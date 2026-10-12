@@ -8,7 +8,7 @@
       "detail": {
         "destination": "https://villacheck.test/#page=user-dashboard"
       },
-      "ms": 1023
+      "ms": 1018
     },
     {
       "name": "Password login merchant",
@@ -17,7 +17,7 @@
       "detail": {
         "destination": "https://villacheck.test/#page=owner-dashboard"
       },
-      "ms": 1021
+      "ms": 1002
     },
     {
       "name": "Password login admin",
@@ -26,7 +26,7 @@
       "detail": {
         "destination": "https://villacheck.test/#page=admin-dashboard"
       },
-      "ms": 1050
+      "ms": 975
     },
     {
       "name": "Password login payment",
@@ -64,7 +64,7 @@
           "Sea Sky Demo Villa"
         ]
       },
-      "ms": 976
+      "ms": 987
     },
     {
       "name": "Guest capacity filters use stored values and reset correctly",
@@ -79,187 +79,187 @@
       "detail": {
         "articles": 3
       },
-      "ms": 1062
+      "ms": 1046
     },
     {
       "name": "Contact lead persists and validates email",
       "role": "guest",
       "status": "pass",
-      "ms": 944
+      "ms": 943
     },
     {
       "name": "Guest report validation, submit and tracking reload",
       "role": "guest",
       "status": "pass",
       "detail": {
-        "reference": "RPT-b577719e-af53-443f-ad57-816833fa6790"
+        "reference": "RPT-f4a0ae3a-0a70-4efd-a510-716aaa72d741"
       },
-      "ms": 1261
+      "ms": 1761
     },
     {
       "name": "Guest QR hides private contact and ownership PDF",
       "role": "guest",
       "status": "pass",
-      "ms": 858
+      "ms": 884
     },
     {
       "name": "User QR reveals contact and records check",
       "role": "user",
       "status": "pass",
-      "ms": 880
+      "ms": 862
     },
     {
       "name": "User precheck matched and mismatch, detail survives reload",
       "role": "user",
       "status": "pass",
-      "ms": 5446
+      "ms": 5399
     },
     {
       "name": "Member report linked to account and detail",
       "role": "user",
       "status": "pass",
-      "ms": 1776
+      "ms": 1756
     },
     {
       "name": "Merchant profile update persists",
       "role": "merchant",
       "status": "pass",
-      "ms": 939
+      "ms": 926
     },
     {
       "name": "Merchant validates missing/oversized documents and invalid photos",
       "role": "merchant",
       "status": "pass",
-      "ms": 1026
+      "ms": 1018
     },
     {
       "name": "Merchant creates Villa with actual UI PDF upload",
       "role": "merchant",
       "status": "pass",
       "detail": {
-        "id": "fae9672d-1ba6-4475-9bbc-1fcccb19d78a"
+        "id": "915a8ff3-6078-4b05-b7f8-e7a5c22f87ad"
       },
-      "ms": 1182
+      "ms": 1175
     },
     {
       "name": "Merchant edits Villa, preserves QR and requires new review",
       "role": "merchant",
       "status": "pass",
-      "ms": 2323
+      "ms": 2322
     },
     {
       "name": "Admin member search",
       "role": "admin",
       "status": "pass",
-      "ms": 867
+      "ms": 870
     },
     {
       "name": "Admin leads filter, notes and state persist",
       "role": "admin",
       "status": "pass",
-      "ms": 1416
+      "ms": 1402
     },
     {
       "name": "Admin report status/public reply/internal note privacy",
       "role": "admin",
       "status": "pass",
-      "ms": 2289
+      "ms": 2295
     },
     {
       "name": "Admin document changes require reason and persist",
       "role": "admin",
       "status": "pass",
-      "ms": 1693
+      "ms": 1672
     },
     {
       "name": "Merchant resubmits requested ownership document",
       "role": "merchant",
       "status": "pass",
-      "ms": 1408
+      "ms": 1407
     },
     {
       "name": "Admin approves Villa under active account",
       "role": "admin",
       "status": "pass",
       "detail": {
-        "qr": "VC-dde1c558-c062-4e88-a376-a8ba419a16c4"
+        "qr": "VC-a048e17b-b9be-4b5b-9931-30d15df0114e"
       },
-      "ms": 1399
+      "ms": 1392
     },
     {
       "name": "Admin approves trial without invoice or payment",
       "role": "admin",
       "status": "pass",
-      "ms": 1367
+      "ms": 1423
     },
     {
       "name": "Admin paid approval creates one invoice and queued demo email",
       "role": "admin",
       "status": "pass",
       "detail": {
-        "paymentId": "9f8bb06a-b975-43a9-ac32-d13b02460d53"
+        "paymentId": "2e572fd8-d454-4750-9f69-c696feefa5ab"
       },
-      "ms": 1387
+      "ms": 1427
     },
     {
       "name": "Merchant generates payment QR and submits dummy slip",
       "role": "payment",
       "status": "pass",
-      "ms": 1396
+      "ms": 1387
     },
     {
       "name": "Admin Payments page exposes submitted invoice for review",
       "role": "admin",
       "status": "pass",
-      "ms": 860
+      "ms": 862
     },
     {
       "name": "Admin rejects slip and Merchant can resubmit via Villa list",
       "role": "admin",
       "status": "pass",
-      "ms": 4268
+      "ms": 4273
     },
     {
       "name": "Admin confirms payment, opens QR, repeat approval cannot extend",
       "role": "admin",
       "status": "pass",
-      "ms": 2902
+      "ms": 2914
     },
     {
       "name": "Paid renewal invoice retains Villa QR",
       "role": "payment",
       "status": "pass",
-      "ms": 1367
+      "ms": 1368
     },
     {
       "name": "Admin QR suspension and restore affect public availability",
       "role": "admin",
       "status": "pass",
-      "ms": 1944
+      "ms": 1931
     },
     {
       "name": "Admin subscription suspension and restore persist",
       "role": "admin",
       "status": "pass",
-      "ms": 1920
+      "ms": 1907
     },
     {
       "name": "Admin adds package and public pricing updates",
       "role": "admin",
       "status": "pass",
-      "ms": 2309
+      "ms": 2325
     },
     {
       "name": "Admin settings offer only human slip review",
       "role": "admin",
       "status": "pass",
-      "ms": 1432
+      "ms": 1409
     },
     {
       "name": "Merchant analytics and reports remain scoped",
       "role": "merchant",
       "status": "pass",
-      "ms": 1716
+      "ms": 1722
     },
     {
       "name": "API role guard rejects privileged endpoints guest",
@@ -292,7 +292,7 @@
       "name": "Cross-owner document and Villa edits rejected",
       "role": "payment",
       "status": "pass",
-      "ms": 13
+      "ms": 14
     },
     {
       "name": "CSRF and forged origin cannot mutate state",
@@ -310,61 +310,61 @@
       "name": "Wrong password login error and unconfigured OTP/OAuth remain disabled",
       "role": "guest",
       "status": "pass",
-      "ms": 1008
+      "ms": 987
     },
     {
       "name": "Member logout invalidates session and hides contacts",
       "role": "user",
       "status": "pass",
-      "ms": 894
+      "ms": 913
     },
     {
       "name": "Mobile navigation opens and selects routes",
       "role": "guest",
       "status": "pass",
-      "ms": 943
+      "ms": 941
     },
     {
       "name": "Hero arrows and featured carousel navigate",
       "role": "guest",
       "status": "pass",
-      "ms": 1057
+      "ms": 1038
     },
     {
       "name": "Province map pin opens filtered directory",
       "role": "guest",
       "status": "pass",
-      "ms": 927
+      "ms": 923
     },
     {
       "name": "Footer policy and support navigation",
       "role": "guest",
       "status": "pass",
-      "ms": 1454
+      "ms": 1424
     },
     {
       "name": "Inactive QR has invalid status while keeping identity",
       "role": "admin",
       "status": "pass",
-      "ms": 45
+      "ms": 39
     },
     {
       "name": "Villa list search and status filters",
       "role": "merchant",
       "status": "pass",
-      "ms": 881
+      "ms": 877
     },
     {
       "name": "Admin explicit rejection persists reason",
       "role": "admin",
       "status": "pass",
-      "ms": 3422
+      "ms": 3412
     },
     {
       "name": "Merchant public photo upload persists and private PDF stays protected",
       "role": "merchant",
       "status": "pass",
-      "ms": 1615
+      "ms": 1586
     },
     {
       "name": "Fresh User registration validates input and creates User",
@@ -376,30 +376,55 @@
       "name": "Fresh Merchant registers, saves profile and chooses subscription",
       "role": "guest",
       "status": "pass",
-      "ms": 1634
+      "ms": 1623
     },
     {
       "name": "Hero next/dots and featured carousel",
       "role": "guest",
       "status": "pass",
-      "ms": 1042
+      "ms": 1038
     },
     {
       "name": "Gallery displays published property photos and opens correct profile",
       "role": "guest",
       "status": "pass",
-      "ms": 937
+      "ms": 938
     },
     {
       "name": "Unconfigured social pages provide real contact fallback",
       "role": "guest",
       "status": "pass",
-      "ms": 2643
+      "ms": 2637
+    },
+    {
+      "name": "Flow repair: review date is Admin review time, never creation fallback",
+      "role": "admin",
+      "status": "pass",
+      "ms": 891,
+      "evidenceRun": "repair-rerun.json"
+    },
+    {
+      "name": "Flow repair: suspended and cancelled messages prevent renewal",
+      "role": "admin",
+      "status": "pass",
+      "ms": 1767
+    },
+    {
+      "name": "Flow repair: real QR SVG download contains a valid image",
+      "role": "merchant",
+      "status": "pass",
+      "ms": 2672
+    },
+    {
+      "name": "Flow repair: monthly offer explains three months then one month",
+      "role": "guest",
+      "status": "pass",
+      "ms": 872
     }
   ],
   "unexpectedPageErrors": [],
   "counts": {
-    "pass": 57,
+    "pass": 61,
     "fail": 0
   },
   "limitations": [
@@ -408,5 +433,5 @@
     "No bank transaction",
     "No hosted deployment inspected"
   ],
-  "note": "Updated intended flow: manual slip review only; persisted guest-capacity filtering enabled."
+  "note": "Final regression run plus corrected home-page selector rerun. Includes four new Flow repairs and actual QR download/scan round trip."
 }

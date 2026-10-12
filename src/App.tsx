@@ -2,7 +2,7 @@ import OperationsPortal from "./OperationsPortal";
 import PremiumBanner from "./PremiumBanner";
 import MerchantProfile from "./MerchantProfile";
 import AdminBusiness from "./AdminBusiness";
-import { usePackages, billingLabel, selectedPlanKey, packageIntentKey } from "./packagePlans";
+import { usePackages, billingLabel, billingValidityLabel, selectedPlanKey, packageIntentKey } from "./packagePlans";
 import { api, currentAccount } from "./api";
 import VillaMap from "./VillaMap";
 import ProvinceExplorer, { popularProvinces } from "./ProvinceExplorer";
@@ -168,7 +168,7 @@ function VillaShowcase({ go }: { go: (p: Page, item?: string) => void }) {
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const [items,setItems]=useState<(typeof villas[number] & {qr:string;premiumBanner:boolean;createdAt:string})[]>([]);
-  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setItems(data.villas.slice(0,4).map(v=>({...v,createdAt:v.updated,updated:new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}),guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(()=>{});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setItems(data.villas.slice(0,4).map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(()=>{});return()=>{active=false;};},[]);
   const scrollToSlide = (index: number) => {
     const next = Math.max(0, Math.min(items.length - 1, index));
     const element = trackRef.current?.children[next] as HTMLElement | undefined;
@@ -309,7 +309,7 @@ function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Pa
   const [sort, setSort] = useState("ล่าสุด");
   const [liveVillas,setLiveVillas]=useState<(typeof villas[number] & {qr:string;premiumBanner:boolean;createdAt:string})[]>([]);
   const [directoryError,setDirectoryError]=useState("");
-  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated,updated:new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}),guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
   const filtered = [...liveVillas]
     .filter(v => v.name.toLowerCase().includes(query.toLowerCase()))
     .filter(v => !province || v.province === province)
@@ -603,6 +603,7 @@ function Pricing({ onSelect, go }: { onSelect: (name: string) => void; go: (page
       {plans.map(plan => <article className={`plan-card ${plan.showPremiumBanner ? "recommended" : ""}`} key={plan.name}>
         {plan.showPremiumBanner && <div className="recommended-label">แนะนำสำหรับคุณ</div>}
         <div className="plan-head"><h2>{plan.name}</h2><p>{plan.description}</p><div><strong>{plan.amount ? `฿${(plan.amount / 100).toLocaleString("th-TH")}` : "ฟรี"}</strong><span>{plan.amount ? `/ ${billingLabel(plan.billingCycle)}` : `${plan.trialMonths} เดือน`}</span></div></div>
+        {plan.amount > 0 && <p>{billingValidityLabel(plan.billingCycle)}</p>}
         <hr /><ul>{plan.features.map(f => <li key={f}><span><Icon name="check" size={14} /></span>{f}</li>)}</ul>
         <button className={plan.showPremiumBanner ? "primary-button full" : "outline-button full"} onClick={() => onSelect(plan.id)}>เลือกแพ็กเกจ</button>
       </article>)}

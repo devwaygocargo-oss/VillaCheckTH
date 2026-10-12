@@ -552,7 +552,8 @@ export function createApp(db, config, transport) {
               qr: v.qr,
               photoUrl: v.photo_url,
               guestCapacity: v.guest_capacity,
-              updated: v.created,
+              updated: v.reviewed_at || null,
+              createdAt: v.created,
               ...(await trustDto(db, v)),
             })),
           ),
@@ -976,6 +977,8 @@ export function createApp(db, config, transport) {
                 fail(409, "ต้องเปิดใช้ QR ก่อนต่ออายุแพ็กเกจ")
               let sub = await getSubscription(db, villa.owner_id)
               if (!sub) fail(409, "ไม่พบแพ็กเกจ Merchant")
+              if (["SUSPENDED", "CANCELLED"].includes(sub.lifecycle))
+                fail(409, "แพ็กเกจถูกระงับหรือยกเลิก กรุณาติดต่อ Admin")
               if ((await getPlan(db, sub.package_id)).amount === 0) {
                 if (
                   !(await getPlan(db, data.packageId)).active ||

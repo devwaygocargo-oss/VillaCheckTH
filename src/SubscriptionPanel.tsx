@@ -1,4 +1,4 @@
-import { usePackages, billingLabel, packageIntentKey } from "./packagePlans";
+import { usePackages, billingLabel, billingValidityLabel, packageIntentKey } from "./packagePlans";
 import { useEffect } from "react";
 import type { Store } from "./merchantStore";
 
@@ -16,6 +16,7 @@ export default function SubscriptionPanel({ store, chosenPlan, setChosenPlan, re
   useEffect(()=>{if(merchantPlans.length && !merchantPlans.some(p=>p.id === chosenPlan))setChosenPlan(merchantPlans.find(p=>p.name === chosenPlan)?.id || merchantPlans[0].id);},[merchantPlans,chosenPlan,setChosenPlan]);
   useEffect(()=>{const paid=merchantPlans.filter(p=>p.amount>0);if(paid.length && !paid.some(p=>p.id===renewalPlan))setRenewalPlan(paid[0].id);},[merchantPlans,renewalPlan,setRenewalPlan]);
   const sub = store.subscription;
+  const blocked = sub?.status === "SUSPENDED" || sub?.status === "CANCELLED";
   const currentPlan=merchantPlans.find(p=>p.id===sub?.packageId);
   const upgrades=merchantPlans.filter(p=>p.isActive && p.amount>0 && p.capacity>(sub?.capacity||0) && p.sort_order>(currentPlan?.sort_order??Infinity));
   const renewalVilla = store.villas.find(v => v.status === "approved" && v.qr);
@@ -25,14 +26,14 @@ export default function SubscriptionPanel({ store, chosenPlan, setChosenPlan, re
     {sub ? <>
       <p>Subscription: {sub.status} · ต่ออายุถัดไป {sub.renewalDate ? new Date(sub.renewalDate).toLocaleDateString("th-TH") : "—"}</p><p><strong>{sub.name}</strong> · ใช้สิทธิ์ {sub.used}/{sub.capacity} Villa</p>
       <p>สมัครแพ็กเกจครั้งเดียวที่บัญชี Merchant · แต่ละ Villa ได้ 1 QR แยกกัน</p>
-      <p>{sub.active ? `แพ็กเกจใช้งานได้ถึง ${new Date(sub.expires!).toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok" })}` : sub.expires ? "แพ็กเกจหมดอายุ กรุณาต่ออายุเพื่อเปิดใช้ QR" : "รออนุมัติ Villa และเปิดใช้แพ็กเกจ"}</p>
-      {sub.used >= sub.capacity && <div><p>ใช้สิทธิ์ Villa ครบแล้ว เพิ่ม Villa ไม่ได้จนกว่าจะอัปเกรดและชำระเงินสำเร็จ</p>{upgrades.length?<div className="subscription-options">{upgrades.map(p=><button key={p.id} disabled={busy||unpaid} onClick={()=>void perform("/subscription/upgrade",{packageId:p.id},"สร้างใบแจ้งชำระอัปเกรดแล้ว สิทธิ์เพิ่มหลัง Admin ยืนยันชำระ")}>อัปเกรดเป็น {p.name} · {p.capacity} Villa · ฿{p.amount/100}/{billingLabel(p.billingCycle)}</button>)}</div>:<p>ไม่มีแพ็กเกจระดับสูงกว่าที่เพิ่มสิทธิ์ Villa ได้ จึงไม่สามารถอัปเกรดเพื่อเพิ่ม Villa ได้</p>}{unpaid&&<p>กรุณาชำระใบแจ้งชำระที่ค้างก่อน</p>}</div>}
-      <p>รอบเรียกเก็บเงิน: {billingLabel(sub.billingCycle)}</p>
+      <p>{sub.status === "SUSPENDED" ? "แพ็กเกจถูกระงับ กรุณาติดต่อ Admin เพื่อเปิดใช้งานอีกครั้ง" : sub.status === "CANCELLED" ? "แพ็กเกจถูกยกเลิก กรุณาติดต่อ Admin" : sub.active ? `แพ็กเกจใช้งานได้ถึง ${new Date(sub.expires!).toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok" })}` : sub.expires ? "แพ็กเกจหมดอายุ กรุณาต่ออายุเพื่อเปิดใช้ QR" : "รออนุมัติ Villa และเปิดใช้แพ็กเกจ"}</p>
+      {sub.used >= sub.capacity && <div><p>ใช้สิทธิ์ Villa ครบแล้ว เพิ่ม Villa ไม่ได้จนกว่าจะอัปเกรดและชำระเงินสำเร็จ</p>{upgrades.length?<div className="subscription-options">{upgrades.map(p=><button key={p.id} disabled={busy||unpaid||blocked} onClick={()=>void perform("/subscription/upgrade",{packageId:p.id},"สร้างใบแจ้งชำระอัปเกรดแล้ว สิทธิ์เพิ่มหลัง Admin ยืนยันชำระ")}>อัปเกรดเป็น {p.name} · {p.capacity} Villa · ฿{p.amount/100}/{billingLabel(p.billingCycle)}</button>)}</div>:<p>ไม่มีแพ็กเกจระดับสูงกว่าที่เพิ่มสิทธิ์ Villa ได้ จึงไม่สามารถอัปเกรดเพื่อเพิ่ม Villa ได้</p>}{unpaid&&<p>กรุณาชำระใบแจ้งชำระที่ค้างก่อน</p>}</div>}
+      <p>รอบเรียกเก็บเงิน: {billingLabel(sub.billingCycle)}</p>{sub.amount > 0 && <p>{billingValidityLabel(sub.billingCycle)}</p>}
       {merchantPlans.find(p=>p.id === sub.packageId)?.amount === 0 && sub.payments > 0 && <label>เลือกแพ็กเกจชำระเงินสำหรับต่ออายุ <select value={renewalPlan} onChange={e => setRenewalPlan(e.target.value)}>{merchantPlans.filter(p => p.amount > 0).map(p => <option key={p.id} value={p.id}>{p.name} · ฿{(p.amount / 100).toLocaleString("th-TH")}/{billingLabel(p.billingCycle)} · {p.capacity} Villa</option>)}</select></label>}
-      {renewalVilla && !unpaid && <div className="button-row"><button disabled={busy} className="primary-button" onClick={() => void perform(`/villas/${renewalVilla.id}/renew`, { packageId: renewalPlan }, "สร้างใบแจ้งชำระต่ออายุแพ็กเกจแล้ว")}>ต่ออายุแพ็กเกจและ QR ตามรอบเรียกเก็บเงิน</button></div>}
+      {renewalVilla && !unpaid && !blocked && <div className="button-row"><button disabled={busy} className="primary-button" onClick={() => void perform(`/villas/${renewalVilla.id}/renew`, { packageId: renewalPlan }, "สร้างใบแจ้งชำระต่ออายุแพ็กเกจแล้ว")}>ต่ออายุแพ็กเกจและ QR ตามรอบเรียกเก็บเงิน</button></div>}
     </> : <>
       <p>เลือกแพ็กเกจสำหรับบัญชี Merchant ก่อนเพิ่ม Villa จากนั้นแนบเอกสารของแต่ละแห่งให้ Admin ตรวจสอบ</p>
-      <div className="subscription-options">{merchantPlans.map(p => <button key={p.id} className={chosenPlan === p.id ? "active" : ""} aria-pressed={chosenPlan === p.id} onClick={() => setChosenPlan(p.id)}><strong>{p.name}</strong><span>{p.amount ? `฿${(p.amount / 100).toLocaleString("th-TH")}/${billingLabel(p.billingCycle)}` : `ทดลองฟรี ${p.trialMonths} เดือน`}</span><small>{p.capacity} Villa = สูงสุด {p.capacity} QR</small></button>)}</div>
+      <div className="subscription-options">{merchantPlans.map(p => <button key={p.id} className={chosenPlan === p.id ? "active" : ""} aria-pressed={chosenPlan === p.id} onClick={() => setChosenPlan(p.id)}><strong>{p.name}</strong><span>{p.amount ? `฿${(p.amount / 100).toLocaleString("th-TH")}/${billingLabel(p.billingCycle)}` : `ทดลองฟรี ${p.trialMonths} เดือน`}</span><small>{p.capacity} Villa = สูงสุด {p.capacity} QR</small>{p.amount > 0 && <small>{billingValidityLabel(p.billingCycle)}</small>}</button>)}</div>
       <button disabled={busy || !merchantPlans.some(p=>p.id === chosenPlan)} className="primary-button" onClick={async () => { if (await perform("/subscription", { packageId: chosenPlan }, "สมัครแพ็กเกจบัญชี Merchant แล้ว กรุณาเพิ่ม Villa")) { sessionStorage.removeItem(packageIntentKey); onSubscribed(); } }}>สมัครแพ็กเกจนี้และเพิ่ม Villa →</button>
     </>}
   </section>;

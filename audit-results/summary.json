@@ -107,6 +107,35 @@
       "impact": "Next arrow, dots and featured carousel pass; previous arrow is intercepted by hero-slide-indicator",
       "status": "fixed",
       "resolution": "Slide indicator moved below photo arrows"
+    },
+    {
+      "id": "review-date",
+      "status": "fixed",
+      "issue": "Public Last checked is populated from creation time instead of last Admin review",
+      "source": "server/app.mjs:555",
+      "resolution": "Uses Admin reviewed_at; unknown review dates remain unknown; createdAt is separate"
+    },
+    {
+      "id": "subscription-message",
+      "status": "fixed",
+      "issue": "Suspended/cancelled subscriptions with a future expiry display expired-package guidance",
+      "source": "src/SubscriptionPanel.tsx:27",
+      "resolution": "Suspended/cancelled notices and renewal/upgrade controls match lifecycle; Backend rejects blocked renewals"
+    },
+    {
+      "id": "qr-download",
+      "status": "fixed",
+      "issue": "Starter promises downloadable QR, but current VillaQr renders SVG and link without QR download action; document/slip download actions are distinct",
+      "source": "server/package-content.mjs:4; src/Backoffice.tsx:26",
+      "resolution": "SVG download tested and its image scanned back to original Villa QR"
+    },
+    {
+      "id": "initial-period",
+      "status": "fixed",
+      "issue": "Monthly pricing is displayed as per month while first paid invoice grants three months; later renewals grant one month",
+      "source": "server/database.mjs:224",
+      "questionAsked": true,
+      "resolution": "Confirmed first monthly payment grants 3 months and renewals 1; explanatory copy present in pricing, promotion and Merchant selection"
     }
   ],
   "limitations": [
@@ -141,8 +170,8 @@
     "providerStatus": "presence checks of local .env only; Google/LINE/SMS OTP credentials present but not verified with remote services; Facebook credentials missing, SMTP host missing, Email OTP API key/secret missing"
   },
   "functionalAudit": {
-    "scenarios": 57,
-    "pass": 57,
+    "scenarios": 61,
+    "pass": 61,
     "fail": 0,
     "evidence": "functional-final.json",
     "browser": "Chrome production browser interactions against Next/NestJS/Prisma/temporary PostgreSQL",
@@ -161,7 +190,7 @@
     "pageErrors": 0
   },
   "postFix": {
-    "functionalPass": 57,
+    "functionalPass": 61,
     "functionalFail": 0,
     "backendPass": 70,
     "backendSkip": 0,
@@ -182,6 +211,15 @@
   "userConfirmedFlow": {
     "slipReview": "human Admin only",
     "facebook": "waiting for Meta approval",
-    "emailOtp": "trial version; paid activation awaits employer payment in the evening; not a code defect"
+    "emailOtp": "trial version; paid activation awaits employer payment in the evening; not a code defect",
+    "monthlyFirstPaymentMonths": 3,
+    "monthlyRenewalMonths": 1
+  },
+  "flowCompliance": {
+    "evidence": "flow-compliance.json",
+    "coreFlow": "passed",
+    "additionalPass": 10,
+    "additionalFail": 0,
+    "overall": "All identified code/Flow discrepancies fixed and regression-verified; live provider approval/payment checks remain intentionally pending"
   }
 }

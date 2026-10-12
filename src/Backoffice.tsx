@@ -26,17 +26,23 @@ function status(v: MerchantVilla) {
 export function VillaQr({ villa }: { villa: MerchantVilla }) {
   const url = `${window.location.origin}${window.location.pathname}#page=verify&item=${encodeURIComponent(villa.qr)}`
   const qrRef = useRef<HTMLDivElement>(null)
+  const [downloadUrl, setDownloadUrl] = useState("")
   useEffect(() => {
     let cancelled = false
+    let objectUrl = ""
+    setDownloadUrl("")
     void import("@zxing/browser").then(({ BrowserQRCodeSvgWriter }) => {
       if (cancelled || !qrRef.current) return
       const svg = new BrowserQRCodeSvgWriter().write(url, 220, 220)
       svg.setAttribute("role", "img")
       svg.setAttribute("aria-label", `QR ของ ${villa.name}`)
       qrRef.current.replaceChildren(svg)
+      objectUrl = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" }))
+      setDownloadUrl(objectUrl)
     })
     return () => {
       cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
   }, [url, villa.name])
   return (
@@ -45,6 +51,7 @@ export function VillaQr({ villa }: { villa: MerchantVilla }) {
       <strong>{villa.qr}</strong><p>{villa.qrStatus} · {villa.verificationLevel}</p>
       <small>หมดอายุ {date(villa.expires)}</small>
       <a href={url}>เปิดหน้าตรวจสอบ ↗</a>
+      {downloadUrl && <a className="outline-button" href={downloadUrl} download={`VillaCheck-${villa.qr}.svg`}>ดาวน์โหลด QR (SVG)</a>}
     </div>
   )
 }

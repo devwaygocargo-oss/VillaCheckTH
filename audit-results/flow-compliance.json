@@ -1,0 +1,149 @@
+{
+  "commit": "0bf0fae8cb489c2c5407b53416555a9dcf801be7",
+  "deployment": "success",
+  "scope": "Flow comparison, source review and additional production-stack dummy tests; live data not mutated",
+  "baseline": {
+    "backendTests": 70,
+    "browserFlows": 57,
+    "liveSmokeChecks": 9
+  },
+  "additional": {
+    "scenarios": 10,
+    "pass": 10,
+    "fail": 0,
+    "evidence": "flow-edge.json"
+  },
+  "flow": [
+    {
+      "step": "User/Merchant/Admin login and registration",
+      "status": "passed",
+      "evidence": "functional-final.json"
+    },
+    {
+      "step": "Merchant profile → subscription → Villa → ownership upload",
+      "status": "passed",
+      "evidence": "functional-final.json"
+    },
+    {
+      "step": "Pending document → Admin approve/change/reject → resubmit",
+      "status": "passed",
+      "evidence": "functional-final.json"
+    },
+    {
+      "step": "Trial approval activates QR without invoice",
+      "status": "passed",
+      "evidence": "functional-final.json"
+    },
+    {
+      "step": "Paid document approval creates invoice but does not activate QR",
+      "status": "passed",
+      "evidence": "flow-edge.json"
+    },
+    {
+      "step": "Merchant slip → Admin reject/resubmit or confirm",
+      "status": "passed",
+      "evidence": "functional-final.json; flow-edge.json"
+    },
+    {
+      "step": "No self-confirmation or reused bank transaction",
+      "status": "passed",
+      "evidence": "flow-edge.json"
+    },
+    {
+      "step": "Renewal retains QR; repeated approval cannot add validity twice",
+      "status": "passed",
+      "evidence": "functional-final.json; flow-edge.json"
+    },
+    {
+      "step": "Suspension blocks payment activation and unavailable QR cannot match precheck",
+      "status": "passed",
+      "evidence": "flow-edge.json"
+    },
+    {
+      "step": "Guest masking, User contact access, role/ownership/CSRF guards",
+      "status": "passed",
+      "evidence": "functional-final.json"
+    },
+    {
+      "step": "Reports: guest tracking, member linkage, Admin public reply/private notes",
+      "status": "passed",
+      "evidence": "functional-final.json"
+    },
+    {
+      "step": "Guest counts: create/edit, review, filters and unknown data",
+      "status": "passed",
+      "evidence": "functional-final.json; flow-edge.json"
+    },
+    {
+      "step": "Capacity limits and paid upgrade before extra Villa rights",
+      "status": "passed-backend",
+      "evidence": "production-integration.log: full capacity requires paid upgrade; five package tiers"
+    },
+    {
+      "step": "Facebook live sign-in",
+      "status": "waiting-Meta-approval",
+      "basis": "User confirmed"
+    },
+    {
+      "step": "Email/OTP live delivery",
+      "status": "waiting-provider-payment",
+      "basis": "User confirmed trial service; not exercised against live provider"
+    }
+  ],
+  "findings": [
+    {
+      "id": "review-date",
+      "status": "fixed",
+      "issue": "Public Last checked is populated from creation time instead of last Admin review",
+      "source": "server/app.mjs:555",
+      "resolution": "Uses Admin reviewed_at; unknown review dates remain unknown; createdAt is separate"
+    },
+    {
+      "id": "subscription-message",
+      "status": "fixed",
+      "issue": "Suspended/cancelled subscriptions with a future expiry display expired-package guidance",
+      "source": "src/SubscriptionPanel.tsx:27",
+      "resolution": "Suspended/cancelled notices and renewal/upgrade controls match lifecycle; Backend rejects blocked renewals"
+    },
+    {
+      "id": "qr-download",
+      "status": "fixed",
+      "issue": "Starter promises downloadable QR, but current VillaQr renders SVG and link without QR download action; document/slip download actions are distinct",
+      "source": "server/package-content.mjs:4; src/Backoffice.tsx:26",
+      "resolution": "SVG download tested and its image scanned back to original Villa QR"
+    },
+    {
+      "id": "initial-period",
+      "status": "fixed",
+      "issue": "Monthly pricing is displayed as per month while first paid invoice grants three months; later renewals grant one month",
+      "source": "server/database.mjs:224",
+      "questionAsked": true,
+      "resolution": "Confirmed first monthly payment grants 3 months and renewals 1; explanatory copy present in pricing, promotion and Merchant selection"
+    }
+  ],
+  "limits": [
+    "No real bank/OTP/email operations",
+    "No physical device camera verification",
+    "Live privileged Admin operations not mutated",
+    "The additional findings concern copy/date presentation, missing QR export and an unconfirmed commercial period rule; passing tests do not prove all displayed claims correct"
+  ],
+  "confirmedBillingRule": {
+    "monthlyFirstPaymentMonths": 3,
+    "monthlyRenewalMonths": 1,
+    "basis": "User confirmed option 1"
+  },
+  "finalVerification": {
+    "browser": {
+      "pass": 61,
+      "fail": 0
+    },
+    "backend": {
+      "pass": 70,
+      "fail": 0,
+      "skip": 0
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "productionBuild": "passed"
+  }
+}
