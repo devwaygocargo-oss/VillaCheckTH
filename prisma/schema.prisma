@@ -221,6 +221,7 @@ model villas {
   reviewed_at        String?
   reviewed_by        String?
   photo_url          String    @default("")
+  guest_capacity     Int?
   support_reports support_reports[]
   user_checks user_checks[]
   villa_events villa_events[]

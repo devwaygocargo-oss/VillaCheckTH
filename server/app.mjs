@@ -1,4 +1,5 @@
 import {createLoginOtp,otpChannels,probeSmsCredit} from './login-otp.mjs'
+import { guestCapacity } from './guest-capacity.mjs'
 import {saveVillaPhoto} from './villa-photo.mjs'
 import {demoSlip,demoMode} from "./demo-payment.mjs"
 import {createReport, recordEvent, operations} from "./operations.mjs"
@@ -285,6 +286,7 @@ export function createApp(db, config, transport) {
       id: v.id,
       name: v.name,
       photoUrl: v.photo_url,
+      guestCapacity: v.guest_capacity,
       province: v.province,
       merchant: v.merchant,
       email: v.email,
@@ -549,6 +551,7 @@ export function createApp(db, config, transport) {
               province: v.province,
               qr: v.qr,
               photoUrl: v.photo_url,
+              guestCapacity: v.guest_capacity,
               updated: v.created,
               ...(await trustDto(db, v)),
             })),
@@ -854,6 +857,7 @@ export function createApp(db, config, transport) {
             fail(400, "เบอร์โทรไม่ถูกต้อง")
           if (contacts[3] && !/^[0-9 -]{6,30}$/.test(contacts[3]))
             fail(400, "เลขบัญชีไม่ถูกต้อง")
+          const capacity = guestCapacity(data.guestCapacity)
           const file = document(data.document)
           const id = await transaction(db, async () => {
             const sub = await getSubscription(db, user.id)
@@ -895,8 +899,8 @@ export function createApp(db, config, transport) {
             )
               fail(400, "Photo URL ต้องเป็น HTTPS")
             await db
-              .prepare("UPDATE villas SET photo_url=? WHERE id=?")
-              .run(photoUrl, id)
+              .prepare("UPDATE villas SET photo_url=?,guest_capacity=? WHERE id=?")
+              .run(photoUrl, capacity, id)
             await audit(db, user, "villa.create", id)
             return id
           })

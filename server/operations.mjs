@@ -1,4 +1,5 @@
 import {saveVillaPhoto} from './villa-photo.mjs'
+import {guestCapacity} from './guest-capacity.mjs'
 import { randomUUID } from 'node:crypto'
 import { trustDto } from './catalog.mjs'
 import { audit } from './database.mjs'
@@ -34,10 +35,11 @@ export async function operations(db,user,req,path,url,readBody){
  if(villaEdit&&['POST','PATCH'].includes(req.method)){
   const data=await readBody(req),villa=await db.prepare('SELECT * FROM villas WHERE id=? AND owner_id=?').get(villaEdit[1],user.id)
   if(!villa)error(404,'ไม่พบ Villa')
+  const capacity = data.guestCapacity === undefined ? villa.guest_capacity : guestCapacity(data.guestCapacity)
   const values=['name','province','merchant','phone','bankName','accountName','accountNumber'].map(k=>clean(data[k]||'',k,200,['name','province','merchant'].includes(k)))
   const photo=clean(data.photoUrl||'','photo',2000,false)
   if(photo&&!/^\/api\/public\/villa-photo\/[a-f0-9-]+$/.test(photo)&&!/^https:\/\//.test(photo)&&!/^\/demo\/villas\/villa-\d+\.jpg$/.test(photo))error(400,'Photo must be HTTPS')
-  await db.transaction(async()=>{const storedPhoto=data.photo?await saveVillaPhoto(db,user.id,data.photo):photo;await db.prepare("UPDATE villas SET name=?,province=?,merchant=?,phone=?,bank_name=?,account_name=?,account_number=?,photo_url=?,status='pending',verification_level='REGISTERED',reason='Information changed; pending Admin review' WHERE id=?").run(...values,storedPhoto,villa.id);await audit(db,user,'villa.update',villa.id)})
+  await db.transaction(async()=>{const storedPhoto=data.photo?await saveVillaPhoto(db,user.id,data.photo):photo;await db.prepare("UPDATE villas SET name=?,province=?,merchant=?,phone=?,bank_name=?,account_name=?,account_number=?,photo_url=?,guest_capacity=?,status='pending',verification_level='REGISTERED',reason='Information changed; pending Admin review' WHERE id=?").run(...values,storedPhoto,capacity,villa.id);await audit(db,user,'villa.update',villa.id)})
   return {ok:true}
  }
  if(path==='/api/user/checks'&&req.method==='POST'){

@@ -119,6 +119,7 @@ export function openDatabase(path) {
   )
   migrate("villas", "verification_level", "TEXT NOT NULL DEFAULT 'VERIFIED'")
   migrate("villas", "photo_url", "TEXT NOT NULL DEFAULT ''")
+  migrate("villas", "guest_capacity", "INTEGER CHECK(guest_capacity BETWEEN 1 AND 1000)")
   migrate("villas", "reviewed_at", "TEXT")
   migrate("villas", "reviewed_by", "TEXT")
   migrate("users", "created", "TEXT NOT NULL DEFAULT ''")

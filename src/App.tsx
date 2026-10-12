@@ -168,7 +168,7 @@ function VillaShowcase({ go }: { go: (p: Page, item?: string) => void }) {
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const [items,setItems]=useState<(typeof villas[number] & {qr:string;premiumBanner:boolean;createdAt:string})[]>([]);
-  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string;premiumBanner:boolean}[]}>("/public/villas").then(data=>{if(active)setItems(data.villas.slice(0,4).map(v=>({...v,createdAt:v.updated,updated:new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}),guests:"ไม่ระบุ",status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(()=>{});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setItems(data.villas.slice(0,4).map(v=>({...v,createdAt:v.updated,updated:new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}),guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(()=>{});return()=>{active=false;};},[]);
   const scrollToSlide = (index: number) => {
     const next = Math.max(0, Math.min(items.length - 1, index));
     const element = trackRef.current?.children[next] as HTMLElement | undefined;
@@ -309,19 +309,19 @@ function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Pa
   const [sort, setSort] = useState("ล่าสุด");
   const [liveVillas,setLiveVillas]=useState<(typeof villas[number] & {qr:string;premiumBanner:boolean;createdAt:string})[]>([]);
   const [directoryError,setDirectoryError]=useState("");
-  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string;premiumBanner:boolean}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated,updated:new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}),guests:"ไม่ระบุ",status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated,updated:new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}),guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
   const filtered = [...liveVillas]
     .filter(v => v.name.toLowerCase().includes(query.toLowerCase()))
     .filter(v => !province || v.province === province)
     .filter(v => !status || v.status === status)
-    .filter(v => !guests || (guests === "1–8 คน" ? Number.parseInt(v.guests) <= 8 : Number.parseInt(v.guests) >= 9))
+    .filter(v => !guests || (guests === "unknown" ? v.guests === "ไม่ระบุ" : guests === "small" ? Number.parseInt(v.guests) <= 8 : guests === "medium" ? Number.parseInt(v.guests) >= 9 && Number.parseInt(v.guests) <= 14 : Number.parseInt(v.guests) >= 15))
     .sort((a, b) => sort === "A–Z" ? a.name.localeCompare(b.name) : Date.parse(b.createdAt)-Date.parse(a.createdAt));
   return <main className="page-bg">
     <div className="page-hero container"><span className="kicker">VILLA DIRECTORY</span><h1>ค้นหาวิลล่าที่ไว้ใจได้</h1><p>ตรวจสอบข้อมูลและสถานะของพูลวิลล่าทั่วไทย ก่อนตัดสินใจโอนเงิน</p></div>
     <div className="container filter-panel">
       <label className="wide"><span>ค้นหาชื่อวิลล่า</span><div><Icon name="search" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="เช่น Sea Sky Pool Villa" /></div></label>
       <label><span>จังหวัด</span><div><Icon name="pin" /><select value={province} onChange={event => setProvince(event.target.value)}><option value="">ทุกจังหวัด</option>{provinces.map(item => <option key={item}>{item}</option>)}</select></div></label>
-      <label><span>จำนวนผู้พัก</span><div><Icon name="users" /><select value={guests} onChange={event => setGuests(event.target.value)}><option value="">ไม่จำกัด</option><option>1–8 คน</option><option>9–14 คน</option></select></div></label>
+      <label><span>จำนวนผู้พัก</span><div><Icon name="users" /><select aria-label="จำนวนผู้พัก" value={guests} onChange={e => setGuests(e.target.value)}><option value="">ไม่จำกัด</option><option value="small">1–8 คน</option><option value="medium">9–14 คน</option><option value="large">15 คนขึ้นไป</option><option value="unknown">ยังไม่ระบุ</option></select></div></label>
       <label><span>สถานะ</span><div><Icon name="shield" /><select value={status} onChange={event => setStatus(event.target.value)}><option value="">ทุกสถานะ</option><option>ตรวจสอบข้อมูลแล้ว</option><option>รอตรวจสอบ</option></select></div></label>
       <button className="primary-button" onClick={() => window.scrollTo({ top: 300, behavior: "smooth" })}><Icon name="search" size={18} />ค้นหา</button>
     </div>
@@ -538,7 +538,7 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
           <div className="scanner-overlay">
             <div className="qr-frame"><span /><span /><span /><span />{!cameraActive && <Icon name={scanState === "loading" ? "search" : scanState === "success" ? "check" : "qr"} size={54} />}</div>
             <strong>{scanState === "requesting" ? "กำลังขอสิทธิ์เข้าถึงกล้อง..." : scanState === "scanning" ? "กำลังสแกน QR Code" : scanState === "loading" ? "กำลังตรวจสอบ QR Code..." : scanState === "success" ? "Scan Success" : errorMessage ? "ไม่สามารถอ่าน QR Code" : "Camera Scanner"}</strong>
-            <p>{scanState === "success" ? "พบข้อมูล VillaCheck VERIFIED" : errorMessage || "วาง QR Code ให้อยู่ในกรอบ"}</p>
+            <p>{scanState === "success" ? "อ่าน QR แล้ว กำลังตรวจสอบสถานะที่พัก" : errorMessage || "วาง QR Code ให้อยู่ในกรอบ"}</p>
             {(scanState === "scanning" || scanState === "loading") && <span className="scan-line" />}
           </div>
         </div>
@@ -625,7 +625,7 @@ function Footer({ go }: { go: (p: Page, item?: string) => void }) {
       <div><strong>สำหรับเจ้าของที่พัก</strong><button onClick={() => go("pricing")}>แพ็กเกจ</button><button onClick={() => go("owner-guide")}>สำหรับเจ้าของที่พัก</button><button onClick={() => go("owner-auth")}>ลงทะเบียนที่พัก</button><button onClick={() => go("login")}>เข้าสู่ระบบ</button></div>
       <div className="footer-support"><strong>ช่วยเหลือและติดต่อ</strong><button onClick={() => go("help")}>Help / Support</button><button onClick={() => go("contact")}>Contact</button><button onClick={() => openSupport("email")}><Icon name="mail" size={14} />อีเมลทีมงาน</button><button onClick={() => openSupport("phone")}><Icon name="phone" size={14} />โทรทีมงาน</button><small>จันทร์–ศุกร์ 09:00–18:00 น.</small></div>
     </div>
-    <div className="container footer-bottom"><span>© 2025 VillaCheck. สงวนลิขสิทธิ์</span><div><button onClick={() => go("privacy")}>นโยบายความเป็นส่วนตัว</button><button onClick={() => go("terms")}>ข้อกำหนดและเงื่อนไข</button></div><span>Trust before transfer.</span></div>
+    <div className="container footer-bottom"><span>© {new Date().getFullYear()} VillaCheck. สงวนลิขสิทธิ์</span><div><button onClick={() => go("privacy")}>นโยบายความเป็นส่วนตัว</button><button onClick={() => go("terms")}>ข้อกำหนดและเงื่อนไข</button></div><span>Trust before transfer.</span></div>
   </footer>;
 }
 

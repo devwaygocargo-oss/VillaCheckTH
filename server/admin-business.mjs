@@ -99,8 +99,8 @@ export async function adminBusiness(
   if (path === "/api/admin/settings") {
     if (req.method === "PATCH" || req.method === "POST") {
       const data = await readBody(req)
-      if (!["MANUAL", "AUTO"].includes(data.paymentVerificationMode))
-        invalid("โหมดไม่ถูกต้อง")
+      if (data.paymentVerificationMode !== "MANUAL")
+        invalid("ระบบนี้ใช้ Admin ตรวจสลิปด้วยตนเองเท่านั้น")
       if(data.demoMode!==undefined){
         if(typeof data.demoMode!=="boolean")invalid("Demo mode must be boolean")
         await db.prepare("INSERT INTO system_settings(key,value) VALUES ('demo_mode',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(String(data.demoMode))

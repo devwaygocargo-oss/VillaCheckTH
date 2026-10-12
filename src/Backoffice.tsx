@@ -87,7 +87,7 @@ export default function Backoffice({
     province: "",
     merchant: "",
     email: "",
-    photoUrl: "", phone: "", bankName: "", accountName: "", accountNumber: "",
+    guestCapacity: "", photoUrl: "", phone: "", bankName: "", accountName: "", accountNumber: "",
     package: "",
   })
   useEffect(() => {
@@ -192,7 +192,7 @@ export default function Backoffice({
     const v=store?.villas.find(v=>v.id===initialItem);
     if(!v)return;
     setSelected(v.id);
-    setForm(current=>({...current,name:v.name,province:v.province,merchant:v.merchant,email:v.email,photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId}));
+    setForm(current=>({...current,name:v.name,province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId}));
     setVerificationLevel(v.status==="approved"?v.verificationLevel:"VERIFIED");
   },[initialItem,store]);
   const submit = async (event: React.FormEvent) => {
@@ -220,7 +220,7 @@ export default function Backoffice({
         province: "",
         merchant: "",
         email: "",
-        photoUrl: "", phone: "", bankName: "", accountName: "", accountNumber: "",
+        guestCapacity: "", photoUrl: "", phone: "", bankName: "", accountName: "", accountNumber: "",
         package: form.package,
       })
       go("owner-villas")
@@ -272,7 +272,7 @@ export default function Backoffice({
   const showDetails = (v: MerchantVilla, edit=false) => {
     setVerificationLevel(v.status === "approved" ? v.verificationLevel : "VERIFIED")
     setSelected(v.id)
-    setForm({...form,name:v.name,province:v.province,merchant:v.merchant,email:v.email,photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId})
+    setForm({...form,name:v.name,province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId})
     setReason("")
     setUpload(null)
     go(admin ? "admin-review" : edit ? "owner-villa-edit" : "owner-villa-detail",v.id)
@@ -317,7 +317,7 @@ export default function Backoffice({
       </div>
       {!admin&&store.subscription&&store.subscription.used>=store.subscription.capacity&&!billing&&<section className="merchant-panel"><p>ใช้สิทธิ์ครบ {store.subscription.used}/{store.subscription.capacity} Villa แล้ว ไม่สามารถเพิ่ม Villa ได้</p><button className="outline-button" onClick={()=>go("owner-package")}>ดูสิทธิ์แพ็กเกจและตัวเลือกอัปเกรด</button></section>}
       {!admin && (billing || dashboard || (adding && !store.subscription)) && <SubscriptionPanel store={store} chosenPlan={chosenPlan} setChosenPlan={setChosenPlan} renewalPlan={renewalPlan} setRenewalPlan={setRenewalPlan} busy={busy} perform={perform} onSubscribed={() => go("owner-add-villa")} />}
-      {!admin && billing && store.villas.some(v => v.invoices.length > 0) && <section className="merchant-panel"><h2>การชำระแพ็กเกจบัญชี Merchant</h2><p>ชำระแพ็กเกจครั้งเดียว ครอบคลุม Villa ภายในจำนวนสิทธิ์ แต่ละแห่งมี QR ของตัวเอง</p>{store.villas.flatMap(v => v.invoices).map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={false} instructions={store.paymentInstructions} configured={store.paymentConfigured}
+      {billing && <section className="merchant-panel"><h2>{admin ? "ตรวจสอบการชำระเงิน" : "การชำระแพ็กเกจบัญชี Merchant"}</h2><p>ชำระแพ็กเกจครั้งเดียว ครอบคลุม Villa ภายในจำนวนสิทธิ์ แต่ละแห่งมี QR ของตัวเอง</p>{!store.villas.some(v => v.invoices.length > 0) && <p>ยังไม่มีใบแจ้งชำระ</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.paymentInstructions} configured={store.paymentConfigured}
                       demo={store.demoMode} busy={busy} perform={perform} />)}</section>}
       {message && (
         <div className="form-message" role="status">
@@ -389,7 +389,7 @@ export default function Backoffice({
               </label>
             ))}
           </div>
-          <VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/>
+          <label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/>
           <label className="merchant-upload">
             <strong>แนบหลักฐานการเป็นเจ้าของ Villa *</strong>
             <span>
@@ -522,7 +522,7 @@ export default function Backoffice({
               page === "owner-villa-edit") && (
               <section className="merchant-panel merchant-detail">
                 {!admin&&<div className="button-row"><button className="outline-button" onClick={()=>go("owner-villas")}>กลับรายการ Villa</button>{!editing&&<button className="primary-button" onClick={()=>showDetails(active,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}</div>}
-                {!admin&&editing&&<form className="portal-form" onSubmit={async e=>{e.preventDefault();try{await api(`/merchant/villas/${active.id}`,{...form,photo});setPhoto(null);await perform("/state",undefined,"Updated; pending document review");}catch(e){setMessage(e instanceof Error?e.message:"Update failed")}}}><h2>แก้ไขข้อมูล Villa</h2><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{k}<input required={["name","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}<button disabled={busy} className="primary-button">บันทึกและส่งตรวจใหม่</button></form>}
+                {!admin&&editing&&<form className="portal-form" onSubmit={async e=>{e.preventDefault();try{await api(`/merchant/villas/${active.id}`,{...form,photo});setPhoto(null);await perform("/state",undefined,"Updated; pending document review");}catch(e){setMessage(e instanceof Error?e.message:"Update failed")}}}><h2>แก้ไขข้อมูล Villa</h2><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{k}<input required={["name","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}<button disabled={busy} className="primary-button">บันทึกและส่งตรวจใหม่</button></form>}
                 {!editing&&active.photoUrl&&<img src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/>}
                 <h2>เอกสารกรรมสิทธิ์ · {active.name}</h2>
                 <p>{active.document.name}</p>

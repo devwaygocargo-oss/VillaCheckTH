@@ -127,7 +127,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
     },
   )
   await t.test(
-    "leads separate users and merchants; database AUTO falls back",
+    "leads separate users and merchants; only manual verification is available",
     async () => {
       await createUser(
         db,
@@ -153,12 +153,12 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
             a,
           )
         ).status,
-        200,
+        400,
       )
       assert.equal(
         (await request("/api/admin/settings", undefined, a)).value
           .paymentVerificationMode,
-        "AUTO",
+        "MANUAL",
       )
     },
   )
@@ -280,7 +280,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
     },
   )
   await t.test(
-    "AUTO placeholder upload remains PENDING_REVIEW and PATCH reject permits resubmission",
+    "Manual upload remains PENDING_REVIEW and PATCH reject permits resubmission",
     async () => {
       assert.equal(
         (
@@ -296,7 +296,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
         await request(`/api/payments/${invoice.id}/status`, undefined, m)
       ).value
       assert.equal(pending.paymentStatus, "PENDING_REVIEW")
-      assert.equal(pending.verificationMode, "AUTO")
+      assert.equal(pending.verificationMode, "MANUAL")
       assert.equal(
         (
           await request(

@@ -128,7 +128,7 @@ Keep `.env` `APP_URL=http://localhost:3001`. A blank `DATABASE_URL` continues us
 
 The existing invoice is the payment request; no second payment table is introduced. Runtime remains React/Vite + Node.js + PostgreSQL (SQLite locally), not NestJS/Prisma. Both databases apply additive, idempotent migrations at startup without discarding existing invoices.
 
-Set `PAYMENT_VERIFICATION_MODE=MANUAL` on Vercel and redeploy. `AUTO` currently safely falls back to manual review; it never approves or rejects a payment automatically. Admin approval of a Villa creates its package invoice; Basic trial remains free. Paid package QR activation requires payment verification. Initial validity is three calendar months; renewal is one month.
+Set `PAYMENT_VERIFICATION_MODE=MANUAL` on Vercel and redeploy. Only MANUAL is supported; settings requests selecting AUTO are rejected. Admin approval of a Villa creates its package invoice; Basic trial remains free. Paid package QR activation requires payment verification. Initial validity is three calendar months; renewal is one month.
 
 Payment endpoints (all under `/api`, authenticated session required):
 
@@ -184,7 +184,7 @@ Guest API omits full phone, account name/number and bank details and returns mas
 
 Package max-level is distinct from Admin-assigned actual level. Pending/expired/suspended Villas show REGISTERED rather than a paid-package badge. A banner requires package entitlement + document approval + active subscription. Buying Premium does not set actual PREMIUM_VERIFIED.
 
-`system_settings.payment_verification_mode` overrides `PAYMENT_VERIFICATION_MODE`. Admin can toggle AUTO/MANUAL. AUTO has no external provider connected and safely stays PENDING_REVIEW. Strategy contract lives in `payment-verification.d.ts`; placeholder implements bounded timeout/error fallback. Future integration must validate authentic bank transaction, recipient, amount/currency and duplicate ID outside DB transactions, then atomically call `confirmPayment` after rechecking invoice status.
+Verification mode is always MANUAL, including installations with a legacy AUTO setting. Admin settings rejects AUTO. Migration 0005 adds nullable Villa guest_capacity and normalizes legacy payment settings to MANUAL. Merchant guest-count edits require document review again and preserve Villa QR identity.
 
 ### API inventory
 
@@ -276,9 +276,9 @@ Migration `0003_operational_records` adds persisted `support_reports`, `user_che
 
 Local passwords are stored only in ignored `server/data/demo-accounts.json`; seeded public accounts do not have public passwords or demo Admin access. You can also register ordinary User/Merchant accounts with your own credentials to test. Dummy records are visibly labelled and seeding is idempotent; rerunning it does not reset reviewed records, passwords or QR identities.
 
-Admin System Settings controls Demo Mode and Auto Payment Verification. In Demo Mode, the Merchant can generate and submit a synthetic PDF slip. This is a simulated payment request, not a real bank QR or a bank-confirmed transfer. Backend QR expiry is still enforced. The normal upload, rejection, resubmission, duplicate reference protection, transaction, subscription activation and immutable Villa QR workflows all run normally. Email delivery is stored as `demo` in the outbox, with no SMTP transmission. Addresses ending in `.example` are always blocked from real delivery.
+Admin System Settings controls Demo Mode; slip verification is always manual. In Demo Mode, the Merchant can generate and submit a synthetic PDF slip. This is a simulated payment request, not a real bank QR or a bank-confirmed transfer. Backend QR expiry is still enforced. The normal upload, rejection, resubmission, duplicate reference protection, transaction, subscription activation and immutable Villa QR workflows all run normally. Email delivery is stored as `demo` in the outbox, with no SMTP transmission. Addresses ending in `.example` are always blocked from real delivery.
 
-Auto verification remains the explicitly requested placeholder; failure/unconfigured AUTO sends payments to manual review. A real bank QR with bank-side expiry requires a bank/payment provider integration; replace the demo payment adapter when switching to actual money transfers.
+Payment QR opens the VillaCheck payment page. Admin checks the transferred amount and transaction ID, then confirms or rejects the uploaded slip. No automatic verification provider is required.
 
 Additional API routes:
 
@@ -312,7 +312,7 @@ Covered integration flows: registration and role/ownership guards; document uplo
 
 Production read-only checks: configuration endpoint succeeds with demoMode=true; public directory returns ten Villas with ten photos; unauthenticated Admin user endpoint returns HTTP 401. Provider configuration flags indicate credentials exist, not successful live OAuth consent.
 
-Remaining live checks: real Google/Facebook/LINE login and callback in configured provider consoles; real SMTP delivery; real bank-transfer QR and authentic transaction verification. AUTO is intentionally a future-phase placeholder. The retained first paid MONTHLY invoice covers three months; renewals cover one month. Confirm that commercial rule before accepting real payments. Camera scanning requires a physical-device check.
+Remaining live checks: real Google/Facebook/LINE login and callback in configured provider consoles; real SMTP delivery; a real manual slip review by Admin. Automatic slip verification is outside the intended flow. The retained first paid MONTHLY invoice covers three months; renewals cover one month. Confirm that commercial rule before accepting real payments. Camera scanning requires a physical-device check.
 
 ### Additional interactive dummy checks
 

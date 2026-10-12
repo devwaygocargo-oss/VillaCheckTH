@@ -1,0 +1,187 @@
+{
+  "date": "2026-10-12",
+  "environment": "Initial browser audit on isolated SQLite; follow-up production build and complete integration tests against temporary PostgreSQL; QR browser cases use Next production/NestJS/Prisma/PostgreSQL; no real database or messages used",
+  "routes": 61,
+  "viewportRuns": 132,
+  "backend": {
+    "pass": 70,
+    "fail": 0,
+    "skip": 0
+  },
+  "typecheck": "passed",
+  "lint": "passed",
+  "findings": [
+    {
+      "priority": "high",
+      "issue": "Guest capacity filter eliminates all entries",
+      "evidence": {
+        "unfiltered": 10,
+        "smallGuestFilter": 0,
+        "largeGuestFilter": 0,
+        "reset": 10
+      },
+      "source": "src/App.tsx:312",
+      "status": "fixed",
+      "resolution": "Nullable guest_capacity persists on creation and edits; Merchant form accepts whole numbers 1–1000; public listing filters 1–8, 9–14, 15+ and unspecified; edits require Admin review and retain QR."
+    },
+    {
+      "priority": "medium",
+      "issue": "Gallery route is placeholder text only, no property gallery",
+      "source": "src/prototype.tsx:45",
+      "status": "fixed",
+      "resolution": "Gallery loads actual published property photos and opens each correct QR profile"
+    },
+    {
+      "priority": "medium",
+      "issue": "Social pages are prototype text without outbound links",
+      "source": "src/prototype.tsx:45",
+      "status": "fixed",
+      "resolution": "Validated configured outbound links; clear email/contact fallback when unconfigured; added NEXT_PUBLIC_LINE_URL"
+    },
+    {
+      "priority": "medium",
+      "issue": "Auto payment verification has no integrated provider in current configuration; manual review remains required",
+      "source": "src/AdminBusiness.tsx:24",
+      "status": "resolved-by-intended-flow",
+      "resolution": "User requires human review only. AUTO UI removed, settings API rejects AUTO, effective mode always MANUAL, migration normalizes legacy settings; no provider integration required."
+    },
+    {
+      "priority": "low",
+      "issue": "Public about/contact/help/guide copy still describes prototype, footer year fixed at 2025",
+      "source": "src/prototype.tsx:30",
+      "status": "fixed",
+      "resolution": "Updated public copy and dynamic footer year"
+    },
+    {
+      "priority": "medium",
+      "issue": "Merchant navigation repeats React key owner-package for Package and Payment; React emitted duplicate key warnings",
+      "source": "src/prototype.tsx:219",
+      "evidence": "Next development server browser console logged repeated duplicate key owner-package warnings",
+      "status": "fixed",
+      "resolution": "Navigation keys include destination and label"
+    },
+    {
+      "priority": "high",
+      "issue": "Local Facebook OAuth has no FACEBOOK_APP_ID or FACEBOOK_APP_SECRET",
+      "evidence": "provider-readiness.json",
+      "scope": "Local .env only; hosted configuration not inspected",
+      "status": "waiting-external-approval",
+      "resolution": "User confirmed Meta approval is pending; activation/live login verification deferred until approved."
+    },
+    {
+      "priority": "high",
+      "issue": "Local email delivery is not configured: SMTP_HOST missing; Email OTP template exists but THAIBULKSMS_API_KEY and THAIBULKSMS_API_SECRET missing",
+      "evidence": "provider-readiness.json",
+      "scope": "Local .env only; real sending not attempted",
+      "status": "waiting-provider-payment",
+      "resolution": "User confirmed trial service is in use and paid activation awaits employer payment in the evening; live delivery not attempted."
+    },
+    {
+      "priority": "medium",
+      "issue": "Scan success text claims VillaCheck VERIFIED immediately after QR decoding, before backend eligibility validation",
+      "source": "src/App.tsx:536",
+      "evidence": "Source review; expired/unregistered QR correctly rejected on subsequent verification page",
+      "status": "fixed",
+      "resolution": "Reading a QR now says its property status is being checked"
+    },
+    {
+      "priority": "high",
+      "issue": "Admin Payments route renders no invoice/payment review panels despite submitted invoice in PostgreSQL",
+      "source": "src/Backoffice.tsx:418",
+      "evidence": "functional-final.json: Admin Payments page exposes submitted invoice for review",
+      "impact": "Admin must use Villa list to inspect/reject/confirm slips; Payments navigation cannot complete the workflow",
+      "reproduce": [
+        "Approve a paid-plan Villa",
+        "Merchant submits dummy slip",
+        "Open Admin Payments: invoice panels absent",
+        "Open Admin Villas: same invoice and review controls appear"
+      ],
+      "status": "fixed",
+      "resolution": "Billing pages render deduplicated invoice panels for both Admin and Merchant, with Admin review controls"
+    },
+    {
+      "priority": "medium",
+      "issue": "Hero previous-slide button is overlapped by slide indicator and cannot receive a normal pointer click at desktop viewport",
+      "source": "src/index.css:656",
+      "evidence": "functional-final.json: Hero arrows and featured carousel navigate",
+      "impact": "Next arrow, dots and featured carousel pass; previous arrow is intercepted by hero-slide-indicator",
+      "status": "fixed",
+      "resolution": "Slide indicator moved below photo arrows"
+    }
+  ],
+  "limitations": [
+    "Live Google/LINE/Facebook OAuth provider flows, SMS/Email delivery, SMTP and slip provider not exercised; presence of credentials is not proof of validity",
+    "Physical iPhone/Android cameras not exercised; QR PNG decoding and simulated camera denial passed in Chrome mobile viewport",
+    "Hosted deployment configuration, HTTPS routing and hosted database not inspected",
+    "Cold backup test covers stopped dummy PostgreSQL; not an online backup or hosted point-in-time recovery test",
+    "Initial page rendering coverage does not imply every control and input permutation tested"
+  ],
+  "initialAudit": {
+    "environment": "Local Next development UI, intercepted API backed by isolated in-memory SQLite, fake mail transport; no real data altered",
+    "backend": {
+      "pass": 62,
+      "fail": 0,
+      "skip": 6
+    }
+  },
+  "productionBuild": "passed: prisma generate, backend compile, next build --webpack; application migration/seed build hooks deliberately bypassed",
+  "followUp": {
+    "productionEvidence": "production-integration.log",
+    "providerEvidence": "provider-readiness.json",
+    "qrEvidence": "qr-production.json",
+    "backupEvidence": "recovery.json",
+    "backupRestore": "passed: cold physical PostgreSQL backup to separate folder, restored on another port; 19 tables and complete row-content digest identical",
+    "qrCases": [
+      "valid PNG",
+      "expired PNG",
+      "unregistered QR PNG",
+      "camera permission denied (simulated)",
+      "image without QR"
+    ],
+    "providerStatus": "presence checks of local .env only; Google/LINE/SMS OTP credentials present but not verified with remote services; Facebook credentials missing, SMTP host missing, Email OTP API key/secret missing"
+  },
+  "functionalAudit": {
+    "scenarios": 57,
+    "pass": 57,
+    "fail": 0,
+    "evidence": "functional-final.json",
+    "browser": "Chrome production browser interactions against Next/NestJS/Prisma/temporary PostgreSQL",
+    "coreFlows": [
+      "Password login for User/Merchant/Admin",
+      "Fresh User and Merchant registration and subscription selection",
+      "Search/province/sort/reset; articles, leads, reports and tracking",
+      "User bank/contact comparison, history, replies and logout",
+      "Merchant profile, file validation, creation, edit, resubmission and photo persistence",
+      "Admin document approval/change/rejection, trial, report reply/private note, users/leads",
+      "Payment slip submit/reject/resubmit/approve, repeat confirmation and renewal",
+      "QR/subscription suspension and restoration; packages/settings",
+      "Seven Admin endpoint guards for each Guest/User/Merchant, cross-owner privacy, CSRF and origin",
+      "Mobile navigation, hero next/dots/carousel, province pins and footer"
+    ],
+    "pageErrors": 0
+  },
+  "postFix": {
+    "functionalPass": 57,
+    "functionalFail": 0,
+    "backendPass": 70,
+    "backendSkip": 0,
+    "typecheck": "passed",
+    "lint": "passed",
+    "productionBuild": "passed",
+    "databaseChanges": "none; all verification used temporary dummy databases",
+    "remaining": [
+      "Meta approval and subsequent live Facebook login check",
+      "Email/OTP paid activation and subsequent live delivery check",
+      "Fill actual guest capacities for existing properties",
+      "Configure real social URLs when available"
+    ],
+    "guestCapacity": "enabled with persisted counts; existing unknown counts preserved",
+    "paymentFlow": "Merchant uploads slip → Admin inspects amount/transaction → reject/resubmit or approve → activate/renew same Villa QR",
+    "migration": "prisma/migrations/0005_villa_guest_capacity/migration.sql validated on isolated PostgreSQL; real database not modified; deploy migration with application before running new capacity queries"
+  },
+  "userConfirmedFlow": {
+    "slipReview": "human Admin only",
+    "facebook": "waiting for Meta approval",
+    "emailOtp": "trial version; paid activation awaits employer payment in the evening; not a code defect"
+  }
+}

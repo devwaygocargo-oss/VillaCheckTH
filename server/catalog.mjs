@@ -59,13 +59,8 @@ export async function listPlans(db, all = false) {
     .all()
   return Promise.all(rows.map((row) => getPlan(db, row.id)))
 }
-export async function getVerificationMode(db, fallback = "MANUAL") {
-  const row = await db
-    .prepare(
-      "SELECT value FROM system_settings WHERE key='payment_verification_mode'",
-    )
-    .get()
-  return row?.value || fallback
+export async function getVerificationMode() {
+  return "MANUAL"
 }
 export function qrState(villa, subscription, now = Date.now()) {
   if (villa.status === "changes" || villa.status === "rejected")

@@ -22,6 +22,7 @@ export type MerchantVilla = {
   id: string
   name: string
   photoUrl: string
+  guestCapacity: number | null
   province: string
   phone: string
   bankName: string
