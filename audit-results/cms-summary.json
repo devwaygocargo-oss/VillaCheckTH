@@ -1,0 +1,82 @@
+{
+  "testedAt": "2026-10-13T10:20:02.079Z",
+  "status": "verified",
+  "entry": "Admin > CMS เว็บไซต์",
+  "workflow": [
+    "แก้เนื้อหา",
+    "บันทึกร่าง",
+    "Preview",
+    "เผยแพร่"
+  ],
+  "capabilities": [
+    "หน้าแรกและภาพสไลด์",
+    "จัดลำดับและซ่อน Section",
+    "เพิ่มหน้าเว็บและ Section ข้อความ/รูป/ปุ่ม",
+    "บทความพร้อมรูปและสถานะเผยแพร่",
+    "FAQ",
+    "เมนูพร้อมตัวเลือกหน้าปลายทาง",
+    "ชื่อเว็บ คำอธิบาย โลโก้และสีหลัก",
+    "ข้อมูลติดต่อ เวลาทำการ ลิงก์ Social",
+    "บัญชีและคำแนะนำรับชำระ",
+    "กติกาอายุสิทธิ์รายเดือนครั้งแรกและต่ออายุ",
+    "หัวข้อและข้อความนำอีเมลแจ้งชำระพร้อมคำแทนข้อความ",
+    "คลังรูปภาพและลบรูปที่ไม่ได้ใช้งาน",
+    "ประวัติ 30 เวอร์ชันและคืนเป็นร่าง"
+  ],
+  "verification": {
+    "backend": {
+      "pass": 82,
+      "fail": 0,
+      "skip": 0
+    },
+    "legacyBrowserFlows": {
+      "pass": 61,
+      "fail": 0
+    },
+    "chromium": {
+      "pass": 17,
+      "fail": 0,
+      "pageErrors": 0
+    },
+    "webkit": {
+      "pass": 17,
+      "fail": 0,
+      "pageErrors": 0
+    },
+    "layoutChecksPerEngine": 36,
+    "build": "passed",
+    "typecheck": "passed",
+    "lint": "passed"
+  },
+  "storage": {
+    "content": "Existing system_settings; no production content replaced until Admin publishes",
+    "media": "Existing documents; JPG/PNG max 2 MB, max 200 images",
+    "history": "Full snapshots stored privately; API returns history metadata",
+    "migration": "0006_invoice_validity: invoice duration accepts 1–36 months; validated fresh and existing PostgreSQL deployment with QR identity preserved"
+  },
+  "businessRules": {
+    "defaultFirstMonthlyMonths": 3,
+    "defaultMonthlyRenewalMonths": 1,
+    "editableMonths": "1–36",
+    "quarterlyMonths": 3,
+    "yearlyMonths": 12,
+    "effect": "Published rules apply to new invoices only; existing invoice amounts/months unchanged",
+    "paymentReview": "Human Admin only",
+    "emails": "Published copy affects newly created invoice messages; publishing CMS does not send an email"
+  },
+  "security": [
+    "Admin-only API",
+    "CSRF and origin checks",
+    "Drafts and unused images private",
+    "Optimistic revision conflict protection",
+    "HTTPS URL validation; plain text rendered without HTML execution",
+    "Cannot delete images referenced by draft/live/history"
+  ],
+  "limits": [
+    "Responsive checks use emulated WebKit/Chrome, not physical devices",
+    "Live provider login/message delivery still needs separate verification after provider approval/payment",
+    "CMS manages content and supported business settings; new application functions, security logic, arbitrary layouts and provider secrets require development or deployment settings",
+    "Client metadata updated; separate search-indexable server-rendered page routes are outside this change"
+  ],
+  "deploymentEvidence": "cms-live.json"
+}

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { supportHref } from "./support";
+import { useCms } from "./cms";
 import type { Page } from "./prototype";
 
 type VillaPhoto = { name: string; province: string; qr: string; photoUrl: string };
 export default function PublicMedia({ page, go }: { page: Page; go: (page: Page, item?: string) => void }) {
+  useCms(); // Refresh configured social links when a new CMS version is published.
   const [villas, setVillas] = useState<VillaPhoto[]>([]);
   const [loading, setLoading] = useState(page === "gallery");
   const [error, setError] = useState("");

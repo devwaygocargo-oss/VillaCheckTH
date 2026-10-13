@@ -1,4 +1,6 @@
 type Channel = "email" | "phone" | "facebook" | "instagram" | "line";
+let configured: Partial<Record<Channel,string>> = {};
+export function configureSupport(values:Partial<Record<Channel,string>>) { configured=values; }
 export function supportHref(channel: Channel) {
   const values: Record<Channel, string | undefined> = {
     email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "villacheck69@gmail.com",
@@ -7,7 +9,7 @@ export function supportHref(channel: Channel) {
     instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL,
     line: process.env.NEXT_PUBLIC_LINE_URL,
   };
-  const value = values[channel]?.trim();
+  const value = (configured[channel] || values[channel])?.trim();
   if (!value) return undefined;
   if (channel === "email") return `mailto:${value}`;
   if (channel === "phone") return `tel:${value}`;

@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
     );
     CREATE TABLE IF NOT EXISTS invoices (
       id TEXT PRIMARY KEY, villa_id TEXT NOT NULL REFERENCES villas(id), amount INTEGER NOT NULL,
-      months INTEGER NOT NULL CHECK(months IN (1,3)),
+      months INTEGER NOT NULL CHECK(months BETWEEN 1 AND 36),
       status TEXT NOT NULL CHECK(status IN ('pending','submitted','paid')) DEFAULT 'pending',
       proof_id TEXT REFERENCES documents(id), reference TEXT NOT NULL DEFAULT '', reason TEXT NOT NULL DEFAULT '',
       created TEXT NOT NULL, paid_at TEXT, confirmed_by TEXT REFERENCES users(id)

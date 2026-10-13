@@ -133,3 +133,39 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
  .user-table td::before { content: attr(data-label); color: var(--muted); font-weight: 600; }
  .user-table td small { grid-column: 2; margin: 0; }
 }
+/* CMS uses the existing portal controls and shares public rendering styles. */
+.cms-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:16px; background:#fff; border:1px solid #dce4ed; border-radius:12px; margin-bottom:16px; }
+.cms-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.cms-tabs button { padding:10px 14px; border:1px solid #ccd8e5; border-radius:8px; background:#fff; }
+.cms-tabs button.active { background:#152d41; color:white; }
+.cms-editor { display:block; min-width:0; border:1px solid #dce4ed; }
+.cms-editor label { display:grid; gap:8px; margin:16px 0; }
+.cms-editor input,.cms-editor textarea,.cms-editor select { width:100%; max-width:100%; box-sizing:border-box; }
+.cms-editor textarea { resize:vertical; }
+.cms-editor .cms-checkbox { display:flex; align-items:center; }
+.cms-editor .cms-checkbox input { width:auto; }
+.cms-editor button { min-height:44px; margin:4px; padding:8px 12px; }
+.cms-block-editor { min-width:0; border:1px solid #dce4ed; padding:16px; margin:16px 0; border-radius:12px; }
+.cms-editor-section { margin-top:28px; }
+.cms-image-field img { display:block; max-width:100%; width:240px; max-height:180px; object-fit:contain; margin:12px 0; }
+.cms-media-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:16px; }
+.cms-media-grid article { min-width:0; overflow-wrap:anywhere; }
+.cms-media-grid img { width:100%; height:160px; object-fit:contain; background:#eef2f6; }
+.cms-preview { border:2px dashed #b2c5d7; background:#fff; padding:12px; margin-bottom:20px; overflow:hidden; }
+.cms-preview .container { width:100%; max-width:100%; box-sizing:border-box; }
+.cms-preview .hero-grid { grid-template-columns:1fr; }
+.cms-prose { white-space:pre-wrap; overflow-wrap:anywhere; }
+.public-info-page h1,.public-info-page h2,.public-info-page p,.cms-content-block h2,.footer-brand p { overflow-wrap:anywhere; }
+.logo { min-width:0; }
+.logo > span:last-child { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media(max-width:600px) { .logo > span:last-child { max-width:110px; } }
+.app .primary-button { background:var(--cms-accent,#173e51); }
+.header .nav { flex-wrap:wrap; }
+.header nav { flex-wrap:wrap; }
+.header nav button { overflow-wrap:anywhere; }
+@media(min-width:1051px) { .header { height:auto; min-height:82px; } .header .nav { min-height:82px; height:auto; padding-block:8px; } .header nav { flex:1; height:auto; justify-content:center; } .header nav button { min-height:48px; } }
+.cms-content-block { margin:24px 0; }
+.cms-content-block img,.cms-article-image { display:block; max-width:100%; max-height:600px; object-fit:contain; border-radius:12px; }
+.cms-faq { padding:16px; margin:12px 0; border:1px solid #dce4ed; border-radius:12px; }
+.cms-faq summary { cursor:pointer; font-weight:600; }
+@media(max-width:600px) { .cms-editor,.cms-block-editor { padding:12px; } .cms-toolbar .button-row { width:100%; } .cms-tabs button { flex:1 1 120px; } }

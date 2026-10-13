@@ -4,6 +4,7 @@ import {saveVillaPhoto} from './villa-photo.mjs'
 import {demoSlip,demoMode} from "./demo-payment.mjs"
 import {createReport, recordEvent, operations} from "./operations.mjs"
 import { adminBusiness } from "./admin-business.mjs"
+import { adminCms, publishedCms, cmsPaymentInstructions } from "./cms.mjs"
 import { generatePaymentQr, paymentQrDto } from "./payment-qr.mjs"
 import {
   getPlan,
@@ -357,13 +358,13 @@ export function createApp(db, config, transport) {
       subscription: await subscriptionDto(db, user.id),
       demoMode:await demoMode(db,config),
       paymentInstructions:
-        (await demoMode(db,config) ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : config.paymentInstructions) ||
+        (await demoMode(db,config) ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : await cmsPaymentInstructions(db, config.paymentInstructions)) ||
         "ยังไม่ได้ตั้งค่าบัญชีรับชำระ กรุณาติดต่อทีมงานก่อนโอนเงิน",
       paymentVerificationMode: await getVerificationMode(
         db,
         config.paymentVerificationMode || "MANUAL",
       ),
-      paymentConfigured: (await demoMode(db,config)) || Boolean(config.paymentInstructions),
+      paymentConfigured: (await demoMode(db,config)) || Boolean(await cmsPaymentInstructions(db, config.paymentInstructions)),
       smtpConfigured: Boolean(transport),
     }
   }
@@ -380,6 +381,31 @@ export function createApp(db, config, transport) {
     try {
       const url = new URL(req.url, "http://localhost")
       let path = url.pathname
+      if (path === "/api/public/cms" && req.method === "GET") {
+        const release = await publishedCms(db)
+        const content = structuredClone(release.content)
+        content.site.paymentInstructions = ""
+        content.business.paymentEmailSubject = ""
+        content.business.paymentEmailIntro = ""
+        content.articles = content.articles.filter(x => x.visible)
+        content.faqs = content.faqs.filter(x => x.visible)
+        content.home.blocks = content.home.blocks.filter(x => x.visible)
+        content.pages = content.pages.map(p => ({...p, blocks:p.blocks.filter(x => x.visible)}))
+        return json({revision:release.revision, content})
+      }
+      const cmsMedia = path.match(/^\/api\/public\/cms-media\/([a-f0-9-]+)$/)
+      if (cmsMedia && req.method === "GET") {
+        const release = await publishedCms(db)
+        const imageUrls = [release.content.site.logo,...release.content.home.images, ...release.content.home.blocks.filter(x=>x.visible).map(x=>x.image), ...release.content.pages.flatMap(p=>p.blocks.filter(x=>x.visible).map(x=>x.image)), ...release.content.articles.filter(x=>x.visible).map(x=>x.image)]
+        if (!imageUrls.includes(path)) {
+          const viewer = await session(req).catch(error => { if (error.status === 401) return null; throw error })
+          if (viewer?.role !== "admin") fail(404, "ไม่พบรูปภาพ")
+        }
+        const image = await db.prepare("SELECT mime,bytes FROM documents WHERE id=? AND name LIKE 'cms-image:%'").get(cmsMedia[1])
+        if (!image) fail(404, "ไม่พบรูปภาพ")
+        res.writeHead(200, {"Content-Type": image.mime})
+        return res.end(Buffer.from(image.bytes))
+      }
       const adminPaymentAction = path.match(
         /^\/api\/admin\/payments\/([a-f0-9-]+)\/(approve|reject)$/,
       )
@@ -436,7 +462,7 @@ export function createApp(db, config, transport) {
       if (req.method === "GET" && path === "/api/config")
         return json({
           localAccounts: Boolean(config.seedDemo),
-          paymentConfigured: (await demoMode(db,config)) || Boolean(config.paymentInstructions),
+          paymentConfigured: (await demoMode(db,config)) || Boolean(await cmsPaymentInstructions(db, config.paymentInstructions)),
           oauth: oauthProviders(config),
           otp: otpChannels(config,transport),
           demoMode: await demoMode(db,config),
@@ -603,6 +629,8 @@ export function createApp(db, config, transport) {
       }
       if (path.startsWith("/api/")) {
         const user = await auth(req)
+        const cms = await adminCms(db, user, req, path, body)
+        if (cms !== undefined) return json(cms)
         if(req.method==='GET'&&path==='/api/admin/otp/status'){
           if(user.role!=='admin')fail(403,'เฉพาะ Admin')
           const email=await db.prepare("SELECT value FROM system_settings WHERE key='otp_delivery_email'").get()

@@ -1,3 +1,4 @@
+import { CmsPublicPage } from "./cms";
 import OtpLogin from "./OtpLogin";
 import ContactLead from "./ContactLead";
 import PublicMedia from "./PublicMedia";
@@ -8,7 +9,7 @@ import { openSupport } from "./support";
 import { useEffect, useState } from "react";
 
 export type Page =
-  | "user-registration" | "admin-users"
+  | "admin-cms" | "cms-page" | "user-registration" | "admin-users"
   | "home" | "directory" | "detail" | "scan" | "verify" | "pricing" | "login"
   | "about" | "verification-standard" | "articles" | "article-detail" | "owner-guide"
   | "help" | "contact" | "privacy" | "terms" | "social-facebook" | "social-instagram"
@@ -27,24 +28,9 @@ type Go = (page: Page, item?: string) => void;
 type Status = "Pending" | "Verified" | "Rejected" | "Suspended" | "Expired";
 export type UserReport = { reference: string; villa: string; type: string; guest: boolean; qr?:string; detail?:string; reporter?:string; contact?:string };
 
-const publicInfo: Partial<Record<Page, { kicker: string; title: string; description: string; body: string }>> = {
-  about: { kicker: "ABOUT VILLACHECK", title: "เกี่ยวกับ VillaCheck", description: "Trust before transfer.", body: "VillaCheck เป็นแพลตฟอร์มตรวจสอบข้อมูลที่พัก ช่องทางติดต่อ และบัญชีรับเงิน เพื่อช่วยให้ผู้ใช้งานมีข้อมูลประกอบการตัดสินใจก่อนโอน" },
-  "verification-standard": { kicker: "VERIFICATION STANDARD", title: "มาตรฐานการตรวจสอบ", description: "หลักการตรวจสอบข้อมูลของ VillaCheck", body: "กระบวนการตรวจสอบครอบคลุมข้อมูลตัวตน ช่องทางติดต่อ บัญชีรับเงิน QR Reference วันตรวจสอบล่าสุด และวันหมดอายุของสถานะ" },
-  "owner-guide": { kicker: "MERCHANT GUIDE", title: "คู่มือสำหรับเจ้าของที่พัก", description: "เริ่มต้นสร้าง Trust Profile ให้ Villa ของคุณ", body: "ศึกษาขั้นตอนลงทะเบียน เพิ่มข้อมูล Villa ส่งข้อมูลตรวจสอบ จัดการ QR และติดตามสถานะผ่าน Merchant Dashboard" },
-  help: { kicker: "HELP / SUPPORT", title: "ศูนย์ช่วยเหลือ", description: "ค้นหาคำตอบและช่องทางรับความช่วยเหลือ", body: "ดูคำแนะนำเกี่ยวกับการค้นหาที่พัก การตรวจสอบก่อนโอน การสแกน QR การแจ้งปัญหา และการจัดการข้อมูลสำหรับเจ้าของที่พัก" },
-  contact: { kicker: "CONTACT VILLACHECK", title: "ติดต่อเรา", description: "ทีมงานพร้อมช่วยเหลือในวันจันทร์–ศุกร์ เวลา 09:00–18:00 น.", body: "ฝากข้อมูลให้ทีมงานติดต่อกลับ หรือส่งอีเมลผ่านช่องทางด้านล่าง" },
-  privacy: { kicker: "LEGAL", title: "นโยบายความเป็นส่วนตัว", description: "การใช้ข้อมูลบัญชีและข้อมูลการตรวจสอบที่พัก", body: "VillaCheck เก็บชื่อ อีเมล และตัวระบุบัญชีจากช่องทางที่คุณเลือกสมัคร เพื่อสร้างบัญชีและเข้าสู่ระบบ รวมถึงประวัติ Checks รายงานปัญหา เอกสาร Merchant และหลักฐานชำระเงิน เพื่อให้ Admin ตรวจสอบ ข้อมูลติดต่อและบัญชีของ Merchant แสดงตามสิทธิ์สมาชิก ไม่เผยเอกสารส่วนตัวต่อ Guest ข้อมูลที่ระบุ Demo เป็นข้อมูลสาธิต หากต้องการสอบถามหรือขอลบข้อมูล ติดต่อ villacheck69@gmail.com โดยระบุอีเมลบัญชี เราจะตรวจสอบความเป็นเจ้าของก่อนดำเนินการ รายการที่เกี่ยวกับธุรกรรมหรือข้อพิพาทอาจต้องเก็บไว้เท่าที่จำเป็น" },
-  terms: { kicker: "LEGAL", title: "ข้อกำหนดและเงื่อนไข", description: "เงื่อนไขการใช้ระบบตรวจสอบข้อมูลที่พัก", body: "VillaCheck ให้บริการตรวจสอบข้อมูลที่พัก ไม่รับจองและไม่รับเงินค่าที่พัก สถานะการตรวจสอบสะท้อนเอกสารที่ Admin ตรวจและอายุ Subscription ณ เวลาที่แสดง ไม่ใช่การรับประกันการจองหรือการปลอดภัยจากการฉ้อโกง Merchant ต้องมีสิทธิ์ในเอกสารและส่งข้อมูลที่ถูกต้อง ค่าบริการแพ็กเกจชำระหลังเอกสารผ่านและเปิดใช้หลัง Admin ยืนยันสลิป โปรดตรวจยอดและระยะเวลาในใบแจ้งชำระก่อนชำระ ข้อมูล Demo และ Payment ทดสอบใช้เพื่อทดสอบระบบเท่านั้น ห้ามโอนเงินจริง หากต้องการแก้ไขข้อมูลหรือสอบถามเกี่ยวกับค่าบริการ ติดต่อ villacheck69@gmail.com" },
-};
-
-const articleBodies: Record<string, string> = {"เช็ก 5 จุดก่อนโอนค่าที่พัก": "ตรวจสอบชื่อที่พัก ตัวตนผู้ประกอบการ ช่องทางติดต่อ บัญชีรับเงิน และสถานะล่าสุดก่อนโอน เก็บหลักฐานประกาศและการสนทนาไว้ประกอบการตรวจสอบ", "QR Verification ช่วยตรวจสอบอะไรบ้าง": "QR เชื่อมไปยังข้อมูลและสถานะของที่พัก ควรตรวจรหัส ชื่อ Villa และวันอัปเดตให้ตรงกับประกาศ การพบ QR ไม่ได้ยืนยันว่าคนที่ส่งประกาศเป็นเจ้าของที่พัก", "วิธีสังเกตช่องทางติดต่อทางการ": "เปรียบเทียบเบอร์โทรและบัญชีสื่อสารกับข้อมูลใน Trust Profile หากมีผู้ขอเปลี่ยนบัญชีรับเงินหรือให้ติดต่อช่องทางใหม่ ควรยืนยันกับช่องทางเดิมก่อน"};
-
 export function PublicInfoPage({ page, go, selectedArticle }: { page: Page; go: Go; selectedArticle?: string }) {
   if (page === "gallery" || page.startsWith("social-")) return <PublicMedia page={page} go={go} />;
-  if (page === "articles") return <main className="page-bg public-info-page"><div className="page-hero container"><span className="kicker">TRAVEL INTELLIGENCE</span><h1>บทความและข่าวสาร</h1><p>ข้อมูลที่ช่วยให้ตรวจสอบที่พักและตัดสินใจก่อนโอนได้ชัดเจนขึ้น</p></div><div className="container info-article-list">{["เช็ก 5 จุดก่อนโอนค่าที่พัก","QR Verification ช่วยตรวจสอบอะไรบ้าง","วิธีสังเกตช่องทางติดต่อทางการ"].map((title, index) => <article key={title}><span>GUIDE 0{index + 1}</span><h2>{title}</h2><p>คำแนะนำจาก VillaCheck สำหรับการตรวจสอบข้อมูลที่พัก</p><button className="text-button" onClick={() => go("article-detail", title)}>อ่านบทความ →</button></article>)}</div></main>;
-  if (page === "article-detail") return <main className="page-bg public-info-page"><div className="page-hero container"><span className="kicker">VILLACHECK GUIDE</span><h1>{selectedArticle || "เช็ก 5 จุดก่อนโอนค่าที่พัก"}</h1><p>ตรวจสอบตัวตน ช่องทางติดต่อ บัญชีรับเงิน สถานะ และ QR Reference</p></div><article className="container info-body"><p>{articleBodies[selectedArticle || "เช็ก 5 จุดก่อนโอนค่าที่พัก"] || articleBodies["เช็ก 5 จุดก่อนโอนค่าที่พัก"]}</p><button className="outline-button" onClick={() => go("articles")}>กลับไปบทความทั้งหมด</button></article></main>;
-  const info = publicInfo[page] ?? publicInfo.about!;
-  return <main className="page-bg public-info-page"><div className="page-hero container"><span className="kicker">{info.kicker}</span><h1>{info.title}</h1><p>{info.description}</p></div><div className="container info-body"><p>{info.body}</p><div className="button-row"><button className="primary-button" onClick={() => page === "owner-guide" ? go("pricing") : page === "help" ? go("contact") : go("home")}>{page === "owner-guide" ? "ดูแพ็กเกจ" : page === "help" ? "ติดต่อทีมงาน" : "กลับหน้าหลัก"}</button>{page === "contact" && <ContactLead />}{page === "contact" && <button className="outline-button" onClick={() => openSupport("email")}>ส่งอีเมล</button>}</div></div></main>;
+  return <CmsPublicPage page={page} item={selectedArticle} go={go}/>;
 }
 
 export function PublicReportPage({ onSubmit, reference="" }: { reference?:string; onSubmit: (report: Omit<UserReport, "reference" | "guest">) => Promise<void> }) {
@@ -215,7 +201,7 @@ const ownerNav: [string, Page][] = [
   ["QR และการต่ออายุ", "owner-villa-detail"], ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["Package", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
 ];
 const adminNav: [string, Page][] = [
-  ["Dashboard", "admin-dashboard"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
+  ["CMS เว็บไซต์", "admin-cms"], ["Dashboard", "admin-dashboard"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
   ["Checks", "admin-checks"], ["Reports", "admin-reports"], ["QR", "admin-qr"], ["Packages", "admin-packages"], ["Documents", "admin-review"], ["Payments", "admin-payments"], ["Subscriptions", "admin-subscriptions"], ["Leads", "admin-leads"], ["Settings", "admin-settings"],
 ];
 const userNav: [string, Page][] = [

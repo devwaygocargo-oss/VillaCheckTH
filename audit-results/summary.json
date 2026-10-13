@@ -232,5 +232,14 @@
       "Chromium"
     ],
     "backendRegression": 70
+  },
+  "cmsAudit": {
+    "evidence": "cms-summary.json",
+    "backendPass": 82,
+    "legacyFlowPass": 61,
+    "cmsBrowserPass": 34,
+    "pageErrors": 0,
+    "migration": "0006_invoice_validity",
+    "status": "verified; deployment evidence in cms-live.json"
   }
 }

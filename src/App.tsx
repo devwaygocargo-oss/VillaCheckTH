@@ -1,3 +1,5 @@
+import AdminCms from "./AdminCms";
+import { CmsProvider, CmsBlocks, CmsHomeLayout, useCms } from "./cms";
 import OperationsPortal from "./OperationsPortal";
 import PremiumBanner from "./PremiumBanner";
 import MerchantProfile from "./MerchantProfile";
@@ -91,7 +93,8 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 }
 
 function Logo({ light = false }: { light?: boolean }) {
-  return <div className={`logo ${light ? "logo-light" : ""}`}><span className="logo-mark"><Icon name="shield" size={24} /></span><span>Villa<span>Check</span></span></div>;
+  const {site}=useCms();
+  return <div className={`logo ${light ? "logo-light" : ""}`}><span className="logo-mark">{site.logo?<img src={site.logo} alt="" style={{width:32,height:32,objectFit:"contain"}}/>:<Icon name="shield" size={24} />}</span><span>{site.name === "VillaCheck" ? <>Villa<span>Check</span></> : site.name}</span></div>;
 }
 
 function Badge({ pending = false, children = "ตรวจสอบข้อมูลแล้ว" }: { pending?: boolean; children?: React.ReactNode }) {
@@ -99,6 +102,7 @@ function Badge({ pending = false, children = "ตรวจสอบข้อม�
 }
 
 function Header({ page, go }: { page: Page; go: (page: Page) => void }) {
+  const {navigation}=useCms();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useEffect(() => { setMobileMenuOpen(false); }, [page]);
   useEffect(() => { const close = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileMenuOpen(false); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, []);
@@ -120,13 +124,7 @@ function Header({ page, go }: { page: Page; go: (page: Page) => void }) {
     <div className="container nav">
       <button className="logo-button" onClick={() => navigate("home")}><Logo /></button>
       <nav id="public-menu" className={mobileMenuOpen ? "mobile-open" : ""}>
-        <button className={page === "home" ? "active" : ""} onClick={() => navigate("home")}>หน้าหลัก</button>
-        <button className={page === "directory" || page === "detail" ? "active" : ""} onClick={() => navigate("directory")}>ค้นหาวิลล่า</button>
-        <button className={page === "scan" || page === "verify" ? "active" : ""} onClick={() => navigate("scan")}>ตรวจสอบก่อนโอน</button>
-        <button onClick={reportIssue}>แจ้งปัญหา</button>
-        <button onClick={showHowItWorks}>วิธีการทำงาน</button>
-        <button className={page === "pricing" ? "active" : ""} onClick={() => navigate("pricing")}>แพ็กเกจเจ้าของที่พัก</button>
-        <button onClick={() => navigate("login")}>เข้าสู่ระบบ</button>
+        {navigation.filter(n=>n.visible).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{window.location.hash=n.href;}}}>{n.label}</button>)}
       </nav>
       <div className="nav-actions"><button className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
     </div>
@@ -190,9 +188,13 @@ function VillaShowcase({ go }: { go: (p: Page, item?: string) => void }) {
 }
 
 function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void; onSearch: (query: string, province: string) => void; onSelect: (id: string) => void }) {
+  const {home}=useCms();
+  const photos=home.images;
+  const section=(id:string)=>home.sections.find(s=>s.id===id)!;
   const {plans}=usePackages();
   const trial=plans.find(p=>p.trialMonths>0);
   const [heroSlide, setHeroSlide] = useState(0);
+  useEffect(()=>setHeroSlide(0),[photos]);
   const [heroAutoPlay, setHeroAutoPlay] = useState(true);
   const heroTouchStart = useRef(0);
   const changeHeroSlide = (next: number, userInitiated = true) => {
@@ -205,7 +207,7 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
     return () => window.clearInterval(timer);
   }, [heroAutoPlay]);
 
-  return <>
+  return <CmsHomeLayout>
     <section className="hero">
       <div className="hero-orb hero-orb-one" /><div className="hero-orb hero-orb-two" />
       <div className="hero-map-line hero-map-line-one" /><div className="hero-map-line hero-map-line-two" />
@@ -213,9 +215,9 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
       <div className="hero-launch-index" aria-hidden="true"><span>01</span><i /><small>PUBLIC TRUST LAYER</small></div>
       <div className="container hero-grid">
         <div className="hero-copy">
-          <div className="eyebrow"><Icon name="shield" size={16} />TRUST INTELLIGENCE FOR TRAVEL</div>
-          <h1>เช็กให้ชัด<br />ก่อนออกเดินทาง<br /><span>ก่อนโอนทุกครั้ง</span></h1>
-          <p>ค้นหาและตรวจสอบ Villa ผ่านข้อมูลตัวตน ช่องทางติดต่อ บัญชีรับเงิน และ QR Verification ในมุมมองเดียว</p>
+          <div className="eyebrow"><Icon name="shield" size={16} />{home.eyebrow}</div>
+          <h1 className="cms-prose">{home.title}</h1>
+          <p>{home.description}</p>
           <SearchBox onSearch={onSearch} />
           <div className="trust-row"><span><Icon name="check" size={14} />ตรวจสอบฟรี</span><span><Icon name="check" size={14} />ไม่ต้องสมัครสมาชิก</span><span><Icon name="check" size={14} />ข้อมูลอัปเดตสม่ำเสมอ</span></div>
         </div>
@@ -227,7 +229,7 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
             <button className="hero-slide-arrow previous" aria-label="ภาพ Hero ก่อนหน้า" onClick={() => changeHeroSlide(heroSlide - 1)}>←</button><button className="hero-slide-arrow next" aria-label="ภาพ Hero ถัดไป" onClick={() => changeHeroSlide(heroSlide + 1)}>→</button>
             <div className="hero-slide-indicator"><span>{heroSlide + 1}/{photos.length}</span>{photos.map((photo, index) => <button key={photo} aria-label={`ไปภาพ Hero ที่ ${index + 1}`} className={heroSlide === index ? "active" : ""} onClick={() => changeHeroSlide(index)} />)}</div>
           </div>
-          <div className="hero-secondary-photo"><img src={photos[3]} alt="รายละเอียดสถาปัตยกรรมพูลวิลล่า" /><span>PROPERTY / 01842</span></div>
+          <div className="hero-secondary-photo"><img src={photos[3]||photos[0]} alt="รายละเอียดสถาปัตยกรรมพูลวิลล่า" /><span>PROPERTY / 01842</span></div>
           <div className="hero-trust-radar" aria-hidden="true"><i /><i /><i /><span><Icon name="shield" size={20} /></span></div>
           <div className="verified-float trust-float">
             <span className="verified-seal"><Icon name="shield" size={27} /></span>
@@ -249,7 +251,7 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
     <div className="container premium-promo-wrap"><PremiumBanner onSelect={onSelect} /></div>
     <section className="section how-section" id="how">
       <div className="container">
-        <div className="timeline-head"><div><span className="kicker">TRUST JOURNEY / 01—03</span><h2>ตรวจสอบใน 3 ขั้นตอน</h2></div><p>จากการค้นหา ไปจนถึงหลักฐานที่ตรวจสอบย้อนกลับได้<br />ออกแบบเพื่อช่วงเวลาก่อนตัดสินใจโอน</p></div>
+        <div className="timeline-head"><div><span className="kicker">TRUST JOURNEY / 01—03</span><h2 className="cms-prose">{section("how").title}</h2></div><p className="cms-prose">{section("how").description}</p></div>
         <div className="steps trust-timeline">
           {[["01", "search", "ค้นหาวิลล่า", "ค้นหาจากชื่อที่พักหรือเลือกจังหวัดที่ต้องการ"], ["02", "shield", "เช็ก Trust Profile", "ตรวจสอบสถานะ ข้อมูลติดต่อ และบัญชีทางการ"], ["03", "qr", "สแกน QR ยืนยัน", "เช็ก QR Verification ที่ได้รับจากเจ้าของที่พัก"]].map((s, i) =>
             <div className="step" key={s[0]}><span className="step-no">{s[0]}</span><span className="step-icon"><Icon name={s[1] as IconName} size={28} /></span><h3>{s[2]}</h3><p>{s[3]}</p>{i < 2 && <span className="step-line"><Icon name="arrow" size={18} /></span>}</div>
@@ -262,14 +264,14 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
 
     <section className="section verified-section showcase-section">
       <div className="container">
-        <div className="section-head"><div><span className="kicker">VERIFIED VILLA SHOWCASE</span><h2>ที่พักพร้อมหลักฐาน<br />ไม่ใช่แค่ภาพสวย</h2><p>สำรวจ Trust metadata ที่สำคัญก่อนตัดสินใจ</p></div><button className="text-button" onClick={() => go("directory")}>เปิด Directory <Icon name="arrow" size={18} /></button></div>
+        <div className="section-head"><div><span className="kicker">VERIFIED VILLA SHOWCASE</span><h2 className="cms-prose">{section("showcase").title}</h2><p>{section("showcase").description}</p></div><button className="text-button" onClick={() => go("directory")}>เปิด Directory <Icon name="arrow" size={18} /></button></div>
         <VillaShowcase go={go} />
       </div>
     </section>
 
     <section className="section qr-section">
       <div className="container split-panel">
-        <div className="qr-copy"><span className="kicker light-kicker">LIVE TRUST SIGNAL</span><h2>หนึ่งสแกน<br />เห็นหลักฐานที่จำเป็น</h2><p>QR ของ VillaCheck เชื่อมผู้เดินทางกับข้อมูลตรวจสอบล่าสุด โดยไม่พาเข้าสู่ขั้นตอนจองหรือชำระเงิน</p><ul><li><Icon name="check" />Official Contact ที่ตรวจสอบข้อมูลแล้ว</li><li><Icon name="check" />บัญชีรับเงินแบบ Masked</li><li><Icon name="check" />Last Checked และ Expire Date</li></ul><button className="sun-button" onClick={() => go("scan")}>เปิด QR Scanner <Icon name="arrow" size={18} /></button></div>
+        <div className="qr-copy"><span className="kicker light-kicker">LIVE TRUST SIGNAL</span><h2 className="cms-prose">{section("qr").title}</h2><p>{section("qr").description}</p><ul><li><Icon name="check" />Official Contact ที่ตรวจสอบข้อมูลแล้ว</li><li><Icon name="check" />บัญชีรับเงินแบบ Masked</li><li><Icon name="check" />Last Checked และ Expire Date</li></ul><button className="sun-button" onClick={() => go("scan")}>เปิด QR Scanner <Icon name="arrow" size={18} /></button></div>
         <div className="qr-demo">
           <div className="qr-orbit qr-orbit-one" /><div className="qr-orbit qr-orbit-two" />
           <div className="phone-card">
@@ -282,7 +284,7 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
 
     <section className="section owner-section">
       <div className="container owner-grid">
-        <div><span className="kicker">FOR VILLA MERCHANTS</span><h2>สร้างความน่าเชื่อถือ<br />ให้ที่พักของคุณ</h2><p>เปลี่ยนความมั่นใจให้เป็นโอกาสทางธุรกิจ ด้วย Trust Profile, QR Verification และข้อมูลเชิงลึกที่ช่วยให้ลูกค้าตัดสินใจง่ายขึ้น</p><button className="primary-button" onClick={() => go("pricing")}>ดูแพ็กเกจทั้งหมด <Icon name="arrow" size={18} /></button></div>
+        <div><span className="kicker">FOR VILLA MERCHANTS</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><button className="primary-button" onClick={() => go("pricing")}>ดูแพ็กเกจทั้งหมด <Icon name="arrow" size={18} /></button></div>
         <div className="feature-stack">
           <div><span><Icon name="shield" /></span><p><strong>Trust Profile</strong>โปรไฟล์ที่พักพร้อมสถานะตรวจสอบ</p></div>
           <div><span><Icon name="qr" /></span><p><strong>QR Verification</strong>QR เฉพาะสำหรับแชร์ให้ลูกค้าตรวจสอบ</p></div>
@@ -294,11 +296,12 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
     <section className="section pricing-preview">
       <div className="container pricing-banner premium-pricing">
         <div className="pricing-number">05</div>
-        <div><span className="kicker">TRUST INFRASTRUCTURE FOR MERCHANTS</span><h2>ทำให้ความน่าเชื่อถือ<br />มองเห็นและตรวจสอบได้</h2><p>{trial?`เริ่มต้น ${trial.name} ทดลองฟรี ${trial.trialMonths} เดือน พร้อม Trust Profile และ QR Verification`:"เลือกแพ็กเกจเพื่อสร้าง Trust Profile และ QR Verification"}</p></div>
+        <div><span className="kicker">TRUST INFRASTRUCTURE FOR MERCHANTS</span><h2 className="cms-prose">{section("pricing").title}</h2><p>{trial?`เริ่มต้น ${trial.name} ทดลองฟรี ${trial.trialMonths} เดือน พร้อม Trust Profile และ QR Verification`:"เลือกแพ็กเกจเพื่อสร้าง Trust Profile และ QR Verification"}</p></div>
         <div><small>START FROM</small><strong>{trial?"ทดลองฟรี":"ดูแพ็กเกจ"}</strong>{trial&&<span>{trial.trialMonths} เดือน · หลังเอกสารผ่านการอนุมัติ</span>}<button className="sun-button" onClick={() => go("pricing")}>สำรวจทุกแพ็กเกจ</button></div>
       </div>
     </section>
-  </>;
+    <div className="container"><CmsBlocks blocks={home.blocks}/></div>
+  </CmsHomeLayout>;
 }
 
 function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Page, item?: string) => void; initialQuery?: string; initialProvince?: string }) {
@@ -594,6 +597,7 @@ function Verify({ go, reference }: { go: (p: Page, item?: string) => void; refer
 }
 
 function Pricing({ onSelect, go }: { onSelect: (name: string) => void; go: (page: Page) => void }) {
+  const {business}=useCms();
   const {plans,error} = usePackages();
   return <main className="page-bg pricing-page">
     <div className="page-hero container"><span className="kicker">PRICING FOR MERCHANTS</span><h1>แพ็กเกจที่เติบโตไปพร้อมธุรกิจคุณ</h1><p>สมัครแพ็กเกจที่บัญชี Merchant แล้วเพิ่ม Villa ตามจำนวนสิทธิ์<br />1 Villa = 1 QR · ตรวจเอกสารโดย Admin ก่อนเปิดใช้งาน</p></div>
@@ -603,7 +607,7 @@ function Pricing({ onSelect, go }: { onSelect: (name: string) => void; go: (page
       {plans.map(plan => <article className={`plan-card ${plan.showPremiumBanner ? "recommended" : ""}`} key={plan.name}>
         {plan.showPremiumBanner && <div className="recommended-label">แนะนำสำหรับคุณ</div>}
         <div className="plan-head"><h2>{plan.name}</h2><p>{plan.description}</p><div><strong>{plan.amount ? `฿${(plan.amount / 100).toLocaleString("th-TH")}` : "ฟรี"}</strong><span>{plan.amount ? `/ ${billingLabel(plan.billingCycle)}` : `${plan.trialMonths} เดือน`}</span></div></div>
-        {plan.amount > 0 && <p>{billingValidityLabel(plan.billingCycle)}</p>}
+        {plan.amount > 0 && <p>{billingValidityLabel(plan.billingCycle,business)}</p>}
         <hr /><ul>{plan.features.map(f => <li key={f}><span><Icon name="check" size={14} /></span>{f}</li>)}</ul>
         <button className={plan.showPremiumBanner ? "primary-button full" : "outline-button full"} onClick={() => onSelect(plan.id)}>เลือกแพ็กเกจ</button>
       </article>)}
@@ -614,23 +618,25 @@ function Pricing({ onSelect, go }: { onSelect: (name: string) => void; go: (page
 }
 
 function Footer({ go }: { go: (p: Page, item?: string) => void }) {
+  const {site,pages}=useCms();
   return <footer className="public-footer">
     <div className="container footer-grid">
       <div className="footer-brand">
         <button className="footer-logo" onClick={() => go("home")}><Logo light /></button>
-        <p>แพลตฟอร์มตรวจสอบข้อมูลพูลวิลล่า ช่องทางติดต่อ และบัญชีรับเงิน เพื่อช่วยให้ทุกการตัดสินใจก่อนโอนมีข้อมูลที่ชัดเจนขึ้น</p>
+        <p>{site.description}</p>
         <div className="footer-social"><button aria-label="Facebook" onClick={() => go("social-facebook")}><Icon name="facebook" size={16} /></button><button aria-label="Instagram" onClick={() => go("social-instagram")}><Icon name="instagram" size={16} /></button><button aria-label="LINE Official" onClick={() => go("social-line")}><Icon name="message" size={16} /></button></div>
       </div>
-      <div><strong>เกี่ยวกับ VillaCheck</strong><button onClick={() => go("about")}>เกี่ยวกับเรา</button><button onClick={() => go("verification-standard")}>มาตรฐานการตรวจสอบ</button><button onClick={() => go("articles")}>บทความและข่าวสาร</button><button onClick={() => go("login")}>เข้าสู่ระบบ</button></div>
+      <div><strong>เกี่ยวกับ VillaCheck</strong><button onClick={() => go("about")}>เกี่ยวกับเรา</button><button onClick={() => go("verification-standard")}>มาตรฐานการตรวจสอบ</button><button onClick={() => go("articles")}>บทความและข่าวสาร</button><button onClick={() => go("login")}>เข้าสู่ระบบ</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
       <div><strong>สำหรับผู้ใช้งาน</strong><button onClick={() => go("directory")}>ค้นหาที่พัก</button><button onClick={() => go("scan")}>ตรวจสอบ QR</button><button onClick={() => go("user-precheck")}>ตรวจสอบก่อนโอน</button><button onClick={() => go("villa-report")}>แจ้งปัญหา</button></div>
-      <div><strong>สำหรับเจ้าของที่พัก</strong><button onClick={() => go("pricing")}>แพ็กเกจ</button><button onClick={() => go("owner-guide")}>สำหรับเจ้าของที่พัก</button><button onClick={() => go("owner-auth")}>ลงทะเบียนที่พัก</button><button onClick={() => go("login")}>เข้าสู่ระบบ</button></div>
-      <div className="footer-support"><strong>ช่วยเหลือและติดต่อ</strong><button onClick={() => go("help")}>Help / Support</button><button onClick={() => go("contact")}>Contact</button><button onClick={() => openSupport("email")}><Icon name="mail" size={14} />อีเมลทีมงาน</button><button onClick={() => openSupport("phone")}><Icon name="phone" size={14} />โทรทีมงาน</button><small>จันทร์–ศุกร์ 09:00–18:00 น.</small></div>
+      <div><strong>สำหรับเจ้าของที่พัก</strong><button onClick={() => go("pricing")}>แพ็กเกจ</button><button onClick={() => go("owner-guide")}>สำหรับเจ้าของที่พัก</button><button onClick={() => go("owner-auth")}>ลงทะเบียนที่พัก</button><button onClick={() => go("login")}>เข้าสู่ระบบ</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
+      <div className="footer-support"><strong>ช่วยเหลือและติดต่อ</strong><button onClick={() => go("help")}>Help / Support</button><button onClick={() => go("contact")}>Contact</button><button onClick={() => openSupport("email")}><Icon name="mail" size={14} />อีเมลทีมงาน</button><button onClick={() => openSupport("phone")}><Icon name="phone" size={14} />โทรทีมงาน</button><small>{site.hours}</small></div>
     </div>
     <div className="container footer-bottom"><span>© {new Date().getFullYear()} VillaCheck. สงวนลิขสิทธิ์</span><div><button onClick={() => go("privacy")}>นโยบายความเป็นส่วนตัว</button><button onClick={() => go("terms")}>ข้อกำหนดและเงื่อนไข</button></div><span>Trust before transfer.</span></div>
   </footer>;
 }
 
-export default function App() {
+function AppContent() {
+  const {site}=useCms();
   const [page, navigate, selectedItem] = usePageNavigation<Page>();
   const [selectedPackage, setSelectedPackage] = useState(() => sessionStorage.getItem(selectedPlanKey) || "Trust Starter");
   const [directorySearch, setDirectorySearch] = useState({ query: "", province: "" });
@@ -666,7 +672,7 @@ export default function App() {
   const isOwnerPage = page.startsWith("owner-") && !["owner-auth", "owner-registration", "owner-information", "owner-onboarding-villa", "owner-select-villa"].includes(page);
   const isAdminPage = page.startsWith("admin-");
   const isUserPage = page.startsWith("user-");
-  const isPublicInfoPage = ["about", "verification-standard", "articles", "article-detail", "owner-guide", "help", "contact", "privacy", "terms", "social-facebook", "social-instagram", "social-line", "gallery"].includes(page);
+  const isPublicInfoPage = ["cms-page", "about", "verification-standard", "articles", "article-detail", "owner-guide", "help", "contact", "privacy", "terms", "social-facebook", "social-instagram", "social-line", "gallery"].includes(page);
   const content =
     page === "home" ? <Home go={go} onSearch={search} onSelect={selectPackage} /> :
     page === "directory" ? <Directory go={go} initialQuery={directorySearch.query} initialProvince={directorySearch.province} /> :
@@ -678,6 +684,7 @@ export default function App() {
     page === "villa-report" ? <PublicReportPage onSubmit={submitReport} reference={selectedItem} /> :
     page === "villa-report-success" ? <PublicReportSuccess go={go} reference={selectedItem||reportReference} linkedToUser={userLoggedIn} /> :
     page === "user-registration" ? <UserRegistration go={go} reference={selectedItem} /> :
+    page === "admin-cms" ? <AdminCms go={go} renderHome={<Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/>}/> :
     ["admin-packages","admin-leads","admin-settings","admin-subscriptions"].includes(page) ? <AdminBusiness page={page} go={go} /> :
     page === "admin-users" ? <AdminUsers go={go} /> :
     ["admin-owners","admin-checks","admin-reports","admin-qr","owner-analytics","owner-reports"].includes(page) || page.startsWith("user-") ? <OperationsPortal page={page} go={go} item={selectedItem} /> :
@@ -694,5 +701,7 @@ export default function App() {
     <UserPages page={page} go={go} reports={[]} selectedReference={selectedItem} />;
   const isStandalone = page === "scan" || page === "verify" || page === "login" || page === "owner-auth" || page === "owner-registration" || page === "owner-information" || page === "owner-onboarding-villa" || page === "owner-select-villa" || page === "package-confirmation" || page === "package-request-pending" || isOwnerPage || isAdminPage || isUserPage;
   const showPublicFooter = ["home", "directory", "detail", "pricing", "scan", "verify", "villa-report", "villa-report-success"].includes(page) || isPublicInfoPage;
-  return <div className="app">{!isStandalone && <Header page={page} go={go} />}{content}{showPublicFooter && <Footer go={go} />}</div>;
+  return <div className="app" style={{"--cms-accent":site.accent} as React.CSSProperties}>{!isStandalone && <Header page={page} go={go} />}{content}{showPublicFooter && <Footer go={go} />}</div>;
 }
+
+export default function App() { return <CmsProvider><AppContent/></CmsProvider>; }

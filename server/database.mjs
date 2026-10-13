@@ -1,3 +1,4 @@
+import { cmsBusiness, monthlyValidity } from "./cms-business.mjs"
 import { DatabaseSync } from "node:sqlite"
 import { wrapSqlite } from "./database-adapter.mjs"
 import { mkdirSync, chmodSync, readFileSync } from "node:fs"
@@ -64,7 +65,7 @@ export function openDatabase(path) {
     );
     CREATE TABLE IF NOT EXISTS invoices (
       id TEXT PRIMARY KEY, villa_id TEXT NOT NULL REFERENCES villas(id), amount INTEGER NOT NULL,
-      months INTEGER NOT NULL CHECK(months IN (1,3)),
+      months INTEGER NOT NULL CHECK(months BETWEEN 1 AND 36),
       status TEXT NOT NULL CHECK(status IN ('pending','submitted','paid')) DEFAULT 'pending',
       proof_id TEXT REFERENCES documents(id), reference TEXT NOT NULL DEFAULT '', reason TEXT NOT NULL DEFAULT '',
       created TEXT NOT NULL, paid_at TEXT, confirmed_by TEXT REFERENCES users(id)
@@ -220,17 +221,16 @@ export async function createInvoice(db, villa, appUrl) {
   const plan = await db
     .prepare("SELECT * FROM package_catalog WHERE id=?")
     .get(villa.package_id)
-  const cycleMonths={MONTHLY:1,QUARTERLY:3,YEARLY:12}[plan.billing_cycle] || 1
-  const months=plan.billing_cycle === "MONTHLY" && villa.payments === 0 ? 3 : cycleMonths
+  const months=monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
   const created = new Date().toISOString()
-  // The first payment covers the selected monthly package and includes a 3-month QR validity.
+  // Snapshot the published validity rule on each new invoice; existing invoices retain their terms.
   await db
     .prepare(
       "INSERT INTO invoices(id,villa_id,amount,months,created,updated_at) VALUES (?,?,?,?,?,?)",
     )
     .run(id, villa.id, plan.amount, months, created, created)
   const subject = `VillaCheck: ${villa.name} ${
-    months === 3 ? "ผ่านการอนุมัติ" : "ต่ออายุ QR"
+    villa.payments === 0 ? "ผ่านการอนุมัติ" : "ต่ออายุ QR"
   } กรุณาชำระแพ็กเกจ`
   const body = `เรียน ${villa.merchant}\n\nVilla: ${villa.name}\nแพ็กเกจ: ${plan.name}\nยอดชำระ: ฿${(plan.amount / 100).toLocaleString("th-TH")}\nเลขที่ใบแจ้งชำระ: ${id}\n\nเข้าสู่ระบบที่ ${appUrl}/#page=owner-package เพื่อดูวิธีชำระและแนบสลิป\nAdmin จะตรวจยืนยันการชำระ จากนั้น QR มีอายุ ${months} เดือน\n1 Villa = 1 QR การต่ออายุใช้รหัสเดิม`
   await db
