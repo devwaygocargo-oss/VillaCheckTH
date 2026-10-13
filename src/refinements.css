@@ -17,6 +17,8 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
  .portal-head h1, .data-row strong, .confirmation-box strong { overflow-wrap: anywhere; }
  input, select, textarea { font-size: 16px !important; min-width: 0; max-width: 100%; }
  .header nav { max-height: calc(100dvh - 90px); overflow-y: auto; }
+ .header nav.mobile-open { flex-wrap:nowrap; }
+ .header nav.mobile-open button { flex-shrink:0; }
  .header nav button { min-height: 44px; }
   .portal-side { display: block; padding: 12px 16px; min-height: 0; align-self: start; position: sticky; top: 0; z-index: 45; }
   .portal-menu-toggle { display: block; color: white; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); border-radius: 8px; min-height: 44px; padding: 0 14px; font: inherit; }
@@ -156,6 +158,8 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .cms-preview .hero-grid { grid-template-columns:1fr; }
 .cms-prose { white-space:pre-wrap; overflow-wrap:anywhere; }
 .demo-notice { background:#fff5d9; color:#674c14; padding:12px 20px; text-align:center; font-size:14px; overflow-wrap:anywhere; border-bottom:1px solid #ead7a8; }
+.footer-grid > div { min-width:0; }
+.footer-grid button,.footer-grid a { min-width:0; max-width:100%; white-space:normal; overflow-wrap:anywhere; word-break:break-word; text-align:left; }
 .public-info-page h1,.public-info-page h2,.public-info-page p,.cms-content-block h2,.footer-brand p { overflow-wrap:anywhere; }
 .logo { min-width:0; }
 .logo > span:last-child { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

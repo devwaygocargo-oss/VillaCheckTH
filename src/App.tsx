@@ -670,10 +670,10 @@ function AppContent() {
     const result=await api<{reference:string;linkedToUser:boolean}>("/public/reports",report);
     setReportReference(result.reference);setUserLoggedIn(result.linkedToUser);go("villa-report-success",result.reference);
   };
-  const isOwnerPage = page.startsWith("owner-") && !["owner-auth", "owner-registration", "owner-information", "owner-onboarding-villa", "owner-select-villa"].includes(page);
+  const isPublicInfoPage = ["cms-page", "about", "verification-standard", "articles", "article-detail", "owner-guide", "help", "contact", "privacy", "terms", "social-facebook", "social-instagram", "social-line", "gallery"].includes(page);
+  const isOwnerPage = page.startsWith("owner-") && !isPublicInfoPage && !["owner-auth", "owner-registration", "owner-information", "owner-onboarding-villa", "owner-select-villa"].includes(page);
   const isAdminPage = page.startsWith("admin-");
   const isUserPage = page.startsWith("user-");
-  const isPublicInfoPage = ["cms-page", "about", "verification-standard", "articles", "article-detail", "owner-guide", "help", "contact", "privacy", "terms", "social-facebook", "social-instagram", "social-line", "gallery"].includes(page);
   const content =
     page === "home" ? <Home go={go} onSearch={search} onSelect={selectPackage} /> :
     page === "directory" ? <Directory go={go} initialQuery={directorySearch.query} initialProvince={directorySearch.province} /> :
