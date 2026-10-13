@@ -207,5 +207,27 @@
     "menuErrors": 0,
     "pageErrors": 6,
     "physicalDeviceAcceptance": false
-  }
+  },
+  "deployment": {
+    "commit": "aa00064",
+    "vercelStatus": "success"
+  },
+  "liveReadOnlyChecks": {
+    "pass": 24,
+    "fail": 0
+  },
+  "liveReadiness": {
+    "demoMode": true,
+    "paymentMode": "MANUAL",
+    "smtpConfigured": true,
+    "smtpLiveAcceptance": false,
+    "facebookStatus": "waiting-approval",
+    "missingGuestCapacities": 15,
+    "legacyInvoicesWithoutBankSnapshot": 2,
+    "otpChannels": {
+      "email": true,
+      "sms": true
+    }
+  },
+  "physicalDeviceResults": "Awaiting user response; devices ready"
 }
