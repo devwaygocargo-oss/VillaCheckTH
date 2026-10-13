@@ -1,4 +1,4 @@
-import { cmsBusiness, monthlyValidity } from "./cms-business.mjs"
+import { cmsBusiness, monthlyValidity, cmsPaymentSnapshot } from "./cms-business.mjs"
 import { DatabaseSync } from "node:sqlite"
 import { wrapSqlite } from "./database-adapter.mjs"
 import { mkdirSync, chmodSync, readFileSync } from "node:fs"
@@ -123,6 +123,7 @@ export function openDatabase(path) {
   migrate("villas", "guest_capacity", "INTEGER CHECK(guest_capacity BETWEEN 1 AND 1000)")
   migrate("villas", "reviewed_at", "TEXT")
   migrate("villas", "reviewed_by", "TEXT")
+  migrate("mails", "payment_instructions", "TEXT")
   migrate("users", "created", "TEXT NOT NULL DEFAULT ''")
   migrate("users", "last_login", "TEXT")
   for (const field of ["business_name", "phone", "address"])
@@ -216,13 +217,14 @@ export function addMonths(value, months) {
   local.setUTCDate(Math.min(day, end))
   return new Date(local.getTime() - 7 * 3600000).toISOString()
 }
-export async function createInvoice(db, villa, appUrl) {
+export async function createInvoice(db, villa, appUrl, paymentInstructions="") {
   const id = randomUUID()
   const plan = await db
     .prepare("SELECT * FROM package_catalog WHERE id=?")
     .get(villa.package_id)
   const months=monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
   const created = new Date().toISOString()
+  const instructions=await cmsPaymentSnapshot(db,paymentInstructions)
   // Snapshot the published validity rule on each new invoice; existing invoices retain their terms.
   await db
     .prepare(
@@ -235,8 +237,8 @@ export async function createInvoice(db, villa, appUrl) {
   const body = `เรียน ${villa.merchant}\n\nVilla: ${villa.name}\nแพ็กเกจ: ${plan.name}\nยอดชำระ: ฿${(plan.amount / 100).toLocaleString("th-TH")}\nเลขที่ใบแจ้งชำระ: ${id}\n\nเข้าสู่ระบบที่ ${appUrl}/#page=owner-package เพื่อดูวิธีชำระและแนบสลิป\nAdmin จะตรวจยืนยันการชำระ จากนั้น QR มีอายุ ${months} เดือน\n1 Villa = 1 QR การต่ออายุใช้รหัสเดิม`
   await db
     .prepare(
-      "INSERT INTO mails(id,villa_id,invoice_id,recipient,subject,body,created) VALUES (?,?,?,?,?,?,?)",
+      "INSERT INTO mails(id,villa_id,invoice_id,recipient,subject,body,created,payment_instructions) VALUES (?,?,?,?,?,?,?,?)",
     )
-    .run(randomUUID(), villa.id, id, villa.email, subject, body, created)
+    .run(randomUUID(), villa.id, id, villa.email, subject, body, created,instructions)
   return id
 }

@@ -58,7 +58,7 @@ const images = [
 ]
 export const cmsDefaults = {
   schemaVersion: 1,
-  business:{monthlyInitialMonths:3,monthlyRenewalMonths:1,paymentEmailSubject:"VillaCheck: {{package}} แจ้งชำระแพ็กเกจ",paymentEmailIntro:"เรียน {{merchant}}\nกรุณาตรวจยอดและระยะเวลาในใบแจ้งชำระ แล้วแนบสลิปให้ Admin ตรวจสอบ"},
+  business:{emailOtpSubject:"VillaCheck: รหัสเข้าสู่ระบบ",emailOtpBody:"รหัส OTP ของคุณคือ {{code}} ใช้ได้ {{minutes}} นาที ห้ามให้รหัสนี้กับผู้อื่น",smsOtpBody:"VillaCheck OTP: {{code}}. Expires in {{minutes}} minutes. Do not share.",emailOtpTemplateId:"",facebookLoginEnabled:false,monthlyInitialMonths:3,monthlyRenewalMonths:1,paymentEmailSubject:"VillaCheck: {{package}} แจ้งชำระแพ็กเกจ",paymentEmailIntro:"เรียน {{merchant}}\nกรุณาตรวจยอดและระยะเวลาในใบแจ้งชำระ แล้วแนบสลิปให้ Admin ตรวจสอบ"},
   site: {
     name: "VillaCheck",
     description: "Trust before transfer.",

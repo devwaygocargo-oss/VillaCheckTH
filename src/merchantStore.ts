@@ -9,6 +9,7 @@ export type Invoice = {
   villaId: string
   amount: number
   months: number
+  paymentInstructions: string | null
   paymentStatus: "WAITING_FOR_SLIP" | "PENDING_REVIEW" | "VERIFYING" | "VERIFIED" | "REJECTED" | "FAILED"
   verificationMode: "MANUAL" | "AUTO"
   status: "pending" | "submitted" | "paid"

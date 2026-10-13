@@ -88,7 +88,7 @@ export function LoginPage({ go, onAuthenticated, reference = "" }: { go: Go; ref
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const oauthError = new URLSearchParams(window.location.hash.slice(1)).get("oauth_error");
-  const oauthErrors: Record<string, string> = { not_configured: "ยังไม่ได้ตั้งค่า OAuth", cancelled: "คุณยกเลิกการเข้าสู่ระบบ", invalid_state: "คำขอเข้าสู่ระบบหมดอายุ กรุณาลองใหม่", email_required: "ผู้ให้บริการไม่ได้ส่งอีเมลที่ยืนยันแล้ว กรุณาสมัครด้วยอีเมล", email_exists: "อีเมลนี้มีบัญชีอยู่แล้ว กรุณาใช้ช่องทางเดิมเข้าสู่ระบบ", provider_failed: "เชื่อมต่อผู้ให้บริการไม่สำเร็จ กรุณาลองใหม่" };
+  const oauthErrors: Record<string, string> = { pending_approval:"Facebook ยังรออนุมัติจาก Meta กรุณาใช้ช่องทางอื่น", not_configured: "ยังไม่ได้ตั้งค่า OAuth", cancelled: "คุณยกเลิกการเข้าสู่ระบบ", invalid_state: "คำขอเข้าสู่ระบบหมดอายุ กรุณาลองใหม่", email_required: "ผู้ให้บริการไม่ได้ส่งอีเมลที่ยืนยันแล้ว กรุณาสมัครด้วยอีเมล", email_exists: "อีเมลนี้มีบัญชีอยู่แล้ว กรุณาใช้ช่องทางเดิมเข้าสู่ระบบ", provider_failed: "เชื่อมต่อผู้ให้บริการไม่สำเร็จ กรุณาลองใหม่" };
   const [error, setError] = useState(oauthError ? oauthErrors[oauthError] || "OAuth ไม่สำเร็จ" : "");
 
   const [localAccounts, setLocalAccounts] = useState(false);

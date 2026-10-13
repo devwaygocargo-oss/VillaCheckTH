@@ -74,7 +74,7 @@ export async function activateVilla(db, villa) {
     .run(villa.qr || `VC-${randomUUID()}`, sub.expires, sub.payments, villa.id)
   return true
 }
-export async function subscriptionInvoice(db, villa, appUrl, selectedPlan) {
+export async function subscriptionInvoice(db, villa, appUrl, selectedPlan, paymentInstructions="") {
   const existing = await db
     .prepare(
       "SELECT id FROM invoices WHERE subscription_owner=? AND status!='paid'",
@@ -87,6 +87,7 @@ export async function subscriptionInvoice(db, villa, appUrl, selectedPlan) {
     db,
     { ...villa, package_id: planId, payments: sub.payments },
     appUrl,
+    paymentInstructions,
   )
   await db
     .prepare("UPDATE invoices SET subscription_owner=?,package_id=? WHERE id=?")

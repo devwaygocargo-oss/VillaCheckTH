@@ -46,7 +46,7 @@ export function createMailWorker(db, config, transport) {
           from: config.smtpFrom,
           to: mail.recipient,
           subject: mail.subject,
-          text: `${mail.body}\n\n${config.paymentInstructions || "กรุณาติดต่อทีมงานเพื่อรับข้อมูลบัญชีชำระเงิน"}`,
+          text: `${mail.body}\n\n${mail.payment_instructions ?? (config.paymentInstructions || "กรุณาติดต่อทีมงานเพื่อรับข้อมูลบัญชีชำระเงิน")}`,
           messageId: `<${mail.id}@villacheck.local>`,
         })
         await db

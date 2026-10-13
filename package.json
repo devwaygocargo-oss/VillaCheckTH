@@ -19,7 +19,10 @@
     "lint": "eslint app pages backend src --max-warnings 0",
     "prebackend": "prisma generate",
     "db:local": "node scripts/local-postgres.mjs",
-    "db:seed": "prisma generate && npm run build:backend && node scripts/seed-demo.mjs"
+    "db:seed": "prisma generate && npm run build:backend && node scripts/seed-demo.mjs",
+    "db:backup": "node --env-file-if-exists=.env scripts/application-backup.mjs backup",
+    "db:restore": "node --env-file-if-exists=.env scripts/application-backup.mjs restore",
+    "check:health": "node scripts/health-check.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^12.1.2",

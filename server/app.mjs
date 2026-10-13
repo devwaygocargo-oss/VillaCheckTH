@@ -1,9 +1,11 @@
+import { cmsLoginConfig } from "./cms-business.mjs"
 import {createLoginOtp,otpChannels,probeSmsCredit} from './login-otp.mjs'
 import { guestCapacity } from './guest-capacity.mjs'
 import {saveVillaPhoto} from './villa-photo.mjs'
 import {demoSlip,demoMode} from "./demo-payment.mjs"
 import {createReport, recordEvent, operations} from "./operations.mjs"
 import { adminBusiness } from "./admin-business.mjs"
+import { readiness } from "./readiness.mjs"
 import { adminCms, publishedCms, cmsPaymentInstructions } from "./cms.mjs"
 import { generatePaymentQr, paymentQrDto } from "./payment-qr.mjs"
 import {
@@ -254,6 +256,7 @@ export function createApp(db, config, transport) {
       villaId: invoice.villa_id,
       amount: invoice.amount / 100,
       months: invoice.months,
+      paymentInstructions: (await db.prepare("SELECT payment_instructions FROM mails WHERE invoice_id=?").get(invoice.id))?.payment_instructions ?? null,
       status: invoice.status,
       paymentStatus: invoice.payment_status,
       verificationMode: invoice.verification_mode,
@@ -387,6 +390,7 @@ export function createApp(db, config, transport) {
         content.site.paymentInstructions = ""
         content.business.paymentEmailSubject = ""
         content.business.paymentEmailIntro = ""
+        for(const key of ["emailOtpSubject","emailOtpBody","smsOtpBody","emailOtpTemplateId"])content.business[key]=""
         content.articles = content.articles.filter(x => x.visible)
         content.faqs = content.faqs.filter(x => x.visible)
         content.home.blocks = content.home.blocks.filter(x => x.visible)
@@ -463,8 +467,9 @@ export function createApp(db, config, transport) {
         return json({
           localAccounts: Boolean(config.seedDemo),
           paymentConfigured: (await demoMode(db,config)) || Boolean(await cmsPaymentInstructions(db, config.paymentInstructions)),
-          oauth: oauthProviders(config),
-          otp: otpChannels(config,transport),
+          oauth: oauthProviders(await cmsLoginConfig(db,config)),
+          oauthStatus:{facebook:(await cmsLoginConfig(db,config)).facebookLoginEnabled?"enabled":"pending_approval"},
+          otp: otpChannels(await cmsLoginConfig(db,config),transport),
           demoMode: await demoMode(db,config),
         })
       if (
@@ -472,7 +477,8 @@ export function createApp(db, config, transport) {
         /^\/api\/auth\/oauth\/(google|facebook|line)\/start$/.test(path)
       )
         await rateLimit(req)
-      if (await oauth(req, res, url)) return
+      if (/^\/api\/auth\/oauth\/facebook\/(start|callback)$/.test(path) && !(await cmsLoginConfig(db,config)).facebookLoginEnabled){res.writeHead(302,{Location:`${config.appUrl}/#page=login&oauth_error=pending_approval`});res.end();return}
+      if (path.startsWith("/api/auth/oauth/") && await createOAuth(db,await cmsLoginConfig(db,config),issueSession,config.oauthFetch||fetch)(req,res,url)) return
       if(req.method==='POST'&&['/api/auth/otp/request','/api/auth/otp/verify'].includes(path)){
         checkOrigin(req);await rateLimit(req);const data=await body(req)
         if(path.endsWith('/request')){try{return json(await loginOtp.request(data))}catch(error){if(error.status===503)fail(503,error.message);throw error}}
@@ -629,6 +635,10 @@ export function createApp(db, config, transport) {
       }
       if (path.startsWith("/api/")) {
         const user = await auth(req)
+        if(path==='/api/admin/readiness'&&req.method==='GET'){
+          if(user.role!=='admin')fail(403,'เฉพาะ Admin')
+          return json(await readiness(db,config,transport))
+        }
         const cms = await adminCms(db, user, req, path, body)
         if (cms !== undefined) return json(cms)
         if(req.method==='GET'&&path==='/api/admin/otp/status'){
@@ -636,7 +646,7 @@ export function createApp(db, config, transport) {
           const email=await db.prepare("SELECT value FROM system_settings WHERE key='otp_delivery_email'").get()
           const sms=await db.prepare("SELECT value FROM system_settings WHERE key='otp_delivery_sms'").get()
           const verification=await db.prepare("SELECT value FROM system_settings WHERE key='otp_verification_email'").get();
-          return json({emailVerification:verification?JSON.parse(verification.value):null,channels:otpChannels(config,transport),email:email?JSON.parse(email.value):null,sms:sms?JSON.parse(sms.value):null,...(url.searchParams.get('probe')==='sms'?{smsProvider:await probeSmsCredit(config)}:{})})
+          return json({emailVerification:verification?JSON.parse(verification.value):null,channels:otpChannels(await cmsLoginConfig(db,config),transport),email:email?JSON.parse(email.value):null,sms:sms?JSON.parse(sms.value):null,...(url.searchParams.get('probe')==='sms'?{smsProvider:await probeSmsCredit(config)}:{})})
         }
         const operation=await operations(db,user,req,path,url,body)
         if(operation!==undefined)return json(operation)
@@ -827,7 +837,7 @@ export function createApp(db, config, transport) {
             if(await db.prepare("SELECT id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id))fail(409,'Complete the pending payment first')
             const villa=await db.prepare("SELECT * FROM villas WHERE owner_id=? AND status='approved' ORDER BY created LIMIT 1").get(user.id)
             if(!villa)fail(409,'An approved Villa is required')
-            await subscriptionInvoice(db,villa,config.appUrl,target.id)
+            await subscriptionInvoice(db,villa,config.appUrl,target.id,config.paymentInstructions)
             await audit(db,user,'subscription.upgrade.request',user.id)
           })
           json(await state(user));void worker.run();return
@@ -982,7 +992,7 @@ export function createApp(db, config, transport) {
                       villa.owner_id,
                       plan.trial_months,
                     )
-                  else await subscriptionInvoice(db, villa, config.appUrl)
+                  else await subscriptionInvoice(db, villa, config.appUrl,undefined,config.paymentInstructions)
                 }
               }
 
@@ -1021,6 +1031,7 @@ export function createApp(db, config, transport) {
                 (await getPlan(db, sub.package_id)).amount === 0
                   ? data.packageId
                   : undefined,
+                config.paymentInstructions,
               )
               await audit(db, user, "subscription.renew", user.id)
             }

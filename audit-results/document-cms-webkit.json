@@ -1,0 +1,135 @@
+{
+  "environment": "Isolated PostgreSQL; fake providers; no real data or emails",
+  "engine": "webkit",
+  "results": [
+    {
+      "name": "Password login user",
+      "role": "user",
+      "status": "pass",
+      "detail": {
+        "destination": "https://villacheck.test/#page=user-dashboard"
+      },
+      "ms": 999
+    },
+    {
+      "name": "Password login merchant",
+      "role": "merchant",
+      "status": "pass",
+      "detail": {
+        "destination": "https://villacheck.test/#page=owner-dashboard"
+      },
+      "ms": 978
+    },
+    {
+      "name": "Password login admin",
+      "role": "admin",
+      "status": "pass",
+      "detail": {
+        "destination": "https://villacheck.test/#page=admin-dashboard"
+      },
+      "ms": 1001
+    },
+    {
+      "name": "CMS: Guest and Merchant cannot open editor",
+      "role": "guest",
+      "status": "pass",
+      "ms": 867
+    },
+    {
+      "name": "CMS: Admin saves home draft without changing public release",
+      "role": "admin",
+      "status": "pass",
+      "ms": 1035
+    },
+    {
+      "name": "CMS: Admin publishes and home displays actual CMS title",
+      "role": "admin",
+      "status": "pass",
+      "ms": 1917
+    },
+    {
+      "name": "CMS: Actual media upload appears in library and is draft-private",
+      "role": "admin",
+      "status": "pass",
+      "ms": 89
+    },
+    {
+      "name": "CMS: About page Section saves, previews, publishes and displays on public route",
+      "role": "admin",
+      "status": "pass",
+      "ms": 1913
+    },
+    {
+      "name": "CMS: Add article, attach uploaded image, publish and open detail",
+      "role": "admin",
+      "status": "pass",
+      "ms": 2010
+    },
+    {
+      "name": "CMS: FAQ editor publishes to help page",
+      "role": "admin",
+      "status": "pass",
+      "ms": 2105
+    },
+    {
+      "name": "CMS: Site contact settings publish to public contact and social pages",
+      "role": "admin",
+      "status": "pass",
+      "ms": 2917
+    },
+    {
+      "name": "CMS: Historical restore remains draft until explicitly published",
+      "role": "admin",
+      "status": "pass",
+      "ms": 359
+    },
+    {
+      "name": "CMS extra: Hide native homepage section and publish a custom section",
+      "role": "admin",
+      "status": "pass",
+      "ms": 3080
+    },
+    {
+      "name": "CMS extra: Create custom public page and add a working navigation menu",
+      "role": "admin",
+      "status": "pass",
+      "ms": 2203
+    },
+    {
+      "name": "CMS layout: Long published content fits iPhone and iPad",
+      "role": "admin",
+      "status": "pass",
+      "detail": {
+        "checks": 9
+      },
+      "ms": 17305
+    },
+    {
+      "name": "CMS: Business rules and email copy save through UI and public pricing reflects published months",
+      "role": "admin",
+      "status": "pass",
+      "ms": 2705
+    },
+    {
+      "name": "CMS: Every editor tab fits iPhone and iPad viewports",
+      "role": "admin",
+      "status": "pass",
+      "detail": {
+        "checks": 27
+      },
+      "ms": 14484
+    },
+    {
+      "name": "Document: Readiness and OTP editor fit physical-device viewport sizes",
+      "role": "admin",
+      "status": "pass",
+      "detail": {
+        "checks": 7
+      },
+      "ms": 6241
+    }
+  ],
+  "errors": [],
+  "pass": 18,
+  "fail": 0
+}

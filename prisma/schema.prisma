@@ -88,6 +88,7 @@ model mails {
   next_attempt BigInt   @default(0)
   last_error   String   @default("")
   sent_at      String?
+  payment_instructions String?
   invoices     invoices @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   villas       villas   @relation(fields: [villa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

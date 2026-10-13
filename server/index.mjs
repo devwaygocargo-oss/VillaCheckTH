@@ -117,6 +117,7 @@ export async function startServer(env = process.env, { listen = true, databaseFa
           : []),
       ],
       smtpFrom: env.SMTP_FROM,
+      facebookLoginEnabled:env.FACEBOOK_LOGIN_ENABLED==='true',
       paymentInstructions: env.PAYMENT_INSTRUCTIONS,
       staticDir:
         env.SERVE_FRONTEND === "true" || production

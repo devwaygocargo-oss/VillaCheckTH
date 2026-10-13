@@ -9,3 +9,15 @@ export function monthlyValidity(business, cycle, payments) {
 export function paymentTemplate(value, fields) {
   return value.replace(/\{\{(merchant|package|villa)\}\}/g,(_,key)=>fields[key])
 }
+export async function cmsPaymentSnapshot(db, fallback="") {
+  const row=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
+  return (row?JSON.parse(row.value).content.site.paymentInstructions:"") || fallback || "กรุณาติดต่อทีมงานเพื่อรับข้อมูลบัญชีชำระเงิน"
+}
+export async function cmsLoginConfig(db,config) {
+  const row=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
+  const business=row?JSON.parse(row.value).content.business:{}
+  return {...config,thaiBulkSmsEmailOtpTemplateId:business.emailOtpTemplateId||config.thaiBulkSmsEmailOtpTemplateId,facebookLoginEnabled:business.facebookLoginEnabled??(config.facebookLoginEnabled===true)}
+}
+export function otpTemplate(value,code) {
+  return value.replace(/\{\{(code|minutes)\}\}/g,(_,key)=>key==='code'?code:'5')
+}

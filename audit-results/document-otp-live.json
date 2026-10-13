@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-10-13T12:53:20.207Z",
+  "origin": "https://design-villacheck.vercel.app",
+  "realDelivery": true,
+  "singleRequestPerChannel": true,
+  "results": [
+    {
+      "channel": "sms",
+      "status": 200,
+      "passed": true,
+      "role": "user"
+    },
+    {
+      "channel": "email",
+      "status": 200,
+      "passed": true,
+      "role": "admin"
+    }
+  ],
+  "destinations": {
+    "sms": "***9920",
+    "email": "v***@gmail.com"
+  }
+}

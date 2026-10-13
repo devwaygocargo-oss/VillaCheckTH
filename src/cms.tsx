@@ -54,7 +54,7 @@ export type CmsHomeSection = {
 }
 export type CmsContent = {
   schemaVersion: number
-  business: {monthlyInitialMonths:number;monthlyRenewalMonths:number;paymentEmailSubject:string;paymentEmailIntro:string}
+  business: {emailOtpSubject:string;emailOtpBody:string;smsOtpBody:string;emailOtpTemplateId:string;facebookLoginEnabled:boolean;monthlyInitialMonths:number;monthlyRenewalMonths:number;paymentEmailSubject:string;paymentEmailIntro:string}
   site: {
     name: string
     description: string

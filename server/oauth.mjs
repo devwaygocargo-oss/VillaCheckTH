@@ -17,7 +17,7 @@ export function oauthProviders(config) {
     google: Boolean(config.googleClientId && config.googleClientSecret),
     line: Boolean(config.lineClientId && config.lineClientSecret),
     facebook: Boolean(
-      config.facebookClientId &&
+      config.facebookLoginEnabled !== false && config.facebookClientId &&
         config.facebookClientSecret &&
         /^v\d+\.0$/.test(config.facebookVersion || ""),
     ),

@@ -155,6 +155,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .cms-preview .container { width:100%; max-width:100%; box-sizing:border-box; }
 .cms-preview .hero-grid { grid-template-columns:1fr; }
 .cms-prose { white-space:pre-wrap; overflow-wrap:anywhere; }
+.demo-notice { background:#fff5d9; color:#674c14; padding:12px 20px; text-align:center; font-size:14px; overflow-wrap:anywhere; border-bottom:1px solid #ead7a8; }
 .public-info-page h1,.public-info-page h2,.public-info-page p,.cms-content-block h2,.footer-brand p { overflow-wrap:anywhere; }
 .logo { min-width:0; }
 .logo > span:last-child { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

@@ -80,11 +80,20 @@ export function validateCms(data) {
 function normalizeCms(data) {
   if (!data || data.schemaVersion !== 1 || !data.site || !data.home)
     fail(400, "ข้อมูล CMS ไม่ครบ")
-  const business = data.business
+  const business = {...cmsDefaults.business,...data.business}
   if (!business || ![business.monthlyInitialMonths,business.monthlyRenewalMonths].every(n=>Number.isInteger(n)&&n>=1&&n<=36)) fail(400,"อายุสิทธิ์รายเดือนต้องเป็นจำนวนเต็ม 1–36 เดือน")
   const subject=string(business.paymentEmailSubject,300),intro=string(business.paymentEmailIntro,12000)
   if (!subject.trim() || /[\r\n]/.test(subject) || [subject,intro].some(value=>(value.match(/\{\{[^}]+\}\}/g)||[]).some(token=>!["{{merchant}}","{{package}}","{{villa}}"].includes(token)))) fail(400,"หัวข้ออีเมลหรือคำแทนข้อความไม่ถูกต้อง")
   const businessSettings={monthlyInitialMonths:business.monthlyInitialMonths,monthlyRenewalMonths:business.monthlyRenewalMonths,paymentEmailSubject:subject,paymentEmailIntro:intro}
+  for (const key of ["emailOtpBody","smsOtpBody"]){
+    const value=string(business[key],key==="smsOtpBody"?300:4000)
+    if (!value.includes("{{code}}")||!value.includes("{{minutes}}")||(value.match(/\{\{[^}]+\}\}/g)||[]).some(token=>!["{{code}}","{{minutes}}"].includes(token))) fail(400,"ข้อความ OTP ต้องมี {{code}} และ {{minutes}} และใช้คำแทนที่รองรับเท่านั้น")
+    businessSettings[key]=value
+  }
+  businessSettings.emailOtpSubject=string(business.emailOtpSubject,150)
+  businessSettings.emailOtpTemplateId=string(business.emailOtpTemplateId,200)
+  if (!businessSettings.emailOtpSubject.trim() || /[\r\n]/.test(businessSettings.emailOtpSubject) || (businessSettings.emailOtpTemplateId&&!/^[a-zA-Z0-9_-]+$/.test(businessSettings.emailOtpTemplateId)) || typeof business.facebookLoginEnabled!=="boolean") fail(400,"ตั้งค่า OTP/Facebook ไม่ถูกต้อง")
+  businessSettings.facebookLoginEnabled=business.facebookLoginEnabled
   const site = Object.fromEntries(
     [
       "name",
@@ -209,7 +218,9 @@ async function read(db, key, fallback) {
   const row = await db
     .prepare("SELECT value FROM system_settings WHERE key=?")
     .get(key)
-  return row ? JSON.parse(row.value) : clone(fallback)
+  const value=row?JSON.parse(row.value):clone(fallback)
+  if (["cms_draft","cms_published"].includes(key)) value.content.business={...cmsDefaults.business,...value.content.business}
+  return value
 }
 async function write(db, key, value) {
   await db

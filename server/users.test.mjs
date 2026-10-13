@@ -137,6 +137,7 @@ test("OAuth state, provider identity, PKCE, return paths and collision handling"
     lineClientSecret: "line-secret",
     googleClientId: "google-id",
     googleClientSecret: "must-stay-server-side",
+    facebookLoginEnabled:true,
     facebookClientId: "facebook-id",
     facebookClientSecret: "facebook-secret",
     facebookVersion: "v24.0",
