@@ -11,13 +11,14 @@
 .portal-menu-toggle { display: none; }
 .portal-mobile-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+ .portal-page { grid-template-columns: minmax(0, 1fr); min-height: 100dvh; }
  .app, .container, .portal-content, .detail-main, .auth-card, .flow-card { min-width: 0; }
  .portal-head h1, .data-row strong, .confirmation-box strong { overflow-wrap: anywhere; }
  input, select, textarea { font-size: 16px !important; min-width: 0; max-width: 100%; }
  .header nav { max-height: calc(100dvh - 90px); overflow-y: auto; }
  .header nav button { min-height: 44px; }
-  .portal-side { display: block; padding: 12px 16px; min-height: 0; align-self: start; }
+  .portal-side { display: block; padding: 12px 16px; min-height: 0; align-self: start; position: sticky; top: 0; z-index: 45; }
   .portal-menu-toggle { display: block; color: white; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); border-radius: 8px; min-height: 44px; padding: 0 14px; font: inherit; }
   .portal-side nav, .portal-side .portal-logout { display: none; }
   .portal-side.portal-menu-open nav { display: grid; grid-template-columns: 1fr 1fr; max-height: calc(100dvh - 160px); overflow-y: auto; padding-top: 16px; gap: 6px; }
@@ -67,3 +68,68 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
  .metric-card strong { font-size: 30px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Tablet layouts must not squeeze the public search or management forms. */
+.portal-page { grid-template-columns: 230px minmax(0, 1fr); }
+.portal-content, .merchant-panel, .payment-panel, .portal-form, .subscription-options > button { min-width: 0; }
+.portal-content h1, .portal-content h2, .portal-content h3, .portal-content p, .merchant-panel a, .payment-panel strong, .subscription-panel strong { overflow-wrap: anywhere; }
+.merchant-qr { width: min(240px, 100%); }
+.merchant-qr svg, .merchant-document { max-width: 100%; height: auto; }
+.portal-form input:not([type="checkbox"]):not([type="radio"]), .portal-form select, .portal-form textarea { width: 100%; box-sizing: border-box; }
+.portal-form input[type="checkbox"], .portal-form input[type="radio"] { width: auto; flex: 0 0 auto; }
+@media (max-width: 1100px) {
+ .portal-page { grid-template-columns: minmax(0, 1fr); }
+ .portal-content { padding-bottom: max(48px, env(safe-area-inset-bottom)); }
+ .portal-side { padding-top: max(12px, env(safe-area-inset-top)); }
+ .portal-side > small { display: none; }
+ .merchant-toolbar { flex-wrap: wrap; }
+ .merchant-toolbar input { flex: 1 1 220px; }
+ .merchant-toolbar select { flex: 1 1 160px; }
+ .user-table-wrap { max-width: 100%; -webkit-overflow-scrolling: touch; }
+ .merchant-mail-row { align-items: flex-start; gap: 12px; }
+ .merchant-mail-row > span { min-width: 0; }
+ .merchant-mail pre { word-break: break-word; }
+ .hero .search-box { width: min(100%, 630px); }
+}
+@media (min-width: 761px) and (max-width: 1180px) {
+ .hero-grid { grid-template-columns: minmax(0, 1fr); padding-top: 48px; padding-bottom: 28px; }
+ .hero-copy { max-width: 760px; }
+ .hero-visual { width: min(620px, 100%); margin: 0 auto; }
+ .hero-signal-strip { position: relative; left: auto; bottom: auto; transform: none; width: calc(100% - 48px); margin: 0 auto 24px; }
+ .hero { min-height: auto; }
+ .plan-grid, .villa-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .merchant-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+ .merchant-toolbar { flex-direction: column; }
+ .merchant-toolbar input, .merchant-toolbar select { flex: none; width: 100%; }
+ .merchant-form-grid { grid-template-columns: minmax(0, 1fr); }
+ .merchant-panel, .payment-panel { padding: 18px; }
+ .portal-form.merchant-panel { padding: 18px; }
+ .merchant-mail-row { flex-direction: column; }
+ .results-head { flex-wrap: wrap; gap: 12px; }
+ .verification-contact-head { flex-wrap: wrap; gap: 10px; }
+ .scanner-actions { flex-direction: column; }
+ .scanner-actions > button, .scanner-actions > label { width: 100%; }
+ .subscription-options { grid-template-columns: minmax(0, 1fr); }
+ .hero-slide-arrow { width: 44px; height: 44px; }
+ .nav-qr-button { display: none; }
+}
+@media (pointer: coarse) {
+ input, select, textarea { font-size: 16px !important; }
+ button, .portal-side nav button, .merchant-qr a { min-height: 44px; }
+ .hero-slide-arrow { width: 44px; height: 44px; opacity: 1; }
+ .hero-slide-indicator button, .carousel-dots button { min-width: 32px; min-height: 32px; background: transparent; position: relative; }
+ .hero-slide-indicator button::after, .carousel-dots button::after { content: ""; position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--sea); left: 13px; top: 13px; }
+ .hero-slide-indicator button.active::after, .carousel-dots button.active::after { background: var(--sun); }
+}
+@media (max-width: 600px) {
+ .user-table { min-width: 0; }
+ .user-table thead { display: none; }
+ .user-table tbody { display: block; }
+ .user-table tr { display: block; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+ .user-table tr:last-child { border-bottom: 0; }
+ .user-table td { display: grid; grid-template-columns: 92px minmax(0, 1fr); padding: 8px 0; gap: 4px 12px; border: 0; overflow-wrap: anywhere; }
+ .user-table td::before { content: attr(data-label); color: var(--muted); font-weight: 600; }
+ .user-table td small { grid-column: 2; margin: 0; }
+}

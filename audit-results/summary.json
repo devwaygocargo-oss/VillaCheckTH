@@ -221,5 +221,16 @@
     "additionalPass": 10,
     "additionalFail": 0,
     "overall": "All identified code/Flow discrepancies fixed and regression-verified; live provider approval/payment checks remain intentionally pending"
+  },
+  "responsiveAudit": {
+    "evidence": "responsive-summary.json",
+    "date": "2026-10-13",
+    "checks": 278,
+    "issues": 0,
+    "engines": [
+      "WebKit",
+      "Chromium"
+    ],
+    "backendRegression": 70
   }
 }
