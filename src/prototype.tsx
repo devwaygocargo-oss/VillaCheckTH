@@ -1,5 +1,7 @@
 import { CmsPublicPage } from "./cms";
 import OtpLogin from "./OtpLogin";
+import {oauthErrors} from "./authMessages";
+import type {Account} from "./merchantStore";
 import ContactLead from "./ContactLead";
 import PublicMedia from "./PublicMedia";
 import { usePackages, packageIntentKey } from "./packagePlans";
@@ -82,25 +84,32 @@ const testAccounts = [
   { role: "Admin", email: "admin@villacheck.test", password: "Admin1234" },
 ];
 
-export function LoginPage({ go, onAuthenticated, reference = "" }: { go: Go; reference?: string; onAuthenticated?: (role: "User" | "Merchant" | "Admin") => void }) {
+export function LoginPage({ go, onAuthenticated, reference = "", accountType="user",packageName="" }: { go: Go; reference?: string; onAuthenticated?: (role: "User" | "Merchant" | "Admin") => void;accountType?:"user"|"merchant";packageName?:string }) {
   const [passwordMode,setPasswordMode]=useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const oauthError = new URLSearchParams(window.location.hash.slice(1)).get("oauth_error");
-  const oauthErrors: Record<string, string> = { pending_approval:"Facebook ยังรออนุมัติจาก Meta กรุณาใช้ช่องทางอื่น", not_configured: "ยังไม่ได้ตั้งค่า OAuth", cancelled: "คุณยกเลิกการเข้าสู่ระบบ", invalid_state: "คำขอเข้าสู่ระบบหมดอายุ กรุณาลองใหม่", email_required: "ผู้ให้บริการไม่ได้ส่งอีเมลที่ยืนยันแล้ว กรุณาสมัครด้วยอีเมล", email_exists: "อีเมลนี้มีบัญชีอยู่แล้ว กรุณาใช้ช่องทางเดิมเข้าสู่ระบบ", provider_failed: "เชื่อมต่อผู้ให้บริการไม่สำเร็จ กรุณาลองใหม่" };
   const [error, setError] = useState(oauthError ? oauthErrors[oauthError] || "OAuth ไม่สำเร็จ" : "");
 
   const [localAccounts, setLocalAccounts] = useState(false);
   useEffect(() => { void api<{ localAccounts: boolean }>("/config").then(v => setLocalAccounts(v.localAccounts)).catch(() => {}); }, []);
+  const authenticated=async(account:Account)=>{
+    if(accountType==="merchant"&&account.role!=="merchant"){setError(oauthErrors.account_type_mismatch);return;}
+    const role=account.role==="merchant"?"Merchant":account.role==="admin"?"Admin":"User";
+    onAuthenticated?.(role);
+    if(role==="Merchant"){
+      if(accountType!=="merchant"){go(sessionStorage.getItem(packageIntentKey)?"owner-information":"owner-dashboard");return;}
+      const profile=await api<{businessName:string;phone:string;address:string;email:string}>("/merchant/profile");
+      go(sessionStorage.getItem(packageIntentKey)||!profile.businessName||!profile.phone||!profile.address||profile.email.endsWith("@phone.villacheck.invalid")?"owner-information":"owner-dashboard");
+    }else go(role==="Admin"?"admin-dashboard":reference?"verify":"user-dashboard",role==="User"?reference:undefined);
+  };
   const login = async () => {
     if (loading) return;
     setError(""); setLoading(true);
     try {
       const account = await authenticate(email, password);
-      const role = account.role === "merchant" ? "Merchant" : account.role === "admin" ? "Admin" : "User";
-      onAuthenticated?.(role);
-      go(role === "Merchant" ? sessionStorage.getItem(packageIntentKey) ? "owner-information" : "owner-dashboard" : role === "Admin" ? "admin-dashboard" : reference ? "verify" : "user-dashboard", role === "User" ? reference : undefined);
+      await authenticated(account);
     } catch (error) { setError(error instanceof Error ? error.message : "เข้าสู่ระบบไม่สำเร็จ"); }
     finally { setLoading(false); }
   };
@@ -109,9 +118,10 @@ export function LoginPage({ go, onAuthenticated, reference = "" }: { go: Go; ref
     <div className="login-sheet">
       <div className="login-topbar"><button aria-label="กลับหน้าหลัก" onClick={()=>go("home")}><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 5-7 7 7 7"/></svg></button><button aria-label="ช่วยเหลือการเข้าสู่ระบบ" onClick={()=>go("help")}><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4"/><path d="M12 16h.01"/></svg></button></div>
       <div className="login-brand"><span className="login-brand-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></span><strong>Villa<span>Check</span></strong></div>
-      <h1 className="login-title">เข้าสู่ระบบ VillaCheck</h1>
+      <h1 className="login-title">{accountType==="merchant"?"เข้าสู่ระบบ Merchant":"เข้าสู่ระบบ VillaCheck"}</h1>
+      {accountType==="merchant"&&<p className="login-account-note">{packageName?`แพ็กเกจที่สนใจ: ${packageName} · `:""}เลือกช่องทางเข้าสู่ระบบหรือสร้างบัญชี Merchant</p>}
       {!passwordMode&&error&&<p className="login-error" role="alert">{error}</p>}
-      {!passwordMode?<OtpLogin onAuthenticated={account=>{const role=account.role==="merchant"?"Merchant":account.role==="admin"?"Admin":"User";onAuthenticated?.(role);go(role==="Merchant"?sessionStorage.getItem(packageIntentKey)?"owner-information":"owner-dashboard":role==="Admin"?"admin-dashboard":reference?"verify":"user-dashboard",role==="User"?reference:undefined)}}/>:<>
+      {!passwordMode?<OtpLogin accountType={accountType} onAuthenticated={account=>{void authenticated(account).catch(e=>setError(e.message));}}/>:<>
       <form className="login-email-form" onSubmit={event=>{event.preventDefault();void login();}}>
         <label className="login-field"><span>อีเมล</span><input aria-label="อีเมล" required type="email" autoComplete="username" value={email} onChange={event=>setEmail(event.target.value)} placeholder="อีเมลของคุณ"/></label>
         <label className="login-field"><span>รหัสผ่าน</span><input aria-label="รหัสผ่าน" required autoComplete="current-password" value={password} onChange={event=>setPassword(event.target.value)} type="password" placeholder="รหัสผ่าน"/></label>
@@ -120,9 +130,9 @@ export function LoginPage({ go, onAuthenticated, reference = "" }: { go: Go; ref
       </form>
       <button type="button" className="login-mode-back" onClick={()=>setPasswordMode(false)}>กลับไปเข้าสู่ระบบด้วย OTP</button></>}
       <div className="login-divider"><span>หรือ</span></div>
-      <SocialLogin reference={reference} variant="stacked"/>
+      <SocialLogin reference={reference} variant="stacked" accountType={accountType}/>
       {!passwordMode&&<button className="login-password-choice" onClick={()=>{setPasswordMode(true);setError("")}}>ดำเนินการต่อด้วยอีเมลและรหัสผ่าน</button>}
-      <div className="login-bottom"><button className="login-create" onClick={()=>go("user-registration",reference)}>สร้างบัญชี User</button><button className="login-merchant" onClick={()=>go("owner-registration")}>สมัครบัญชี Merchant</button><p>เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ<button onClick={()=>go("terms")}>เงื่อนไขการใช้บริการ</button>และได้อ่าน<button onClick={()=>go("privacy")}>นโยบายความเป็นส่วนตัว</button>ของ VillaCheck แล้ว</p></div>
+      <div className="login-bottom">{accountType==="merchant"?<><button className="login-create" onClick={()=>go("owner-registration")}>สมัคร Merchant ใหม่</button><button className="login-merchant" onClick={()=>go("login")}>เข้าสู่ระบบ User / Admin</button></>:<><button className="login-create" onClick={()=>go("user-registration",reference)}>สร้างบัญชี User</button><button className="login-merchant" onClick={()=>go("owner-auth")}>เข้าสู่ระบบ Merchant</button><button className="login-merchant" onClick={()=>go("owner-registration")}>สมัครบัญชี Merchant</button></>}<p>เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ<button onClick={()=>go("terms")}>เงื่อนไขการใช้บริการ</button>และได้อ่าน<button onClick={()=>go("privacy")}>นโยบายความเป็นส่วนตัว</button>ของ VillaCheck แล้ว</p></div>
       {localAccounts && <div className="test-accounts">
         <strong>บัญชีทดสอบบนเซิร์ฟเวอร์ Local</strong>
         {testAccounts.map(account => <button key={account.role === "Merchant" ? "Merchant" : account.role} onClick={() => { setEmail(account.email); setPassword(account.password); setError(""); }}>
@@ -134,7 +144,7 @@ export function LoginPage({ go, onAuthenticated, reference = "" }: { go: Go; ref
 }
 
 export function OwnerPackageAuth({ go, packageName }: { go: Go; packageName: string; onOwnerLogin: () => void }) {
-  return <FlowPage kicker="MERCHANT REGISTER / LOGIN" title="เริ่มต้นใช้งานแพ็กเกจ" subtitle={`แพ็กเกจที่เลือก: ${packageName}`} onBack={() => go("pricing")}><div className="auth-choice"><button className="primary-button" onClick={() => go("owner-registration")}>สมัคร Merchant ใหม่</button><button className="outline-button" onClick={() => go("login")}>เข้าสู่ระบบ Merchant</button></div></FlowPage>;
+  return <LoginPage go={go} accountType="merchant" packageName={sessionStorage.getItem(packageIntentKey)?packageName:""}/>;
 }
 
 export function OwnerRegistration({ go, packageName }: { go: Go; packageName: string }) {
@@ -150,7 +160,7 @@ export function OwnerRegistration({ go, packageName }: { go: Go; packageName: st
     catch (error) { setError(error instanceof Error ? error.message : "สมัครไม่สำเร็จ"); }
     finally { setBusy(false); }
   };
-  return <FlowPage kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle={`แพ็กเกจที่สนใจ: ${packageName}`} onBack={() => go("login")}><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัท</span><input required value={name} onChange={e => setName(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
+  return <FlowPage kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle={`แพ็กเกจที่สนใจ: ${packageName}`} onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัท</span><input required value={name} onChange={e => setName(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
 }
 
 export function OwnerOnboardingVilla({ go, onVillaAdded }: { go: Go; onVillaAdded: (name: string) => void }) {

@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-10-13T15:24:29.968Z",
+  "backend": {
+    "checkedAt": "2026-10-13T15:16:37.567Z",
+    "dummyOnly": true,
+    "build": "pass",
+    "pass": 94,
+    "fail": 0,
+    "skip": 0
+  },
+  "regression": {
+    "pass": 61,
+    "fail": 0
+  },
+  "browserChecks": [
+    {
+      "engine": "chromium",
+      "pass": 18,
+      "fail": 0,
+      "layoutChecks": 60,
+      "layoutFailures": 0
+    },
+    {
+      "engine": "webkit",
+      "pass": 18,
+      "fail": 0,
+      "layoutChecks": 60,
+      "layoutFailures": 0
+    }
+  ],
+  "changes": [
+    "Shared provider SVGs on User and Merchant login/registration/account linking",
+    "Merchant signup/login with Facebook, Google, LINE, phone OTP and email OTP; password login retained",
+    "Existing Merchant accounts link social identities or verified phone in profile; email changes require verification",
+    "Login does not silently create a duplicate Merchant or promote User/Admin accounts",
+    "Phone-only signup requires verified email before saving the business profile",
+    "OAuth link uses Merchant session and CSRF; callback must belong to the same session owner"
+  ],
+  "facebook": "Still disabled pending Meta approval on production; fake approvals used only in isolated tests",
+  "realProviderTests": false,
+  "realMessagesSent": 0,
+  "physicalDeviceTest": false
+}

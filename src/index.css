@@ -1072,10 +1072,6 @@ footer { background: var(--ocean); color: white; padding: 72px 0 24px; }
 .login-social-stack .oauth-button { position:relative; width:100%; min-height:58px; border:1px solid #dedede; border-radius:999px; background:#fff; color:#171717; padding:14px 46px; font-size:15px; font-weight:500; }
 .login-social-stack .oauth-button:hover:not(:disabled) { background:#f7fafa; border-color:#a3cbd0; }
 .login-social-stack .oauth-button:disabled { opacity:.45; }
-.login-provider-icon { position:absolute; left:19px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:27px; height:27px; font-weight:800; font-family:Arial,sans-serif; }
-.login-provider-icon.facebook { background:#1877f2; border-radius:50%; color:white; font-size:26px; align-items:end; }
-.login-provider-icon.google { font-size:27px; background:conic-gradient(#4285f4 0 90deg,#34a853 90deg 170deg,#fbbc05 170deg 220deg,#ea4335 220deg 290deg,#4285f4 290deg); background-clip:text; color:transparent; }
-.login-provider-icon.line { background:#06c755; color:white; border-radius:50%; font-size:9px; }
 .login-social-stack .line-login-notice { background:transparent; border:0; padding:0; font-size:11px; line-height:1.7; color:#888; margin:15px 4px 0; }
 .login-social-stack small { font-size:11px; color:#888; }
 .login-bottom { margin-top:38px; text-align:center; }

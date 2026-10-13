@@ -43,7 +43,11 @@ export async function probeSmsCredit(config,fetchProvider=fetch){
 }
 export function createLoginOtp(db,config,transport,fetchSms=fetch){
  return {
-  async request(data){
+  async request(data,bindingUser=null){
+   const accountType=data.accountType||'user'
+   if(!['user','merchant'].includes(accountType))fail(400,'ประเภทบัญชีไม่ถูกต้อง')
+   if(data.purpose!==undefined&&!['login','register','link_identity'].includes(data.purpose))fail(400,'คำขอ OTP ไม่ถูกต้อง')
+   if(data.purpose==='link_identity'&&bindingUser?.role!=='merchant')fail(403,'เข้าสู่ระบบ Merchant ก่อนเชื่อมช่องทางเข้าสู่ระบบ')
    const business=await cmsBusiness(db),deliveryConfig=await cmsLoginConfig(db,config)
    const channel=data.channel,destination=otpDestination(channel,data.destination)
    if(!otpChannels(deliveryConfig,transport)[channel])fail(503,channel==='email'?'ยังไม่ได้ตั้งค่าการส่ง OTP ทางอีเมล':'ยังไม่ได้ตั้งค่าการส่ง OTP ทาง SMS')
@@ -55,7 +59,7 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
     const count=await db.prepare('SELECT count(*) AS n FROM login_otps WHERE destination=? AND created>?').get(destination,now-3600000)
     if(Number(count.n)>=5)fail(429,'ขอ OTP ครบจำนวนที่อนุญาต กรุณาลองอีกครั้งภายหลัง')
     await db.prepare('UPDATE login_otps SET consumed=1 WHERE destination=? AND consumed=0').run(destination)
-    await db.prepare('INSERT INTO login_otps(id,channel,destination,code_hash,expires,created) VALUES (?,?,?,?,?,?)').run(id,channel,destination,hash(config,id,code),now+300000,now)
+    await db.prepare('INSERT INTO login_otps(id,channel,destination,code_hash,expires,created,account_type,binding_user_id,purpose) VALUES (?,?,?,?,?,?,?,?,?)').run(id,channel,destination,hash(config,id,code),now+300000,now,accountType,data.purpose==='link_identity'?bindingUser.id:null,data.purpose||'login')
    })
    try{
     if(channel==='email'&&deliveryConfig.thaiBulkSmsEmailOtpTemplateId){
@@ -84,13 +88,14 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('otp_delivery_'+channel,JSON.stringify({ok:true,at:new Date().toISOString()}))
    return {challengeId:id,expiresAt:new Date(now+300000).toISOString(),resendAfter:60}
   },
-  async verify(data){
+  async verify(data,bindingUser=null){
    if(typeof data.challengeId!=='string'||!/^[-a-f0-9]{36}$/.test(data.challengeId)||typeof data.code!=='string'||!/^\d{6}$/.test(data.code))fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
    if(!config.otpSecret||config.otpSecret.length<32)fail(503,'OTP ยังไม่พร้อมใช้งาน')
    let verificationDiagnostic,verificationChannel;
    const result=await db.transaction(async()=>{
     const row=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(data.challengeId)
     if(!row||row.consumed||Number(row.expires)<=Date.now()||row.attempts>=5)return {invalid:true}
+    if(row.binding_user_id&&(!bindingUser||bindingUser.id!==row.binding_user_id||bindingUser.role!=='merchant'))fail(403,'ใช้บัญชี Merchant ที่เริ่มยืนยันช่องทางนี้')
     verificationChannel=row.channel;
     let valid;
     if(row.code_hash.startsWith('tbs:')){
@@ -111,17 +116,38 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
     if(!verificationDiagnostic)verificationDiagnostic={category:valid?'OK':'INVALID_OTP'};
     if(!valid){await db.prepare('UPDATE login_otps SET attempts=attempts+1 WHERE id=?').run(row.id);return {invalid:true}}
     await db.prepare('UPDATE login_otps SET consumed=1 WHERE id=?').run(row.id)
+    if(row.binding_user_id){
+     if(row.channel==='email'){
+      const other=await db.prepare('SELECT id FROM users WHERE email=?').get(row.destination)
+      if(other&&other.id!==row.binding_user_id)return {conflict:true}
+      await db.prepare('UPDATE users SET email=? WHERE id=?').run(row.destination,row.binding_user_id)
+      await db.prepare('UPDATE leads SET email=?,updated=? WHERE user_id=?').run(row.destination,new Date().toISOString(),row.binding_user_id)
+     }else{
+      const other=await db.prepare("SELECT user_id FROM oauth_identities WHERE provider='phone_otp' AND subject=?").get(row.destination)
+      if(other&&other.user_id!==row.binding_user_id)return {conflict:true}
+      await db.prepare("DELETE FROM oauth_identities WHERE provider='phone_otp' AND user_id=?").run(row.binding_user_id)
+      await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,row.binding_user_id)
+     }
+     return {user:await db.prepare('SELECT * FROM users WHERE id=?').get(row.binding_user_id)}
+    }
     if(row.channel==='email'){
      const existing=await db.prepare('SELECT * FROM users WHERE email=?').get(row.destination)
-     return {user:existing||await createUser(db,row.destination,randomBytes(48).toString('hex'),row.destination.split('@')[0],'user')}
+     if(existing&&row.account_type==='merchant'&&existing.role!=='merchant')return {wrongAccount:true}
+     if(!existing&&row.account_type==='merchant'&&row.purpose!=='register')return {unlinked:true}
+     return {user:existing||await createUser(db,row.destination,randomBytes(48).toString('hex'),row.destination.split('@')[0],row.account_type||'user')}
     }
     // Never treat an unverified contact phone on a Merchant/Admin profile as a login identity.
     let user=await db.prepare("SELECT u.* FROM oauth_identities o JOIN users u ON u.id=o.user_id WHERE o.provider='phone_otp' AND o.subject=?").get(row.destination)
-    if(!user){user=await createUser(db,`${randomUUID()}@phone.villacheck.invalid`,randomBytes(48).toString('hex'),'สมาชิก VillaCheck','user');await db.prepare('UPDATE users SET phone=? WHERE id=?').run(row.destination,user.id);await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,user.id)}
+    if(user&&row.account_type==='merchant'&&user.role!=='merchant')return {wrongAccount:true}
+    if(!user&&row.account_type==='merchant'&&row.purpose!=='register')return {unlinked:true}
+    if(!user){user=await createUser(db,`${randomUUID()}@phone.villacheck.invalid`,randomBytes(48).toString('hex'),row.account_type==='merchant'?'Merchant VillaCheck':'สมาชิก VillaCheck',row.account_type||'user');await db.prepare('UPDATE users SET phone=? WHERE id=?').run(row.destination,user.id);await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,user.id)}
     return {user}
    })
    if(verificationDiagnostic)await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('otp_verification_'+verificationChannel,JSON.stringify({...verificationDiagnostic,category:result.invalid?verificationDiagnostic.category:'OK',accepted:!result.invalid,at:new Date().toISOString()}));
    if(result.invalid)fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
+   if(result.conflict)fail(409,'ช่องทางนี้ผูกกับบัญชีอื่นแล้ว กรุณาใช้ช่องทางอื่น')
+   if(result.wrongAccount)fail(409,'บัญชีนี้ไม่ใช่ Merchant กรุณาเข้าสู่ระบบในหน้าบัญชีของคุณ หรือสมัคร Merchant ด้วยช่องทางอื่น')
+   if(result.unlinked)fail(409,'ยังไม่มีบัญชี Merchant ที่เชื่อมช่องทางนี้ กรุณาสมัคร Merchant ใหม่ หรือใช้อีเมลเดิมแล้วเชื่อมเบอร์ในข้อมูล Merchant')
    return result.user
   }
  }

@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS login_otps (
  expires BIGINT NOT NULL,
  attempts INTEGER NOT NULL DEFAULT 0,
  consumed INTEGER NOT NULL DEFAULT 0,
- created BIGINT NOT NULL
+ created BIGINT NOT NULL,
+ account_type TEXT NOT NULL DEFAULT 'user' CHECK(account_type IN ('user','merchant')),
+ binding_user_id TEXT REFERENCES users(id),
+ purpose TEXT NOT NULL DEFAULT 'login' CHECK(purpose IN ('login','register','link_identity'))
 );
 CREATE INDEX IF NOT EXISTS login_otps_destination_created ON login_otps(destination,created);

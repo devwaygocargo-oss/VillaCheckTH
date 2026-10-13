@@ -109,6 +109,7 @@ model oauth_states {
   verifier   String
   return_to  String
   expires    BigInt
+  binding_user_id String?
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -288,5 +289,8 @@ model login_otps {
   attempts Int @default(0)
   consumed Int @default(0)
   created BigInt
+  account_type String @default("user")
+  binding_user_id String?
+  purpose String @default("login")
   @@index([destination,created], map: "login_otps_destination_created")
 }

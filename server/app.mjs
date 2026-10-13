@@ -192,12 +192,6 @@ export function createApp(db, config, transport) {
     return { csrf, cookie: cookie(token) }
   }
   const loginOtp=createLoginOtp(db,config,transport,config.smsFetch||fetch)
-  const oauth = createOAuth(
-    db,
-    config,
-    issueSession,
-    config.oauthFetch || fetch,
-  )
   async function session(req) {
     const token = req.headers.cookie?.match(
       /(?:^|;\s*)vc_session=([a-f0-9]{64})(?:;|$)/,
@@ -478,11 +472,22 @@ export function createApp(db, config, transport) {
       )
         await rateLimit(req)
       if (/^\/api\/auth\/oauth\/facebook\/(start|callback)$/.test(path) && !(await cmsLoginConfig(db,config)).facebookLoginEnabled){res.writeHead(302,{Location:`${config.appUrl}/#page=login&oauth_error=pending_approval`});res.end();return}
-      if (path.startsWith("/api/auth/oauth/") && await createOAuth(db,await cmsLoginConfig(db,config),issueSession,config.oauthFetch||fetch)(req,res,url)) return
+      if (path.startsWith("/api/auth/oauth/")) {
+        const linking=req.method==='POST'&&/^\/api\/auth\/oauth\/(google|facebook|line)\/link$/.test(path)
+        let linkUser=linking?await auth(req,'merchant'):null
+        if(req.method==='GET'&&path.endsWith('/callback')&&/^[a-f0-9]{64}$/.test(url.searchParams.get('state')||'')){
+          const pending=await db.prepare('SELECT return_to FROM oauth_states WHERE state_hash=?').get(hash(url.searchParams.get('state')))
+          const bindingId=pending?new URLSearchParams(pending.return_to.slice(1)).get('linkAccount'):null
+          if(bindingId){linkUser=await auth(req,'merchant');if(linkUser.id!==bindingId)fail(403,'ใช้บัญชี Merchant ที่เริ่มเชื่อมช่องทางนี้')}
+        }
+        if(await createOAuth(db,await cmsLoginConfig(db,config),issueSession,config.oauthFetch||fetch)(req,res,url,linkUser))return
+      }
       if(req.method==='POST'&&['/api/auth/otp/request','/api/auth/otp/verify'].includes(path)){
         checkOrigin(req);await rateLimit(req);const data=await body(req)
-        if(path.endsWith('/request')){try{return json(await loginOtp.request(data))}catch(error){if(error.status===503)fail(503,error.message);throw error}}
-        let user;try{user=await loginOtp.verify(data)}catch(error){if(error.status===503)fail(503,error.message);throw error};const issued=await issueSession(req,user)
+        if(path.endsWith('/request')){const bindingUser=data.purpose==='link_identity'?await auth(req,'merchant'):null;try{return json(await loginOtp.request(data,bindingUser))}catch(error){if(error.status===503)fail(503,error.message);throw error}}
+        const challenge=typeof data.challengeId==='string'?await db.prepare('SELECT binding_user_id FROM login_otps WHERE id=?').get(data.challengeId):null
+        const bindingUser=challenge?.binding_user_id?await auth(req,'merchant'):null
+        let user;try{user=await loginOtp.verify(data,bindingUser)}catch(error){if(error.status===503)fail(503,error.message);throw error};const issued=await issueSession(req,user)
         res.setHeader('Set-Cookie',issued.cookie);return json({user:{id:user.id,email:user.email,name:user.name,role:user.role},csrf:issued.csrf})
       }
       if (
@@ -653,6 +658,7 @@ export function createApp(db, config, transport) {
         if (path === "/api/merchant/profile") {
           if (user.role !== "merchant") fail(403, "เฉพาะ Merchant")
           if (req.method === "POST" || req.method === "PATCH") {
+            if(user.email.endsWith('@phone.villacheck.invalid'))fail(409,'กรุณายืนยันอีเมลบัญชี Merchant ก่อนบันทึกข้อมูล')
             const data = await body(req)
             await db.transaction(async () => {
               await db
@@ -689,6 +695,7 @@ export function createApp(db, config, transport) {
             phone: profile.phone,
             address: profile.address,
             email: profile.email,
+            loginPhone:(await db.prepare("SELECT subject FROM oauth_identities WHERE provider='phone_otp' AND user_id=?").get(user.id))?.subject||'',
           })
         }
         const managed = await adminBusiness(

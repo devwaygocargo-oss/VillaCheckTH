@@ -5,6 +5,7 @@ export function safeReturn(value) {
   if (typeof value !== "string" || !value.startsWith("#") || value.length > 500)
     return "#page=user-dashboard"
   const params = new URLSearchParams(value.slice(1))
+  if(['owner-dashboard','owner-information','owner-profile'].includes(params.get('page')))return `#page=${params.get('page')}`
   if (
     params.get("page") !== "verify" ||
     !/^VC-[a-zA-Z0-9-]+$/.test(params.get("item") || "")
@@ -37,12 +38,15 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
     if (!response.ok) throw Error("provider_failed")
     return response.json()
   }
-  return async (req, res, url) => {
+  return async (req, res, url, linkUser=null) => {
     const match = url.pathname.match(
-      /^\/api\/auth\/oauth\/(google|facebook|line)\/(start|callback)$/,
+      /^\/api\/auth\/oauth\/(google|facebook|line)\/(start|callback|link)$/,
     )
-    if (!match || req.method !== "GET") return false
+    if (!match || req.method !== (match[2]==='link'?'POST':'GET')) return false
     const [, provider, action] = match
+    if(action==='link'&&linkUser?.role!=='merchant')throw Object.assign(Error('เฉพาะ Merchant'),{status:403})
+    let returnTo=action==='link'?'#page=owner-profile':safeReturn(url.searchParams.get('returnTo'))
+    const isMerchant=()=>returnTo.startsWith('#page=owner-')
     const enabled = oauthProviders(config)[provider]
     const redirect = (location) => {
       res.writeHead(302, { Location: location })
@@ -50,9 +54,10 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
     }
     const failure = (error) =>
       redirect(
-        `${config.appUrl}/#page=login&oauth_error=${encodeURIComponent(error)}`,
+        `${config.appUrl}/#page=${action==='link'||returnTo==='#page=owner-profile'?'owner-profile':isMerchant()?'owner-auth':'login'}&oauth_error=${encodeURIComponent(error)}`,
       )
     if (!enabled) {
+      if(action==='link')throw Object.assign(Error('ช่องทางนี้ยังไม่พร้อมใช้งาน'),{status:503})
       failure("not_configured")
       return true
     }
@@ -63,7 +68,7 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
       ? config.googleClientSecret
       : config.facebookClientSecret
     const callback = `${config.appUrl}/api/auth/oauth/${provider}/callback`
-    if (action === "start") {
+    if (action === "start" || action==='link') {
       if (req.headers["sec-fetch-site"] === "cross-site") {
         failure("invalid_state")
         return true
@@ -81,12 +86,12 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
           .prepare("DELETE FROM oauth_states WHERE state_hash=?")
           .run(digest(old))
       await db
-        .prepare("INSERT INTO oauth_states VALUES (?,?,?,?,?)")
+        .prepare("INSERT INTO oauth_states(state_hash,provider,verifier,return_to,expires) VALUES (?,?,?,?,?)")
         .run(
           digest(state),
           provider,
           verifier,
-          safeReturn(url.searchParams.get("returnTo")),
+          action==='link'?`${returnTo}&linkAccount=${encodeURIComponent(linkUser.id)}`:returnTo,
           Date.now() + 600000,
         )
       const authUrl = new URL(
@@ -110,7 +115,7 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
       }
       if (line) authUrl.searchParams.set("nonce", verifier)
       res.setHeader("Set-Cookie", stateCookie(state))
-      redirect(authUrl.toString())
+      if(action==='link'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({authorizeUrl:authUrl.toString()}))}else redirect(authUrl.toString())
       return true
     }
     const state = url.searchParams.get("state")
@@ -130,6 +135,8 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
       failure("invalid_state")
       return true
     }
+    returnTo=safeReturn(flow.return_to)
+    const bindingId=new URLSearchParams(flow.return_to.slice(1)).get('linkAccount')
     await db
       .prepare("DELETE FROM oauth_states WHERE state_hash=?")
       .run(digest(state))
@@ -204,6 +211,16 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
         )
         .get(provider, subject)
       let user = linked
+      if(bindingId){
+        if(linkUser?.id!==bindingId||linkUser.role!=='merchant')throw Error('account_type_mismatch')
+        const owner=await db.prepare('SELECT * FROM users WHERE id=?').get(bindingId)
+        if(!owner||owner.role!=='merchant')throw Error('account_type_mismatch')
+        if(linked&&linked.id!==owner.id)throw Error('identity_exists')
+        const emailOwner=typeof profile.email==='string'?await db.prepare('SELECT id FROM users WHERE email=?').get(profile.email.toLowerCase()):null
+        if(emailOwner&&emailOwner.id!==owner.id)throw Error('email_exists')
+        await transaction(db,async()=>{await db.prepare('DELETE FROM oauth_identities WHERE provider=? AND user_id=?').run(provider,owner.id);await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run(provider,subject,owner.id)})
+        user=owner
+      }
       if (!user) {
         if (
           typeof profile.email !== "string" ||
@@ -225,7 +242,7 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
             address,
             randomBytes(48).toString("hex"),
             name || "User",
-            "user",
+            isMerchant()?"merchant":"user",
           )
           await db
             .prepare("INSERT INTO oauth_identities VALUES (?,?,?)")
@@ -233,12 +250,15 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
           return created
         })
       }
+      if(isMerchant()&&user.role!=='merchant')throw Error('account_type_mismatch')
       const sessionCookie = (await issueSession(req, user)).cookie
       res.setHeader("Set-Cookie", [stateCookie("", 0), sessionCookie])
-      redirect(`${config.appUrl}/${safeReturn(flow.return_to)}`)
+      const onboarding=user.role==='merchant'&&(!user.business_name||!user.phone||!user.address||user.email.endsWith('@phone.villacheck.invalid'))
+      const target=user.role==='admin'?'#page=admin-dashboard':user.role==='merchant'?(bindingId?'#page=owner-profile':onboarding?'#page=owner-information':isMerchant()?returnTo:'#page=owner-dashboard'):returnTo
+      redirect(`${config.appUrl}/${target}`)
     } catch (error) {
       failure(
-        ["email_required", "email_exists"].includes(error.message)
+        ["email_required", "email_exists", "identity_exists", "account_type_mismatch"].includes(error.message)
           ? error.message
           : "provider_failed",
       )
