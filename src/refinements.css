@@ -162,6 +162,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .footer-grid button,.footer-grid a { min-width:0; max-width:100%; white-space:normal; overflow-wrap:anywhere; word-break:break-word; text-align:left; }
 .auth-provider-icon { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; flex-shrink:0; }
 .auth-provider-logo { display:block; width:24px; height:24px; }
+.auth-provider-logo[data-provider="google"] { width:20px; height:20px; flex-shrink:0; }
 .social-login > div { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
 .oauth-button { display:flex; align-items:center; justify-content:center; gap:8px; min-width:0; }
 .oauth-button > span:last-child { min-width:0; overflow-wrap:anywhere; }
