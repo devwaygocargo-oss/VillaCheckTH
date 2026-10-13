@@ -206,7 +206,7 @@ const adminNav: [string, Page][] = [
 ];
 const userNav: [string, Page][] = [
   ["Dashboard", "user-dashboard"], ["Checks", "user-checks"], ["Report ของฉัน", "user-reports"],
-  ["Directory", "directory"], ["Check Before Transfer", "user-precheck"],
+  ["Check Before Transfer", "user-precheck"],
 ];
 
 export function PortalShell({ role, page, go, children }: { role: "Merchant" | "Admin" | "User"; page: Page; go: Go; children: React.ReactNode }) {
@@ -320,7 +320,7 @@ function StateGallery() {
 }
 
 export function UserPages({ page, go, reports, selectedReference }: { page: Page; go: Go; reports: UserReport[]; selectedReference?: string }) {
-  if (page === "user-dashboard") return <PortalShell role="User" page={page} go={go}><PortalHead title="User Dashboard" subtitle="ตรวจสอบที่พักก่อนโอนอย่างมั่นใจ" action={<button className="primary-button" onClick={() => go("user-precheck")}>Check Before Transfer</button>} /><div className="metric-grid"><Metric label="Checks" value="3" note="Verified 2" /><Metric label="Reports" value={String(reports.length)} note="กำลังดำเนินการ" /></div><div className="portal-grid"><ActionCard title="Checks" text="ดูประวัติการตรวจสอบ" action="เปิด Checks" onClick={() => go("user-checks")} /><ActionCard title="Report ของฉัน" text="ติดตามรายงานปัญหา" action="เปิด Report" onClick={() => go("user-reports")} /><ActionCard title="Directory" text="ค้นหา Villa ที่ตรวจสอบข้อมูลแล้ว" action="ค้นหา Villa" onClick={() => go("directory")} /></div></PortalShell>;
+  if (page === "user-dashboard") return <PortalShell role="User" page={page} go={go}><PortalHead title="User Dashboard" subtitle="ตรวจสอบที่พักก่อนโอนอย่างมั่นใจ" action={<button className="primary-button" onClick={() => go("user-precheck")}>Check Before Transfer</button>} /><div className="metric-grid"><Metric label="Checks" value="3" note="Verified 2" /><Metric label="Reports" value={String(reports.length)} note="กำลังดำเนินการ" /></div><div className="portal-grid"><ActionCard title="Checks" text="ดูประวัติการตรวจสอบ" action="เปิด Checks" onClick={() => go("user-checks")} /><ActionCard title="Report ของฉัน" text="ติดตามรายงานปัญหา" action="เปิด Report" onClick={() => go("user-reports")} /></div></PortalShell>;
   if (page === "user-checks") return <PortalShell role="User" page={page} go={go}><PortalHead title="Checks" subtitle="ประวัติการตรวจสอบก่อนโอน" /><DataRow title="CHK-2081" detail="Sea Sky Pool Villa · 20 มิ.ย. 2568" status="Verified" action="Check Detail" onClick={() => go("user-check-detail")} /></PortalShell>;
   if (page === "user-check-detail") return <PortalShell role="User" page="user-checks" go={go}><PortalHead title="Check Detail" subtitle="Reference CHK-2081" /><StatePanel status="Verified" title="VillaCheck VERIFIED" /><DetailPanel /><button className="outline-button" onClick={() => go("detail")}>ดู Trust Profile</button></PortalShell>;
   if (page === "user-reports") return <PortalShell role="User" page={page} go={go}><PortalHead title="Report ของฉัน" subtitle="รายงานที่ผูกกับบัญชี User ของคุณ" action={<button className="primary-button" onClick={() => go("villa-report")}>+ แจ้งปัญหา</button>} />{reports.length ? reports.map(report => <DataRow key={report.reference} title={report.reference} detail={`${report.villa} · ${report.type}`} status="Pending" action="Report Detail" onClick={() => go("user-report-detail", report.reference)} />) : <StatePanel status="Pending" title="ยังไม่มี Report" />}</PortalShell>;
