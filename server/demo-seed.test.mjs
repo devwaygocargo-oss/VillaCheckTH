@@ -1,10 +1,11 @@
+import {readFileSync,existsSync} from 'node:fs';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {openTestDatabase} from './test-database.mjs';import{seedDemo}from'./demo-seed.mjs';import{trustDto}from'./catalog.mjs';
 test('dummy seed is idempotent, private documents follow ownership and expired QR stays stable',async()=>{
  const db=await openTestDatabase();try{
   await seedDemo(db,{password:'DemoTestPassword123'});const first=await db.prepare('SELECT id,qr FROM villas ORDER BY id').all();
-  await seedDemo(db,{password:'DemoTestPassword123'});assert.equal(first.length,14);assert.equal((await db.prepare("SELECT count(*) AS n FROM villas WHERE photo_url LIKE '/demo/villas/%'").get()).n,14);assert.deepEqual(await db.prepare('SELECT id,qr FROM villas ORDER BY id').all(),first);
-  assert.equal((await db.prepare("SELECT count(*) AS n FROM villas WHERE status='approved'").get()).n,10);
+  await seedDemo(db,{password:'DemoTestPassword123'});assert.equal(first.length,16);assert.equal((await db.prepare("SELECT count(*) AS n FROM villas WHERE photo_url LIKE '/demo/villas/%'").get()).n,16);assert.deepEqual(await db.prepare('SELECT id,qr FROM villas ORDER BY id').all(),first);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM villas WHERE status='approved'").get()).n,12);
   const owners=await db.prepare('SELECT owner_id,count(*) AS n FROM villas GROUP BY owner_id').all();assert.ok(owners.every(x=>x.n<=10));
   const expired=await db.prepare("SELECT * FROM villas WHERE name='Expired Demo Villa'").get();assert.equal((await trustDto(db,expired)).qrStatus,'EXPIRED');
   assert.equal((await db.prepare('SELECT owner_id FROM documents WHERE id=?').get(expired.document_id)).owner_id,expired.owner_id);
@@ -38,3 +39,15 @@ test('dummy relationships agree across owners, documents, reports and check outc
   assert.equal((await db.prepare("SELECT count(*) AS n FROM mails").get()).n,0)
  }finally{await db.close()}
 })
+
+ test('all ten provinces displayed on the website have active linked dummy Villas and existing photos',async()=>{
+ const db=await openTestDatabase();try{
+  await seedDemo(db,{password:'DemoTestPassword123'})
+  const source=readFileSync('src/ProvinceExplorer.tsx','utf8'),provinces=JSON.parse(source.match(/popularProvinces = (\[[^;]+\]);/)[1]);assert.equal(provinces.length,10)
+  const villas=await db.prepare('SELECT * FROM villas').all(),active=[]
+  for(const villa of villas){assert.ok(existsSync('public'+villa.photo_url));if((await trustDto(db,villa)).qrStatus==='ACTIVE')active.push(villa)}
+  for(const province of provinces)assert.ok(active.some(v=>v.province===province),'Missing active dummy Villa in '+province)
+  const regional=await db.prepare("SELECT u.id,s.expires FROM users u JOIN subscriptions s ON s.owner_id=u.id WHERE u.email='demo-regional@villacheck.example'").get()
+  for(const name of ['Bangkok Garden Demo Villa','Samui Island Demo Villa']){const villa=villas.find(v=>v.name===name);assert.equal(villa.owner_id,regional.id);assert.equal(villa.expires,regional.expires)}
+ }finally{await db.close()}
+ })
