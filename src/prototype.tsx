@@ -213,7 +213,7 @@ const ownerNav: [string, Page][] = [
   ["QR และการต่ออายุ", "owner-villa-detail"], ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["Package", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
 ];
 const adminNav: [string, Page][] = [
-  ["CMS เว็บไซต์", "admin-cms"], ["Villa รออนุมัติ", "admin-pending-villas"], ["Villa ที่อนุมัติแล้ว", "admin-approved-villas"], ["Dashboard", "admin-dashboard"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
+  ["CMS เว็บไซต์", "admin-cms"], ["Dashboard", "admin-dashboard"], ["Villa รออนุมัติ", "admin-pending-villas"], ["Villa ที่อนุมัติแล้ว", "admin-approved-villas"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
   ["Checks", "admin-checks"], ["Reports", "admin-reports"], ["QR", "admin-qr"], ["Packages", "admin-packages"], ["Payments", "admin-payments"], ["บัญชีรับเงิน", "admin-receiving-bank"], ["Subscriptions", "admin-subscriptions"], ["Leads", "admin-leads"], ["Settings", "admin-settings"],
 ];
 const userNav: [string, Page][] = [
