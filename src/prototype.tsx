@@ -12,7 +12,7 @@ import { openSupport } from "./support";
 import { useEffect, useState } from "react";
 
 export type Page =
-  | "admin-login" | "admin-cms" | "cms-page" | "user-registration" | "admin-users"
+  | "admin-pending-villas" | "admin-login" | "admin-cms" | "cms-page" | "user-registration" | "admin-users"
   | "home" | "directory" | "detail" | "scan" | "verify" | "pricing" | "login"
   | "about" | "verification-standard" | "articles" | "article-detail" | "owner-guide"
   | "help" | "contact" | "privacy" | "terms" | "social-facebook" | "social-instagram"
@@ -213,7 +213,7 @@ const ownerNav: [string, Page][] = [
   ["QR และการต่ออายุ", "owner-villa-detail"], ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["Package", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
 ];
 const adminNav: [string, Page][] = [
-  ["CMS เว็บไซต์", "admin-cms"], ["Dashboard", "admin-dashboard"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
+  ["CMS เว็บไซต์", "admin-cms"], ["Villa รออนุมัติ", "admin-pending-villas"], ["Dashboard", "admin-dashboard"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
   ["Checks", "admin-checks"], ["Reports", "admin-reports"], ["QR", "admin-qr"], ["Packages", "admin-packages"], ["Documents", "admin-review"], ["Payments", "admin-payments"], ["Subscriptions", "admin-subscriptions"], ["Leads", "admin-leads"], ["Settings", "admin-settings"],
 ];
 const userNav: [string, Page][] = [

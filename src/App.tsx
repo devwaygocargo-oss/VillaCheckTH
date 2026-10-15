@@ -1,3 +1,4 @@
+import AdminPendingVillas from "./AdminPendingVillas";
 import AdminLogin from "./AdminLogin";
 import AdminAccess from "./AdminAccess";
 import AdminCms from "./AdminCms";
@@ -688,6 +689,7 @@ function AppContent() {
     page === "villa-report" ? <PublicReportPage onSubmit={submitReport} reference={selectedItem} /> :
     page === "villa-report-success" ? <PublicReportSuccess go={go} reference={selectedItem||reportReference} linkedToUser={userLoggedIn} /> :
     page === "user-registration" ? <UserRegistration go={go} reference={selectedItem} /> :
+    page === "admin-pending-villas" ? <AdminPendingVillas go={go}/> :
     page === "admin-cms" ? <AdminCms go={go} renderHome={<Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/>}/> :
     ["admin-packages","admin-leads","admin-settings","admin-subscriptions"].includes(page) ? <AdminBusiness page={page} go={go} /> :
     page === "admin-users" ? <AdminUsers go={go} /> :

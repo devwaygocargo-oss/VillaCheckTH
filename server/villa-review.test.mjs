@@ -1,0 +1,54 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {openTestDatabase} from './test-database.mjs'
+import {seedDemo} from './demo-seed.mjs'
+import {createApp} from './app.mjs'
+import {hashPassword} from './database.mjs'
+
+test('Villa approval requests retain actual changes, documents, permissions and stale review protection',async t=>{
+ const db=await openTestDatabase();await seedDemo(db,{password:'DummyPassword1234',adminEmail:'review-admin@example.test',adminPassword:'DummyPassword1234'})
+ const origin='http://localhost:8443',app=createApp(db,{appUrl:origin,allowedOrigins:[origin],fakeHash:hashPassword('dummy-placeholder'),serverless:true},null)
+ await new Promise(r=>app.listen(0,'127.0.0.1',r));t.after(async()=>{await new Promise(r=>app.close(r));await db.close()})
+ const base=`http://127.0.0.1:${app.address().port}/api`
+ const request=async(path,data,session)=>{const r=await fetch(base+path,{method:data===undefined?'GET':'POST',headers:{Origin:origin,'Content-Type':'application/json',...(session?{Cookie:session.cookie,'X-CSRF-Token':session.csrf}:{})},body:data===undefined?undefined:JSON.stringify(data)});return {status:r.status,value:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]}}
+ const login=async email=>{const r=await request('/auth/login',{email,password:'DummyPassword1234'});assert.equal(r.status,200);return {cookie:r.cookie,csrf:r.value.csrf}}
+ const admin=await login('review-admin@example.test'),merchant=await login('demo-merchant@villacheck.example')
+ const villa=await db.prepare("SELECT * FROM villas WHERE name='Sea Sky Demo Villa'").get()
+ const edit={name:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photoUrl:villa.photo_url,guestCapacity:20}
+ const state=async()=>(await request('/state',undefined,admin)).value.villas.find(v=>v.id===villa.id)
+ let submission
+ await t.test('capacity update records before and after, and Admin sees full contact/bank data',async()=>{
+  assert.equal((await request('/merchant/villas/'+villa.id,edit,merchant)).status,200)
+  const v=await state();submission=v.reviewRequest.id;assert.equal(v.status,'pending');assert.equal(v.qr,villa.qr);assert.match(v.reviewRequest.summary,/จำนวนผู้เข้าพัก/)
+  assert.deepEqual(v.reviewRequest.changes.find(c=>c.field==='guest_capacity'),{field:'guest_capacity',label:'จำนวนผู้เข้าพักสูงสุด',before:String(villa.guest_capacity),after:'20'})
+  assert.equal(v.phone,villa.phone);assert.equal(v.accountNumber,villa.account_number)
+ })
+ await t.test('successive pending edits compare against original submission baseline',async()=>{
+  await request('/merchant/villas/'+villa.id,{...edit,guestCapacity:22},merchant)
+  const v=await state();assert.equal(v.reviewRequest.changes.find(c=>c.field==='guest_capacity').before,String(villa.guest_capacity));assert.equal(v.reviewRequest.changes.find(c=>c.field==='guest_capacity').after,'22')
+ })
+ await t.test('stale approval cannot approve changed data',async()=>{
+  const r=await request('/villas/'+villa.id+'/review',{status:'approved',verificationLevel:'VERIFIED',expectedReviewId:submission},admin);assert.equal(r.status,409);assert.equal((await state()).status,'pending')
+ })
+ await t.test('current approval succeeds, preserves QR and rejects duplicate review',async()=>{
+  const v=await state(),input={status:'approved',verificationLevel:'VERIFIED',expectedReviewId:v.reviewRequest.id};assert.equal((await request('/villas/'+villa.id+'/review',input,merchant)).status,403);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,200);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,409);assert.equal((await state()).qr,villa.qr)
+ })
+ await t.test('Admin QR view is unlocked while guest data stays masked',async()=>{
+  const full=(await request('/public/qr/'+villa.qr,undefined,admin)).value;assert.equal(full.locked,false);assert.equal(full.accountNumber,villa.account_number);assert.equal(full.phone,villa.phone)
+  const guest=(await request('/public/qr/'+villa.qr)).value;assert.equal(guest.locked,true);assert.equal(guest.accountNumber,undefined)
+ })
+ await t.test('explicit document resubmission records real document filename changes',async()=>{
+  await request('/merchant/villas/'+villa.id,edit,merchant);await request('/villas/'+villa.id+'/review',{status:'changes',reason:'Dummy test: ownership proof needs replacement'},admin)
+  assert.equal((await request('/villas/'+villa.id+'/resubmit',{document:{name:'DUMMY-replacement.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from('%PDF-1.4 Dummy test ownership').toString('base64')}},merchant)).status,200)
+  const v=await state();assert.equal(v.reviewRequest.kind,'document_resubmission');assert.equal(v.reviewRequest.changes.find(c=>c.field==='document').after,'DUMMY-replacement.pdf')
+ })
+ await t.test('attached document preview and dummy example require correct permissions',async()=>{
+  const v=await state();const doc=await fetch(base.replace('/api','')+v.document.data+'?preview=1',{headers:{Cookie:admin.cookie}});assert.equal(doc.status,200);assert.match(doc.headers.get('content-disposition'),/^inline/)
+  assert.equal((await fetch(base+'/admin/review-sample-document')).status,401);assert.equal((await fetch(base+'/admin/review-sample-document',{headers:{Cookie:merchant.cookie}})).status,403)
+  const sample=await fetch(base+'/admin/review-sample-document',{headers:{Cookie:admin.cookie}});assert.equal(sample.status,200);assert.equal(sample.headers.get('content-type'),'application/pdf');assert.match(await sample.text(),/dummy document - NOT legal evidence/i)
+ })
+ await t.test('legacy modified records disclose missing history without invented changes',async()=>{
+  await db.prepare('DELETE FROM system_settings WHERE key=?').run('villa_review:'+villa.id);await db.prepare("UPDATE villas SET reason='Information changed; pending Admin review' WHERE id=?").run(villa.id)
+  const v=await state();assert.equal(v.reviewRequest.kind,'legacy_update');assert.deepEqual(v.reviewRequest.changes,[]);assert.equal(v.reviewRequest.submittedAt,null)
+ })
+})

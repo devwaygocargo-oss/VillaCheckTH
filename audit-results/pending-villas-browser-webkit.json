@@ -1,0 +1,53 @@
+{
+  "checkedAt": "2026-10-15T06:37:15.926Z",
+  "engine": "webkit",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "Dedicated Admin login enters CMS directly with no social or signup buttons",
+      "passed": true
+    },
+    {
+      "name": "Guest CMS redirects to dedicated login and public logins do not link to Admin",
+      "passed": true
+    },
+    {
+      "name": "Merchant credentials cannot enter CMS via Admin login",
+      "passed": true
+    },
+    {
+      "name": "Edits survive background refresh and save persists with original QR",
+      "passed": true
+    },
+    {
+      "name": "API save error stays visible at submit and retains entered values",
+      "passed": true
+    },
+    {
+      "name": "Photo upload and retry resubmit successfully without duplicate clicks",
+      "passed": true
+    },
+    {
+      "name": "Saving another field retains the newly uploaded photo without reloading",
+      "passed": true
+    },
+    {
+      "name": "Dedicated approval page shows actual changes, full Admin data, documents and approve controls",
+      "passed": true
+    },
+    {
+      "name": "Admin logout returns to dedicated login and remains protected on reload",
+      "passed": true
+    },
+    {
+      "name": "Admin login and CMS approval notice fit mobile, tablet and desktop widths",
+      "passed": true
+    }
+  ],
+  "layout": [],
+  "errors": [],
+  "pass": 10,
+  "fail": 0
+}

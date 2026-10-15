@@ -1,3 +1,4 @@
+import {recordVillaReview} from './villa-review.mjs'
 import {saveVillaPhoto} from './villa-photo.mjs'
 import {guestCapacity} from './guest-capacity.mjs'
 import { randomUUID } from 'node:crypto'
@@ -39,7 +40,15 @@ export async function operations(db,user,req,path,url,readBody){
   const values=['name','province','merchant','phone','bankName','accountName','accountNumber'].map(k=>clean(data[k]||'',k,200,['name','province','merchant'].includes(k)))
   const photo=clean(data.photoUrl||'','photo',2000,false)
   if(photo&&!/^\/api\/public\/villa-photo\/[a-f0-9-]+$/.test(photo)&&!/^https:\/\//.test(photo)&&!/^\/demo\/villas\/villa-\d+\.jpg$/.test(photo))error(400,'Photo must be HTTPS')
-  await db.transaction(async()=>{const storedPhoto=data.photo?await saveVillaPhoto(db,user.id,data.photo):photo;await db.prepare("UPDATE villas SET name=?,province=?,merchant=?,phone=?,bank_name=?,account_name=?,account_number=?,photo_url=?,guest_capacity=?,status='pending',verification_level='REGISTERED',reason='Information changed; pending Admin review' WHERE id=?").run(...values,storedPhoto,capacity,villa.id);await audit(db,user,'villa.update',villa.id)})
+  await db.transaction(async()=>{
+   const latest=await db.prepare('SELECT * FROM villas WHERE id=? AND owner_id=?').get(villa.id,user.id)
+   if(!latest)error(404,'ไม่พบ Villa')
+   const storedPhoto=data.photo?await saveVillaPhoto(db,user.id,data.photo):photo
+   const savedCapacity=data.guestCapacity===undefined?latest.guest_capacity:capacity
+   await recordVillaReview(db,latest,{...latest,...Object.fromEntries(['name','province','merchant','phone','bank_name','account_name','account_number'].map((key,i)=>[key,values[i]])),guest_capacity:savedCapacity,photo_url:storedPhoto},'information_update',user)
+   await db.prepare("UPDATE villas SET name=?,province=?,merchant=?,phone=?,bank_name=?,account_name=?,account_number=?,photo_url=?,guest_capacity=?,status='pending',verification_level='REGISTERED',reason='Information changed; pending Admin review' WHERE id=?").run(...values,storedPhoto,savedCapacity,villa.id)
+   await audit(db,user,'villa.update',villa.id)
+  })
   return {ok:true}
  }
  if(path==='/api/user/checks'&&req.method==='POST'){

@@ -19,8 +19,7 @@ export default function AdminApprovalNotice({go}:{go:(page:Page,item?:string)=>v
     <strong role="status">Villa รออนุมัติ {pending.length} รายการ</strong>
     {error&&<p role="alert">{error}</p>}
     {pending.length>0&&<><p>มีรายการใหม่หรือแก้ไขข้อมูลที่ต้องตรวจสอบก่อนอนุมัติ</p>
-      <div className="button-row">{pending.slice(0,5).map(v=><button key={v.id} type="button" className="outline-button" onClick={()=>go("admin-review",v.id)}>ตรวจสอบ {v.name}</button>)}</div>
-      <button className="text-button" type="button" onClick={()=>go("admin-villas")}>ดูรายการ Villa ทั้งหมด</button>
+      <button className="primary-button" type="button" onClick={()=>go("admin-pending-villas")}>เปิดหน้ารายการ Villa รออนุมัติ</button>
     </>}
   </section>;
 }

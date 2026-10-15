@@ -1,3 +1,5 @@
+import {villaReview,recordVillaReview} from './villa-review.mjs'
+import {dummyPdf} from './demo-seed.mjs'
 import { cmsLoginConfig } from "./cms-business.mjs"
 import {createLoginOtp,otpChannels,probeSmsCredit} from './login-otp.mjs'
 import { guestCapacity } from './guest-capacity.mjs'
@@ -285,6 +287,7 @@ export function createApp(db, config, transport) {
       name: v.name,
       photoUrl: v.photo_url,
       guestCapacity: v.guest_capacity,
+      reviewRequest: await villaReview(db,v),
       province: v.province,
       merchant: v.merchant,
       email: v.email,
@@ -607,7 +610,7 @@ export function createApp(db, config, transport) {
         } catch (error) {
           if (error.status !== 401) throw error
         }
-        const unlocked = viewer?.role === "user"
+        const unlocked = viewer?.role === "user" || viewer?.role === "admin"
         return json({
           name: v.name,
           photoUrl: v.photo_url,
@@ -652,6 +655,11 @@ export function createApp(db, config, transport) {
           const sms=await db.prepare("SELECT value FROM system_settings WHERE key='otp_delivery_sms'").get()
           const verification=await db.prepare("SELECT value FROM system_settings WHERE key='otp_verification_email'").get();
           return json({emailVerification:verification?JSON.parse(verification.value):null,channels:otpChannels(await cmsLoginConfig(db,config),transport),email:email?JSON.parse(email.value):null,sms:sms?JSON.parse(sms.value):null,...(url.searchParams.get('probe')==='sms'?{smsProvider:await probeSmsCredit(config)}:{})})
+        }
+        if(path==='/api/admin/review-sample-document'&&req.method==='GET'){
+          if(user.role!=='admin')fail(403,'เฉพาะ Admin');
+          res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':'inline; filename="DUMMY-ownership-sample.pdf"','Cache-Control':'private, no-store'});
+          return res.end(dummyPdf());
         }
         const operation=await operations(db,user,req,path,url,body)
         if(operation!==undefined)return json(operation)
@@ -828,7 +836,7 @@ export function createApp(db, config, transport) {
             fail(404, "ไม่พบเอกสาร")
           res.writeHead(200, {
             "Content-Type": file.mime,
-            "Content-Disposition": `attachment; filename="document"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+            "Content-Disposition": `${user.role === "admin" && url.searchParams.get("preview") === "1" ? "inline" : "attachment"}; filename="document"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
             "Content-Security-Policy": "default-src 'none'; sandbox",
           })
           return res.end(Buffer.from(file.bytes))
@@ -963,6 +971,8 @@ export function createApp(db, config, transport) {
             if (action === "review") {
               if (user.role !== "admin") fail(403, "เฉพาะ Admin")
               if (villa.status !== "pending") fail(409, "Villa นี้ถูกตรวจสอบแล้ว")
+              if(Object.hasOwn(data,'expectedReviewId')&&(await villaReview(db,villa)).id!==data.expectedReviewId)
+                fail(409,'ข้อมูล Villa เปลี่ยนหลังจากเปิดตรวจ กรุณาโหลดรายการล่าสุดก่อนอนุมัติ')
               if (!["approved", "changes", "rejected"].includes(data.status))
                 fail(400, "สถานะไม่ถูกต้อง")
               const reason =
@@ -1010,6 +1020,7 @@ export function createApp(db, config, transport) {
                 fail(409, "ยังไม่สามารถส่งเอกสารใหม่ได้")
               const file = document(data.document)
               const docId = await insertDocument(db, user.id, file)
+              await recordVillaReview(db,villa,{...villa,document_id:docId},"document_resubmission",user)
               await db
                 .prepare(
                   "UPDATE villas SET document_id=?,status='pending',reason='' WHERE id=?",

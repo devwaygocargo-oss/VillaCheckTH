@@ -19,7 +19,9 @@ export type Invoice = {
   paidAt: string | null
   proof: Document | null
 }
+export type VillaReviewRequest = {id:string|null;kind:string;submittedAt:string|null;submittedBy:string|null;summary:string;changes:{field:string;label:string;before:string;after:string}[]}
 export type MerchantVilla = {
+  reviewRequest?: VillaReviewRequest
   id: string
   name: string
   photoUrl: string
