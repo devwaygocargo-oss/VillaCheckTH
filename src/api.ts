@@ -28,6 +28,9 @@ export async function api<T>(path: string, data?: unknown): Promise<T> {
     .catch(() => ({ error: "เชื่อมต่อ Backend ไม่สำเร็จ" }))
   if (!response.ok)
     throw new ApiError(response.status, value.error || "ดำเนินการไม่สำเร็จ")
+  if (data !== undefined && (path.startsWith("/auth/") || path.startsWith("/otp/"))) {
+    window.dispatchEvent(new Event("auth-session-changed"))
+  }
   return value as T
 }
 export async function currentAccount() {

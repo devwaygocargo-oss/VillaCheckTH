@@ -9,7 +9,8 @@ import PremiumBanner from "./PremiumBanner";
 import MerchantProfile from "./MerchantProfile";
 import AdminBusiness from "./AdminBusiness";
 import { usePackages, billingLabel, billingValidityLabel, selectedPlanKey, packageIntentKey } from "./packagePlans";
-import { api, currentAccount } from "./api";
+import type { Account } from "./merchantStore";
+import { api, ApiError, currentAccount } from "./api";
 import VillaMap from "./VillaMap";
 import ProvinceExplorer, { popularProvinces } from "./ProvinceExplorer";
 import { UserRegistration, AdminUsers, MemberDashboard } from "./UserAccounts";
@@ -105,7 +106,10 @@ function Badge({ pending = false, children = "ตรวจสอบข้อม�
   return <span className={`badge ${pending ? "badge-pending" : ""}`}><span className="badge-icon"><Icon name={pending ? "clock" : "check"} size={12} /></span>{children}</span>;
 }
 
-function Header({ page, go }: { page: Page; go: (page: Page) => void }) {
+const accountHome = (account: Account): Page => account.role === "admin" ? "admin-dashboard" : account.role === "merchant" ? "owner-dashboard" : "user-dashboard";
+const accountLabel = (account: Account) => `บัญชี ${account.role === "admin" ? "Admin" : account.role === "merchant" ? "Merchant" : "User"}`;
+
+function Header({ page, go, account }: { page: Page; go: (page: Page) => void; account: Account | null }) {
   const {navigation}=useCms();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useEffect(() => { setMobileMenuOpen(false); }, [page]);
@@ -128,9 +132,9 @@ function Header({ page, go }: { page: Page; go: (page: Page) => void }) {
     <div className="container nav">
       <button className="logo-button" onClick={() => navigate("home")}><Logo /></button>
       <nav id="public-menu" className={mobileMenuOpen ? "mobile-open" : ""}>
-        {navigation.filter(n=>n.visible).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{window.location.hash=n.href;}}}>{n.label}</button>)}
+        {navigation.filter(n=>n.visible).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
       </nav>
-      <div className="nav-actions"><button className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
+      <div className="nav-actions">{account && <button className="outline-button nav-account-button" onClick={() => navigate(accountHome(account))}>{accountLabel(account)}</button>}<button className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
     </div>
   </header>;
 }
@@ -621,7 +625,7 @@ function Pricing({ onSelect, go }: { onSelect: (name: string) => void; go: (page
   </main>;
 }
 
-function Footer({ go }: { go: (p: Page, item?: string) => void }) {
+function Footer({ go, account }: { go: (p: Page, item?: string) => void; account: Account | null }) {
   const {site,pages}=useCms();
   return <footer className="public-footer">
     <div className="container footer-grid">
@@ -630,9 +634,9 @@ function Footer({ go }: { go: (p: Page, item?: string) => void }) {
         <p>{site.description}</p>
         <div className="footer-social"><button aria-label="Facebook" onClick={() => go("social-facebook")}><Icon name="facebook" size={16} /></button><button aria-label="Instagram" onClick={() => go("social-instagram")}><Icon name="instagram" size={16} /></button><button aria-label="LINE Official" onClick={() => go("social-line")}><Icon name="message" size={16} /></button></div>
       </div>
-      <div><strong>เกี่ยวกับ VillaCheck</strong><button onClick={() => go("about")}>เกี่ยวกับเรา</button><button onClick={() => go("verification-standard")}>มาตรฐานการตรวจสอบ</button><button onClick={() => go("articles")}>บทความและข่าวสาร</button><button onClick={() => go("login")}>เข้าสู่ระบบ</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
+      <div><strong>เกี่ยวกับ VillaCheck</strong><button onClick={() => go("about")}>เกี่ยวกับเรา</button><button onClick={() => go("verification-standard")}>มาตรฐานการตรวจสอบ</button><button onClick={() => go("articles")}>บทความและข่าวสาร</button><button onClick={() => go(account ? accountHome(account) : "login")}>{account ? accountLabel(account) : "เข้าสู่ระบบ"}</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
       <div><strong>สำหรับผู้ใช้งาน</strong><button onClick={() => go("directory")}>ค้นหาที่พัก</button><button onClick={() => go("scan")}>ตรวจสอบ QR</button><button onClick={() => go("user-precheck")}>ตรวจสอบก่อนโอน</button><button onClick={() => go("villa-report")}>แจ้งปัญหา</button></div>
-      <div><strong>สำหรับเจ้าของที่พัก</strong><button onClick={() => go("pricing")}>แพ็กเกจ</button><button onClick={() => go("owner-guide")}>สำหรับเจ้าของที่พัก</button><button onClick={() => go("owner-auth")}>ลงทะเบียนที่พัก</button><button onClick={() => go("login")}>เข้าสู่ระบบ</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
+      <div><strong>สำหรับเจ้าของที่พัก</strong><button onClick={() => go("pricing")}>แพ็กเกจ</button><button onClick={() => go("owner-guide")}>สำหรับเจ้าของที่พัก</button><button onClick={() => go("owner-auth")}>ลงทะเบียนที่พัก</button><button onClick={() => go(account ? accountHome(account) : "login")}>{account ? accountLabel(account) : "เข้าสู่ระบบ"}</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
       <div className="footer-support"><strong>ช่วยเหลือและติดต่อ</strong><button onClick={() => go("help")}>Help / Support</button><button onClick={() => go("contact")}>Contact</button><button onClick={() => openSupport("email")}><Icon name="mail" size={14} />อีเมลทีมงาน</button><button onClick={() => openSupport("phone")}><Icon name="phone" size={14} />โทรทีมงาน</button><small>{site.hours}</small></div>
     </div>
     <div className="container footer-bottom"><span>© {new Date().getFullYear()} VillaCheck. สงวนลิขสิทธิ์</span><div><button onClick={() => go("privacy")}>นโยบายความเป็นส่วนตัว</button><button onClick={() => go("terms")}>ข้อกำหนดและเงื่อนไข</button></div><span>Trust before transfer.</span></div>
@@ -645,12 +649,27 @@ function AppContent() {
   const [selectedPackage, setSelectedPackage] = useState(() => sessionStorage.getItem(selectedPlanKey) || "Trust Starter");
   const [directorySearch, setDirectorySearch] = useState({ query: "", province: "" });
   const [qrReference, setQrReference] = useState("");
-  const [ownerLoggedIn, setOwnerLoggedIn] = useState(false);
+  const [account, setAccount] = useState<Account | null>(null);
+  useEffect(() => {
+    let active = true;
+    let request = 0;
+    const refresh = () => {
+      const version = ++request;
+      void currentAccount().then(value => { if (active && version === request) setAccount(value); }).catch(error => {
+        if (active && version === request && error instanceof ApiError && error.status === 401) setAccount(null);
+      });
+    };
+    refresh();
+    window.addEventListener("app-navigation", refresh);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("auth-session-changed", refresh);
+    return () => { active = false; window.removeEventListener("app-navigation", refresh); window.removeEventListener("focus", refresh); window.removeEventListener("auth-session-changed", refresh); };
+  }, []);
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [reportReference, setReportReference] = useState("");
 
 
-  const go = (next: Page, item?: string) => { if (next === "login") { setOwnerLoggedIn(false); setUserLoggedIn(false); } navigate(next, item); };
+  const go = (next: Page, item?: string) => { navigate(next, item); };
   const search = (query: string, province: string) => {
     setDirectorySearch({ query, province });
     go("directory");
@@ -695,8 +714,8 @@ function AppContent() {
     ["admin-packages","admin-leads","admin-settings","admin-subscriptions"].includes(page) ? <AdminBusiness page={page} go={go} /> :
     page === "admin-users" ? <AdminUsers go={go} /> :
     ["admin-owners","admin-checks","admin-reports","admin-qr","owner-analytics","owner-reports"].includes(page) || page.startsWith("user-") ? <OperationsPortal page={page} go={go} item={selectedItem} /> :
-    page === "login" ? <LoginPage reference={selectedItem} go={go} onAuthenticated={role => { if (role === "Merchant") setOwnerLoggedIn(true); if (role === "User") setUserLoggedIn(true); }} /> :
-    page === "owner-auth" ? <OwnerPackageAuth go={go} packageName={selectedPackage} onOwnerLogin={() => setOwnerLoggedIn(true)} /> :
+    page === "login" ? <LoginPage reference={selectedItem} go={go} onAuthenticated={role => setUserLoggedIn(role === "User")} /> :
+    page === "owner-auth" ? <OwnerPackageAuth go={go} packageName={selectedPackage} onOwnerLogin={() => {}} /> :
     page === "owner-information" || page === "owner-profile" ? <MerchantProfile page={page} go={go} /> :
     page === "owner-registration" ? <OwnerRegistration go={go} packageName={selectedPackage} /> :
     page === "owner-onboarding-villa" ? <Backoffice page={page} go={go} initialPackage={selectedPackage} initialItem={selectedItem} /> :
@@ -708,7 +727,7 @@ function AppContent() {
     <UserPages page={page} go={go} reports={[]} selectedReference={selectedItem} />;
   const isStandalone = page === "scan" || page === "verify" || page === "login" || page === "owner-auth" || page === "owner-registration" || page === "owner-information" || page === "owner-onboarding-villa" || page === "owner-select-villa" || page === "package-confirmation" || page === "package-request-pending" || isOwnerPage || isAdminPage || isUserPage;
   const showPublicFooter = ["home", "directory", "detail", "pricing", "scan", "verify", "villa-report", "villa-report-success"].includes(page) || isPublicInfoPage;
-  return <div className="app" style={{"--cms-accent":site.accent} as React.CSSProperties}>{!isStandalone && <Header page={page} go={go} />}{!isAdminPage&&!isOwnerPage&&!isUserPage&&<DemoNotice/>}{isAdminPage&&page!=="admin-login"?<AdminAccess go={go}>{content}</AdminAccess>:content}{showPublicFooter && <Footer go={go} />}</div>;
+  return <div className="app" style={{"--cms-accent":site.accent} as React.CSSProperties}>{!isStandalone && <Header page={page} go={go} account={account} />}{!isAdminPage&&!isOwnerPage&&!isUserPage&&<DemoNotice/>}{isAdminPage&&page!=="admin-login"?<AdminAccess go={go}>{content}</AdminAccess>:content}{showPublicFooter && <Footer go={go} account={account} />}</div>;
 }
 
 export default function App() { return <CmsProvider><AppContent/></CmsProvider>; }
