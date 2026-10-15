@@ -1,3 +1,4 @@
+import { drainBankNotifications } from "./bank-receiving.mjs"
 import {demoMode} from "./demo-payment.mjs"
 import { qrSvg, paymentQrDto } from "./payment-qr.mjs"
 export function createMailWorker(db, config, transport) {
@@ -10,6 +11,7 @@ export function createMailWorker(db, config, transport) {
     return active
   }
   async function drain() {
+    await drainBankNotifications(db,config,transport)
     const demo=await demoMode(db,config)
     if(!transport && !demo)return
     // Delivery leases allow retry after an interrupted function invocation.

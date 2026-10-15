@@ -1,3 +1,4 @@
+import { receivingBank, bankInstructions } from "./payment-account.mjs"
 import { randomUUID } from "node:crypto"
 import { cmsDefaults } from "./cms-defaults.mjs"
 import { audit } from "./database.mjs"
@@ -253,6 +254,7 @@ function mediaReferences(content) {
   ].filter((x) => x.startsWith("/api/public/cms-media/"))
 }
 export async function cmsPaymentInstructions(db, fallback = "") {
+  const bank=await receivingBank(db);if(bank)return bankInstructions(bank)
   return (await publishedCms(db)).content.site.paymentInstructions || fallback
 }
 export async function adminCms(db, user, req, path, readBody) {

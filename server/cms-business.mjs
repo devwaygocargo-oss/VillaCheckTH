@@ -1,3 +1,4 @@
+import { receivingBank, bankInstructions } from "./payment-account.mjs"
 import { cmsDefaults } from "./cms-defaults.mjs"
 export async function cmsBusiness(db) {
   const row=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
@@ -10,6 +11,7 @@ export function paymentTemplate(value, fields) {
   return value.replace(/\{\{(merchant|package|villa)\}\}/g,(_,key)=>fields[key])
 }
 export async function cmsPaymentSnapshot(db, fallback="") {
+  const bank=await receivingBank(db);if(bank)return bankInstructions(bank)
   const row=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
   return (row?JSON.parse(row.value).content.site.paymentInstructions:"") || fallback || "กรุณาติดต่อทีมงานเพื่อรับข้อมูลบัญชีชำระเงิน"
 }

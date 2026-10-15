@@ -1,3 +1,4 @@
+import AdminReceivingBank from "./AdminReceivingBank";
 import AdminApprovedVillas from "./AdminApprovedVillas";
 import AdminPendingVillas from "./AdminPendingVillas";
 import AdminLogin from "./AdminLogin";
@@ -710,6 +711,7 @@ function AppContent() {
     page === "villa-report" ? <PublicReportPage onSubmit={submitReport} reference={selectedItem} /> :
     page === "villa-report-success" ? <PublicReportSuccess go={go} reference={selectedItem||reportReference} linkedToUser={userLoggedIn} /> :
     page === "user-registration" ? <UserRegistration go={go} reference={selectedItem} /> :
+    page === "admin-receiving-bank" ? <AdminReceivingBank go={go}/> :
     page === "admin-approved-villas" ? <AdminApprovedVillas go={go}/> :
     page === "admin-pending-villas" ? <AdminPendingVillas go={go}/> :
     page === "admin-cms" ? <AdminCms go={go} renderHome={<Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/>}/> :

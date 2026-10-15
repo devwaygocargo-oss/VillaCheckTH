@@ -1,3 +1,5 @@
+import { receivingBank } from "./payment-account.mjs"
+import { adminReceivingBank } from "./bank-receiving.mjs"
 import {villaReview,recordVillaReview} from './villa-review.mjs'
 import {dummyPdf} from './demo-seed.mjs'
 import { cmsLoginConfig } from "./cms-business.mjs"
@@ -358,7 +360,7 @@ export function createApp(db, config, transport) {
       },
       subscription: await subscriptionDto(db, user.id),
       demoMode:await demoMode(db,config),
-      paymentBankQrImage: await demoMode(db,config) ? "" : (await publishedCms(db)).content.site.paymentQrImage || "",
+      paymentBankQrImage: await demoMode(db,config) ? "" : ((await receivingBank(db))?.qrImage || (await publishedCms(db)).content.site.paymentQrImage || ""),
       paymentInstructions:
         (await demoMode(db,config) ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : await cmsPaymentInstructions(db, config.paymentInstructions)) ||
         "ยังไม่ได้ตั้งค่าบัญชีรับชำระ กรุณาติดต่อทีมงานก่อนโอนเงิน",
@@ -654,6 +656,15 @@ export function createApp(db, config, transport) {
           if(user.role!=='admin')fail(403,'เฉพาะ Admin')
           return json(await readiness(db,config,transport))
         }
+        const bankImage=path.match(/^\/api\/receiving-bank\/qr\/([a-f0-9-]{36})$/)
+        if(bankImage&&req.method==="GET"){
+          if(!["admin","merchant"].includes(user.role))fail(403,"เฉพาะ Admin และ Merchant")
+          const image=await db.prepare("SELECT mime,bytes FROM documents WHERE id=? AND name LIKE 'receiving-bank-qr:%'").get(bankImage[1])
+          if(!image)fail(404,"ไม่พบ QR รับเงิน")
+          res.writeHead(200,{"Content-Type":image.mime,"Cache-Control":"private, no-store","Content-Disposition":url.searchParams.get("download")==="1"?'attachment; filename="villacheck-bank-qr.png"':"inline"});return res.end(Buffer.from(image.bytes))
+        }
+        const bankResult=await adminReceivingBank(db,user,req,path,body,config,transport)
+        if(bankResult!==undefined){json(bankResult);if(req.method==="POST")void worker.run();return}
         const cms = await adminCms(db, user, req, path, body)
         if (cms !== undefined) return json(cms)
         if(req.method==='GET'&&path==='/api/admin/otp/status'){

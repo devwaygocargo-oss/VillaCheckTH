@@ -1116,12 +1116,10 @@ export default function AdminCms({
                   ["facebook", "Facebook URL"],
                   ["instagram", "Instagram URL"],
                   ["line", "LINE URL"],
-                  ["paymentInstructions", "ข้อมูลบัญชีและคำแนะนำรับชำระ"],
                 ] as const).map(([key, label]) => (
                   <Field
                     key={key}
                     label={label}
-                    multiline={key === "paymentInstructions"}
                     value={content.site[key]}
                     onChange={(value) =>
                       change({
@@ -1131,12 +1129,11 @@ export default function AdminCms({
                     }
                   />
                 ))}
-                <ImageField label="QR บัญชีธนาคารสำหรับโอนเงิน" value={content.site.paymentQrImage || ""} media={media} onChange={paymentQrImage => change({...content, site:{...content.site, paymentQrImage}})}/>
-                <p>อัปโหลด QR ธนาคารในคลังรูปภาพ แล้วเลือกภาพนี้ ระบุธนาคาร ชื่อบัญชี และเลขบัญชีในข้อมูลรับชำระ บันทึกฉบับร่างและเผยแพร่จึงมีผลกับ Merchant ใบแจ้งชำระเดิมคงบัญชีและ QR เดิม</p>
+                <h3>บัญชีและ QR รับเงิน</h3>
+                <p>จัดการบัญชี สร้าง QR พร้อมเพย์คงที่ และส่งอีเมลให้ Merchant ได้ที่หน้าบัญชีรับเงิน ข้อมูลที่บันทึกในหน้านั้นใช้กับใบแจ้งชำระใหม่ โดยใบเดิมคงข้อมูลเดิม</p>
+                <button className="outline-button" onClick={()=>go("admin-receiving-bank")}>จัดการบัญชีรับเงิน</button>
                 <p>
-                  ช่องว่างของช่องทางติดต่อและข้อมูลรับชำระใช้ค่าที่ตั้งไว้เดิม
-                  การเปลี่ยนบัญชีรับชำระมีผลหลังเผยแพร่ ตรวจชื่อบัญชีและเลขบัญชีก่อนเผยแพร่ทุกครั้ง
-                  ระบบตรวจสลิปยังใช้คนตรวจตาม Flow
+                  ช่องว่างของช่องทางติดต่อใช้ค่าที่ตั้งไว้เดิม ระบบตรวจสลิปยังใช้คนตรวจตาม Flow
                 </p>
               </>
             )}

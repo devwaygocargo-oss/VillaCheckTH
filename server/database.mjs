@@ -1,3 +1,4 @@
+import { receivingBank } from "./payment-account.mjs"
 import { cmsBusiness, monthlyValidity, cmsPaymentSnapshot } from "./cms-business.mjs"
 import { DatabaseSync } from "node:sqlite"
 import { wrapSqlite } from "./database-adapter.mjs"
@@ -229,7 +230,7 @@ export async function createInvoice(db, villa, appUrl, paymentInstructions="") {
   const created = new Date().toISOString()
   const instructions=await cmsPaymentSnapshot(db,paymentInstructions)
   const release=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
-  const bankQrImage=release?JSON.parse(release.value).content.site.paymentQrImage || "":""
+  const bankQrImage=(await receivingBank(db))?.qrImage || (release?JSON.parse(release.value).content.site.paymentQrImage || "":"")
   // Snapshot the published validity rule on each new invoice; existing invoices retain their terms.
   await db
     .prepare(

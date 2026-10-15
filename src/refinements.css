@@ -1,4 +1,14 @@
 /* Design 1 remains the visual foundation; restrained Design 3 evidence details. */
+.receiving-bank-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.receiving-bank-grid > *, .receiving-bank-recipients { min-width: 0; }
+.receiving-bank-preview img { display: block; width: 256px; max-width: 100%; height: auto; margin: 16px 0; }
+.receiving-bank-recipients { border: 1px solid var(--line); border-radius: 12px; padding: 14px; max-height: 360px; overflow-y: auto; }
+.portal-form .receiving-bank-choice { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; padding: 8px 0; }
+.portal-form .receiving-bank-choice input { width: 20px; min-width: 20px; height: 20px; min-height: 20px; margin-top: 3px; }
+.receiving-bank-choice span, .receiving-bank-mail p { overflow-wrap: anywhere; }
+.receiving-bank-choice small { display: block; }
+.receiving-bank-mail { padding: 16px 0; border-top: 1px solid var(--line); }
+@media (max-width: 900px) { .receiving-bank-grid { grid-template-columns: minmax(0, 1fr); } }
 .nav-account-button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 12px; white-space: nowrap; }
 .nav-account-button .nav-session-status { font-size: 10px; font-weight: 500; line-height: 1.4; color: #08755b; }
 .nav-account-button strong { font-size: 12px; line-height: 1.4; }
