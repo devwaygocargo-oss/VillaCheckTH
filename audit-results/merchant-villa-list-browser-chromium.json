@@ -1,0 +1,46 @@
+{
+  "checkedAt": "2026-10-15T08:06:41.999Z",
+  "engine": "chromium",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "Merchant list shows all owned Villas with explicit approval states and no QR",
+      "passed": true
+    },
+    {
+      "name": "QR appears only after opening the selected Villa details",
+      "passed": true
+    },
+    {
+      "name": "Filters work and returning to Villa list resets to all statuses",
+      "passed": true
+    },
+    {
+      "name": "List remains scoped to Merchant and fits phone and tablet widths",
+      "passed": true
+    }
+  ],
+  "layout": [
+    {
+      "width": 320,
+      "scroll": 320
+    },
+    {
+      "width": 390,
+      "scroll": 390
+    },
+    {
+      "width": 768,
+      "scroll": 768
+    },
+    {
+      "width": 1024,
+      "scroll": 1024
+    }
+  ],
+  "errors": [],
+  "pass": 4,
+  "fail": 0
+}

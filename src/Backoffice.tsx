@@ -23,6 +23,7 @@ function status(v: MerchantVilla) {
   if (!v.qr) return "อนุมัติแล้ว · รอชำระเงิน"
   return new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
 }
+const approvalStatus = (value: MerchantVilla["status"]) => ({pending:"รออนุมัติ",approved:"อนุมัติแล้ว",changes:"ต้องแก้ไข",rejected:"ไม่อนุมัติ"})[value];
 export function VillaQr({ villa, admin = false }: { villa: MerchantVilla; admin?: boolean }) {
   const url = `${window.location.origin}/#page=verify&item=${encodeURIComponent(villa.qr)}`
   const qrRef = useRef<HTMLDivElement>(null)
@@ -99,6 +100,7 @@ export default function Backoffice({
   })
   useEffect(() => {
     setMessage("")
+    if(page === "owner-villas"){setFilter("all");setSearch("");}
   }, [page])
   useEffect(() => {
     setLoading(true)
@@ -427,6 +429,7 @@ export default function Backoffice({
       ) : (
         <>
           {!billing && !editing && !detailPage && <>
+          {page === "owner-villas" && <p role="status">Villa ของคุณทั้งหมด {store.villas.length} รายการ · แสดง {list.length} รายการ</p>}
           <div className="merchant-toolbar">
             <input
               aria-label="ค้นหา Villa หรือ Merchant"
@@ -483,16 +486,16 @@ export default function Backoffice({
                   </div>
                   {v.premiumBanner&&<span className="merchant-status">Premium Verified</span>}
                   <span className={`merchant-status ${v.status}`}>
-                    {status(v)}
+                    {admin ? status(v) : approvalStatus(v.status)}
                   </span>
                 </div>
                 <div className="merchant-villa-meta">
                   <span>
                     แพ็กเกจ<strong>{v.package}</strong>
                   </span>
-                  <span>
+                  {admin ? <span>
                     QR Reference<strong>{v.qr || "เปิดใช้หลังชำระเงิน"}</strong>
-                  </span>
+                  </span> : <span>จำนวนผู้เข้าพักสูงสุด<strong>{v.guestCapacity == null ? "ไม่ได้ระบุ" : `${v.guestCapacity} คน`}</strong></span>}
                   <span>
                     วันหมดอายุ<strong>{date(v.expires)}</strong>
                   </span>
@@ -505,11 +508,11 @@ export default function Backoffice({
                     className="outline-button"
                     onClick={() => showDetails(v)}
                   >
-                    {admin ? "ตรวจเอกสาร / รายละเอียด" : "ดูเอกสารและ QR"}
+                    {admin ? "ตรวจเอกสาร / รายละเอียด" : "ดูรายละเอียด Villa"}
                   </button>
                   {!admin&&<button className="primary-button" onClick={()=>showDetails(v,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}
                 </div>
-                {v.qr && <VillaQr villa={v} admin={admin} />}
+                {admin && v.qr && <VillaQr villa={v} admin={admin} />}
                 {admin && v.status === "approved" &&
                   v.invoices.map((invoice) => (
                     <PaymentPanel
