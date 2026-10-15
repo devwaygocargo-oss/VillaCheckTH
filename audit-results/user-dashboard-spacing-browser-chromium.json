@@ -1,0 +1,91 @@
+{
+  "checkedAt": "2026-10-15T09:10:42.967Z",
+  "engine": "chromium",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "Dashboard greets the authenticated User by name and retains working menu links",
+      "passed": true
+    },
+    {
+      "name": "User navigation and action buttons have wider gaps without overflowing phone or tablet widths",
+      "passed": true
+    },
+    {
+      "name": "A User without a display name is greeted using the email username",
+      "passed": true
+    }
+  ],
+  "layout": [
+    {
+      "width": 320,
+      "scroll": 320,
+      "actionGap": 16,
+      "menuGap": 14,
+      "buttonHeights": [
+        52,
+        52,
+        52,
+        52
+      ],
+      "columns": 1
+    },
+    {
+      "width": 390,
+      "scroll": 390,
+      "actionGap": 16,
+      "menuGap": 14,
+      "buttonHeights": [
+        52,
+        52,
+        52,
+        52
+      ],
+      "columns": 1
+    },
+    {
+      "width": 768,
+      "scroll": 768,
+      "actionGap": 24,
+      "menuGap": 14,
+      "buttonHeights": [
+        52,
+        52,
+        52,
+        52
+      ],
+      "columns": 2
+    },
+    {
+      "width": 1024,
+      "scroll": 1024,
+      "actionGap": 24,
+      "menuGap": 14,
+      "buttonHeights": [
+        52,
+        52,
+        52,
+        52
+      ],
+      "columns": 2
+    },
+    {
+      "width": 1440,
+      "scroll": 1440,
+      "actionGap": 24,
+      "menuGap": 14,
+      "buttonHeights": [
+        52,
+        52,
+        52,
+        52
+      ],
+      "columns": 2
+    }
+  ],
+  "errors": [],
+  "pass": 3,
+  "fail": 0
+}
