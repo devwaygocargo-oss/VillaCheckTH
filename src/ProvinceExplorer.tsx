@@ -45,7 +45,7 @@ export default function ProvinceExplorer({ onSearch }: { onSearch: (query: strin
               aria-label={`ดู Villa ในจังหวัด${province}`}
             >
               <i aria-hidden="true" />
-              <span>{province === "นครราชสีมา" ? "เขาใหญ่" : province}<small>ดู Villa ในจังหวัด →</small></span>
+              <span>{province}<small>ดู Villa ในจังหวัด →</small></span>
             </button>
           ))}
           <div className="map-index"><span>POPULAR DESTINATIONS</span><span>10 จังหวัด · คลิกเพื่อดู Villa</span></div>
