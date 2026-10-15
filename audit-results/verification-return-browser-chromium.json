@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-10-15T07:20:44.798Z",
+  "engine": "chromium",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "User verification return preserves login and opens its own dashboard",
+      "passed": true
+    },
+    {
+      "name": "Merchant verification return preserves login and opens its own dashboard",
+      "passed": true
+    },
+    {
+      "name": "Admin verification return preserves login and opens its own dashboard",
+      "passed": true
+    },
+    {
+      "name": "Guest verification return opens public homepage",
+      "passed": true
+    },
+    {
+      "name": "Invalid QR still returns logged-in Merchant to its dashboard",
+      "passed": true
+    },
+    {
+      "name": "Session expired while viewing QR returns to public homepage safely",
+      "passed": true
+    },
+    {
+      "name": "Session lookup failure retains the QR page and allows retry without signing out",
+      "passed": true
+    }
+  ],
+  "layout": [],
+  "errors": [],
+  "pass": 7,
+  "fail": 0
+}

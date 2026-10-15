@@ -776,6 +776,18 @@ export function MerchantVerification({
     }
   }, [reference,adminView])
   const isAdmin = adminView || villa?.viewerRole === "admin";
+  const [returning,setReturning]=useState(false);
+  const backToAccount=async()=>{
+    if(returning)return;
+    setReturning(true);
+    try{
+      const account=await currentAccount();
+      go(account.role==="admin"?"admin-dashboard":account.role==="merchant"?"owner-dashboard":"user-dashboard");
+    }catch(error){
+      if(error instanceof ApiError&&error.status===401)go("home");
+      else setError(error instanceof Error?error.message:"กลับหน้าบัญชีไม่สำเร็จ กรุณาลองใหม่");
+    }finally{setReturning(false);}
+  };
   return (
     <main className="page-bg">
       <div className="container merchant-verification merchant-panel">
@@ -810,8 +822,8 @@ export function MerchantVerification({
           </>
         )}
         <p>QR Reference: {reference}</p>
-        <button className="outline-button" onClick={() => go(isAdmin?"admin-qr":"home")}>
-          {isAdmin?"กลับทะเบียน QR":"กลับหน้าหลัก"}
+        <button className="outline-button" disabled={returning} onClick={()=>void backToAccount()}>
+          {returning?"กำลังกลับหน้าบัญชี…":isAdmin?"กลับหน้าหลัก Admin":villa?.viewerRole==="merchant"?"กลับหน้าหลัก Merchant":villa?.viewerRole==="user"?"กลับหน้าหลัก User":"กลับหน้าหลัก"}
         </button>
       </div>
     </main>
