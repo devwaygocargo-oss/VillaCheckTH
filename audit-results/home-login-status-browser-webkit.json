@@ -1,0 +1,131 @@
+{
+  "checkedAt": "2026-10-15T08:01:05.482Z",
+  "engine": "webkit",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "User homepage, reload, new tab and logout preserve correct session",
+      "passed": true
+    },
+    {
+      "name": "Merchant homepage, reload, new tab and logout preserve correct session",
+      "passed": true
+    },
+    {
+      "name": "Admin homepage, reload, new tab and logout preserve correct session",
+      "passed": true
+    }
+  ],
+  "layout": [
+    {
+      "role": "User",
+      "width": 320,
+      "scroll": 320,
+      "bottom": 67,
+      "status": 31.296875
+    },
+    {
+      "role": "User",
+      "width": 390,
+      "scroll": 390,
+      "bottom": 67,
+      "status": 30.59375
+    },
+    {
+      "role": "User",
+      "width": 768,
+      "scroll": 768,
+      "bottom": 82,
+      "status": 38.09375
+    },
+    {
+      "role": "User",
+      "width": 1024,
+      "scroll": 1024,
+      "bottom": 82,
+      "status": 38.09375
+    },
+    {
+      "role": "User",
+      "width": 1440,
+      "scroll": 1440,
+      "bottom": 83,
+      "status": 38.59375
+    },
+    {
+      "role": "Merchant",
+      "width": 320,
+      "scroll": 320,
+      "bottom": 67,
+      "status": 31.296875
+    },
+    {
+      "role": "Merchant",
+      "width": 390,
+      "scroll": 390,
+      "bottom": 67,
+      "status": 30.59375
+    },
+    {
+      "role": "Merchant",
+      "width": 768,
+      "scroll": 768,
+      "bottom": 82,
+      "status": 38.09375
+    },
+    {
+      "role": "Merchant",
+      "width": 1024,
+      "scroll": 1024,
+      "bottom": 82,
+      "status": 38.09375
+    },
+    {
+      "role": "Merchant",
+      "width": 1440,
+      "scroll": 1440,
+      "bottom": 83,
+      "status": 38.59375
+    },
+    {
+      "role": "Admin",
+      "width": 320,
+      "scroll": 320,
+      "bottom": 67,
+      "status": 31.296875
+    },
+    {
+      "role": "Admin",
+      "width": 390,
+      "scroll": 390,
+      "bottom": 67,
+      "status": 30.59375
+    },
+    {
+      "role": "Admin",
+      "width": 768,
+      "scroll": 768,
+      "bottom": 82,
+      "status": 38.09375
+    },
+    {
+      "role": "Admin",
+      "width": 1024,
+      "scroll": 1024,
+      "bottom": 82,
+      "status": 38.09375
+    },
+    {
+      "role": "Admin",
+      "width": 1440,
+      "scroll": 1440,
+      "bottom": 83,
+      "status": 38.59375
+    }
+  ],
+  "errors": [],
+  "pass": 3,
+  "fail": 0
+}

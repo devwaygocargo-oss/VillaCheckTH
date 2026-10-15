@@ -1,4 +1,13 @@
 /* Design 1 remains the visual foundation; restrained Design 3 evidence details. */
+.nav-account-button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 12px; white-space: nowrap; }
+.nav-account-button .nav-session-status { font-size: 10px; font-weight: 500; line-height: 1.4; color: #08755b; }
+.nav-account-button strong { font-size: 12px; line-height: 1.4; }
+@media (max-width: 360px) {
+ .header .nav { gap: 4px; flex-wrap: nowrap; }
+ .header .nav-actions { gap: 4px; }
+ .nav-account-button { padding: 6px; }
+ .nav-account-button strong { font-size: 11px; }
+}
 .verification-ledger { margin: 24px 0; border: 1px solid var(--line); border-radius: 14px; padding: 22px; background: white; }
 .ledger-heading h2 { margin: 5px 0; font-size: 20px; color: var(--ocean); }
 .ledger-heading p { margin: 0 0 16px; color: var(--muted); font-size: 12px; }
