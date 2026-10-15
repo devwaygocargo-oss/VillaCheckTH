@@ -1,3 +1,5 @@
+import AdminLogin from "./AdminLogin";
+import AdminAccess from "./AdminAccess";
 import AdminCms from "./AdminCms";
 import DemoNotice from "./DemoNotice";
 import { CmsProvider, CmsBlocks, CmsHomeLayout, useCms } from "./cms";
@@ -675,6 +677,7 @@ function AppContent() {
   const isAdminPage = page.startsWith("admin-");
   const isUserPage = page.startsWith("user-");
   const content =
+    page === "admin-login" ? <AdminLogin go={go}/> :
     page === "home" ? <Home go={go} onSearch={search} onSelect={selectPackage} /> :
     page === "directory" ? <Directory go={go} initialQuery={directorySearch.query} initialProvince={directorySearch.province} /> :
     page === "detail" ? <MerchantVerification go={go} reference={selectedItem || qrReference} /> :
@@ -702,7 +705,7 @@ function AppContent() {
     <UserPages page={page} go={go} reports={[]} selectedReference={selectedItem} />;
   const isStandalone = page === "scan" || page === "verify" || page === "login" || page === "owner-auth" || page === "owner-registration" || page === "owner-information" || page === "owner-onboarding-villa" || page === "owner-select-villa" || page === "package-confirmation" || page === "package-request-pending" || isOwnerPage || isAdminPage || isUserPage;
   const showPublicFooter = ["home", "directory", "detail", "pricing", "scan", "verify", "villa-report", "villa-report-success"].includes(page) || isPublicInfoPage;
-  return <div className="app" style={{"--cms-accent":site.accent} as React.CSSProperties}>{!isStandalone && <Header page={page} go={go} />}{!isAdminPage&&!isOwnerPage&&!isUserPage&&<DemoNotice/>}{content}{showPublicFooter && <Footer go={go} />}</div>;
+  return <div className="app" style={{"--cms-accent":site.accent} as React.CSSProperties}>{!isStandalone && <Header page={page} go={go} />}{!isAdminPage&&!isOwnerPage&&!isUserPage&&<DemoNotice/>}{isAdminPage&&page!=="admin-login"?<AdminAccess go={go}>{content}</AdminAccess>:content}{showPublicFooter && <Footer go={go} />}</div>;
 }
 
 export default function App() { return <CmsProvider><AppContent/></CmsProvider>; }

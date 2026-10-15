@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-const pages = new Set(["admin-cms", "cms-page", "user-registration", "admin-users", "admin-leads", "admin-settings", "admin-payments", "admin-subscriptions", "home", "directory", "detail", "scan", "verify", "pricing", "login", "about", "verification-standard", "articles", "article-detail", "owner-guide", "help", "contact", "privacy", "terms", "social-facebook", "social-instagram", "social-line", "gallery", "owner-auth", "owner-registration", "owner-information", "owner-onboarding-villa", "package-confirmation", "owner-select-villa", "package-request-pending", "owner-profile", "owner-dashboard", "owner-villas", "owner-villa-detail", "owner-villa-edit", "owner-add-villa", "owner-preview", "owner-pending", "owner-analytics", "owner-reports", "owner-package", "user-dashboard", "user-checks", "user-check-detail", "user-reports", "user-report-detail", "user-precheck", "user-check-success", "villa-report", "villa-report-success", "admin-dashboard", "admin-review", "admin-owners", "admin-villas", "admin-checks", "admin-reports", "admin-qr", "admin-packages"]);
+const pages = new Set(["admin-login","admin-cms", "cms-page", "user-registration", "admin-users", "admin-leads", "admin-settings", "admin-payments", "admin-subscriptions", "home", "directory", "detail", "scan", "verify", "pricing", "login", "about", "verification-standard", "articles", "article-detail", "owner-guide", "help", "contact", "privacy", "terms", "social-facebook", "social-instagram", "social-line", "gallery", "owner-auth", "owner-registration", "owner-information", "owner-onboarding-villa", "package-confirmation", "owner-select-villa", "package-request-pending", "owner-profile", "owner-dashboard", "owner-villas", "owner-villa-detail", "owner-villa-edit", "owner-add-villa", "owner-preview", "owner-pending", "owner-analytics", "owner-reports", "owner-package", "user-dashboard", "user-checks", "user-check-detail", "user-reports", "user-report-detail", "user-precheck", "user-check-success", "villa-report", "villa-report-success", "admin-dashboard", "admin-review", "admin-owners", "admin-villas", "admin-checks", "admin-reports", "admin-qr", "admin-packages"]);
 function readLocation() {
   const params = new URLSearchParams(window.location.hash.slice(1));
-  const page = params.get("page") || "home";
+  const page = params.get("page") || (window.location.pathname === "/admin/login" ? "admin-login" : window.location.pathname === "/admin" ? "admin-cms" : "home");
   return { page: pages.has(page) ? page : "home", item: params.get("item") || "" };
 }
 export function usePageNavigation<T extends string>() {
@@ -17,8 +17,8 @@ export function usePageNavigation<T extends string>() {
     if (!pages.has(page)) return;
     const params = new URLSearchParams({ page });
     if (item) params.set("item", item);
-    const hash = `#${params}`;
-    if (window.location.hash !== hash) window.history.pushState(null, "", hash);
+    const hash = page === "admin-login" ? "/admin/login" : page.startsWith("admin-") ? `/admin#${params}` : `/${window.location.pathname === "/" ? window.location.search : ""}#${params}`;
+    if (window.location.pathname + window.location.hash !== hash) window.history.pushState(null, "", hash);
     setLocation({ page, item });
     window.dispatchEvent(new Event("app-navigation"));
     window.scrollTo({ top: 0, behavior: "smooth" });

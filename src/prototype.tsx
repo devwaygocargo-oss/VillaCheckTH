@@ -1,3 +1,4 @@
+import AdminApprovalNotice from "./AdminApprovalNotice";
 import { CmsPublicPage } from "./cms";
 import OtpLogin from "./OtpLogin";
 import {oauthErrors} from "./authMessages";
@@ -11,7 +12,7 @@ import { openSupport } from "./support";
 import { useEffect, useState } from "react";
 
 export type Page =
-  | "admin-cms" | "cms-page" | "user-registration" | "admin-users"
+  | "admin-login" | "admin-cms" | "cms-page" | "user-registration" | "admin-users"
   | "home" | "directory" | "detail" | "scan" | "verify" | "pricing" | "login"
   | "about" | "verification-standard" | "articles" | "article-detail" | "owner-guide"
   | "help" | "contact" | "privacy" | "terms" | "social-facebook" | "social-instagram"
@@ -95,14 +96,15 @@ export function LoginPage({ go, onAuthenticated, reference = "", accountType="us
   const [localAccounts, setLocalAccounts] = useState(false);
   useEffect(() => { void api<{ localAccounts: boolean }>("/config").then(v => setLocalAccounts(v.localAccounts)).catch(() => {}); }, []);
   const authenticated=async(account:Account)=>{
+    if(account.role==="admin"){await logout();setError("กรุณาเข้าสู่ระบบผ่านหน้าสำหรับผู้ดูแลระบบ");return;}
     if(accountType==="merchant"&&account.role!=="merchant"){setError(oauthErrors.account_type_mismatch);return;}
-    const role=account.role==="merchant"?"Merchant":account.role==="admin"?"Admin":"User";
+    const role=account.role==="merchant"?"Merchant":"User";
     onAuthenticated?.(role);
     if(role==="Merchant"){
       if(accountType!=="merchant"){go(sessionStorage.getItem(packageIntentKey)?"owner-information":"owner-dashboard");return;}
       const profile=await api<{businessName:string;phone:string;address:string;email:string}>("/merchant/profile");
       go(sessionStorage.getItem(packageIntentKey)||!profile.businessName||!profile.phone||!profile.address||profile.email.endsWith("@phone.villacheck.invalid")?"owner-information":"owner-dashboard");
-    }else go(role==="Admin"?"admin-dashboard":reference?"verify":"user-dashboard",role==="User"?reference:undefined);
+    }else go(reference?"verify":"user-dashboard",reference||undefined);
   };
   const login = async () => {
     if (loading) return;
@@ -132,10 +134,10 @@ export function LoginPage({ go, onAuthenticated, reference = "", accountType="us
       <div className="login-divider"><span>หรือ</span></div>
       <SocialLogin reference={reference} variant="stacked" accountType={accountType}/>
       {!passwordMode&&<button className="login-password-choice" onClick={()=>{setPasswordMode(true);setError("")}}>ดำเนินการต่อด้วยอีเมลและรหัสผ่าน</button>}
-      <div className="login-bottom">{accountType==="merchant"?<><button className="login-create" onClick={()=>go("owner-registration")}>สมัคร Merchant ใหม่</button><button className="login-merchant" onClick={()=>go("login")}>เข้าสู่ระบบ User / Admin</button></>:<><button className="login-create" onClick={()=>go("user-registration",reference)}>สร้างบัญชี User</button><button className="login-merchant" onClick={()=>go("owner-auth")}>เข้าสู่ระบบ Merchant</button><button className="login-merchant" onClick={()=>go("owner-registration")}>สมัครบัญชี Merchant</button></>}<p>เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ<button onClick={()=>go("terms")}>เงื่อนไขการใช้บริการ</button>และได้อ่าน<button onClick={()=>go("privacy")}>นโยบายความเป็นส่วนตัว</button>ของ VillaCheck แล้ว</p></div>
+      <div className="login-bottom">{accountType==="merchant"?<><button className="login-create" onClick={()=>go("owner-registration")}>สมัคร Merchant ใหม่</button><button className="login-merchant" onClick={()=>go("login")}>เข้าสู่ระบบ User</button></>:<><button className="login-create" onClick={()=>go("user-registration",reference)}>สร้างบัญชี User</button><button className="login-merchant" onClick={()=>go("owner-auth")}>เข้าสู่ระบบ Merchant</button><button className="login-merchant" onClick={()=>go("owner-registration")}>สมัครบัญชี Merchant</button></>}<p>เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ<button onClick={()=>go("terms")}>เงื่อนไขการใช้บริการ</button>และได้อ่าน<button onClick={()=>go("privacy")}>นโยบายความเป็นส่วนตัว</button>ของ VillaCheck แล้ว</p></div>
       {localAccounts && <div className="test-accounts">
         <strong>บัญชีทดสอบบนเซิร์ฟเวอร์ Local</strong>
-        {testAccounts.map(account => <button key={account.role === "Merchant" ? "Merchant" : account.role} onClick={() => { setEmail(account.email); setPassword(account.password); setError(""); }}>
+        {testAccounts.filter(account=>account.role!=="Admin").map(account => <button key={account.role === "Merchant" ? "Merchant" : account.role} onClick={() => { setEmail(account.email); setPassword(account.password); setError(""); }}>
           <span>{account.role === "Merchant" ? "Merchant" : account.role}</span><small>{account.email}<br />{account.password}</small>
         </button>)}
       </div>}
@@ -224,8 +226,8 @@ export function PortalShell({ role, page, go, children }: { role: "Merchant" | "
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutError, setLogoutError] = useState("");
   const signOut = async () => {
-    try { await logout(); navigate("login"); }
-    catch (error) { if (error instanceof ApiError && error.status === 401) navigate("login"); else setLogoutError(error instanceof Error ? error.message : "ออกจากระบบไม่สำเร็จ"); }
+    try { await logout(); navigate(role === "Admin" ? "admin-login" : "login"); }
+    catch (error) { if (error instanceof ApiError && error.status === 401) navigate(role === "Admin" ? "admin-login" : "login"); else setLogoutError(error instanceof Error ? error.message : "ออกจากระบบไม่สำเร็จ"); }
   };
   const navigate = (target: Page) => { setMenuOpen(false); go(target); };
   useEffect(() => { setMenuOpen(false); }, [page]);
@@ -244,7 +246,7 @@ export function PortalShell({ role, page, go, children }: { role: "Merchant" | "
       <nav id="portal-menu" aria-label={`เมนู ${role === "Merchant" ? "Merchant" : role}`}>{nav.map(([label, target]) => <button key={`${target}:${label}`} aria-current={page === target ? "page" : undefined} className={page === target ? "active" : ""} onClick={() => navigate(target)}>{label}</button>)}</nav>
       <button className="portal-logout" onClick={() => void signOut()}>ออกจากระบบ</button>{logoutError && <p role="alert">{logoutError}</p>}
     </aside>
-    <section className="portal-content">{children}</section>
+    <section className="portal-content">{role==="Admin"&&<AdminApprovalNotice go={go}/>}{children}</section>
   </main>;
 }
 

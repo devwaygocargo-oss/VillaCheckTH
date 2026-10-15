@@ -16,7 +16,7 @@ const date = (value: string) =>
       })
     : "ยังไม่เปิดใช้งาน"
 function status(v: MerchantVilla) {
-  if (v.status === "pending") return "รอ Admin ตรวจสอบ"
+  if (v.status === "pending") return "รออนุมัติจาก Admin"
   if (v.status === "changes") return "ต้องแก้ไขเอกสาร"
   if (v.status === "rejected") return "ไม่ผ่านการอนุมัติ"
   if (["SUSPENDED","INACTIVE"].includes(v.qrStatus))return "QR ถูกระงับหรือปิดใช้งาน"
@@ -24,7 +24,7 @@ function status(v: MerchantVilla) {
   return new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
 }
 export function VillaQr({ villa }: { villa: MerchantVilla }) {
-  const url = `${window.location.origin}${window.location.pathname}#page=verify&item=${encodeURIComponent(villa.qr)}`
+  const url = `${window.location.origin}/#page=verify&item=${encodeURIComponent(villa.qr)}`
   const qrRef = useRef<HTMLDivElement>(null)
   const [downloadUrl, setDownloadUrl] = useState("")
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function Backoffice({
         if (!cancelled && !busyRef.current) setStore(next)
       } catch (error) {
         if (!cancelled) {
-          if (error instanceof ApiError && error.status === 401) go("login")
+          if (error instanceof ApiError && error.status === 401) go(admin ? "admin-login" : "owner-auth")
           else
             setMessage(
               error instanceof Error ? error.message : "โหลดข้อมูลไม่สำเร็จ",
@@ -159,7 +159,7 @@ export default function Backoffice({
       setMessage(success)
       return next
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) go("login")
+      if (error instanceof ApiError && error.status === 401) go(admin ? "admin-login" : "owner-auth")
       setMessage(error instanceof Error ? error.message : "ดำเนินการไม่สำเร็จ")
       return null
     } finally {
@@ -540,7 +540,7 @@ export default function Backoffice({
                   try{
                     await api(`/merchant/villas/${active.id}`,{...form,photo});
                     setPhoto(null);
-                    setMessage("บันทึกสำเร็จและส่งให้ Admin ตรวจสอบใหม่แล้ว โดยคง QR เดิม");
+                    setMessage("บันทึกสำเร็จ · รออนุมัติจาก Admin โดยคง QR เดิม");
                     try{
                       const next=await api<Store>("/state");
                       setStore(next);
@@ -549,10 +549,10 @@ export default function Backoffice({
                     }
                     catch{setMessage("บันทึกและส่งตรวจใหม่สำเร็จแล้ว แต่โหลดสถานะล่าสุดไม่สำเร็จ กรุณารีเฟรชหน้า");}
                   }catch(error){
-                    if(error instanceof ApiError && error.status===401)go("login");
+                    if(error instanceof ApiError && error.status===401)go(admin ? "admin-login" : "owner-auth");
                     setMessage(error instanceof Error?error.message:"บันทึกไม่สำเร็จ กรุณาลองใหม่");
                   }finally{busyRef.current=false;setBusy(false);}
-                }}><h2>แก้ไขข้อมูล Villa</h2><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{k}<input required={["name","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
+                }}><h2>แก้ไขข้อมูล Villa</h2><p role="status" className="merchant-status">สถานะ: {status(active)}</p><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{k}<input required={["name","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
                 {!editing&&active.photoUrl&&<img src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/>}
                 <h2>เอกสารกรรมสิทธิ์ · {active.name}</h2>
                 <p>{active.document.name}</p>
