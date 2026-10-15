@@ -4,11 +4,11 @@ import { PortalShell, type Page } from "./prototype";
 
 type Fields={bankName:string;accountName:string;accountNumber:string;promptpayType:"phone"|"taxId";promptpayId:string;instructions:string};
 type Bank=Fields&{revision:number;qrImage:string;generatedAt:string;updatedAt:string};
-type Notification={id:string;recipient:string;merchantName:string;subject:string;status:string;created:string;sentAt:string|null;error:string;attempts:number;bankRevision:number};
-type Snapshot={bank:Bank|null;merchants:{id:string;name:string;business_name:string;email:string}[];notifications:Notification[];demoMode:boolean;smtpConfigured:boolean};
+type Notification={id:string;recipient:string;merchantName:string;subject:string;status:string;created:string;sentAt:string|null;error:string;attempts:number;bankRevision:number;invoiceId?:string;amount?:number;packageName?:string};
+type Snapshot={bank:Bank|null;merchants:{id:string;name:string;business_name:string;email:string;invoiceId:string;amount:number;packageName:string}[];notifications:Notification[];demoMode:boolean;smtpConfigured:boolean};
 const blank:Fields={bankName:"",accountName:"",accountNumber:"",promptpayType:"phone",promptpayId:"",instructions:""};
 const fields=(bank:Bank|null):Fields=>bank?{bankName:bank.bankName,accountName:bank.accountName,accountNumber:bank.accountNumber,promptpayType:bank.promptpayType,promptpayId:bank.promptpayId,instructions:bank.instructions}:{...blank};
-const label:Record<string,string>={demo:"DEMO · ไม่ส่งอีเมลจริง",queued:"รอส่ง",sending:"กำลังส่ง",sent:"ส่งแล้ว",failed:"ส่งไม่สำเร็จ"};
+const label:Record<string,string>={demo:"DEMO · ไม่ส่งอีเมลจริง",queued:"รอส่ง",sending:"กำลังส่ง",sent:"ส่งแล้ว",failed:"ส่งไม่สำเร็จ",cancelled:"ยกเลิกส่ง · รายการไม่ได้รอชำระแล้ว"};
 export default function AdminReceivingBank({go}:{go:(page:Page)=>void}) {
   const [data,setData]=useState<Snapshot|null>(null),[form,setForm]=useState<Fields>(blank),[revision,setRevision]=useState(0);
   const [confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState("");
@@ -26,7 +26,7 @@ export default function AdminReceivingBank({go}:{go:(page:Page)=>void}) {
   const visible=(data?.merchants||[]).filter(m=>`${m.name} ${m.business_name} ${m.email}`.toLowerCase().includes(search.toLowerCase()));
   const act=async(work:()=>Promise<void>)=>{if(working.current)return;working.current=true;setBusy(true);setError("");setMessage("");try{await work();}catch(e){setError(e instanceof Error?e.message:"ดำเนินการไม่สำเร็จ");}finally{working.current=false;setBusy(false);}};
   return <PortalShell role="Admin" page="admin-receiving-bank" go={go}>
-    <div className="portal-head"><div><h1>บัญชีรับเงินจาก Merchant</h1><p>จัดการบัญชีรับชำระ QR พร้อมเพย์คงที่ และส่งรายละเอียดให้ Merchant ที่เลือก</p></div><button disabled={busy} className="outline-button" onClick={()=>void act(async()=>{replace(await api<Snapshot>("/admin/receiving-bank"));setMessage("โหลดข้อมูลล่าสุดแล้ว");})}>โหลดข้อมูลล่าสุด</button></div>
+    <div className="portal-head"><div><h1>บัญชีรับเงินจาก Merchant</h1><p>จัดการบัญชีรับชำระ และส่ง QR ระบุยอดตามแพ็กเกจให้ Merchant ที่รอชำระ</p></div><button disabled={busy} className="outline-button" onClick={()=>void act(async()=>{replace(await api<Snapshot>("/admin/receiving-bank"));setMessage("โหลดข้อมูลล่าสุดแล้ว");})}>โหลดข้อมูลล่าสุด</button></div>
     {error&&<p className="form-message" role="alert">{error}</p>}{message&&<p className="form-message" role="status">{message}</p>}
     {!data?<p role="status">กำลังโหลดข้อมูลบัญชีรับเงิน…</p>:<>
       <div className="receiving-bank-grid">
@@ -54,22 +54,22 @@ export default function AdminReceivingBank({go}:{go:(page:Page)=>void}) {
           <small>บัญชีรุ่น {data.bank.revision} · อัปเดต {new Date(data.bank.updatedAt).toLocaleString("th-TH")}</small>
         </>:<p>ยังไม่มี QR กรุณากรอกข้อมูลและบันทึกบัญชีรับเงินก่อน</p>}</section>
       </div>
-      <section className="merchant-panel portal-form"><h2>ส่งบัญชีและ QR ให้ Merchant</h2>
+      <section className="merchant-panel portal-form"><h2>ส่ง QR ชำระแพ็กเกจทางอีเมล</h2><p>แสดงเฉพาะ Merchant ที่ซื้อแพ็กเกจและมีใบแจ้งชำระรอชำระ ไม่รวมทดลองฟรี รายการชำระแล้ว และรายการส่งสลิปรอตรวจ QR ในอีเมลระบุยอดจากใบแจ้งชำระโดยใช้บัญชีรับเงินที่ผูกกับรายการนั้น</p>
         <p>{data.demoMode?"โหมด DEMO บันทึกในประวัติเท่านั้น ไม่ส่งอีเมลจริง":data.smtpConfigured?"พร้อมส่งผ่าน SMTP โดยแนบ QR เป็นไฟล์ PNG":"ยังไม่ได้ตั้งค่า SMTP จึงยังส่งอีเมลจริงไม่ได้"}</p>
         <label>ค้นหา Merchant<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="ชื่อธุรกิจ ชื่อ หรืออีเมล"/></label>
-        <fieldset disabled={busy} className="receiving-bank-recipients"><legend>เลือก Merchant ที่ต้องการส่ง (สูงสุด 50 ราย)</legend>{visible.map(m=><label className="receiving-bank-choice" key={m.id}><input type="checkbox" checked={selected.includes(m.id)} onChange={e=>setSelected(ids=>e.target.checked?[...ids,m.id]:ids.filter(id=>id!==m.id))}/><span>{m.business_name||m.name}<small>{m.name} · {m.email}</small></span></label>)}{!visible.length&&<p>ไม่พบ Merchant ที่มีอีเมลรับข้อความได้</p>}</fieldset>
+        <fieldset disabled={busy} className="receiving-bank-recipients"><legend>เลือก Merchant ที่ต้องการส่ง (สูงสุด 50 ราย)</legend>{visible.map(m=><label className="receiving-bank-choice" key={m.id}><input type="checkbox" checked={selected.includes(m.id)} onChange={e=>setSelected(ids=>e.target.checked?[...ids,m.id]:ids.filter(id=>id!==m.id))}/><span>{m.business_name||m.name}<small>{m.name} · {m.email}</small><small>{m.packageName} · ฿{(m.amount/100).toLocaleString("th-TH",{minimumFractionDigits:2})}</small><small>ใบแจ้งชำระ: {m.invoiceId}</small></span></label>)}{!visible.length&&<p>ไม่พบ Merchant ที่มีรายการซื้อแพ็กเกจรอชำระและมีอีเมลรับข้อความได้</p>}</fieldset>
         <p>เลือก {selected.length} ราย · ส่งแยกฉบับ ไม่เปิดเผยอีเมลผู้รับรายอื่น</p>
-        <p>อีเมลใช้บัญชีที่บันทึกล่าสุด หากใบแจ้งชำระเดิมของ Merchant ระบุบัญชีอื่น ให้ใช้ข้อมูลในใบแจ้งชำระเดิมก่อนโอน</p>
+        <p>QR ระบุยอดตามแพ็กเกจในใบแจ้งชำระ บัญชีรับเงินยึดตามใบนั้น แม้ Admin จะเปลี่ยนบัญชีสำหรับรายการใหม่แล้วก็ตาม</p>
         <label>หัวข้ออีเมล<input maxLength={200} disabled={busy} value={subject} onChange={e=>setSubject(e.target.value)}/></label>
         <label>ข้อความถึง Merchant<textarea maxLength={4000} disabled={busy} value={emailMessage} onChange={e=>setEmailMessage(e.target.value)}/></label>
         {dirty&&<p>กรุณาบันทึกหรือโหลดข้อมูลล่าสุดก่อนส่งอีเมล</p>}
         <button className="primary-button" disabled={busy||!data.bank||dirty||!selected.length||selected.length>50||!subject.trim()||(!data.demoMode&&!data.smtpConfigured)} onClick={()=>void act(async()=>{
-          const payload={revision:data.bank!.revision,merchantIds:selected,subject,message:emailMessage},fingerprint=JSON.stringify(payload);
+          const payload={revision:data.bank!.revision,merchantIds:selected,invoiceIds:data.merchants.filter(m=>selected.includes(m.id)).map(m=>m.invoiceId),subject,message:emailMessage},fingerprint=JSON.stringify(payload);
           if(request.current?.fingerprint!==fingerprint)request.current={fingerprint,id:crypto.randomUUID()};
           const next=await api<Snapshot>("/admin/receiving-bank/email",{...payload,requestId:request.current!.id});setData(next);request.current=null;setSelected([]);setMessage(next.demoMode?"บันทึกอีเมล DEMO แล้ว ไม่มีการส่งอีเมลจริง":"เพิ่มอีเมลเข้าคิวแล้ว ตรวจผลส่งได้ในประวัติด้านล่าง");
-        })}>ส่งบัญชีและ QR ให้ Merchant ที่เลือก</button>
+        })}>ส่ง QR ตามยอดแพ็กเกจให้ Merchant ที่เลือก</button>
       </section>
-      <section className="merchant-panel"><h2>ประวัติการส่งรายละเอียดรับเงิน</h2>{!data.notifications.length&&<p>ยังไม่มีประวัติการส่ง</p>}{data.notifications.map(mail=><article className="receiving-bank-mail" key={mail.id}><h3>{mail.merchantName}</h3><p>{mail.recipient} · {mail.subject}</p><p>{label[mail.status]||mail.status} · บัญชีรุ่น {mail.bankRevision} · {new Date(mail.created).toLocaleString("th-TH")}</p>{mail.error&&<p role="status">{mail.error}</p>}{mail.status==="failed"&&<button disabled={busy||!data.smtpConfigured} onClick={()=>void act(async()=>{setData(await api<Snapshot>(`/admin/receiving-bank/notifications/${mail.id}/retry`,{}));setMessage("เพิ่มอีเมลกลับเข้าคิวแล้ว");})}>ส่งอีเมลซ้ำ</button>}</article>)}</section>
+      <section className="merchant-panel"><h2>ประวัติการส่งรายละเอียดรับเงิน</h2>{!data.notifications.length&&<p>ยังไม่มีประวัติการส่ง</p>}{data.notifications.map(mail=><article className="receiving-bank-mail" key={mail.id}><h3>{mail.merchantName}</h3><p>{mail.recipient} · {mail.subject}</p>{mail.invoiceId&&<p>{mail.packageName} · ฿{((mail.amount||0)/100).toLocaleString("th-TH",{minimumFractionDigits:2})} · ใบแจ้งชำระ {mail.invoiceId}</p>}<p>{label[mail.status]||mail.status} · บัญชีรุ่น {mail.bankRevision} · {new Date(mail.created).toLocaleString("th-TH")}</p>{mail.error&&<p role="status">{mail.error}</p>}{mail.status==="failed"&&<button disabled={busy||!data.smtpConfigured} onClick={()=>void act(async()=>{setData(await api<Snapshot>(`/admin/receiving-bank/notifications/${mail.id}/retry`,{}));setMessage("เพิ่มอีเมลกลับเข้าคิวแล้ว");})}>ส่งอีเมลซ้ำ</button>}</article>)}</section>
     </>}
   </PortalShell>;
 }

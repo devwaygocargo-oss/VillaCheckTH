@@ -53,6 +53,10 @@ test('Admin receiving bank uses stable decodable PromptPay QR, scoped email outb
   const villaId=randomUUID(),documentId=randomUUID();await db.prepare('INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?)').run(documentId,merchant.id,'dummy.pdf','application/pdf',Buffer.from('%PDF-1.4 dummy'))
   await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,created) VALUES (?,?,?,?,?,?,?,?,?,?)").run(villaId,merchant.id,'Bank Snapshot Dummy Villa','ชลบุรี','Dummy Merchant',merchant.email,'starter',documentId,'approved',new Date().toISOString())
   invoice=await createInvoice(db,await db.prepare('SELECT * FROM villas WHERE id=?').get(villaId),config.appUrl)
+  await db.prepare("UPDATE invoices SET subscription_owner=?,package_id='starter' WHERE id=?").run(merchant.id,invoice)
+  const otherVilla=randomUUID();await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,created) VALUES (?,?,?,?,?,?,?,?,?,?)").run(otherVilla,other.id,'Other Dummy Villa','ชลบุรี','Other Dummy',other.email,'pro',documentId,'approved',new Date().toISOString())
+  const otherInvoice=await createInvoice(db,await db.prepare('SELECT * FROM villas WHERE id=?').get(otherVilla),config.appUrl)
+  await db.prepare("UPDATE invoices SET subscription_owner=?,package_id='pro' WHERE id=?").run(other.id,otherInvoice)
   const state=(await req('/state',undefined,m)).value;assert.equal(state.paymentBankQrImage,first.qrImage);assert.equal(state.villas[0].invoices[0].bankQrImage,first.qrImage)
   const publicCms=(await req('/public/cms')).value;assert.equal(publicCms.content.site.paymentInstructions,'');assert.equal(publicCms.content.site.paymentQrImage,'')
  })
@@ -60,7 +64,7 @@ test('Admin receiving bank uses stable decodable PromptPay QR, scoped email outb
  await t.test('Only selected Merchants receive separate PNG messages; retries of one request do not duplicate sends',async()=>{
   const payload=email([merchant.id,other.id]);const [r,duplicate]=await Promise.all([req('/admin/receiving-bank/email',payload,a),req('/admin/receiving-bank/email',payload,a)]);assert.equal(r.status,200);assert.equal(duplicate.status,200);assert.deepEqual(r.value.queuedIds,duplicate.value.queuedIds);await server.runMail()
   assert.equal(sent.length,2);assert.deepEqual(sent.map(x=>x.to).sort(),[merchant.email,other.email].sort())
-  for(const mail of sent){assert.equal(mail.cc,undefined);assert.equal(mail.bcc,undefined);assert.equal(decode(mail.attachments[0].content),first.payload);assert.ok(mail.text.includes('DUMMY UPDATED'))}
+  for(const mail of sent){assert.equal(mail.cc,undefined);assert.equal(mail.bcc,undefined);const tags=tlv(decode(mail.attachments[0].content));assert.equal(tags['29'],tlv(first.payload)['29']);const expected=await db.prepare("SELECT amount FROM invoices WHERE subscription_owner=?").get(mail.to===merchant.email?merchant.id:other.id);assert.equal(tags['54'],(expected.amount/100).toFixed(2));assert.ok(mail.text.includes('DUMMY UPDATED'));assert.ok(mail.text.includes('เลขที่ใบแจ้งชำระ'))}
   assert.equal((await req('/admin/receiving-bank/email',payload,a)).status,200);await server.runMail();assert.equal(sent.length,2)
   assert.equal((await req('/admin/receiving-bank/email',{...payload,message:'different'},a)).status,409)
   const history=(await req('/admin/receiving-bank',undefined,a)).value.notifications;assert.equal(history.filter(x=>x.status==='sent').length,2)
@@ -78,7 +82,7 @@ test('Admin receiving bank uses stable decodable PromptPay QR, scoped email outb
   const changed=await req('/admin/receiving-bank',{...fields,promptpayId:'0898765432',revision:saved.revision},a);assert.equal(changed.status,200);saved=changed.value.bank;assert.notEqual(saved.qrImage,first.qrImage)
   assert.equal(decode((await req(first.qrImage.replace('/api',''),undefined,m)).value),first.payload)
   const state=(await req('/state',undefined,m)).value;assert.equal(state.paymentBankQrImage,saved.qrImage);assert.equal(state.villas[0].invoices.find(i=>i.id===invoice).bankQrImage,first.qrImage);assert.ok(state.villas[0].invoices[0].paymentInstructions.includes('0812345678'))
-  smtpFailure=false;assert.equal((await req(`/admin/receiving-bank/notifications/${id}/retry`,{},a)).status,200);await server.runMail();assert.equal(sent.length,3);assert.equal(decode(sent[2].attachments[0].content),first.payload)
+  smtpFailure=false;assert.equal((await req(`/admin/receiving-bank/notifications/${id}/retry`,{},a)).status,200);await server.runMail();assert.equal(sent.length,3);assert.equal(tlv(decode(sent[2].attachments[0].content))['29'],tlv(first.payload)['29'])
   assert.equal((await req(`/admin/receiving-bank/notifications/${id}/retry`,{},a)).status,409)
  })
  await t.test('Demo emails never invoke SMTP, and stale account revisions cannot be sent',async()=>{
@@ -87,6 +91,22 @@ test('Admin receiving bank uses stable decodable PromptPay QR, scoped email outb
   const r=await req('/admin/receiving-bank/email',email(),a);assert.equal(r.status,200);await server.runMail();assert.equal(sent.length,3)
   assert.equal((await req('/admin/receiving-bank',undefined,a)).value.notifications.find(x=>x.id===r.value.queuedIds[0]).status,'demo')
   assert.equal((await receivingBank(db)).revision,saved.revision)
+ })
+
+ await t.test('Only outstanding paid-package buyers appear; free, paid, submitted and unpurchased recipients are excluded',async()=>{
+  const unpurchased=await createUser(db,'unpurchased@example.test',password,'No purchase','merchant')
+  let view=(await req('/admin/receiving-bank',undefined,a)).value
+  assert.deepEqual(view.merchants.map(x=>x.id).sort(),[merchant.id,other.id].sort())
+  assert.ok(view.merchants.every(x=>x.amount>0&&x.invoiceId&&x.packageName))
+  assert.equal((await req('/admin/receiving-bank/email',email([unpurchased.id]),a)).status,400)
+  assert.equal((await req('/admin/receiving-bank/email',email([merchant.id],{invoiceIds:['stale-invoice']}),a)).status,409)
+  await db.prepare("UPDATE invoices SET status='submitted' WHERE id=?").run(invoice)
+  assert.equal((await req('/admin/receiving-bank/email',email(),a)).status,400)
+  assert.ok(!(await req('/admin/receiving-bank',undefined,a)).value.merchants.some(x=>x.id===merchant.id))
+  await db.prepare("UPDATE invoices SET status='paid' WHERE id=?").run(invoice)
+  assert.ok(!(await req('/admin/receiving-bank',undefined,a)).value.merchants.some(x=>x.id===merchant.id))
+  await db.prepare("UPDATE invoices SET status='pending',amount=0 WHERE id=?").run(invoice)
+  assert.ok(!(await req('/admin/receiving-bank',undefined,a)).value.merchants.some(x=>x.id===merchant.id))
  })
 
  await t.test('Validated tax IDs generate a static PromptPay tax-ID QR',async()=>{

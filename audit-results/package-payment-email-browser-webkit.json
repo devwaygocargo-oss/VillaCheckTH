@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-15T09:44:05.389Z",
+  "engine": "webkit",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "Recipient list includes only package buyers with pending payment and shows package amount",
+      "passed": true
+    },
+    {
+      "name": "Selected buyers receive individually priced QR email records in Demo without real delivery",
+      "passed": true
+    },
+    {
+      "name": "Submitted and paid invoices disappear from recipients; page fits phone and tablet",
+      "passed": true
+    }
+  ],
+  "layout": [],
+  "errors": [],
+  "pass": 3,
+  "fail": 0
+}

@@ -238,6 +238,8 @@ export async function createInvoice(db, villa, appUrl, paymentInstructions="") {
     )
     .run(id, villa.id, plan.amount, months, created, created)
   await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_bank_qr:${id}`,JSON.stringify(bankQrImage))
+  const receiver=await receivingBank(db)
+  if(receiver)await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_receiving_bank:${id}`,JSON.stringify(receiver))
   const subject = `VillaCheck: ${villa.name} ${
     villa.payments === 0 ? "ผ่านการอนุมัติ" : "ต่ออายุ QR"
   } กรุณาชำระแพ็กเกจ`

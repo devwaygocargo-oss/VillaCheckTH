@@ -32,10 +32,21 @@ function validate(data) {
   if(data.confirmedBinding!==true)fail(400,"กรุณายืนยันว่าพร้อมเพย์ผูกกับบัญชีรับเงินที่ระบุแล้ว")
   return {bankName,accountName,accountNumber,promptpayType,promptpayId,instructions}
 }
+async function payableMerchants(db) {
+  const rows=await db.prepare("SELECT u.id,u.name,u.business_name,u.email,i.id AS invoice_id,i.amount,i.package_id AS selected_package_id,p.name AS package_name FROM users u JOIN invoices i ON i.subscription_owner=u.id JOIN villas v ON v.id=i.villa_id JOIN package_catalog p ON p.id=COALESCE(i.package_id,v.package_id) WHERE u.role='merchant' AND i.status='pending' AND i.amount>0 ORDER BY u.name,u.id").all()
+  return rows.map(({invoice_id,selected_package_id,package_name,...row})=>({...row,invoiceId:invoice_id,packageId:selected_package_id,packageName:package_name}))
+}
+async function invoiceBank(db,invoiceId,current) {
+  const snapshot=await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_receiving_bank:${invoiceId}`)
+  if(snapshot)return JSON.parse(snapshot.value)
+  const qr=await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${invoiceId}`)
+  if(qr&&JSON.parse(qr.value)===current.qrImage)return current
+  fail(409,"ใบแจ้งชำระเดิมไม่มีข้อมูลพร้อมเพย์ที่ยืนยันได้ กรุณาตรวจบัญชีในใบแจ้งชำระก่อนส่ง")
+}
 async function view(db,config,transport) {
-  const merchants=await db.prepare("SELECT id,name,business_name,email FROM users WHERE role='merchant' ORDER BY name,id").all()
+  const merchants=await payableMerchants(db)
   const rows=await notifications(db)
-  return {bank:await receivingBank(db),merchants:merchants.filter(m=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email)&&!m.email.endsWith("@phone.villacheck.invalid")),notifications:rows.slice(0,100).map(({id,merchantId,recipient,merchantName,subject,status,created,sentAt,error,attempts,bank})=>({id,merchantId,recipient,merchantName,subject,status,created,sentAt,error,attempts,bankRevision:bank.revision})),demoMode:await demoMode(db,config),smtpConfigured:Boolean(transport)}
+  return {bank:await receivingBank(db),merchants:merchants.filter(m=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email)&&!m.email.endsWith("@phone.villacheck.invalid")),notifications:rows.slice(0,100).map(({id,merchantId,recipient,merchantName,subject,status,created,sentAt,error,attempts,bank,invoiceId,amount,packageName})=>({id,merchantId,recipient,merchantName,subject,status,created,sentAt,error,attempts,invoiceId,amount,packageName,bankRevision:bank.revision})),demoMode:await demoMode(db,config),smtpConfigured:Boolean(transport)}
 }
 export async function adminReceivingBank(db,user,req,path,readBody,config,transport) {
   if(!path.startsWith("/api/admin/receiving-bank"))return undefined
@@ -67,7 +78,7 @@ export async function adminReceivingBank(db,user,req,path,readBody,config,transp
     if(!Array.isArray(data.merchantIds)||!data.merchantIds.length||data.merchantIds.length>50||data.merchantIds.some(id=>typeof id!=="string")||new Set(data.merchantIds).size!==data.merchantIds.length)fail(400,"เลือก Merchant 1–50 รายโดยไม่ซ้ำ")
     const subject=text(data.subject,200),message=text(data.message||"",4000)
     if(!subject||/[\r\n]/.test(subject))fail(400,"หัวข้ออีเมลไม่ถูกต้อง")
-    const fingerprint=JSON.stringify({revision:data.revision,merchantIds:[...data.merchantIds].sort(),subject,message})
+    const fingerprint=JSON.stringify({revision:data.revision,merchantIds:[...data.merchantIds].sort(),invoiceIds:data.invoiceIds,subject,message})
     let ids
     await db.transaction(async()=>{
       const requestKey=`bank_email_request:${data.requestId}`,existing=await db.prepare("SELECT value FROM system_settings WHERE key=?").get(requestKey)
@@ -75,12 +86,22 @@ export async function adminReceivingBank(db,user,req,path,readBody,config,transp
       const bank=await receivingBank(db)
       if(!bank)fail(409,"กรุณาบันทึกบัญชีรับเงินและ QR ก่อนส่งอีเมล")
       if(data.revision!==bank.revision)fail(409,"บัญชีรับเงินเปลี่ยนแล้ว กรุณาโหลดล่าสุดก่อนส่ง")
-      const recipients=[]
-      for(const id of data.merchantIds){const merchant=await db.prepare("SELECT id,name,email FROM users WHERE id=? AND role='merchant'").get(id);if(!merchant||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(merchant.email)||merchant.email.endsWith("@phone.villacheck.invalid"))fail(400,"Merchant บางรายไม่มีอีเมลที่ใช้รับข้อความได้");recipients.push(merchant)}
+      const eligible=await payableMerchants(db),recipients=[]
+      for(const id of data.merchantIds){
+        const merchant=eligible.find(m=>m.id===id)
+        if(!merchant||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(merchant.email)||merchant.email.endsWith("@phone.villacheck.invalid"))fail(400,"เลือกได้เฉพาะ Merchant ที่ซื้อแพ็กเกจ มีใบแจ้งชำระรอชำระ และมีอีเมลรับข้อความได้")
+        if(data.invoiceIds&&(!Array.isArray(data.invoiceIds)||!data.invoiceIds.includes(merchant.invoiceId)))fail(409,"รายการชำระเปลี่ยนแล้ว กรุณาโหลดข้อมูลล่าสุด")
+        recipients.push(merchant)
+      }
       ids=[]
       for(const merchant of recipients){
+        const receiver=await invoiceBank(db,merchant.invoiceId,bank)
+        const payload=generatePayload(receiver.promptpayId,{amount:merchant.amount/100})
+        const qrDocumentId=randomUUID(),png=await QRCode.toBuffer(payload,{type:"png",width:512,margin:4,errorCorrectionLevel:"M"})
+        await db.prepare("INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?)").run(qrDocumentId,user.id,`receiving-bank-qr:${qrDocumentId}.png`,"image/png",png)
+        const paymentBank={...receiver,payload,qrDocumentId,qrImage:`/api/receiving-bank/qr/${qrDocumentId}`}
         const id=randomUUID(),created=new Date().toISOString()
-        const mail={id,merchantId:merchant.id,merchantName:merchant.name,recipient:merchant.email,subject,message,bank,body:`เรียน ${merchant.name}\n\n${message}\n\n${bankInstructions(bank)}\n\nข้อมูลรับชำระนี้ใช้กับรายการใหม่ หากใบแจ้งชำระเดิมระบุบัญชีอื่น โปรดใช้บัญชีในใบแจ้งชำระเดิมหรือติดต่อทีมงานก่อนโอน\n\nQR พร้อมเพย์แนบเป็นไฟล์ PNG ใช้ซ้ำได้ ไม่กำหนดยอด กรุณาระบุยอดตามใบแจ้งชำระ ตรวจชื่อผู้รับก่อนโอนและแนบสลิปให้ Admin ตรวจ\n${config.appUrl}/#page=owner-package`,created,status:demo||/\.example$/.test(merchant.email)?"demo":"queued",attempts:0,nextAttempt:0,sentAt:null,error:"",lease:null}
+        const mail={id,merchantId:merchant.id,merchantName:merchant.name,recipient:merchant.email,invoiceId:merchant.invoiceId,amount:merchant.amount,packageName:merchant.packageName,subject,message,bank:paymentBank,body:`เรียน ${merchant.name}\n\n${message}\n\nแพ็กเกจ: ${merchant.packageName}\nเลขที่ใบแจ้งชำระ: ${merchant.invoiceId}\nยอดชำระ: ฿${(merchant.amount/100).toLocaleString("th-TH",{minimumFractionDigits:2})}\n\n${bankInstructions(receiver)}\n\nQR พร้อมเพย์แนบเป็นไฟล์ PNG ระบุยอดตามใบแจ้งชำระนี้ ตรวจชื่อผู้รับก่อนโอนและแนบสลิปให้ Admin ตรวจ หากชำระแล้วไม่ต้องชำระซ้ำ\n${config.appUrl}/#page=owner-package`,created,status:demo||/\.example$/.test(merchant.email)?"demo":"queued",attempts:0,nextAttempt:0,sentAt:null,error:"",lease:null}
         await put(db,key(id),mail);ids.push(id)
       }
       await put(db,requestKey,{fingerprint,ids})
@@ -108,7 +129,8 @@ export async function drainBankNotifications(db,config,transport) {
     if(!mail)break
     let status="sent",error=""
     try{
-      if(/\.example$/.test(mail.recipient)){status="demo"}else{
+      if(mail.invoiceId&&!(await db.prepare("SELECT id FROM invoices WHERE id=? AND status='pending' AND amount=? AND subscription_owner=?").get(mail.invoiceId,mail.amount,mail.merchantId))){status="cancelled"}
+      else if(/\.example$/.test(mail.recipient)){status="demo"}else{
         const image=await db.prepare("SELECT bytes FROM documents WHERE id=? AND name LIKE 'receiving-bank-qr:%'").get(mail.bank.qrDocumentId)
         if(!image)throw Error("Missing bank QR")
         await transport.sendMail({from:config.smtpFrom,to:mail.recipient,subject:mail.subject,text:mail.body,messageId:`<bank-${mail.id}@villacheck.local>`,attachments:[{filename:"villacheck-bank-qr.png",content:Buffer.from(image.bytes),contentType:"image/png"}]})
