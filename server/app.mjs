@@ -247,6 +247,7 @@ export function createApp(db, config, transport) {
     return {
       id: invoice.id,
       packageName: (await getPlan(db,invoice.package_id || (await db.prepare("SELECT package_id FROM villas WHERE id=?").get(invoice.villa_id)).package_id)).name,
+      bankQrImage: JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${invoice.id}`))?.value || '""'),
       paymentQr: await paymentQrDto(db, invoice.id),
       scope: invoice.subscription_owner ? "merchant" : "villa",
       villaId: invoice.villa_id,
@@ -357,6 +358,7 @@ export function createApp(db, config, transport) {
       },
       subscription: await subscriptionDto(db, user.id),
       demoMode:await demoMode(db,config),
+      paymentBankQrImage: await demoMode(db,config) ? "" : (await publishedCms(db)).content.site.paymentQrImage || "",
       paymentInstructions:
         (await demoMode(db,config) ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : await cmsPaymentInstructions(db, config.paymentInstructions)) ||
         "ยังไม่ได้ตั้งค่าบัญชีรับชำระ กรุณาติดต่อทีมงานก่อนโอนเงิน",
@@ -385,6 +387,7 @@ export function createApp(db, config, transport) {
         const release = await publishedCms(db)
         const content = structuredClone(release.content)
         content.site.paymentInstructions = ""
+        content.site.paymentQrImage = ""
         content.business.paymentEmailSubject = ""
         content.business.paymentEmailIntro = ""
         for(const key of ["emailOtpSubject","emailOtpBody","smsOtpBody","emailOtpTemplateId"])content.business[key]=""
@@ -400,11 +403,12 @@ export function createApp(db, config, transport) {
         const imageUrls = [release.content.site.logo,...release.content.home.images, ...release.content.home.blocks.filter(x=>x.visible).map(x=>x.image), ...release.content.pages.flatMap(p=>p.blocks.filter(x=>x.visible).map(x=>x.image)), ...release.content.articles.filter(x=>x.visible).map(x=>x.image)]
         if (!imageUrls.includes(path)) {
           const viewer = await session(req).catch(error => { if (error.status === 401) return null; throw error })
-          if (viewer?.role !== "admin") fail(404, "ไม่พบรูปภาพ")
+          const merchantQr = viewer?.role === "merchant" && (release.content.site.paymentQrImage === path || await db.prepare("SELECT i.id FROM invoices i JOIN villas v ON v.id=i.villa_id JOIN system_settings s ON s.key='invoice_bank_qr:' || i.id WHERE v.owner_id=? AND s.value=?").get(viewer.id,JSON.stringify(path)))
+          if (viewer?.role !== "admin" && !merchantQr) fail(404, "ไม่พบรูปภาพ")
         }
         const image = await db.prepare("SELECT mime,bytes FROM documents WHERE id=? AND name LIKE 'cms-image:%'").get(cmsMedia[1])
         if (!image) fail(404, "ไม่พบรูปภาพ")
-        res.writeHead(200, {"Content-Type": image.mime})
+        res.writeHead(200, {"Content-Type": image.mime,"Cache-Control":"private, no-store"})
         return res.end(Buffer.from(image.bytes))
       }
       const adminPaymentAction = path.match(
@@ -851,7 +855,7 @@ export function createApp(db, config, transport) {
             const sub=await getSubscription(db,user.id);if(!sub)fail(409,'No subscription')
             if(['SUSPENDED','CANCELLED'].includes(sub.lifecycle))fail(409,'Subscription unavailable')
             const current=await getPlan(db,sub.package_id),target=await getPlan(db,data.packageId)
-            if(!target.active||target.capacity<=current.capacity||target.sort_order<=current.sort_order||target.amount<=0)fail(409,'Select a higher package with more Villa capacity')
+            if(!target.active||target.capacity<current.capacity||target.sort_order<=current.sort_order||target.amount<=0)fail(409,'Select a higher package without reducing Villa capacity')
             if(await db.prepare("SELECT id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id))fail(409,'Complete the pending payment first')
             const villa=await db.prepare("SELECT * FROM villas WHERE owner_id=? AND status='approved' ORDER BY created LIMIT 1").get(user.id)
             if(!villa)fail(409,'An approved Villa is required')

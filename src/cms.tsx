@@ -64,6 +64,7 @@ export type CmsContent = {
     instagram: string
     line: string
     hours: string
+    paymentQrImage: string
     paymentInstructions: string
     logo: string
     accent: string

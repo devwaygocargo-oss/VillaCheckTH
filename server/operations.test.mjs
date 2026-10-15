@@ -79,7 +79,11 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
   let state=(await request('/state',undefined,outsider)).value;const v=state.villas[0];await request(`/villas/${v.id}/review`,{status:'approved'},a);
   const pay=async()=>{const invoice=(await request('/state',undefined,outsider)).value.villas[0].invoices.find(i=>i.status!=='paid');const slip=(await request(`/payments/${invoice.id}/demo-slip`,{},outsider)).value;assert.equal((await request(`/invoices/${invoice.id}/proof`,slip,outsider)).status,200);assert.equal((await request(`/invoices/${invoice.id}/confirm`,{},a)).status,200)};
   await pay();const qr=(await request('/state',undefined,outsider)).value.villas[0].qr;
-  assert.equal((await request('/subscription/upgrade',{packageId:'pro'},outsider)).status,409);
+  assert.equal((await request('/subscription/upgrade',{packageId:'pro'},outsider)).status,200);
+  assert.equal((await request('/state',undefined,outsider)).value.subscription.packageId,'starter');
+  await pay();
+  assert.equal((await request('/state',undefined,outsider)).value.subscription.packageId,'pro');
+  assert.equal((await request('/subscription/upgrade',{packageId:'starter'},outsider)).status,409);
   assert.equal((await request('/subscription/upgrade',{packageId:'plus'},outsider)).status,200);
   assert.equal((await request('/state',undefined,outsider)).value.subscription.capacity,1);
   assert.equal((await request('/villas',{...input,name:'Before upgrade payment'},outsider)).status,409);

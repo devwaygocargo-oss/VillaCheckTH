@@ -3,6 +3,7 @@ export type Document = { name: string; data: string; type: string }
 export type Invoice = {
   packageName: string
   updatedAt: string
+  bankQrImage: string
   paymentQr: PaymentQrData | null
   scope: "merchant" | "villa"
   id: string
@@ -68,6 +69,7 @@ export type Store = {
   villas: MerchantVilla[]
   mails: Mail[]
   user: Account
+  paymentBankQrImage: string
   paymentInstructions: string
   paymentConfigured: boolean
   demoMode: boolean

@@ -156,6 +156,7 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
       content.home.title = "Dummy CMS title"
       content.home.images = [media.url]
       content.site.paymentInstructions = "Dummy bank instructions"
+      content.site.paymentQrImage = media.url
       content.articles.push({
         id: "hidden",
         title: "Private draft",
@@ -217,6 +218,8 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
       assert.equal(pub.content.home.title, "Dummy CMS title")
       assert.equal(pub.revision, 1)
       assert.equal(pub.content.site.paymentInstructions, "")
+      assert.equal(pub.content.site.paymentQrImage, "")
+      assert.equal((await request("/api/state", undefined, owner)).value.paymentBankQrImage, media.url)
       assert.ok(!pub.content.articles.some((a) => a.id === "hidden"))
       assert.equal(pub.content.faqs[0].question, "Question")
       assert.equal((await request(media.url)).status, 200)
@@ -275,6 +278,7 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
       for (const change of [
         (c) => (c.site.facebook = "javascript:alert(1)"),
         (c) => (c.home.images = ["data:image/svg+xml,<svg/>"]),
+        (c) => (c.site.paymentQrImage = "javascript:alert(1)"),
         (c) => (c.pages = []),
         (c) => (c.articles = [null]),
         (c) => (c.home.sections = [...c.home.sections, c.home.sections[0]]),
@@ -389,11 +393,13 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
     }
     const old=await createInvoice(db,await fixture(),config.appUrl)
     assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(old)).months,3)
-    const c=structuredClone(cmsDefaults);c.business.monthlyInitialMonths=6;c.business.monthlyRenewalMonths=2;c.business.paymentEmailSubject="CMS {{package}} / {{villa}}";c.business.paymentEmailIntro="Hello {{merchant}}"
+    const c=structuredClone(cmsDefaults);c.site.paymentQrImage=media.url;c.business.monthlyInitialMonths=6;c.business.monthlyRenewalMonths=2;c.business.paymentEmailSubject="CMS {{package}} / {{villa}}";c.business.paymentEmailIntro="Hello {{merchant}}"
     assert.equal((await request("/api/admin/cms/save",{revision:3,content:c},admin)).status,200)
     assert.equal((await request("/api/admin/cms/publish",{revision:4},admin)).status,200)
     const first=await createInvoice(db,await fixture(),config.appUrl),renew=await createInvoice(db,await fixture(1),config.appUrl)
     assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(first)).months,6)
+    assert.equal(JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${first}`)).value),media.url)
+    assert.equal(JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${old}`)).value),"")
     assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(renew)).months,2)
     assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(old)).months,3)
     await db.prepare("UPDATE package_catalog SET billing_cycle='YEARLY' WHERE id='starter'").run()

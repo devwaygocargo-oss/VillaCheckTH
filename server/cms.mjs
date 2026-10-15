@@ -115,6 +115,7 @@ function normalizeCms(data) {
   for (const k of ["facebook", "instagram", "line"])
     site[k] = cmsUrl(data.site[k])
   site.logo = cmsUrl(data.site.logo, true)
+  site.paymentQrImage = cmsUrl(data.site.paymentQrImage || "", true)
   site.accent = string(data.site.accent, 7)
   if (!/^#[a-fA-F0-9]{6}$/.test(site.accent))
     fail(400, "สีหลักต้องเป็นรหัสสี #RRGGBB")
@@ -219,7 +220,7 @@ async function read(db, key, fallback) {
     .prepare("SELECT value FROM system_settings WHERE key=?")
     .get(key)
   const value=row?JSON.parse(row.value):clone(fallback)
-  if (["cms_draft","cms_published"].includes(key)) value.content.business={...cmsDefaults.business,...value.content.business}
+  if (["cms_draft","cms_published"].includes(key)) { value.content.business={...cmsDefaults.business,...value.content.business}; value.content.site={...cmsDefaults.site,...value.content.site}; }
   return value
 }
 async function write(db, key, value) {
@@ -244,6 +245,7 @@ export async function publishedCms(db) {
 function mediaReferences(content) {
   return [
     content.site.logo,
+    content.site.paymentQrImage || "",
     ...content.home.images,
     ...content.home.blocks.map((x) => x.image),
     ...content.pages.flatMap((p) => p.blocks.map((x) => x.image)),
@@ -320,6 +322,8 @@ export async function adminCms(db, user, req, path, readBody) {
         draft = await read(db, "cms_draft", published),
         history = await read(db, "cms_history", [])
       const url = `/api/public/cms-media/${data.id}`
+      if (await db.prepare("SELECT key FROM system_settings WHERE key LIKE 'invoice_bank_qr:%' AND value=?").get(JSON.stringify(url)))
+        fail(409, "QR นี้อ้างอิงในใบแจ้งชำระ จึงยังลบไม่ได้")
       if (
         [published, draft, ...history].some((v) =>
           mediaReferences(v.content).includes(url),

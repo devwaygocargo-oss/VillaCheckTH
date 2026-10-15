@@ -69,6 +69,7 @@ export const cmsDefaults = {
     line: "",
     hours: "จันทร์–ศุกร์ 09:00–18:00 น.",
     paymentInstructions: "",
+    paymentQrImage: "",
     logo: "",
     accent: "#173e51",
   },

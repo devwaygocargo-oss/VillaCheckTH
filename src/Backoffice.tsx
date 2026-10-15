@@ -894,6 +894,9 @@ function PaymentPanel({
       <small>{invoice.id} · {invoice.packageName} · สร้าง {date(invoice.created)}</small>
       <p>Payment: {invoice.paymentStatus} · QR: {invoice.paymentQr?.status||"ไม่มี QR"} · หมดอายุ {date(invoice.paymentQr?.expiresAt||"")}</p>
       {invoice.proof&&<p>อัปเดตหลักฐาน {new Date(invoice.updatedAt).toLocaleString("th-TH")}</p>}
+          <p className="payment-instructions">{instructions}</p>
+          <a href={`data:text/plain;charset=utf-8,${encodeURIComponent(`VillaCheck · ${invoice.id}\n${invoice.packageName} · THB ${invoice.amount}\n${instructions}`)}`} download={`payment-${invoice.id}.txt`}>ดาวน์โหลดรายละเอียดบัญชีและยอดชำระ</a>
+          {!demo && invoice.bankQrImage && <section className="bank-payment-details"><h3>QR โอนเงินเข้าบัญชีรับชำระ</h3><img src={invoice.bankQrImage} alt="QR บัญชีรับชำระของ VillaCheck" style={{width:240,maxWidth:"100%",objectFit:"contain"}}/><p>ตรวจชื่อผู้รับและยอดตามใบแจ้งชำระก่อนยืนยันโอน จากนั้นแนบสลิปเพื่อให้ Admin ตรวจ</p><a href={invoice.bankQrImage} target="_blank" rel="noopener noreferrer" download>เปิด / ดาวน์โหลด QR รับชำระ</a></section>}
       {!admin && invoice.status === "pending" && <PaymentQr paymentId={invoice.id} initial={invoice.paymentQr} />}
       <p>
         {invoice.status === "paid"
@@ -907,7 +910,7 @@ function PaymentPanel({
       {demo && invoice.status === "pending" && !admin && <div className="merchant-panel"><strong>DEMO · ไม่มีการโอนเงินจริง</strong><p>สร้างสลิปตัวอย่างและส่งเข้าคิวให้ Admin ตรวจ Manual</p><button disabled={busy} onClick={async()=>{try{const slip=await api<{reference:string;document:Document}>(`/payments/${invoice.id}/demo-slip`,{});await perform(`/invoices/${invoice.id}/proof`,slip,"ส่งสลิป dummy ให้ Admin ตรวจแล้ว");}catch(e){setError(e instanceof Error?e.message:"สร้างสลิปไม่สำเร็จ")}}}>สร้างและแนบสลิป dummy</button>{error&&<p role="alert">{error}</p>}</div>}
       {invoice.status === "pending" && !admin && (
         <div className="portal-form">
-          <p className="payment-instructions">{instructions}</p>
+
           {!demo&&invoice.paymentInstructions===null&&<p className="form-message">ใบแจ้งชำระนี้สร้างก่อนระบบบันทึกข้อมูลบัญชี ณ ตอนสร้าง โปรดยืนยันข้อมูลรับชำระกับทีมงานก่อนโอน</p>}
           {(
             <>

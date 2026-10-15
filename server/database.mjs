@@ -228,12 +228,15 @@ export async function createInvoice(db, villa, appUrl, paymentInstructions="") {
   const months=monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
   const created = new Date().toISOString()
   const instructions=await cmsPaymentSnapshot(db,paymentInstructions)
+  const release=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
+  const bankQrImage=release?JSON.parse(release.value).content.site.paymentQrImage || "":""
   // Snapshot the published validity rule on each new invoice; existing invoices retain their terms.
   await db
     .prepare(
       "INSERT INTO invoices(id,villa_id,amount,months,created,updated_at) VALUES (?,?,?,?,?,?)",
     )
     .run(id, villa.id, plan.amount, months, created, created)
+  await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_bank_qr:${id}`,JSON.stringify(bankQrImage))
   const subject = `VillaCheck: ${villa.name} ${
     villa.payments === 0 ? "ผ่านการอนุมัติ" : "ต่ออายุ QR"
   } กรุณาชำระแพ็กเกจ`
