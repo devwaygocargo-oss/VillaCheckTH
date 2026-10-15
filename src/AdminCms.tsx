@@ -329,6 +329,7 @@ export default function AdminCms({
       setBusy(false)
     }
   }
+  const [homePanel,setHomePanel]=useState("hero");
   const p = content?.pages.find((p) => p.slug === selected),
     a = content?.articles.find((a) => a.id === articleId)
   return (
@@ -419,6 +420,7 @@ export default function AdminCms({
               </button>
             ))}
           </nav>
+          <div className={`cms-workspace${preview?" has-preview":""}`}>
           {preview && (
             <section className="cms-preview" aria-label="ตัวอย่างเนื้อหาก่อนเผยแพร่">
               <p>Preview ก่อนเผยแพร่ · ใช้ตัวแสดงเดียวกับเว็บไซต์จริง</p>
@@ -454,10 +456,14 @@ export default function AdminCms({
           )}
           <fieldset
             disabled={busy}
-            className="merchant-panel portal-form cms-editor"
+            className={`merchant-panel portal-form cms-editor cms-editor-${tab}`}
           >
             {tab === "home" && (
               <>
+                <nav className="cms-home-panels" aria-label="ส่วนแก้ไขหน้าแรก">
+                  {[["hero","ข้อความหน้าแรก"],["sections","ลำดับ Section"],["slides","ภาพสไลด์"],["blocks","Section เพิ่มเติม"]].map(([key,label])=><button key={key} type="button" aria-pressed={homePanel===key} className={homePanel===key?"active":""} onClick={()=>setHomePanel(key)}>{label}</button>)}
+                </nav>
+                {homePanel==="hero"&&<>
                 <Field
                   label="ข้อความเหนือหัวข้อ"
                   value={content.home.eyebrow}
@@ -484,6 +490,8 @@ export default function AdminCms({
                     })
                   }
                 />
+                </>}
+                {homePanel==="sections"&&<>
                 <h2>ลำดับ Section หน้าแรก</h2>
                 {content.home.sections.map((s, i) => (
                   <div className="cms-block-editor" key={s.id}>
@@ -545,7 +553,8 @@ export default function AdminCms({
                     {["how", "showcase", "qr", "merchant", "pricing"].includes(
                       s.id,
                     ) && (
-                      <>
+                      <details className="cms-card-details">
+                        <summary>แก้ไขข้อความ Section</summary>
                         <Field
                           label="หัวข้อ Section"
                           multiline
@@ -580,10 +589,12 @@ export default function AdminCms({
                             }
                           />
                         )}
-                      </>
+                      </details>
                     )}
                   </div>
                 ))}
+                </>}
+                {homePanel==="slides"&&<>
                 <h2>ภาพสไลด์หน้าแรก</h2>
                 {content.home.images.map((url, i) => (
                   <div className="cms-block-editor" key={i}>
@@ -652,13 +663,14 @@ export default function AdminCms({
                 >
                   + เพิ่มภาพสไลด์
                 </button>
-                <BlockEditor
+                </>}
+                {homePanel==="blocks"&&<BlockEditor
                   blocks={content.home.blocks}
                   media={media}
                   onChange={(blocks) =>
                     change({ ...content, home: { ...content.home, blocks } })
                   }
-                />
+                />}
               </>
             )}
             {tab === "navigation" && (
@@ -1207,6 +1219,7 @@ export default function AdminCms({
               </>
             )}
           </fieldset>
+          </div>
         </>
       )}
     </PortalShell>

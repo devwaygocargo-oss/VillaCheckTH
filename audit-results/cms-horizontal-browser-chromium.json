@@ -1,0 +1,304 @@
+{
+  "checkedAt": "2026-10-15T06:51:49.316Z",
+  "engine": "chromium",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "Every CMS tab fits mobile, tablet and desktop without page overflow",
+      "passed": true
+    },
+    {
+      "name": "Home subsections display horizontal cards and only the selected editing group",
+      "passed": true
+    },
+    {
+      "name": "Section text expands on demand and preserves edited values when collapsed",
+      "passed": true
+    },
+    {
+      "name": "Draft edits survive subsection/tab switches and save without publishing",
+      "passed": true
+    },
+    {
+      "name": "Desktop Preview opens alongside editor and stays usable on smaller screens",
+      "passed": true
+    }
+  ],
+  "layout": [
+    {
+      "label": "หน้าแรก",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "เมนูเว็บไซต์",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "หน้าเว็บ",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "บทความ",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "FAQ",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "ตั้งค่าเว็บไซต์",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "กติกา / ข้อความอีเมล",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "คลังรูปภาพ",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "ประวัติ / ย้อนเวอร์ชัน",
+      "width": 390,
+      "page": 390,
+      "viewport": 390
+    },
+    {
+      "label": "หน้าแรก",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "เมนูเว็บไซต์",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "หน้าเว็บ",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "บทความ",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "FAQ",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "ตั้งค่าเว็บไซต์",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "กติกา / ข้อความอีเมล",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "คลังรูปภาพ",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "ประวัติ / ย้อนเวอร์ชัน",
+      "width": 820,
+      "page": 820,
+      "viewport": 820
+    },
+    {
+      "label": "หน้าแรก",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "เมนูเว็บไซต์",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "หน้าเว็บ",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "บทความ",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "FAQ",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "ตั้งค่าเว็บไซต์",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "กติกา / ข้อความอีเมล",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "คลังรูปภาพ",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "ประวัติ / ย้อนเวอร์ชัน",
+      "width": 1024,
+      "page": 1024,
+      "viewport": 1024
+    },
+    {
+      "label": "หน้าแรก",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "เมนูเว็บไซต์",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "หน้าเว็บ",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "บทความ",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "FAQ",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "ตั้งค่าเว็บไซต์",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "กติกา / ข้อความอีเมล",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "คลังรูปภาพ",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "ประวัติ / ย้อนเวอร์ชัน",
+      "width": 1440,
+      "page": 1440,
+      "viewport": 1440
+    },
+    {
+      "label": "หน้าแรก",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    },
+    {
+      "label": "เมนูเว็บไซต์",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    },
+    {
+      "label": "หน้าเว็บ",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    },
+    {
+      "label": "บทความ",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    },
+    {
+      "label": "FAQ",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    },
+    {
+      "label": "ตั้งค่าเว็บไซต์",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    },
+    {
+      "label": "กติกา / ข้อความอีเมล",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    },
+    {
+      "label": "คลังรูปภาพ",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    },
+    {
+      "label": "ประวัติ / ย้อนเวอร์ชัน",
+      "width": 1920,
+      "page": 1920,
+      "viewport": 1920
+    }
+  ],
+  "errors": [],
+  "pass": 5,
+  "fail": 0
+}
