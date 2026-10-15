@@ -486,16 +486,14 @@ export default function Backoffice({
                   </div>
                   {v.premiumBanner&&<span className="merchant-status">Premium Verified</span>}
                   <span className={`merchant-status ${v.status}`}>
-                    {admin ? status(v) : approvalStatus(v.status)}
+                    {approvalStatus(v.status)}
                   </span>
                 </div>
                 <div className="merchant-villa-meta">
                   <span>
                     แพ็กเกจ<strong>{v.package}</strong>
                   </span>
-                  {admin ? <span>
-                    QR Reference<strong>{v.qr || "เปิดใช้หลังชำระเงิน"}</strong>
-                  </span> : <span>จำนวนผู้เข้าพักสูงสุด<strong>{v.guestCapacity == null ? "ไม่ได้ระบุ" : `${v.guestCapacity} คน`}</strong></span>}
+                  <span>จำนวนผู้เข้าพักสูงสุด<strong>{v.guestCapacity == null ? "ไม่ได้ระบุ" : `${v.guestCapacity} คน`}</strong></span>
                   <span>
                     วันหมดอายุ<strong>{date(v.expires)}</strong>
                   </span>
@@ -512,7 +510,6 @@ export default function Backoffice({
                   </button>
                   {!admin&&<button className="primary-button" onClick={()=>showDetails(v,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}
                 </div>
-                {admin && v.qr && <VillaQr villa={v} admin={admin} />}
                 {admin && v.status === "approved" &&
                   v.invoices.map((invoice) => (
                     <PaymentPanel
