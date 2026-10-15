@@ -12,7 +12,7 @@ import MerchantProfile from "./MerchantProfile";
 import AdminBusiness from "./AdminBusiness";
 import { usePackages, billingLabel, billingValidityLabel, selectedPlanKey, packageIntentKey } from "./packagePlans";
 import type { Account } from "./merchantStore";
-import { api, ApiError, currentAccount } from "./api";
+import { api, ApiError, currentAccount, logout } from "./api";
 import VillaMap from "./VillaMap";
 import ProvinceExplorer, { popularProvinces } from "./ProvinceExplorer";
 import { UserRegistration, AdminUsers, MemberDashboard } from "./UserAccounts";
@@ -114,6 +114,23 @@ const accountLabel = (account: Account) => `บัญชี ${account.role === "
 function Header({ page, go, account }: { page: Page; go: (page: Page) => void; account: Account | null }) {
   const {navigation}=useCms();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+  const accountMenu = useRef<HTMLDivElement>(null);
+  useEffect(() => { setAccountMenuOpen(false); setLogoutError(""); }, [page, account?.id]);
+  useEffect(() => {
+    const outside = (event: PointerEvent) => { if (!accountMenu.current?.contains(event.target as Node)) setAccountMenuOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape" && accountMenu.current?.querySelector("[aria-expanded=true]")) { setAccountMenuOpen(false); accountMenu.current?.querySelector<HTMLButtonElement>(".nav-account-button")?.focus(); } };
+    document.addEventListener("pointerdown", outside); document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", escape); };
+  }, []);
+  const signOut = async () => {
+    setLoggingOut(true); setLogoutError("");
+    try { await logout(); setAccountMenuOpen(false); go("home"); }
+    catch (error) { setLogoutError(error instanceof Error ? error.message : "ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง"); }
+    finally { setLoggingOut(false); }
+  };
   useEffect(() => { setMobileMenuOpen(false); }, [page]);
   useEffect(() => { const close = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileMenuOpen(false); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, []);
   const reportIssue = () => {
@@ -134,9 +151,9 @@ function Header({ page, go, account }: { page: Page; go: (page: Page) => void; a
     <div className="container nav">
       <button className="logo-button" onClick={() => navigate("home")}><Logo /></button>
       <nav id="public-menu" className={mobileMenuOpen ? "mobile-open" : ""}>
-        {navigation.filter(n=>n.visible).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
+        {navigation.filter(n=>n.visible && !(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href))).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
       </nav>
-      <div className="nav-actions">{account && <button className="outline-button nav-account-button" title={`${account.name} · ${accountLabel(account)}`} onClick={() => navigate(accountHome(account))}><span className="nav-session-status" role="status"><span aria-hidden="true">●</span> เข้าสู่ระบบอยู่</span><strong>{accountLabel(account)}</strong></button>}<button className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
+      <div className="nav-actions">{account && <div className="nav-account" ref={accountMenu}><button className="outline-button nav-account-button" title={`${account.name} · ${accountLabel(account)}`} aria-expanded={accountMenuOpen} aria-controls="account-dropdown" onClick={() => setAccountMenuOpen(open => !open)}><span className="nav-session-status" role="status"><span aria-hidden="true">●</span> เข้าสู่ระบบอยู่</span><strong>{accountLabel(account)} <span aria-hidden="true">▾</span></strong></button>{accountMenuOpen && <div id="account-dropdown" className="account-dropdown"><strong>{account.name}</strong><button onClick={() => navigate(accountHome(account))}>ไปยังบัญชี {account.role === "admin" ? "Admin" : account.role === "merchant" ? "Merchant" : "User"}</button><button disabled={loggingOut} onClick={() => void signOut()}>{loggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}</button>{logoutError && <p role="alert">{logoutError}</p>}</div>}</div>}<button className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
     </div>
   </header>;
 }

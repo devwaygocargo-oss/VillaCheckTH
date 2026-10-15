@@ -258,3 +258,12 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 }
 .cms-workspace .cms-editor { width:100%; max-width:none; box-sizing:border-box; }
 .cms-card-details summary { cursor:pointer; color:#173e51; font-weight:600; padding:8px 0; }
+
+.nav-account { position: relative; }
+.account-dropdown { position: absolute; right: 0; top: calc(100% + 8px); z-index: 100; width: min(260px, calc(100vw - 32px)); padding: 12px; display: grid; gap: 8px; background: white; border: 1px solid #dbe6ed; border-radius: 14px; box-shadow: 0 12px 30px #12345524; }
+.account-dropdown > strong { padding: 8px; overflow-wrap: anywhere; }
+.account-dropdown button { text-align: left; padding: 12px; border-radius: 8px; min-height: 44px; }
+.account-dropdown button:hover, .account-dropdown button:focus-visible { background: #edf8fa; }
+.account-dropdown p { font-size: 13px; overflow-wrap: anywhere; }
+
+@media (max-width: 600px) { .account-dropdown { position: fixed; left: 16px; right: 16px; width: auto; top: auto; margin-top: 8px; } }

@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-15T09:30:22.808Z",
+  "engine": "chromium",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "User dropdown, account navigation, responsive layout and logout",
+      "passed": true
+    },
+    {
+      "name": "Merchant dropdown, account navigation, responsive layout and logout",
+      "passed": true
+    },
+    {
+      "name": "Admin dropdown, account navigation, responsive layout and logout",
+      "passed": true
+    }
+  ],
+  "layout": [],
+  "errors": [],
+  "pass": 3,
+  "fail": 0
+}
