@@ -80,7 +80,6 @@ export default function Backoffice({
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
   const [chosenPlan, setChosenPlan] = useState(planId(initialPackage));
-  const [renewalPlan, setRenewalPlan] = useState("starter");
   const [selected, setSelected] = useState(initialItem)
   const [message, setMessage] = useState("")
   const [search, setSearch] = useState("")
@@ -305,7 +304,7 @@ export default function Backoffice({
         · แพ็กเกจชำระเงินต้องยืนยันการชำระก่อนเปิดใช้ QR
       </div>
       {!admin&&store.subscription&&store.subscription.used>=store.subscription.capacity&&!billing&&<section className="merchant-panel"><p>ใช้สิทธิ์ครบ {store.subscription.used}/{store.subscription.capacity} Villa แล้ว ไม่สามารถเพิ่ม Villa ได้</p><button className="outline-button" onClick={()=>go("owner-package")}>ดูสิทธิ์แพ็กเกจและตัวเลือกอัปเกรด</button></section>}
-      {!admin && (billing || dashboard || (adding && !store.subscription)) && <SubscriptionPanel store={store} chosenPlan={chosenPlan} setChosenPlan={setChosenPlan} renewalPlan={renewalPlan} setRenewalPlan={setRenewalPlan} busy={busy} perform={perform} onSubscribed={() => go("owner-add-villa")} />}
+      {!admin && (billing || dashboard || (adding && !store.subscription)) && <SubscriptionPanel store={store} chosenPlan={chosenPlan} setChosenPlan={setChosenPlan} busy={busy} perform={perform} onSubscribed={() => go("owner-add-villa")} />}
       {billing && <section className="merchant-panel"><h2>{admin ? "ตรวจสอบการชำระเงิน" : "การชำระแพ็กเกจบัญชี Merchant"}</h2><p>ชำระแพ็กเกจครั้งเดียว ครอบคลุม Villa ภายในจำนวนสิทธิ์ แต่ละแห่งมี QR ของตัวเอง</p>{!store.villas.some(v => v.invoices.length > 0) && <p>ยังไม่มีใบแจ้งชำระ</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.demoMode ? store.paymentInstructions : (invoice.paymentInstructions ?? store.paymentInstructions)} configured={store.paymentConfigured}
                       demo={store.demoMode} busy={busy} perform={perform} />)}</section>}
       {message && (

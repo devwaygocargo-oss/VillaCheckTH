@@ -1,0 +1,58 @@
+{
+  "checkedAt": "2026-10-15T09:21:53.492Z",
+  "engine": "chromium",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "Existing Merchant sees every active package and can select without changing rights or creating invoices",
+      "passed": true
+    },
+    {
+      "name": "Admin bank details and QR are immediately visible and downloadable on the payment page",
+      "passed": true
+    },
+    {
+      "name": "Expired Merchant confirms a selected plan and gets an invoice while current rights stay unchanged",
+      "passed": true
+    },
+    {
+      "name": "Reloading current Admin bank data does not replace the old bank snapshot on an existing invoice",
+      "passed": true
+    },
+    {
+      "name": "A new Merchant can choose and reselect a package before adding their first Villa",
+      "passed": true
+    },
+    {
+      "name": "Package chooser and visible bank section fit phone and tablet viewports; Demo clearly hides real transfer QR",
+      "passed": true
+    }
+  ],
+  "layout": [
+    {
+      "width": 320,
+      "scroll": 320
+    },
+    {
+      "width": 390,
+      "scroll": 390
+    },
+    {
+      "width": 768,
+      "scroll": 768
+    },
+    {
+      "width": 1024,
+      "scroll": 1024
+    },
+    {
+      "width": 1440,
+      "scroll": 1440
+    }
+  ],
+  "errors": [],
+  "pass": 6,
+  "fail": 0
+}

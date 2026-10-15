@@ -1,4 +1,9 @@
 /* Design 1 remains the visual foundation; restrained Design 3 evidence details. */
+.subscription-selection { padding: 18px; border: 1px solid var(--line); border-radius: 12px; margin: 16px 0; background: #f5fbfc; }
+.subscription-selection ul { padding-left: 22px; }
+.subscription-panel .bank-payment-details { margin-top: 28px; }
+.subscription-panel .bank-payment-details h3 { flex: 1; min-width: 0; }
+.subscription-panel .bank-payment-details img { display: block; height: auto; margin: 16px 0; }
 .portal-page.portal-user .portal-side nav { gap: 14px; }
 .portal-page.portal-user .portal-side nav button { min-height: 52px; padding: 14px 16px; font-size: 14px; line-height: 1.6; }
 .portal-page.portal-user .portal-side .portal-logout { margin-top: 20px; }

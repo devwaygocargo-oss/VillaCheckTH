@@ -882,8 +882,14 @@ export function createApp(db, config, transport) {
           if (!selected.active) fail(400, "แพ็กเกจปิดใช้งาน")
           await transaction(db, async () => {
             const current = await getSubscription(db, user.id)
-            if (current && current.package_id !== data.packageId)
-              fail(409, "บัญชีนี้สมัครแพ็กเกจแล้ว กรุณาใช้แพ็กเกจปัจจุบัน")
+            if (current && current.package_id !== data.packageId) {
+              const used=await db.prepare("SELECT count(*) AS n FROM villas WHERE owner_id=?").get(user.id)
+              const invoice=await db.prepare("SELECT id FROM invoices WHERE subscription_owner=?").get(user.id)
+              if(used.n||invoice||current.expires||current.payments||["SUSPENDED","CANCELLED"].includes(current.lifecycle))
+                fail(409,"แพ็กเกจนี้มีการใช้งานแล้ว กรุณาเลือกอัปเกรดหรือต่ออายุ")
+              await db.prepare("UPDATE subscriptions SET package_id=? WHERE owner_id=?").run(selected.id,user.id)
+              await audit(db,user,"subscription.reselect",user.id)
+            }
             if (!current) {
               const count = (
                 await db
@@ -1053,20 +1059,20 @@ export function createApp(db, config, transport) {
               if (!sub) fail(409, "ไม่พบแพ็กเกจ Merchant")
               if (["SUSPENDED", "CANCELLED"].includes(sub.lifecycle))
                 fail(409, "แพ็กเกจถูกระงับหรือยกเลิก กรุณาติดต่อ Admin")
-              if ((await getPlan(db, sub.package_id)).amount === 0) {
-                if (
-                  !(await getPlan(db, data.packageId)).active ||
-                  (await getPlan(db, data.packageId)).amount === 0
-                )
-                  fail(400, "ทดลองฟรีใช้ได้ครั้งเดียว กรุณาเลือกแพ็กเกจชำระเงินเพื่อต่ออายุ")
-              }
+              const currentPlan=await getPlan(db,sub.package_id)
+              const target=await getPlan(db,data.packageId||sub.package_id)
+              if(!target.active||target.amount===0)fail(400,"กรุณาเลือกแพ็กเกจชำระเงินที่เปิดใช้งาน ทดลองฟรีใช้ได้ครั้งเดียว")
+              const used=await db.prepare("SELECT count(*) AS n FROM villas WHERE owner_id=?").get(user.id)
+              if(target.capacity<used.n)fail(409,"จำนวน Villa เกินสิทธิ์แพ็กเกจที่เลือก")
+              if(target.id!==currentPlan.id&&currentPlan.amount>0&&(!sub.expires||new Date(sub.expires)>new Date()))
+                fail(409,"แพ็กเกจยังไม่หมดอายุ กรุณาใช้การอัปเกรดหรือเลือกต่ออายุแพ็กเกจเดิม")
+              const pending=await db.prepare("SELECT package_id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id)
+              if(pending&&(pending.package_id||villa.package_id)!==target.id)fail(409,"กรุณาจัดการใบแจ้งชำระที่ค้างก่อนเปลี่ยนแพ็กเกจ")
               await subscriptionInvoice(
                 db,
                 villa,
                 config.appUrl,
-                (await getPlan(db, sub.package_id)).amount === 0
-                  ? data.packageId
-                  : undefined,
+                target.id,
                 config.paymentInstructions,
               )
               await audit(db, user, "subscription.renew", user.id)
