@@ -48,8 +48,7 @@ export default function AdminPendingVillas({go}:{go:(page:Page,item?:string)=>vo
     }catch(e){setMessage(e instanceof Error?e.message:"บันทึกผลตรวจสอบไม่สำเร็จ");}
     finally{working.current=false;setBusy(false);}
   };
-  return <PortalShell role="Admin" page="admin-pending-villas" go={go}><div className="portal-head"><div><h1>Villa รออนุมัติ</h1><p>ตรวจเหตุผล ข้อมูลก่อนและหลังแก้ไข และเอกสารประกอบก่อนอนุมัติ</p></div></div>
-    <details className="merchant-panel"><summary>เอกสาร Dummy สำหรับทดลองตรวจสอบ</summary><p>DUMMY — เอกสารจำลอง ไม่ใช่เอกสารของ Villa และไม่ใช้แทนหลักฐานจริง</p><a className="outline-button" href="/api/admin/review-sample-document" target="_blank" rel="noreferrer">เปิดเอกสาร Dummy ตัวอย่าง (PDF)</a></details>
+  return <PortalShell role="Admin" page="admin-pending-villas" go={go}><div className="portal-head"><div><h1>Villa รออนุมัติ</h1><p>ตรวจเหตุผล ข้อมูลก่อนและหลังแก้ไข และเอกสารประกอบก่อนอนุมัติ</p></div><button className="outline-button" onClick={()=>go("admin-approved-villas")}>ดู Villa ที่อนุมัติแล้ว</button></div>
     {message&&<p role="status" className="form-message">{message}</p>}
     <p role="status">{loading?"กำลังโหลดรายการ…":`รออนุมัติ ${villas.length} รายการ`}</p>
     {!loading&&!villas.length&&<section className="merchant-panel">ไม่มี Villa รออนุมัติ</section>}
