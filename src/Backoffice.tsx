@@ -195,13 +195,17 @@ export default function Backoffice({
   }
   const [photo,setPhoto]=useState<Document|null>(null);
   useEffect(()=>setPhoto(null),[selected,page]);
+  const initializedEdit = useRef("");
   useEffect(()=>{
+    if(page !== "owner-villa-edit") initializedEdit.current = "";
     const v=store?.villas.find(v=>v.id===initialItem);
     if(!v)return;
+    if(page === "owner-villa-edit" && initializedEdit.current === v.id) return;
+    if(page === "owner-villa-edit") initializedEdit.current = v.id;
     setSelected(v.id);
     setForm(current=>({...current,name:v.name,province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId}));
     setVerificationLevel(v.status==="approved"?v.verificationLevel:"VERIFIED");
-  },[initialItem,store]);
+  },[initialItem,store,page]);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!upload) {
@@ -529,7 +533,26 @@ export default function Backoffice({
               page === "owner-villa-edit") && (
               <section className="merchant-panel merchant-detail">
                 {!admin&&<div className="button-row"><button className="outline-button" onClick={()=>go("owner-villas")}>กลับรายการ Villa</button>{!editing&&<button className="primary-button" onClick={()=>showDetails(active,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}</div>}
-                {!admin&&editing&&<form className="portal-form" onSubmit={async e=>{e.preventDefault();try{await api(`/merchant/villas/${active.id}`,{...form,photo});setPhoto(null);await perform("/state",undefined,"Updated; pending document review");}catch(e){setMessage(e instanceof Error?e.message:"Update failed")}}}><h2>แก้ไขข้อมูล Villa</h2><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{k}<input required={["name","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}<button disabled={busy} className="primary-button">บันทึกและส่งตรวจใหม่</button></form>}
+                {!admin&&editing&&<form className="portal-form" onSubmit={async e=>{
+                  e.preventDefault();
+                  if(busyRef.current)return;
+                  busyRef.current=true;setBusy(true);setMessage("");
+                  try{
+                    await api(`/merchant/villas/${active.id}`,{...form,photo});
+                    setPhoto(null);
+                    setMessage("บันทึกสำเร็จและส่งให้ Admin ตรวจสอบใหม่แล้ว โดยคง QR เดิม");
+                    try{
+                      const next=await api<Store>("/state");
+                      setStore(next);
+                      const saved=next.villas.find(v=>v.id===active.id);
+                      if(saved)setForm(current=>({...current,photoUrl:saved.photoUrl||""}));
+                    }
+                    catch{setMessage("บันทึกและส่งตรวจใหม่สำเร็จแล้ว แต่โหลดสถานะล่าสุดไม่สำเร็จ กรุณารีเฟรชหน้า");}
+                  }catch(error){
+                    if(error instanceof ApiError && error.status===401)go("login");
+                    setMessage(error instanceof Error?error.message:"บันทึกไม่สำเร็จ กรุณาลองใหม่");
+                  }finally{busyRef.current=false;setBusy(false);}
+                }}><h2>แก้ไขข้อมูล Villa</h2><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{k}<input required={["name","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
                 {!editing&&active.photoUrl&&<img src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/>}
                 <h2>เอกสารกรรมสิทธิ์ · {active.name}</h2>
                 <p>{active.document.name}</p>
