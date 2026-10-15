@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-15T07:12:44.988Z",
+  "environment": "production",
+  "scope": "reserved dummy fixtures only",
+  "fixtures": 14,
+  "checks": {
+    "villaIdentitiesStatusesAndQrPreserved": true,
+    "noMailCreated": true,
+    "mismatchScenarioCorrect": true,
+    "expiredOwnerContactAligned": true
+  },
+  "batchedSeedRollback": {
+    "passed": true,
+    "elapsedMs": 4304,
+    "noChangesCommitted": true
+  }
+}

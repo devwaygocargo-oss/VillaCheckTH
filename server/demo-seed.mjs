@@ -84,31 +84,36 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
 // Merchant edits, replacement documents, review decisions and historical snapshots remain intact.
 async function synchronizeDemoProfilesAndDocuments(db,names,originalMerchant){
  const emails=['demo-merchant@villacheck.example','demo-regional@villacheck.example','demo-expired@villacheck.example','demo-payment@villacheck.example','demo-trial@villacheck.example']
- const owners=new Map()
- for(const email of emails){
-  const owner=await db.prepare("SELECT * FROM users WHERE email=? AND role='merchant'").get(email)
-  if(!owner)continue
-  owners.set(owner.id,owner)
-  const villa=await db.prepare('SELECT * FROM villas WHERE owner_id=? ORDER BY created,id LIMIT 1').get(owner.id)
+ const placeholders=values=>values.map(()=>'?').join(',')
+ const ownerRows=await db.prepare(`SELECT * FROM users WHERE role='merchant' AND email IN (${placeholders(emails)})`).all(...emails)
+ const owners=new Map(ownerRows.map(owner=>[owner.id,owner]))
+ const ids=names.map(uuid)
+ const villas=await db.prepare(`SELECT * FROM villas WHERE id IN (${placeholders(ids)}) ORDER BY created,id`).all(...ids)
+ const expectedDocs=new Set(names.map(name=>uuid(name+'-document')))
+ const docIds=[...new Set(villas.map(v=>v.document_id).filter(id=>expectedDocs.has(id)))]
+ const docs=docIds.length?await db.prepare(`SELECT * FROM documents WHERE id IN (${placeholders(docIds)})`).all(...docIds):[]
+ const documents=new Map(docs.map(doc=>[doc.id,doc]))
+ const reviewKeys=ids.map(id=>'villa_review:'+id)
+ const reviews=new Set((await db.prepare(`SELECT key FROM system_settings WHERE key IN (${placeholders(reviewKeys)})`).all(...reviewKeys)).map(row=>row.key))
+ for(const owner of ownerRows){
+  const villa=villas.find(v=>v.owner_id===owner.id)
   if(villa)for(const [field,value]of [['business_name',villa.merchant],['phone',villa.phone],['address','DUMMY address - not a real business location']]){
    if(!owner[field])await db.prepare(`UPDATE users SET ${field}=? WHERE id=? AND ${field}=''`).run(value||'',owner.id)
   }
  }
  const generic=dummyPdf()
  for(const name of names){
-  const villa=await db.prepare('SELECT * FROM villas WHERE id=?').get(uuid(name))
-  const owner=villa&&owners.get(villa.owner_id)
+  const villa=villas.find(v=>v.id===uuid(name)),owner=villa&&owners.get(villa.owner_id)
   if(!owner)continue
   if(name==='Expired Demo Villa'&&owner.email==='demo-expired@villacheck.example'&&villa.email===originalMerchant.email)
    await db.prepare('UPDATE villas SET email=? WHERE id=? AND email=?').run(owner.email,villa.id,originalMerchant.email)
-  const review=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('villa_review:'+villa.id)
-  if(!review&&!villa.reviewed_by&&['pending','changes'].includes(villa.status)){
-   await db.prepare("UPDATE villas SET verification_level='REGISTERED' WHERE id=? AND verification_level='VERIFIED'").run(villa.id)
+  if(!reviews.has('villa_review:'+villa.id)&&!villa.reviewed_by&&['pending','changes'].includes(villa.status)){
+   if(villa.verification_level==='VERIFIED')await db.prepare("UPDATE villas SET verification_level='REGISTERED' WHERE id=? AND verification_level='VERIFIED'").run(villa.id)
    if(villa.status==='changes'&&!villa.reason)
-    await db.prepare("UPDATE villas SET reason=? WHERE id=? AND reason=''").run('DUMMY: ownership document needs additional detail; Merchant must upload a replacement for Admin review.',villa.id)
+    await db.prepare("UPDATE villas SET reason=? WHERE id=? AND reason='' ").run('DUMMY: ownership document needs additional detail; Merchant must upload a replacement for Admin review.',villa.id)
   }
   if(villa.document_id!==uuid(name+'-document'))continue
-  const doc=await db.prepare('SELECT * FROM documents WHERE id=?').get(villa.document_id)
+  const doc=documents.get(villa.document_id)
   if(doc?.owner_id===owner.id&&doc.name==='dummy-ownership.pdf'&&Buffer.from(doc.bytes).equals(generic)){
    await db.prepare('UPDATE documents SET bytes=? WHERE id=?').run(dummyPdf({'Villa ID':villa.id,'Villa name':villa.name,'Merchant email':owner.email,'Purpose':'DUMMY ownership proof - no real property rights'}),doc.id)
   }
