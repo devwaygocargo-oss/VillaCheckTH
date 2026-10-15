@@ -12,7 +12,7 @@ import { openSupport } from "./support";
 import { useEffect, useState } from "react";
 
 export type Page =
-  | "admin-pending-villas" | "admin-login" | "admin-cms" | "cms-page" | "user-registration" | "admin-users"
+  | "admin-verify" | "admin-pending-villas" | "admin-login" | "admin-cms" | "cms-page" | "user-registration" | "admin-users"
   | "home" | "directory" | "detail" | "scan" | "verify" | "pricing" | "login"
   | "about" | "verification-standard" | "articles" | "article-detail" | "owner-guide"
   | "help" | "contact" | "privacy" | "terms" | "social-facebook" | "social-instagram"

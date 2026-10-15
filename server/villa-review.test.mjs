@@ -37,6 +37,11 @@ test('Villa approval requests retain actual changes, documents, permissions and 
   const full=(await request('/public/qr/'+villa.qr,undefined,admin)).value;assert.equal(full.locked,false);assert.equal(full.accountNumber,villa.account_number);assert.equal(full.phone,villa.phone)
   const guest=(await request('/public/qr/'+villa.qr)).value;assert.equal(guest.locked,true);assert.equal(guest.accountNumber,undefined)
  })
+ await t.test('dedicated Admin verification requires Admin and returns full pending Villa details',async()=>{
+  const path='/admin/qr-verification/'+encodeURIComponent(villa.qr)
+  assert.equal((await request(path)).status,401);assert.equal((await request(path,undefined,merchant)).status,403)
+  const full=(await request(path,undefined,admin)).value;assert.equal(full.viewerRole,'admin');assert.equal(full.locked,false);assert.equal(full.phone,villa.phone);assert.equal(full.accountNumber,villa.account_number)
+ })
  await t.test('explicit document resubmission records real document filename changes',async()=>{
   await request('/merchant/villas/'+villa.id,edit,merchant);await request('/villas/'+villa.id+'/review',{status:'changes',reason:'Dummy test: ownership proof needs replacement'},admin)
   assert.equal((await request('/villas/'+villa.id+'/resubmit',{document:{name:'DUMMY-replacement.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from('%PDF-1.4 Dummy test ownership').toString('base64')}},merchant)).status,200)

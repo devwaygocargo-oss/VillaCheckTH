@@ -23,7 +23,7 @@ function status(v: MerchantVilla) {
   if (!v.qr) return "อนุมัติแล้ว · รอชำระเงิน"
   return new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
 }
-export function VillaQr({ villa }: { villa: MerchantVilla }) {
+export function VillaQr({ villa, admin = false }: { villa: MerchantVilla; admin?: boolean }) {
   const url = `${window.location.origin}/#page=verify&item=${encodeURIComponent(villa.qr)}`
   const qrRef = useRef<HTMLDivElement>(null)
   const [downloadUrl, setDownloadUrl] = useState("")
@@ -50,7 +50,7 @@ export function VillaQr({ villa }: { villa: MerchantVilla }) {
       <div ref={qrRef} />
       <strong>{villa.qr}</strong><p>{villa.qrStatus} · {villa.verificationLevel}</p>
       <small>หมดอายุ {date(villa.expires)}</small>
-      <a href={url}>เปิดหน้าตรวจสอบ ↗</a>
+      <a href={admin?`/admin#${new URLSearchParams({page:"admin-verify",item:villa.qr})}`:url}>เปิดหน้าตรวจสอบ ↗</a>
       {downloadUrl && <a className="outline-button" href={downloadUrl} download={`VillaCheck-${villa.qr}.svg`}>ดาวน์โหลด QR (SVG)</a>}
     </div>
   )
@@ -509,7 +509,7 @@ export default function Backoffice({
                   </button>
                   {!admin&&<button className="primary-button" onClick={()=>showDetails(v,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}
                 </div>
-                {v.qr && <VillaQr villa={v} />}
+                {v.qr && <VillaQr villa={v} admin={admin} />}
                 {admin && v.status === "approved" &&
                   v.invoices.map((invoice) => (
                     <PaymentPanel
@@ -641,7 +641,7 @@ export default function Backoffice({
                     </button>
                   </div>
                 )}
-                {!editing && active.qr && <VillaQr villa={active} />}
+                {!editing && active.qr && <VillaQr villa={active} admin={admin} />}
               </section>
             )}
           {(admin || billing) && (
@@ -713,9 +713,11 @@ export default function Backoffice({
 export function MerchantVerification({
   reference,
   go,
+  adminView = false,
 }: {
   reference: string
   go: (page: Page, item?: string) => void
+  adminView?: boolean
 }) {
   const [villa, setVilla] = useState<{
     name: string
@@ -728,6 +730,7 @@ export function MerchantVerification({
     expires: string
     valid: boolean
     locked: boolean
+    viewerRole?: string
     phone?: string
     bankName?: string
     accountName?: string
@@ -741,12 +744,13 @@ export function MerchantVerification({
     setLoading(true)
     setVilla(null)
     setError("")
-    void api<{ photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
-      `/public/qr/${encodeURIComponent(reference)}`,
+    void api<{ photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
+      `${adminView?"/admin/qr-verification":"/public/qr"}/${encodeURIComponent(reference)}`,
     )
       .then((value) => {
         if (!cancelled) {
           setVilla(value)
+          if(value.viewerRole==="admin")return
           const activityKey=reference+":"+value.locked
           if(activityLogged.current===activityKey)return
           activityLogged.current=activityKey
@@ -759,7 +763,10 @@ export function MerchantVerification({
         }
       })
       .catch((error) => {
-        if (!cancelled) setError(error.message)
+        if (!cancelled) {
+          if(adminView && error instanceof ApiError && error.status===401)go("admin-login");
+          setError(error.message);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -767,11 +774,12 @@ export function MerchantVerification({
     return () => {
       cancelled = true
     }
-  }, [reference])
+  }, [reference,adminView])
+  const isAdmin = adminView || villa?.viewerRole === "admin";
   return (
     <main className="page-bg">
       <div className="container merchant-verification merchant-panel">
-        <span className="kicker">VILLACHECK / QR VERIFICATION</span>
+        <span className="kicker">{isAdmin?"VILLACHECK / ADMIN QR VERIFICATION":"VILLACHECK / QR VERIFICATION"}</span>
         <h1>
           {loading ? "กำลังตรวจสอบ QR…" : villa?.name || "ตรวจสอบ QR ไม่สำเร็จ"}
         </h1>
@@ -788,22 +796,22 @@ export function MerchantVerification({
             {villa.premiumBanner && <p className="merchant-status">✦ Premium Verified · เอกสารผ่านและ Subscription ใช้งานได้</p>}
             <a href={`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:`${villa.name} ${villa.province}`})}`} target="_blank" rel="noopener noreferrer">ดูที่ตั้งบน Google Maps</a>
             <p>วันหมดอายุ: {date(villa.expires)}</p>
-            <button onClick={()=>go("villa-report",reference)}>แจ้งปัญหาเกี่ยวกับที่พักนี้</button>
+            {!isAdmin&&<button onClick={()=>go("villa-report",reference)}>แจ้งปัญหาเกี่ยวกับที่พักนี้</button>}
             <section className={`verification-contact ${villa.locked ? "locked" : ""}`}>
-              <div className="verification-contact-head"><h2>ข้อมูลติดต่อและบัญชีรับเงิน</h2><span>{villa.locked ? "สำหรับสมาชิก User" : "เข้าสู่ระบบ User แล้ว"}</span></div>
+              <div className="verification-contact-head"><h2>ข้อมูลติดต่อและบัญชีรับเงิน</h2><span>{isAdmin?"ข้อมูลเต็มสำหรับ Admin":villa.locked ? "สำหรับสมาชิก User" : "เข้าสู่ระบบ User แล้ว"}</span></div>
               <dl>
                 <div><dt>เบอร์โทรศัพท์ทางการ</dt><dd>{villa.locked ? "•••-•••-••••" : villa.phone || "ยังไม่ได้ระบุ"}</dd></div>
                 <div><dt>ธนาคาร</dt><dd>{villa.locked ? "ข้อมูลถูกซ่อน" : villa.bankName || "ยังไม่ได้ระบุ"}</dd></div>
                 <div><dt>ชื่อบัญชี</dt><dd>{villa.locked ? "ข้อมูลถูกซ่อน" : villa.accountName || "ยังไม่ได้ระบุ"}</dd></div>
                 <div><dt>เลขที่บัญชีรับเงิน</dt><dd>{villa.locked ? "•••-•-•••••-•" : villa.accountNumber || "ยังไม่ได้ระบุ"}</dd></div>
               </dl>
-              {villa.locked ? <div className="verification-login"><p>เข้าสู่ระบบด้วยบัญชี User เพื่อดูเบอร์โทรและเลขบัญชีเต็ม โดยกลับมาตรวจ QR นี้ได้ทันที</p><div className="button-row"><button className="primary-button" onClick={() => go("login", reference)}>เข้าสู่ระบบเพื่อดูข้อมูล</button><button className="outline-button" onClick={() => go("user-registration", reference)}>สมัครสมาชิก User</button></div></div> : <p className="verification-reminder">ตรวจสอบชื่อบัญชีและช่องทางติดต่อให้ตรงกับประกาศก่อนโอนทุกครั้ง</p>}
+              {villa.locked && !isAdmin ? <div className="verification-login"><p>เข้าสู่ระบบด้วยบัญชี User เพื่อดูเบอร์โทรและเลขบัญชีเต็ม โดยกลับมาตรวจ QR นี้ได้ทันที</p><div className="button-row"><button className="primary-button" onClick={() => go("login", reference)}>เข้าสู่ระบบเพื่อดูข้อมูล</button><button className="outline-button" onClick={() => go("user-registration", reference)}>สมัครสมาชิก User</button></div></div> : <p className="verification-reminder">{isAdmin?"ข้อมูลทะเบียนสำหรับผู้ดูแลระบบ":"ตรวจสอบชื่อบัญชีและช่องทางติดต่อให้ตรงกับประกาศก่อนโอนทุกครั้ง"}</p>}
             </section>
           </>
         )}
         <p>QR Reference: {reference}</p>
-        <button className="outline-button" onClick={() => go("home")}>
-          กลับหน้าหลัก
+        <button className="outline-button" onClick={() => go(isAdmin?"admin-qr":"home")}>
+          {isAdmin?"กลับทะเบียน QR":"กลับหน้าหลัก"}
         </button>
       </div>
     </main>

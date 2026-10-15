@@ -599,14 +599,16 @@ export function createApp(db, config, transport) {
           ),
         })
       }
-      if (req.method === "GET" && path.startsWith("/api/public/qr/")) {
+      const adminQrVerification=path.startsWith("/api/admin/qr-verification/")
+      if (req.method === "GET" && (path.startsWith("/api/public/qr/") || adminQrVerification)) {
+        let viewer
+        if(adminQrVerification){viewer=await auth(req);if(viewer.role!=="admin")fail(403,"เฉพาะ Admin")}
         const v = await db
           .prepare("SELECT * FROM villas WHERE qr=?")
-          .get(decodeURIComponent(path.slice(15)))
+          .get(decodeURIComponent(path.slice(adminQrVerification?"/api/admin/qr-verification/".length:15)))
         if (!v) fail(404, "ไม่พบ QR ในระบบ")
-        let viewer
         try {
-          viewer = await session(req)
+          if(!viewer)viewer = await session(req)
         } catch (error) {
           if (error.status !== 401) throw error
         }
@@ -620,6 +622,7 @@ export function createApp(db, config, transport) {
           expires: v.expires,
           valid: (await trustDto(db, v)).qrStatus === "ACTIVE",
           locked: !unlocked,
+          viewerRole: viewer?.role || "guest",
           maskedPhone: "08X-XXX-XXXX",
           maskedBankAccount: "xxx-x-xxxxx-x",
           documentReviewStatus: {

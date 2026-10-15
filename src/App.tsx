@@ -18,7 +18,7 @@ import { openSupport } from "./support";
 import { usePageNavigation } from "./navigation";
 import { useEffect, useRef, useState } from "react";
 import type { BrowserQRCodeReader, IScannerControls } from "@zxing/browser";
-import { LoginPage, OwnerPackageAuth, OwnerRegistration, PublicInfoPage, PublicReportPage, PublicReportSuccess, type Page, type UserReport, UserPages } from "./prototype";
+import { PortalShell, LoginPage, OwnerPackageAuth, OwnerRegistration, PublicInfoPage, PublicReportPage, PublicReportSuccess, type Page, type UserReport, UserPages } from "./prototype";
 type IconName =
   | "search"
   | "pin"
@@ -678,6 +678,7 @@ function AppContent() {
   const isAdminPage = page.startsWith("admin-");
   const isUserPage = page.startsWith("user-");
   const content =
+    page === "admin-verify" ? <PortalShell role="Admin" page={page} go={go}><MerchantVerification reference={selectedItem} go={go} adminView/></PortalShell> :
     page === "admin-login" ? <AdminLogin go={go}/> :
     page === "home" ? <Home go={go} onSearch={search} onSelect={selectPackage} /> :
     page === "directory" ? <Directory go={go} initialQuery={directorySearch.query} initialProvince={directorySearch.province} /> :
