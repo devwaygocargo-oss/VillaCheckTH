@@ -1,0 +1,62 @@
+import EmbeddedPostgres from '../node_modules/embedded-postgres/dist/index.js';
+import {chromium,webkit} from '/private/tmp/villacheck-audit-tools/node_modules/playwright/index.mjs';
+import {readFileSync,writeFileSync,mkdtempSync,mkdirSync} from 'node:fs';
+import {spawn} from 'node:child_process';
+import {randomBytes} from 'node:crypto';
+import assert from 'node:assert/strict';
+import {openPostgres} from '../server/postgres.mjs';
+import {seedDemo} from '../server/demo-seed.mjs';
+import {createApp} from '../server/app.mjs';
+import {hashPassword} from '../server/database.mjs';
+import {publishedCms} from '../server/cms.mjs';
+import {otpDestination} from '../server/login-otp.mjs';
+const root=process.cwd(),engine=process.env.RESPONSIVE_ENGINE||'chromium',pgPort=engine==='webkit'?55465:55464,port=engine==='webkit'?8562:8560,apiPort=port+1,origin='https://villacheck.test',local=`http://127.0.0.1:${port}`,apiLocal=`http://127.0.0.1:${apiPort}`;
+const password=randomBytes(20).toString('hex'),pg=new EmbeddedPostgres({databaseDir:mkdtempSync('/private/tmp/villacheck-merchant-auth-')+'/db',user:'postgres',password,port:pgPort,persistent:true,postgresFlags:['-h','127.0.0.1'],onLog:()=>{},onError:()=>{}});
+const env={...process.env};for(const line of readFileSync('.env','utf8').split('\n')){const key=line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/)?.[1];if(key)env[key]='';}
+const codes=new Map(),profiles={google:{},line:{},facebook:{}},results=[],errors=[],layout=[],contexts={},pages={};let db,server,backend,browser;
+mkdirSync('audit-results/functional-screenshots',{recursive:true});
+const save=()=>writeFileSync(`audit-results/demo-relations-browser-${engine}.json`,JSON.stringify({checkedAt:new Date().toISOString(),engine,dummyOnly:true,realMessageDelivery:false,physicalDeviceTest:false,results,layout,errors,pass:results.filter(x=>x.passed).length,fail:results.filter(x=>!x.passed).length},null,2));
+const t=async(name,fn)=>{try{await fn();results.push({name,passed:true});console.log('PASS',name)}catch(e){results.push({name,passed:false,error:e.message});console.log('FAIL',name,e.message.split('\n')[0]);}save();};
+let visits=0;const visit=async(p,page)=>{await p.goto(origin+'/?auth-audit='+(++visits)+'#page='+page);await p.locator('h1').waitFor();await p.waitForTimeout(300)};
+const api=async(p,path,data)=>p.evaluate(async({path,data})=>{let csrf;if(data!==undefined){const me=await fetch('/api/auth/me');if(me.ok)csrf=(await me.json()).csrf;}const r=await fetch('/api'+path,{method:data===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...csrf?{'X-CSRF-Token':csrf}:{}},body:data===undefined?undefined:JSON.stringify(data)});return {status:r.status,value:await r.json().catch(()=>null)};},{path,data});
+const otp=async(p,channel,destination,purpose='login')=>{const form=p.locator('.login-otp');await form.getByRole('button',{name:channel==='sms'?'เบอร์โทรศัพท์':'อีเมล',exact:true}).click();await form.getByLabel(channel==='sms'?'เบอร์โทรศัพท์':'อีเมลรับ OTP').fill(destination);await form.getByRole('button',{name:'รับรหัส OTP',exact:true}).click();await form.getByLabel('รหัส OTP').waitFor();await form.getByLabel('รหัส OTP').fill(codes.get(otpDestination(channel,destination)));await form.getByRole('button',{name:purpose==='register'?'ยืนยัน OTP และสร้างบัญชี':purpose==='link_identity'?'ยืนยันช่องทางเข้าสู่ระบบ':'ยืนยัน OTP และเข้าสู่ระบบ',exact:true}).click();};
+const seedProfile=(provider,owner='new')=>profiles[provider]={sub:`${owner}-${provider}`,id:`${owner}-${provider}`,name:'Dummy Merchant',email:`${owner}-${provider}@example.test`,email_verified:true};
+try{
+ await pg.initialise();await pg.start();const client=pg.getPgClient();await client.connect();await client.query('CREATE DATABASE dummy_auth');await client.end();const url=new URL(`postgresql://postgres@127.0.0.1:${pgPort}/dummy_auth`);url.password=password;db=await openPostgres(url.toString());await seedDemo(db,{password:'AuditDummyPassword123',adminEmail:'full-admin@example.com',adminPassword:'AuditDummyPassword123'});
+
+ const release=await publishedCms(db);release.content.business.facebookLoginEnabled=true;await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('cms_published',JSON.stringify(release));
+ const config={appUrl:origin,allowedOrigins:[origin],secureCookies:true,serverless:true,demoMode:true,otpSecret:'dummy-browser-secret-with-more-than-32-characters',smtpFrom:'dummy@example.test',thaiBulkSmsApiKey:'dummy-key',thaiBulkSmsApiSecret:'dummy-secret',thaiBulkSmsSender:'VillaCheck',fakeHash:hashPassword('dummy-fake-password'),googleClientId:'dummy-google',googleClientSecret:'dummy-secret',lineClientId:'dummy-line',lineClientSecret:'dummy-secret',facebookClientId:'dummy-facebook',facebookClientSecret:'dummy-secret',facebookVersion:'v24.0',facebookLoginEnabled:true,smsFetch:async(_url,options)=>{const p=new URLSearchParams(options.body);codes.set('+'+p.get('msisdn'),p.get('message').match(/\b\d{6}\b/)[0]);return {ok:true,status:200,json:async()=>({phone_number_list:[{number:p.get('msisdn'),message_id:'dummy-message'}]})}},oauthFetch:async(url,options)=>{const u=String(url),provider=u.includes('line.me')?'line':u.includes('facebook')?'facebook':'google';return {ok:true,json:async()=>u.includes('/token')||u.includes('access_token')?{access_token:'dummy-token',id_token:'dummy-line-token'}:u.endsWith('/verify')?{...profiles.line,iss:'https://access.line.me',aud:'dummy-line',nonce:new URLSearchParams(options.body).get('nonce'),exp:Date.now()/1000+3600}:profiles[provider]};}};
+ backend=createApp(db,config,{sendMail:async m=>codes.set(m.to,m.text.match(/\b\d{6}\b/)[0])});await new Promise(r=>backend.listen(apiPort,'127.0.0.1',r));
+ Object.assign(env,{DATABASE_URL:url.toString(),APP_URL:origin,NODE_ENV:'production',ADMIN_EMAIL:'full-admin@example.com',ADMIN_PASSWORD:'AuditDummyPassword123',NEXT_TELEMETRY_DISABLED:'1',SEED_DEMO_ACCOUNTS:'false',DEMO_MODE:'true'});server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--port',String(port),'--hostname','127.0.0.1'],{cwd:root,env,stdio:'ignore'});let ready=false;for(let n=0;n<80;n++){try{if((await fetch(local)).ok){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,200))}assert.ok(ready);
+ browser=engine==='webkit'?await webkit.launch({headless:true}):await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+ const context=async name=>{const c=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});await c.route(origin+'/**',async route=>{const target=route.request().url().replace(origin,new URL(route.request().url()).pathname.startsWith('/api/')?apiLocal:local);const response=await route.fetch({url:target,maxRedirects:0});if(response.status()===302){await route.fulfill({response,status:200,contentType:'text/html',body:'<script>location.replace('+JSON.stringify(response.headers().location)+')</script>'});}else await route.fulfill({response});});for(const [host,provider]of [['accounts.google.com','google'],['access.line.me','line'],['www.facebook.com','facebook']])await c.route('https://'+host+'/**',async route=>{const state=new URL(route.request().url()).searchParams.get('state');await route.fulfill({status:200,contentType:'text/html',body:'<script>location.replace('+JSON.stringify(origin+`/api/auth/oauth/${provider}/callback?state=${state}&code=dummy-code`)+')</script>'});});contexts[name]=c;const p=await c.newPage();p.setDefaultTimeout(10000);p.on('pageerror',e=>errors.push({context:name,message:e.message}));pages[name]=p;return p;};
+
+
+
+ const user=await context('user'),owner=await context('owner'),admin=await context('admin');
+ for(const [p,email]of [[user,'demo-user@villacheck.example'],[owner,'demo-merchant@villacheck.example'],[admin,'full-admin@example.com']]){await visit(p,'login');assert.equal((await api(p,'/auth/login',{email,password:'AuditDummyPassword123'})).status,200);}
+ const merchantState=(await api(owner,'/state')).value,villa=merchantState.villas.find(v=>v.name==='Sea Sky Demo Villa'),reports=(await api(user,'/reports')).value.reports,report=reports.find(r=>r.status==='NEW');
+ await t('User checks, Merchant Villas and Admin checks reference the same seeded Villa and QR',async()=>{
+ await visit(owner,'owner-villas');await owner.getByRole('heading',{name:villa.name,exact:true}).waitFor();
+ const checks=(await api(user,'/user/checks')).value.checks;assert.equal(checks.length,2);
+ await visit(user,'user-checks');await visit(admin,'admin-checks');
+ for(const check of checks){await user.locator('article').filter({hasText:check.reference}).waitFor();await admin.locator('article').filter({hasText:check.reference}).waitFor();assert.equal(check.villa_id,villa.id);assert.equal(check.qr,villa.qr);assert.equal(check.status==='MATCHED',check.submitted_account===villa.accountNumber);}
+ const adminVilla=(await api(admin,'/state')).value.villas.find(v=>v.id===villa.id);assert.equal(adminVilla.document.data,villa.document.data);assert.equal(adminVilla.phone,villa.phone);assert.equal(adminVilla.email,villa.email);
+ });
+ await t('Admin report resolution is shown on both User and owning Merchant screens',async()=>{
+ await visit(admin,'admin-reports');const row=admin.locator('article').filter({hasText:report.reference});await row.getByRole('button',{name:'ตรวจสอบ/ตอบกลับ',exact:true}).click();await row.getByLabel('บันทึกภายใน Admin').fill('PRIVATE DEMO RELATION NOTE');await row.getByLabel('คำตอบที่ผู้แจ้งและ Merchant เห็น').fill('DUMMY: same Villa bank account verified');await row.locator('select').selectOption('RESOLVED');await row.getByRole('button',{name:'บันทึก',exact:true}).click();await row.getByText('คำตอบ: DUMMY: same Villa bank account verified',{exact:true}).waitFor();
+ for(const [p,route]of [[user,'user-reports'],[owner,'owner-reports']]){await visit(p,route);const shown=p.locator('article').filter({hasText:report.reference});await shown.getByText('คำตอบ: DUMMY: same Villa bank account verified',{exact:true}).waitFor();assert.equal(await shown.getByText('PRIVATE DEMO RELATION NOTE',{exact:true}).count(),0);}
+ });
+ await t('Admin approval of Merchant dummy Villa appears in User Directory with identical QR and capacity',async()=>{
+ const pending=merchantState.villas.find(v=>v.status==='pending');assert.ok(pending);await visit(admin,'admin-pending-villas');const card=admin.getByRole('article',{name:'รออนุมัติ '+pending.name,exact:true});await card.getByRole('button',{name:'อนุมัติ Villa',exact:true}).click();await card.waitFor({state:'hidden'});
+ const current=(await api(owner,'/state')).value.villas.find(v=>v.id===pending.id);assert.equal(current.status,'approved');assert.ok(current.qr);
+ await visit(user,'directory');await user.getByRole('heading',{name:pending.name,exact:true}).waitFor();const directory=(await api(user,'/public/villas')).value.villas.find(v=>v.id===pending.id);assert.equal(directory.qr,current.qr);assert.equal(directory.guestCapacity,current.guestCapacity);
+ await user.goto(origin+'/#page=verify&item='+encodeURIComponent(current.qr));await user.locator('.verification-contact').getByText(current.accountNumber,{exact:true}).waitFor();
+ });
+ await t('Reseeding preserves the linked Admin result and edited state across all three accounts',async()=>{
+ const before=(await api(owner,'/state')).value.villas.map(v=>({id:v.id,status:v.status,qr:v.qr})).sort((a,b)=>a.id.localeCompare(b.id));await seedDemo(db,{password:'AuditDummyPassword123'});assert.deepEqual((await api(owner,'/state')).value.villas.map(v=>({id:v.id,status:v.status,qr:v.qr})).sort((a,b)=>a.id.localeCompare(b.id)),before);
+ for(const [p,path]of [[user,'/reports'],[owner,'/merchant/reports'],[admin,'/admin/reports']]){const r=(await api(p,path)).value.reports.find(r=>r.id===report.id);assert.equal(r.status,'RESOLVED');assert.equal(r.public_note,'DUMMY: same Villa bank account verified');}
+ assert.equal((await db.prepare('SELECT count(*) AS n FROM mails').get()).n,0);
+ });
+ assert.equal(results.filter(x=>!x.passed).length,0);assert.equal(errors.length,0);console.log(JSON.stringify({engine,passed:results.length,pageErrors:errors.length,realMessagesSent:false}));save();
+}finally{await browser?.close();if(server&&server.exitCode===null){server.kill('SIGTERM');await new Promise(r=>server.once('exit',r));}if(backend)await new Promise(r=>backend.close(r));await db?.close();await pg.stop().catch(()=>{});}

@@ -1,10 +1,12 @@
 import {createHash,randomUUID} from "node:crypto"
 import {createUser,addMonths} from "./database.mjs"
-import {seedCatalog} from "./catalog.mjs"
+import {seedCatalog,trustDto} from "./catalog.mjs"
 const uuid=(name)=>{const h=createHash('sha256').update(`villacheck-demo:${name}`).digest('hex');return `${h.slice(0,8)}-${h.slice(8,12)}-4${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`}
-export function dummyPdf(){
- const content='BT /F1 14 Tf 40 150 Td (VillaCheck dummy document - NOT legal evidence) Tj ET';
- const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 500 220] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',`<< /Length ${content.length} >>\nstream\n${content}\nendstream`,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
+export function dummyPdf(details={}){
+ const pdfText=value=>String(value).replace(/[^\x20-\x7e]/g,'?').replace(/[()\\]/g,'\\$&');
+ const lines=Object.entries(details).map(([label,value])=>`0 -22 Td (${pdfText(label+': '+value)}) Tj`).join(' ');
+ const content='BT /F1 14 Tf 40 150 Td (VillaCheck dummy document - NOT legal evidence) Tj'+(lines?' '+lines:'')+' ET';
+ const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>',`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${lines?'720 300':'500 220'}] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>`,`<< /Length ${content.length} >>\nstream\n${content}\nendstream`,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
  let data='%PDF-1.4\n';const offsets=[0];for(const [i,object]of objects.entries()){offsets.push(Buffer.byteLength(data));data+=`${i+1} 0 obj\n${object}\nendobj\n`;}
  const xref=Buffer.byteLength(data);data+=`xref\n0 6\n0000000000 65535 f \n${offsets.slice(1).map(x=>String(x).padStart(10,'0')+' 00000 n ').join('\n')}\ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
  return Buffer.from(data);
@@ -14,7 +16,11 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
  return db.transaction(async()=>{
   await seedCatalog(db)
   await db.prepare("INSERT INTO system_settings(key,value) VALUES ('demo_mode','true') ON CONFLICT(key) DO NOTHING").run()
-  const add=async(email,name,role,pw=password)=>await db.prepare('SELECT * FROM users WHERE email=?').get(email) || await createUser(db,email,pw,name,role)
+  const add=async(email,name,role,pw=password)=>{
+   const existing=await db.prepare('SELECT * FROM users WHERE email=?').get(email)
+   if(existing&&existing.role!==role)throw Error('Dummy account role does not match its scenario')
+   return existing||await createUser(db,email,pw,name,role)
+  }
   const merchant=await add('demo-merchant@villacheck.example','Merchant ตัวอย่าง','merchant')
   const regional=await add('demo-regional@villacheck.example','Merchant จุดหมายตัวอย่าง','merchant')
   const customer=await add('demo-user@villacheck.example','User ตัวอย่าง','user')
@@ -28,9 +34,9 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const id=uuid(name),doc=uuid(`${name}-document`),expired=name.startsWith('Expired')
    await db.prepare("INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING").run(doc,owner.id,'dummy-ownership.pdf','application/pdf',dummyPdf())
    await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level) VALUES (?,?,?,?,?,?,'premium',?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING")
-    .run(id,owner.id,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,status,status==='approved'?`VC-DEMO-${id}`:null,expired?'2000-01-01T00:00:00.000Z':status==='approved'?expires:null,now,'0800000000','ธนาคารตัวอย่าง — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000','VERIFIED')
-   await db.prepare('UPDATE villas SET guest_capacity=? WHERE id=? AND guest_capacity IS NULL').run(index % 2 ? 8 : 12,id)
-   await db.prepare("UPDATE villas SET photo_url=? WHERE id=? AND (photo_url='' OR photo_url=?)").run(`/demo/villas/villa-${index>=6?index-2:index%3+1}.jpg`,id,`/demo/villas/villa-${index%3+1}.jpg`)
+    .run(id,owner.id,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,status,status==='approved'?`VC-DEMO-${id}`:null,expired?'2000-01-01T00:00:00.000Z':status==='approved'?expires:null,now,'0800000000','ธนาคารตัวอย่าง — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000',status==='approved'?'VERIFIED':'REGISTERED')
+   await db.prepare('UPDATE villas SET guest_capacity=? WHERE id=? AND guest_capacity IS NULL AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)').run(index % 2 ? 8 : 12,id,'villa_review:'+id)
+   await db.prepare("UPDATE villas SET photo_url=? WHERE id=? AND (photo_url='' OR photo_url=?) AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)").run(`/demo/villas/villa-${index>=6?index-2:index%3+1}.jpg`,id,`/demo/villas/villa-${index%3+1}.jpg`,'villa_review:'+id)
   }
   // Explicit simulated highest-level Admin results for two labelled demo records only.
   for(const name of ['Sea Sky Demo Villa','Khao Yai Forest Demo Villa'])await db.prepare("UPDATE villas SET verification_level='PREMIUM_VERIFIED' WHERE id=? AND status='approved' AND merchant='ธุรกิจสาธิต — ไม่ใช่ที่พักจริง' AND reviewed_by IS NULL").run(uuid(name))
@@ -45,14 +51,26 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    await db.prepare("INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING").run(doc,owner.id,'dummy-ownership.pdf','application/pdf',dummyPdf())
    await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,created,photo_url,phone,bank_name,account_name,account_number,verification_level) VALUES (?,?,?,'ชลบุรี',?,?,?,?, 'pending',?, '/demo/villas/villa-1.jpg','0800000000','DEMO BANK','DEMO ACCOUNT','0000000000','REGISTERED') ON CONFLICT(id) DO NOTHING").run(id,owner.id,name,'DEMO business - no real bookings',email,plan,doc,now)
   }
+  await synchronizeDemoProfilesAndDocuments(db,[...samples.map(([name])=>name),'Payment Workflow Demo Villa','Free Trial Demo Villa'],merchant)
   const sampleId=uuid('Sea Sky Demo Villa')
+  const sample=await db.prepare('SELECT * FROM villas WHERE id=?').get(sampleId)
+  const reportDetails=[
+   'DUMMY: User received account 9999999999, which differs from the registered demo account. Merchant and Admin must review; no real transfer.',
+   'DUMMY: User requested a QR investigation. Admin is reviewing the same Villa; no real complaint.',
+   'DUMMY: Contact inquiry resolved by Admin using the registered Villa details; no real complaint.'
+  ]
   for(const [index,status] of ['NEW','UNDER_REVIEW','RESOLVED'].entries()){
    const id=uuid('report-'+index)
-   await db.prepare('INSERT INTO support_reports(id,reference,user_id,villa_id,villa_name,type,detail,reporter,contact,status,public_note,created,updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING').run(id,'RPT-DEMO-'+id,customer.id,sampleId,'Sea Sky Demo Villa','DEMO report','Dummy report for workflow testing; no real complaint.','Demo User',customer.email,status,status==='RESOLVED'?'Demo report resolved by test team.':'',now,now)
+   await db.prepare('INSERT INTO support_reports(id,reference,user_id,villa_id,villa_name,type,detail,reporter,contact,status,public_note,created,updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING').run(id,'RPT-DEMO-'+id,customer.id,sampleId,sample.name,'DEMO report',reportDetails[index],customer.name,customer.email,status,status==='RESOLVED'?'DUMMY: Admin checked the same registered Villa and replied to the User.':'',now,now)
+   await db.prepare("UPDATE support_reports SET detail=?,reporter=? WHERE id=? AND detail='Dummy report for workflow testing; no real complaint.' AND reporter='Demo User'").run(reportDetails[index],customer.name,id)
   }
-  for(const [index,status]of ['MATCHED','REVIEW_REQUIRED'].entries()){
+  const sampleTrust=await trustDto(db,sample)
+  for(const index of [0,1]){
+   const matched=index===0&&sampleTrust.qrStatus==='ACTIVE'
+   const checkResult=matched?'DUMMY: Submitted contact and bank account matched the registered Villa at test time; not a booking guarantee.':index===0?'DUMMY: QR is not active; Admin must review this Villa before it can be trusted.':'DUMMY: Submitted account 9999999999 differs from the registered demo account; review before transfer.'
    const id=uuid('check-'+index)
-   await db.prepare('INSERT INTO user_checks VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING').run(id,'CHK-DEMO-'+id,customer.id,sampleId,'Sea Sky Demo Villa','VC-DEMO-'+sampleId,status,'Dummy check snapshot - not a guarantee of bookings.','0000000000','0800000000','demo-'+index,now)
+   await db.prepare('INSERT INTO user_checks VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING').run(id,'CHK-DEMO-'+id,customer.id,sampleId,sample.name,sample.qr||'',matched?'MATCHED':'REVIEW_REQUIRED',checkResult,index===0?sample.account_number:'9999999999',sample.phone,'demo-'+index,now)
+   if(index===1)await db.prepare("UPDATE user_checks SET submitted_account='9999999999',result=? WHERE id=? AND request_key='demo-1' AND result='Dummy check snapshot - not a guarantee of bookings.'").run('DUMMY: Submitted account 9999999999 differs from the registered demo account; review before transfer.',id)
   }
   for(let day=0;day<7;day++)for(const [index,kind]of ['PROFILE_VIEW','QR_SCAN','CONTACT_VIEW'].entries()){
    const stamp=new Date(Date.now()-day*86400000).toISOString(),id=uuid('event-'+stamp.slice(0,10)+'-'+index)
@@ -60,4 +78,39 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
   }
   return {merchant:'demo-merchant@villacheck.example',user:'demo-user@villacheck.example',villas:samples.length+2,workflowMerchants:["demo-payment@villacheck.example","demo-trial@villacheck.example"]}
  })
+}
+
+// Repair only our deterministic fixtures and their untouched legacy defaults.
+// Merchant edits, replacement documents, review decisions and historical snapshots remain intact.
+async function synchronizeDemoProfilesAndDocuments(db,names,originalMerchant){
+ const emails=['demo-merchant@villacheck.example','demo-regional@villacheck.example','demo-expired@villacheck.example','demo-payment@villacheck.example','demo-trial@villacheck.example']
+ const owners=new Map()
+ for(const email of emails){
+  const owner=await db.prepare("SELECT * FROM users WHERE email=? AND role='merchant'").get(email)
+  if(!owner)continue
+  owners.set(owner.id,owner)
+  const villa=await db.prepare('SELECT * FROM villas WHERE owner_id=? ORDER BY created,id LIMIT 1').get(owner.id)
+  if(villa)for(const [field,value]of [['business_name',villa.merchant],['phone',villa.phone],['address','DUMMY address - not a real business location']]){
+   if(!owner[field])await db.prepare(`UPDATE users SET ${field}=? WHERE id=? AND ${field}=''`).run(value||'',owner.id)
+  }
+ }
+ const generic=dummyPdf()
+ for(const name of names){
+  const villa=await db.prepare('SELECT * FROM villas WHERE id=?').get(uuid(name))
+  const owner=villa&&owners.get(villa.owner_id)
+  if(!owner)continue
+  if(name==='Expired Demo Villa'&&owner.email==='demo-expired@villacheck.example'&&villa.email===originalMerchant.email)
+   await db.prepare('UPDATE villas SET email=? WHERE id=? AND email=?').run(owner.email,villa.id,originalMerchant.email)
+  const review=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('villa_review:'+villa.id)
+  if(!review&&!villa.reviewed_by&&['pending','changes'].includes(villa.status)){
+   await db.prepare("UPDATE villas SET verification_level='REGISTERED' WHERE id=? AND verification_level='VERIFIED'").run(villa.id)
+   if(villa.status==='changes'&&!villa.reason)
+    await db.prepare("UPDATE villas SET reason=? WHERE id=? AND reason=''").run('DUMMY: ownership document needs additional detail; Merchant must upload a replacement for Admin review.',villa.id)
+  }
+  if(villa.document_id!==uuid(name+'-document'))continue
+  const doc=await db.prepare('SELECT * FROM documents WHERE id=?').get(villa.document_id)
+  if(doc?.owner_id===owner.id&&doc.name==='dummy-ownership.pdf'&&Buffer.from(doc.bytes).equals(generic)){
+   await db.prepare('UPDATE documents SET bytes=? WHERE id=?').run(dummyPdf({'Villa ID':villa.id,'Villa name':villa.name,'Merchant email':owner.email,'Purpose':'DUMMY ownership proof - no real property rights'}),doc.id)
+  }
+ }
 }

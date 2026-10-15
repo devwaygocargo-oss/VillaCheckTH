@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-10-15T07:04:46.201Z",
+  "engine": "chromium",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "User checks, Merchant Villas and Admin checks reference the same seeded Villa and QR",
+      "passed": true
+    },
+    {
+      "name": "Admin report resolution is shown on both User and owning Merchant screens",
+      "passed": true
+    },
+    {
+      "name": "Admin approval of Merchant dummy Villa appears in User Directory with identical QR and capacity",
+      "passed": true
+    },
+    {
+      "name": "Reseeding preserves the linked Admin result and edited state across all three accounts",
+      "passed": true
+    }
+  ],
+  "layout": [],
+  "errors": [],
+  "pass": 4,
+  "fail": 0
+}
