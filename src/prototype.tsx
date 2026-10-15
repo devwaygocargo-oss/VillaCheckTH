@@ -24,7 +24,7 @@ export type Page =
   | "owner-pending" | "owner-analytics" | "owner-reports" | "owner-package"
   | "user-dashboard" | "user-checks" | "user-check-detail" | "user-reports"
   | "user-report-detail" | "user-precheck" | "user-check-success" | "villa-report" | "villa-report-success"
-  | "admin-dashboard" | "admin-review" | "admin-owners" | "admin-villas"
+  | "admin-dashboard" | "admin-owners" | "admin-villas"
   | "admin-leads" | "admin-settings" | "admin-payments" | "admin-subscriptions" | "admin-checks" | "admin-reports" | "admin-qr" | "admin-packages";
 
 type Go = (page: Page, item?: string) => void;
@@ -214,7 +214,7 @@ const ownerNav: [string, Page][] = [
 ];
 const adminNav: [string, Page][] = [
   ["CMS เว็บไซต์", "admin-cms"], ["Villa รออนุมัติ", "admin-pending-villas"], ["Villa ที่อนุมัติแล้ว", "admin-approved-villas"], ["Dashboard", "admin-dashboard"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
-  ["Checks", "admin-checks"], ["Reports", "admin-reports"], ["QR", "admin-qr"], ["Packages", "admin-packages"], ["Documents", "admin-review"], ["Payments", "admin-payments"], ["Subscriptions", "admin-subscriptions"], ["Leads", "admin-leads"], ["Settings", "admin-settings"],
+  ["Checks", "admin-checks"], ["Reports", "admin-reports"], ["QR", "admin-qr"], ["Packages", "admin-packages"], ["Payments", "admin-payments"], ["Subscriptions", "admin-subscriptions"], ["Leads", "admin-leads"], ["Settings", "admin-settings"],
 ];
 const userNav: [string, Page][] = [
   ["Dashboard", "user-dashboard"], ["Checks", "user-checks"], ["Report ของฉัน", "user-reports"],
@@ -304,8 +304,7 @@ function PackagePicker({ selected, onSelect }: { selected: string; onSelect: (na
 }
 
 export function AdminPages({ page, go, villaStatus, setVillaStatus }: { page: Page; go: Go; villaStatus: Status; setVillaStatus: (status: Status) => void }) {
-  if (page === "admin-dashboard") return <PortalShell role="Admin" page={page} go={go}><PortalHead title="Admin Dashboard" subtitle="ภาพรวมระบบ VillaCheck" /><div className="metric-grid"><Metric label="Pending Villas" value="4" note="รอตรวจสอบ" /><Metric label="Merchants" value="128" note="Active 123" /><Metric label="Checks" value="2,481" note="เดือนนี้" /><Metric label="Reports" value="12" note="Open 3" /></div><ActionCard title="Pending Villa" text="Sea Sky Pool Villa รอการตรวจสอบ" action="Review" onClick={() => go("admin-review")} /><StateGallery /></PortalShell>;
-  if (page === "admin-review") return <PortalShell role="Admin" page="admin-villas" go={go}><PortalHead title="Review Villa" subtitle="ตรวจสอบข้อมูล Sea Sky Pool Villa" /><DetailPanel /><div className="review-actions"><button className="primary-button" onClick={() => { setVillaStatus("Verified"); go("admin-villas"); }}>Approve</button><button className="outline-button" onClick={() => { setVillaStatus("Pending"); window.alert("ส่งคำขอแก้ไขให้ Merchant แล้ว"); }}>Request Change</button><button className="danger-button" onClick={() => { setVillaStatus("Rejected"); go("admin-villas"); }}>Reject</button></div></PortalShell>;
+  if (page === "admin-dashboard") return <PortalShell role="Admin" page={page} go={go}><PortalHead title="Admin Dashboard" subtitle="ภาพรวมระบบ VillaCheck" /><div className="metric-grid"><Metric label="Pending Villas" value="4" note="รอตรวจสอบ" /><Metric label="Merchants" value="128" note="Active 123" /><Metric label="Checks" value="2,481" note="เดือนนี้" /><Metric label="Reports" value="12" note="Open 3" /></div><ActionCard title="Pending Villa" text="Sea Sky Pool Villa รอการตรวจสอบ" action="Review" onClick={() => go("admin-pending-villas")} /><StateGallery /></PortalShell>;
   const configs: Partial<Record<Page, [string,string]>> = {
     "admin-owners": ["Merchants", "บัญชีเจ้าของที่พักและสถานะการใช้งาน"],
     "admin-villas": ["Villas", "รายการ Villa และสถานะล่าสุด"],
@@ -317,7 +316,7 @@ export function AdminPages({ page, go, villaStatus, setVillaStatus }: { page: Pa
   const [title, subtitle] = configs[page] ?? ["Admin", "จัดการระบบ"];
   return <PortalShell role="Admin" page={page} go={go}><PortalHead title={title} subtitle={subtitle} />
     {page === "admin-owners" && <><DataRow title="Sea Sky Co., Ltd." detail="owner@villacheck.test" status="Verified" action="เปิด Merchant" onClick={() => window.alert("Merchant: Sea Sky Co., Ltd.")} /><DataRow title="North Stay Group" detail="สถานะถูกระงับชั่วคราว" status="Suspended" action="ตรวจสอบ" onClick={() => window.alert("บัญชี Suspended")} /></>}
-    {page === "admin-villas" && <DataRow title="Sea Sky Pool Villa" detail="VC-TH-2025-01842" status={villaStatus} action="Review" onClick={() => go("admin-review")} />}
+    {page === "admin-villas" && <DataRow title="Sea Sky Pool Villa" detail="VC-TH-2025-01842" status={villaStatus} action="Review" onClick={() => go("admin-pending-villas")} />}
     {page === "admin-checks" && <DataRow title="CHK-2081" detail="Sea Sky Pool Villa · Success" status="Verified" action="ดู Check" onClick={() => window.alert("CHK-2081 · Verification Success · Sea Sky Pool Villa")} />}
     {page === "admin-reports" && <DataRow title="REP-1048" detail="ข้อมูลบัญชีไม่ตรง" status="Pending" action="เปิด Report" onClick={() => window.alert("REP-1048 · อยู่ระหว่างตรวจสอบข้อมูลบัญชี")} />}
     {page === "admin-qr" && <><DataRow title="VC-TH-2025-01842" detail="Sea Sky Pool Villa" status="Verified" action="Verification Page" onClick={() => go("verify")} /><DataRow title="VC-TH-2024-00991" detail="QR หมดอายุ" status="Expired" action="ดูรายละเอียด" onClick={() => window.alert("QR นี้หมดอายุแล้ว")} /></>}

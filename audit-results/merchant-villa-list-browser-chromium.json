@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-15T08:08:26.369Z",
+  "checkedAt": "2026-10-15T08:14:19.102Z",
   "engine": "chromium",
   "dummyOnly": true,
   "realMessageDelivery": false,
@@ -22,7 +22,11 @@
       "passed": true
     },
     {
-      "name": "Admin Villa list also shows approval states and keeps QR inside details",
+      "name": "Admin list opens current approval pages instead of the removed ownership review page",
+      "passed": true
+    },
+    {
+      "name": "Legacy ownership review links resolve to the pending queue and stay protected",
       "passed": true
     }
   ],
@@ -45,6 +49,6 @@
     }
   ],
   "errors": [],
-  "pass": 5,
+  "pass": 6,
   "fail": 0
 }

@@ -83,8 +83,6 @@ export default function Backoffice({
   const [renewalPlan, setRenewalPlan] = useState("starter");
   const [selected, setSelected] = useState(initialItem)
   const [message, setMessage] = useState("")
-  const [verificationLevel,setVerificationLevel]=useState("VERIFIED")
-  const [reason, setReason] = useState("")
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState("all")
   const [upload, setUpload] = useState<Document | null>(null)
@@ -206,7 +204,6 @@ export default function Backoffice({
     if(page === "owner-villa-edit") initializedEdit.current = v.id;
     setSelected(v.id);
     setForm(current=>({...current,name:v.name,province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId}));
-    setVerificationLevel(v.status==="approved"?v.verificationLevel:"VERIFIED");
   },[initialItem,store,page]);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -239,22 +236,6 @@ export default function Backoffice({
       go("owner-villas")
     }
   }
-  const review = async (v: MerchantVilla, next: MerchantVilla["status"]) => {
-    if (next !== "approved" && !reason.trim()) {
-      setMessage("กรุณาระบุเหตุผลเพื่อให้ Merchant ดำเนินการต่อ")
-      return
-    }
-    if (
-      await perform(
-        `/villas/${v.id}/review`,
-        { status: next, reason, verificationLevel },
-        next === "approved"
-          ? "อนุมัติเอกสารแล้ว เปิด Trial หรือสร้างใบแจ้งชำระตามแพ็กเกจ"
-          : "บันทึกผลตรวจสอบแล้ว",
-      )
-    )
-      setReason("")
-  }
   if (loading || !store)
     return (
       <PortalShell role={admin ? "Admin" : "Merchant"} page={page} go={go}>
@@ -271,7 +252,6 @@ export default function Backoffice({
   const active = store.villas.find((v) => v.id === selected)
   const adding = page === "owner-add-villa" || page === "owner-onboarding-villa"
   const billing = page === "owner-package" || page === "admin-payments"
-  const reviewing = page === "admin-review"
   const dashboard = page.endsWith("dashboard")
   const editing = page === "owner-villa-edit"
   const detailPage = page === "owner-villa-detail"
@@ -283,12 +263,10 @@ export default function Backoffice({
       (filter === "all" || (billing ? v.invoices.some(i=>i.paymentStatus===filter) : v.status === filter)),
   )
   const showDetails = (v: MerchantVilla, edit=false) => {
-    setVerificationLevel(v.status === "approved" ? v.verificationLevel : "VERIFIED")
     setSelected(v.id)
     setForm({...form,name:v.name,province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId})
-    setReason("")
     setUpload(null)
-    go(admin ? "admin-review" : edit ? "owner-villa-edit" : "owner-villa-detail",v.id)
+    go(edit ? "owner-villa-edit" : "owner-villa-detail",v.id)
   }
   return (
     <PortalShell role={admin ? "Admin" : "Merchant"} page={page} go={go}>
@@ -300,9 +278,7 @@ export default function Backoffice({
           <h1>
             {adding
               ? "เพิ่ม Villa"
-              : reviewing
-                ? "ตรวจสอบกรรมสิทธิ์ Villa"
-                : billing
+              : billing
                   ? "แพ็กเกจและการชำระเงิน"
                   : page === "admin-owners"
                     ? "Merchants"
@@ -502,12 +478,16 @@ export default function Backoffice({
                   <p className="merchant-reason">เหตุผลจาก Admin: {v.reason}</p>
                 )}
                 <div className="button-row">
-                  <button
+                  {admin ? <>
+                    <a className="outline-button" href={`${v.document.data}?preview=1`} target="_blank" rel="noreferrer">เปิดเอกสารที่แนบ</a>
+                    {v.status === "pending" && <button className="primary-button" onClick={()=>go("admin-pending-villas")}>เปิดคิว Villa รออนุมัติ</button>}
+                    {v.status === "approved" && <button className="primary-button" onClick={()=>go("admin-approved-villas")}>ดู Villa ที่อนุมัติแล้ว</button>}
+                  </> : <button
                     className="outline-button"
                     onClick={() => showDetails(v)}
                   >
-                    {admin ? "ตรวจเอกสาร / รายละเอียด" : "ดูรายละเอียด Villa"}
-                  </button>
+                    ดูรายละเอียด Villa
+                  </button>}
                   {!admin&&<button className="primary-button" onClick={()=>showDetails(v,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}
                 </div>
                 {admin && v.status === "approved" &&
@@ -528,8 +508,7 @@ export default function Backoffice({
           </div>
           </>}
           {active &&
-            (reviewing ||
-              page === "owner-villa-detail" ||
+            (page === "owner-villa-detail" ||
               page === "owner-villa-edit") && (
               <section className="merchant-panel merchant-detail">
                 {!admin&&<div className="button-row"><button className="outline-button" onClick={()=>go("owner-villas")}>กลับรายการ Villa</button>{!editing&&<button className="primary-button" onClick={()=>showDetails(active,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}</div>}
@@ -574,42 +553,6 @@ export default function Backoffice({
                     src={active.document.data}
                     alt="เอกสารกรรมสิทธิ์ Villa"
                   />
-                )}
-                {admin && active.status === "approved" && <div className="portal-form"><label>ระดับ Verification ที่ Admin ตรวจจริง<select value={verificationLevel} onChange={e=>setVerificationLevel(e.target.value)}>{["REGISTERED","BASIC_CHECKED","VERIFIED","PREMIUM_VERIFIED"].map(x=><option key={x}>{x}</option>)}</select></label><button className="primary-button" disabled={busy} onClick={()=>void perform(`/villas/${active.id}/verification-level`,{verificationLevel},"บันทึกระดับ Verification แล้ว")}>บันทึกระดับที่ตรวจสอบแล้ว</button></div>}
-                {admin && active.status === "pending" && <label>ระดับที่ Admin ตรวจจริง<select value={verificationLevel} onChange={e=>setVerificationLevel(e.target.value)}>{["REGISTERED","BASIC_CHECKED","VERIFIED","PREMIUM_VERIFIED"].map(x=><option key={x}>{x}</option>)}</select></label>}
-                {admin && active.status === "pending" && (
-                  <div className="portal-form">
-                    <label>
-                      <span>เหตุผล / ข้อเสนอแนะ (จำเป็นสำหรับขอแก้ไขหรือไม่อนุมัติ)</span>
-                      <textarea
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                      />
-                    </label>
-                    <div className="button-row">
-                      <button
-                        className="primary-button"
-                        disabled={busy}
-                        onClick={() => void review(active, "approved")}
-                      >
-                        Approve และสร้างอีเมลแจ้งชำระ
-                      </button>
-                      <button
-                        className="outline-button"
-                        disabled={busy}
-                        onClick={() => void review(active, "changes")}
-                      >
-                        ขอแก้ไขเอกสาร
-                      </button>
-                      <button
-                        className="danger-button"
-                        disabled={busy}
-                        onClick={() => void review(active, "rejected")}
-                      >
-                        ไม่อนุมัติ
-                      </button>
-                    </div>
-                  </div>
                 )}
                 {!admin && ["changes", "rejected"].includes(active.status) && (
                   <div className="portal-form">
