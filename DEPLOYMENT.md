@@ -56,3 +56,17 @@ Release decision: record named business/finance reviewers and their Pass/Fail ev
 ## Useful commands
 
 `npm run typecheck`; `npm run lint`; `npm run check:health`; `npm run test:backend` with TEST_DATABASE_URL for full PostgreSQL integration. `npm run build` has database side effects; use a safe isolated audit harness for local validation.
+
+## Current agreed delivery scope (19 October 2026)
+
+Dew owns Vercel/Backup/Monitoring operations. Dummy data remains the approved testing/demonstration content; real-content replacement is deferred for the current phase. Keep Demo enabled until separately approved financial and production prerequisites are satisfied. This does not convert dummy acceptance into Production Acceptance. SMTP smoke-test outcomes are persisted with sanitized authentication/DNS/connection/TLS/provider-limit diagnostics in Admin readiness. Monitoring counts a webhook as accepted only for a successful HTTP response.
+
+## Operator Mac automation
+
+`scripts/install-operator-jobs.mjs` is an explicit macOS operator installer (never run by build/startup). Supply a verified BACKUP_DATABASE_URL in the operator environment. It stores credentials in `~/.villacheck-operations/operator.env` and the encryption key in `keys/backup.key`, both mode 0600, outside Git. The encrypted archives and safe operation logs are in separate subdirectories. Existing keys are reused, never regenerated on reinstall.
+
+LaunchAgents `com.villacheck.backup` (every 24 hours and login) and `com.villacheck.monitor` (every 10 minutes and login) run only while the operator Mac is on and connected. Health/backup failures request a local macOS notification; a successful notification command does not prove the user saw it. Set an approved HTTPS ALERT_WEBHOOK_URL for external alerts if required. Local archive and key on one Mac are not an offsite disaster-recovery copy. Approve and configure separate storage before claiming 24/7 hosted operational acceptance.
+
+Inspect jobs with `launchctl print gui/$(id -u)/com.villacheck.backup` or `.monitor`, inspect sanitized JSONL logs, and keep the recovery key secure. Stop a job using `launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.villacheck.backup.plist` (or monitor); stopping does not delete backups or keys.
+
+SMTP connection-only verification is available in Admin Settings and does not send an email. SMTP host/credentials are not exposed; diagnostics expose category, port/TLS settings and presence flags only. Port 465 selects implicit TLS automatically when SMTP_SECURE is unset; explicit settings remain authoritative. A connection-only success is not an inbox acceptance result.

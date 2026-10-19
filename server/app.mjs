@@ -1,3 +1,4 @@
+import {smtpDiagnostic} from "./smtp-diagnostics.mjs"
 import {acceptanceApi} from "./acceptance.mjs"
 import {promotionsApi,selectCoupon} from "./promotions.mjs"
 import { changeApprovals } from "./change-approvals.mjs"
@@ -668,6 +669,8 @@ export function createApp(db, config, transport) {
           const data=await body(req)
           if(!transport)fail(409,"SMTP ยังไม่พร้อม ต้องตั้งค่าบริการก่อน")
           if(data.confirmed!==true||typeof data.recipient!=="string"||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.recipient)||data.recipient.length>254)fail(400,"กรุณายืนยันอีเมลทดสอบ")
+          if(data.verifyOnly!==undefined&&typeof data.verifyOnly!=="boolean")fail(400,"รูปแบบการตรวจ SMTP ไม่ถูกต้อง")
+          if(data.verifyOnly===true&&typeof transport.verify!=="function")fail(409,"บริการนี้ไม่รองรับการตรวจเชื่อมต่อแยก")
           const stamp=await db.prepare("SELECT value FROM system_settings WHERE key='smtp:last_test'").get()
           if(stamp&&Date.now()-Date.parse(JSON.parse(stamp.value).at)<60000)fail(429,"รออย่างน้อย 1 นาทีก่อนทดสอบซ้ำ")
           // Reserve before delivery so a failed request is also rate-limited.
@@ -676,9 +679,15 @@ export function createApp(db, config, transport) {
             if(current&&Date.now()-Date.parse(JSON.parse(current.value).at)<60000)fail(429,"รออย่างน้อย 1 นาที")
             await db.prepare("INSERT INTO system_settings(key,value) VALUES ('smtp:last_test',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({at:new Date().toISOString(),status:"testing"}))
           })
-          try{await transport.sendMail({from:config.smtpFrom,to:data.recipient,subject:"VillaCheck UAT: ทดสอบ SMTP เท่านั้น",text:"ข้อความทดสอบบริการอีเมล VillaCheck ไม่มีการเรียกเก็บเงินและไม่ใช่การยืนยันชำระเงิน กรุณาตอบผู้ตรวจรับว่าได้รับใน Inbox หรือ Spam"})}catch{fail(502,"ส่งทดสอบไม่สำเร็จ กรุณาตรวจการตั้งค่า SMTP")}
+          try{if(data.verifyOnly===true)await transport.verify();else await transport.sendMail({from:config.smtpFrom,to:data.recipient,subject:"VillaCheck UAT: ทดสอบ SMTP เท่านั้น",text:"ข้อความทดสอบบริการอีเมล VillaCheck ไม่มีการเรียกเก็บเงินและไม่ใช่การยืนยันชำระเงิน กรุณาตอบผู้ตรวจรับว่าได้รับใน Inbox หรือ Spam"})}catch(error){
+            const diagnostic=smtpDiagnostic(error)
+            await db.prepare("UPDATE system_settings SET value=? WHERE key='smtp:last_test'").run(JSON.stringify({at:new Date().toISOString(),status:"failed",...diagnostic}))
+            await audit(db,user,"smtp.test.failed",diagnostic.category)
+            fail(502,diagnostic.message)
+          }
+          await db.prepare("UPDATE system_settings SET value=? WHERE key='smtp:last_test'").run(JSON.stringify({at:new Date().toISOString(),status:data.verifyOnly?"verified":"accepted",category:data.verifyOnly?"CONNECTION_VERIFIED":"SMTP_ACCEPTED",message:data.verifyOnly?"เชื่อมต่อและยืนยัน SMTP ผ่าน ยังไม่ได้ส่งอีเมล":"SMTP รับข้อความแล้ว รอยืนยัน Inbox/Spam จากผู้รับ"}))
           await audit(db,user,"smtp.test",data.recipient)
-          return json({ok:true,acceptedBySmtp:true,inboxConfirmationRequired:true})
+          return json({ok:true,acceptedBySmtp:!data.verifyOnly,verifiedConnection:true,inboxConfirmationRequired:!data.verifyOnly})
         }
         if(path==='/api/admin/readiness'&&req.method==='GET'){
           if(user.role!=='admin')fail(403,'เฉพาะ Admin')

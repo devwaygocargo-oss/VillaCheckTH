@@ -21,3 +21,12 @@ test('Scheduled encrypted backup retains prior archive on failure and prunes old
  await assert.rejects(run(process.execPath,['scripts/scheduled-backup.mjs'],{env:{...env,BACKUP_SECRET:'short'}}));assert.ok(existsSync(old))
  const r=await run(process.execPath,['scripts/scheduled-backup.mjs'],{env});assert.equal(JSON.parse(r.stdout).ok,true);assert.equal(existsSync(old),false);assert.equal(readdirSync(dir).filter(x=>x.endsWith('.vcb')).length,1)
 })
+
+test('Alert delivery requires a successful webhook response and never reports HTTP rejection as accepted',async()=>{
+ const {checkOperations}=await import('../scripts/operations-check.mjs')
+ for(const [status,expected]of [[202,'accepted'],[401,'failed'],[500,'failed']]){
+  const result=await checkOperations({origin:'https://dummy.test',alertUrl:'https://alert.test/private-secret',fetchImpl:async(url,opts)=>opts?.method==='POST'?{ok:status===202,status}:{ok:false,json:async()=>({})}})
+  assert.equal(result.ok,false);assert.equal(result.alert,expected);assert.ok(!JSON.stringify(result).includes('private-secret'))
+ }
+ await assert.rejects(checkOperations({origin:'http://127.0.0.1.attacker.test'}),/HTTPS/)
+})

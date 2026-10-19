@@ -115,13 +115,14 @@
     },
     {
       "work": "Scheduled worker/backup storage/alerts",
-      "status": "PENDING_OPERATOR_CONFIGURATION",
-      "reason": "CLI logged out; CRON_SECRET, backup destination/key/schedule and alert recipient not configured by this task"
+      "status": "LOCAL_AUTOMATION_DONE_HOSTED_ACCEPTANCE_PENDING",
+      "reason": "Vercel authenticated; CRON_SECRET configured. Daily encrypted local backup and 10-minute local monitoring installed; restore of 280 rows in 15 tables passed in isolated database. Hosted worker verification follows deployment; offsite backup and external alert destination remain.",
+      "owner": "Dew"
     },
     {
-      "work": "Production business data and business UAT sign-off",
-      "status": "PENDING_BUSINESS_INPUT",
-      "reason": "Demo still enabled; real content/finance rules and named sign-off not supplied"
+      "work": "Production acceptance after agreed dummy phase",
+      "status": "DEFERRED_BY_AGREED_SCOPE",
+      "reason": "User explicitly approved dummy content for current phase; preserve Demo. Business sign-off and real financial data remain Go-live prerequisites, not missing dummy development work."
     },
     {
       "work": "Independent reviewer identity",
@@ -130,5 +131,62 @@
     }
   ],
   "acceptanceRecords": "audit-results/priority-acceptance-records-live-19Oct2026.json",
-  "noSecretsInReport": true
+  "noSecretsInReport": true,
+  "agreedScope": {
+    "content": "Use dummy data for testing and demonstration as explicitly agreed by user; real content is deferred, not a current development blocker.",
+    "operationsOwner": "Dew",
+    "productionAcceptance": "Still requires separately evidenced real services/finance/physical-device/business review."
+  },
+  "followup": {
+    "checkedAt": "2026-10-19T08:04:12.382Z",
+    "deployment": "pending-followup-deployment",
+    "backend": {
+      "checkedAt": "2026-10-19T08:00:35.261Z",
+      "dummyOnly": true,
+      "build": "pass",
+      "pass": 140,
+      "fail": 0,
+      "skip": 0
+    },
+    "browser": [
+      {
+        "engine": "chromium",
+        "pass": 5,
+        "fail": 0
+      },
+      {
+        "engine": "webkit",
+        "pass": 5,
+        "fail": 0
+      }
+    ],
+    "operations": {
+      "owner": "Dew",
+      "vercelAuthenticated": true,
+      "productionCronSecretConfigured": true,
+      "workerLiveVerification": "pending-deployment",
+      "localBackupScheduled": true,
+      "localMonitoringScheduled": true,
+      "backupIntervalSeconds": 86400,
+      "monitorIntervalSeconds": 600,
+      "retentionDays": 30,
+      "restoreDrill": {
+        "checkedAt": "2026-10-19T07:57:56.310Z",
+        "productionReadOnlyBackup": true,
+        "restoreTarget": "isolated temporary PostgreSQL on localhost",
+        "productionDatabaseRestored": false,
+        "passed": true,
+        "tables": 15,
+        "rows": 280,
+        "transientSessionsRestored": false,
+        "allDurableTablesAndBinaryDocumentsIdentical": true
+      },
+      "limitations": [
+        "Local jobs require operator Mac awake and online",
+        "No offsite backup or external alert receiver configured",
+        "Local notification command accepted; actual user receipt not confirmed"
+      ]
+    },
+    "smtp": "TLS inference for port 465 and sanitized persistent diagnostics added; verify-only live test pending deployment"
+  }
 }

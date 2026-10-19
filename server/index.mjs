@@ -1,3 +1,4 @@
+import {smtpTransportOptions} from "./smtp-diagnostics.mjs"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 import { createApp } from "./app.mjs"
@@ -72,18 +73,7 @@ export async function startServer(env = process.env, { listen = true, databaseFa
     let transport
     if (env.SMTP_HOST && env.SMTP_FROM) {
       const { default: nodemailer } = await import("nodemailer")
-      transport = nodemailer.createTransport({
-        host: env.SMTP_HOST,
-        port: Number(env.SMTP_PORT || 587),
-        secure: env.SMTP_SECURE === "true",
-        requireTLS: env.SMTP_SECURE !== "true",
-        auth: env.SMTP_USER
-          ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD }
-          : undefined,
-        connectionTimeout: 10000,
-        socketTimeout: 20000,
-        greetingTimeout: 10000,
-      })
+      transport = nodemailer.createTransport(smtpTransportOptions(env))
     }
     const config = {
       appUrl,

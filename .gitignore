@@ -26,3 +26,8 @@ logs/
 .next/
 .build/
 backend/generated/
+.vercel
+
+# Vercel project metadata and downloaded environment files
+.vercel/
+.env*.local
