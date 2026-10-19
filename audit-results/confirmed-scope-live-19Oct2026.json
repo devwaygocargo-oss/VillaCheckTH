@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-19T08:15:27.231Z",
+  "commit": "ecae0f6",
+  "supportAdminLoginPassed": true,
+  "supportPermissions": {
+    "canReview": true,
+    "canPropose": false
+  },
+  "proposerPermissions": {
+    "canReview": false,
+    "canPropose": true
+  },
+  "supportProposalDenied": true,
+  "proposerReviewDenied": true,
+  "facebookDisabled": true,
+  "facebookStatus": "pending_approval",
+  "facebookStartBlocked": true,
+  "emailsSent": 0,
+  "smsSent": 0,
+  "bankChanged": false
+}

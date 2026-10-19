@@ -1,6 +1,6 @@
 {
   "reviewDate": "2026-10-19",
-  "codeCommit": "6b60c56",
+  "codeCommit": "ecae0f6",
   "deployment": "success",
   "completedDevelopment": [
     "Automatic invoice email includes amount-specific PromptPay PNG from invoice bank snapshot",
@@ -165,8 +165,8 @@
     },
     {
       "work": "Independent reviewer identity",
-      "status": "ACCOUNT_CREATED_POLICY_IMPLEMENTED",
-      "reason": "support@villacheckth.com Admin created; initial credential privately stored outside Git. Designated reviewer policy implemented and isolated tests passed; live verification after deployment."
+      "status": "DONE",
+      "reason": "support@villacheckth.com Admin created and login verified on Production. Designated reviewer cannot propose; proposer cannot approve/reject (HTTP 403 verified). Initial credential privately stored outside Git. No messages sent or bank data changed."
     },
     {
       "work": "ThaiBulkSMS approved Sender Name",
@@ -253,6 +253,27 @@
       "คุณเกมส์"
     ],
     "uatStatus": "PENDING REVIEW — ยังไม่มีผลตรวจรับจริงจากผู้รับผิดชอบ",
-    "facebook": "ปิดไว้จนกว่า Meta อนุมัติ"
+    "facebook": "ปิดไว้จนกว่า Meta อนุมัติ",
+    "liveVerification": {
+      "checkedAt": "2026-10-19T08:15:27.231Z",
+      "commit": "ecae0f6",
+      "supportAdminLoginPassed": true,
+      "supportPermissions": {
+        "canReview": true,
+        "canPropose": false
+      },
+      "proposerPermissions": {
+        "canReview": false,
+        "canPropose": true
+      },
+      "supportProposalDenied": true,
+      "proposerReviewDenied": true,
+      "facebookDisabled": true,
+      "facebookStatus": "pending_approval",
+      "facebookStartBlocked": true,
+      "emailsSent": 0,
+      "smsSent": 0,
+      "bankChanged": false
+    }
   }
 }
