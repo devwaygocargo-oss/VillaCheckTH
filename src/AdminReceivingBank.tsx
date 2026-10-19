@@ -1,13 +1,14 @@
+import AdminChangeApprovals from "./AdminChangeApprovals";
 import { useEffect, useRef, useState } from "react";
 import { api, currentAccount } from "./api";
 import { PortalShell, type Page } from "./prototype";
 
-type Fields={bankName:string;accountName:string;accountNumber:string;promptpayType:"phone"|"taxId";promptpayId:string;instructions:string};
+type Fields={accountType:"savings"|"current"|"other";bankName:string;accountName:string;accountNumber:string;promptpayType:"phone"|"taxId";promptpayId:string;instructions:string};
 type Bank=Fields&{revision:number;qrImage:string;generatedAt:string;updatedAt:string};
 type Notification={id:string;recipient:string;merchantName:string;subject:string;status:string;created:string;sentAt:string|null;error:string;attempts:number;bankRevision:number;invoiceId?:string;amount?:number;packageName?:string};
 type Snapshot={bank:Bank|null;merchants:{id:string;name:string;business_name:string;email:string;invoiceId:string;amount:number;packageName:string}[];notifications:Notification[];demoMode:boolean;smtpConfigured:boolean};
-const blank:Fields={bankName:"",accountName:"",accountNumber:"",promptpayType:"phone",promptpayId:"",instructions:""};
-const fields=(bank:Bank|null):Fields=>bank?{bankName:bank.bankName,accountName:bank.accountName,accountNumber:bank.accountNumber,promptpayType:bank.promptpayType,promptpayId:bank.promptpayId,instructions:bank.instructions}:{...blank};
+const blank:Fields={accountType:"savings",bankName:"",accountName:"",accountNumber:"",promptpayType:"phone",promptpayId:"",instructions:""};
+const fields=(bank:Bank|null):Fields=>bank?{accountType:bank.accountType||"savings",bankName:bank.bankName,accountName:bank.accountName,accountNumber:bank.accountNumber,promptpayType:bank.promptpayType,promptpayId:bank.promptpayId,instructions:bank.instructions}:{...blank};
 const label:Record<string,string>={demo:"DEMO · ไม่ส่งอีเมลจริง",queued:"รอส่ง",sending:"กำลังส่ง",sent:"ส่งแล้ว",failed:"ส่งไม่สำเร็จ",cancelled:"ยกเลิกส่ง · รายการไม่ได้รอชำระแล้ว"};
 export default function AdminReceivingBank({go}:{go:(page:Page)=>void}) {
   const [data,setData]=useState<Snapshot|null>(null),[form,setForm]=useState<Fields>(blank),[revision,setRevision]=useState(0);
@@ -29,9 +30,10 @@ export default function AdminReceivingBank({go}:{go:(page:Page)=>void}) {
     <div className="portal-head"><div><h1>บัญชีรับเงินจาก Merchant</h1><p>จัดการบัญชีรับชำระ และส่ง QR ระบุยอดตามแพ็กเกจให้ Merchant ที่รอชำระ</p></div><button disabled={busy} className="outline-button" onClick={()=>void act(async()=>{replace(await api<Snapshot>("/admin/receiving-bank"));setMessage("โหลดข้อมูลล่าสุดแล้ว");})}>โหลดข้อมูลล่าสุด</button></div>
     {error&&<p className="form-message" role="alert">{error}</p>}{message&&<p className="form-message" role="status">{message}</p>}
     {!data?<p role="status">กำลังโหลดข้อมูลบัญชีรับเงิน…</p>:<>
+      <AdminChangeApprovals kind="bank"/>
       <div className="receiving-bank-grid">
-        <form className="merchant-panel portal-form" onSubmit={e=>{e.preventDefault();void act(async()=>{const next=await api<Snapshot>("/admin/receiving-bank",{...form,revision,confirmedBinding:confirmed});replace(next);setMessage("บันทึกบัญชีรับเงินแล้ว QR ใช้ซ้ำได้และไม่มีวันหมดอายุ");});}}>
-          <h2>ข้อมูลบัญชีรับเงิน</h2>
+        <form className="merchant-panel portal-form" onSubmit={e=>{e.preventDefault();void act(async()=>{await api("/admin/change-approvals",{kind:"bank",payload:{...form,revision,confirmedBinding:confirmed}});setMessage("เสนอข้อมูลบัญชีแล้ว รอ Admin อีกบัญชีอนุมัติ ข้อมูลรับเงินเดิมยังใช้ตามปกติ");});}}>
+          <h2>ข้อมูลบัญชีรับเงิน</h2><label>ประเภทบัญชี<select value={form.accountType} disabled={busy} onChange={e=>change("accountType",e.target.value as Fields["accountType"])}><option value="savings">ออมทรัพย์</option><option value="current">กระแสรายวัน</option><option value="other">อื่น ๆ</option></select></label>
           <label>ธนาคาร<input required maxLength={200} disabled={busy} value={form.bankName} onChange={e=>change("bankName",e.target.value)}/></label>
           <label>ชื่อบัญชี<input required maxLength={200} disabled={busy} value={form.accountName} onChange={e=>change("accountName",e.target.value)}/></label>
           <label>เลขบัญชีธนาคาร<input required inputMode="numeric" maxLength={30} disabled={busy} value={form.accountNumber} onChange={e=>change("accountNumber",e.target.value)}/></label>
@@ -41,7 +43,7 @@ export default function AdminReceivingBank({go}:{go:(page:Page)=>void}) {
           <label>คำแนะนำการชำระเงิน<textarea maxLength={2000} disabled={busy} value={form.instructions} onChange={e=>change("instructions",e.target.value)}/></label>
           <label className="receiving-bank-choice"><input type="checkbox" required disabled={busy} checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>ยืนยันว่าหมายเลขพร้อมเพย์ผูกกับบัญชีรับเงินนี้แล้ว</label>
           {dirty&&<p role="status">มีข้อมูลที่ยังไม่ได้บันทึก Merchant ยังใช้ข้อมูลที่บันทึกล่าสุด</p>}
-          <button className="primary-button" disabled={busy||!confirmed}>บันทึกและสร้าง QR คงที่</button>
+          <button className="primary-button" disabled={busy||!confirmed}>เสนอข้อมูลบัญชีเพื่ออนุมัติ</button>
         </form>
         <section className="merchant-panel receiving-bank-preview"><h2>QR รับเงินที่บันทึกแล้ว</h2>{data.bank?<>
           <img width="256" height="256" src={data.bank.qrImage} alt="QR พร้อมเพย์รับเงินจาก Merchant"/>

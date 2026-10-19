@@ -1,3 +1,6 @@
+import {acceptanceApi} from "./acceptance.mjs"
+import {promotionsApi,selectCoupon} from "./promotions.mjs"
+import { changeApprovals } from "./change-approvals.mjs"
 import { receivingBank } from "./payment-account.mjs"
 import { adminReceivingBank } from "./bank-receiving.mjs"
 import {villaReview,recordVillaReview} from './villa-review.mjs'
@@ -30,7 +33,7 @@ import {
 } from "./subscriptions.mjs"
 import { createOAuth, oauthProviders } from "./oauth.mjs"
 import { createServer } from "node:http"
-import { createHash, randomBytes, randomUUID } from "node:crypto"
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto"
 import { readFileSync, existsSync } from "node:fs"
 import { resolve, sep } from "node:path"
 import {
@@ -650,8 +653,33 @@ export function createApp(db, config, transport) {
             : {}),
         })
       }
+      if(path==="/api/ops/cron"&&req.method==="GET"){
+        const expected=config.cronSecret?Buffer.from("Bearer "+config.cronSecret):null,actual=Buffer.from(req.headers.authorization||"")
+        if(!expected)fail(503,"Scheduled worker ยังไม่ได้ตั้งค่า")
+        if(actual.length!==expected.length||!timingSafeEqual(actual,expected))fail(401,"Unauthorized")
+        await worker.run()
+        await db.prepare("INSERT INTO system_settings(key,value) VALUES ('ops:last_cron',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(new Date().toISOString())
+        return json({ok:true})
+      }
       if (path.startsWith("/api/")) {
         const user = await auth(req)
+        if(path==="/api/admin/email-test"&&req.method==="POST"){
+          if(user.role!=="admin")fail(403,"เฉพาะ Admin")
+          const data=await body(req)
+          if(!transport)fail(409,"SMTP ยังไม่พร้อม ต้องตั้งค่าบริการก่อน")
+          if(data.confirmed!==true||typeof data.recipient!=="string"||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.recipient)||data.recipient.length>254)fail(400,"กรุณายืนยันอีเมลทดสอบ")
+          const stamp=await db.prepare("SELECT value FROM system_settings WHERE key='smtp:last_test'").get()
+          if(stamp&&Date.now()-Date.parse(JSON.parse(stamp.value).at)<60000)fail(429,"รออย่างน้อย 1 นาทีก่อนทดสอบซ้ำ")
+          // Reserve before delivery so a failed request is also rate-limited.
+          await db.transaction(async()=>{
+            const current=await db.prepare("SELECT value FROM system_settings WHERE key='smtp:last_test'").get()
+            if(current&&Date.now()-Date.parse(JSON.parse(current.value).at)<60000)fail(429,"รออย่างน้อย 1 นาที")
+            await db.prepare("INSERT INTO system_settings(key,value) VALUES ('smtp:last_test',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(JSON.stringify({at:new Date().toISOString(),status:"testing"}))
+          })
+          try{await transport.sendMail({from:config.smtpFrom,to:data.recipient,subject:"VillaCheck UAT: ทดสอบ SMTP เท่านั้น",text:"ข้อความทดสอบบริการอีเมล VillaCheck ไม่มีการเรียกเก็บเงินและไม่ใช่การยืนยันชำระเงิน กรุณาตอบผู้ตรวจรับว่าได้รับใน Inbox หรือ Spam"})}catch{fail(502,"ส่งทดสอบไม่สำเร็จ กรุณาตรวจการตั้งค่า SMTP")}
+          await audit(db,user,"smtp.test",data.recipient)
+          return json({ok:true,acceptedBySmtp:true,inboxConfirmationRequired:true})
+        }
         if(path==='/api/admin/readiness'&&req.method==='GET'){
           if(user.role!=='admin')fail(403,'เฉพาะ Admin')
           return json(await readiness(db,config,transport))
@@ -663,6 +691,21 @@ export function createApp(db, config, transport) {
           if(!image)fail(404,"ไม่พบ QR รับเงิน")
           res.writeHead(200,{"Content-Type":image.mime,"Cache-Control":"private, no-store","Content-Disposition":url.searchParams.get("download")==="1"?'attachment; filename="villacheck-bank-qr.png"':"inline"});return res.end(Buffer.from(image.bytes))
         }
+        const acceptance=await acceptanceApi(db,user,req,path,body)
+        if(acceptance!==undefined)return json(acceptance)
+        const promotions=await promotionsApi(db,user,req,path,body)
+        if(promotions!==undefined)return json(promotions)
+        const approvalResult=await changeApprovals(db,user,req,path,body,async(kind,payload,validateOnly)=>{
+          const request={method:"POST"}
+          if(kind==="bank")return adminReceivingBank(db,user,request,"/api/admin/receiving-bank",async()=>payload,config,transport,validateOnly)
+          const draft=await db.prepare("SELECT value FROM system_settings WHERE key='cms_draft'").get()
+          const value=draft?JSON.parse(draft.value):null
+          if(!value||!value.revision||payload.revision!==value.revision)fail(409,"ร่าง CMS เปลี่ยนแล้ว กรุณาโหลดล่าสุดและเสนอใหม่")
+          if(validateOnly)return
+          return adminCms(db,user,request,"/api/admin/cms/publish",async()=>payload)
+        })
+        if(approvalResult!==undefined)return json(approvalResult)
+        if(config.requireDualApproval&&req.method==="POST"&&["/api/admin/receiving-bank","/api/admin/cms/publish"].includes(path))fail(403,"ต้องเสนอคำขอและให้ Admin อีกบัญชีอนุมัติ")
         const bankResult=await adminReceivingBank(db,user,req,path,body,config,transport)
         if(bankResult!==undefined){json(bankResult);if(req.method==="POST")void worker.run();return}
         const cms = await adminCms(db, user, req, path, body)
@@ -870,10 +913,17 @@ export function createApp(db, config, transport) {
             if(await db.prepare("SELECT id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id))fail(409,'Complete the pending payment first')
             const villa=await db.prepare("SELECT * FROM villas WHERE owner_id=? AND status='approved' ORDER BY created LIMIT 1").get(user.id)
             if(!villa)fail(409,'An approved Villa is required')
+            await selectCoupon(db,user.id,target,data.couponCode)
             await subscriptionInvoice(db,villa,config.appUrl,target.id,config.paymentInstructions)
             await audit(db,user,'subscription.upgrade.request',user.id)
           })
           json(await state(user));void worker.run();return
+        }
+        if(path==="/api/subscription/coupon"&&req.method==="POST"){
+          if(user.role!=="merchant")fail(403,"เฉพาะ Merchant")
+          const data=await body(req),sub=await getSubscription(db,user.id);if(!sub)fail(409,"ยังไม่มีแพ็กเกจ")
+          await transaction(db,async()=>{if(await db.prepare("SELECT id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id))fail(409,"ใบแจ้งชำระสร้างแล้ว ไม่แก้ส่วนลดย้อนหลัง");await selectCoupon(db,user.id,await getPlan(db,sub.package_id),data.couponCode)})
+          return json(await state(user))
         }
         if (req.method === "POST" && path === "/api/subscription") {
           if (user.role !== "merchant") fail(403, "เฉพาะ Merchant")
@@ -881,6 +931,7 @@ export function createApp(db, config, transport) {
           const selected = await getPlan(db, data.packageId)
           if (!selected.active) fail(400, "แพ็กเกจปิดใช้งาน")
           await transaction(db, async () => {
+            await selectCoupon(db,user.id,selected,data.couponCode)
             const current = await getSubscription(db, user.id)
             if (current && current.package_id !== data.packageId) {
               const used=await db.prepare("SELECT count(*) AS n FROM villas WHERE owner_id=?").get(user.id)
@@ -1068,6 +1119,7 @@ export function createApp(db, config, transport) {
                 fail(409,"แพ็กเกจยังไม่หมดอายุ กรุณาใช้การอัปเกรดหรือเลือกต่ออายุแพ็กเกจเดิม")
               const pending=await db.prepare("SELECT package_id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id)
               if(pending&&(pending.package_id||villa.package_id)!==target.id)fail(409,"กรุณาจัดการใบแจ้งชำระที่ค้างก่อนเปลี่ยนแพ็กเกจ")
+              if(!pending)await selectCoupon(db,user.id,target,data.couponCode)
               await subscriptionInvoice(
                 db,
                 villa,

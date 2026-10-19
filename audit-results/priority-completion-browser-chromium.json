@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-10-19T06:29:23.640Z",
+  "engine": "chromium",
+  "dummyOnly": true,
+  "realMessageDelivery": false,
+  "physicalDeviceTest": false,
+  "results": [
+    {
+      "name": "Bank proposal, account type and independent review preserve current bank until approval",
+      "passed": true
+    },
+    {
+      "name": "CMS publishing requires proposal and another Admin approval",
+      "passed": true
+    },
+    {
+      "name": "Admin promotion editor and Merchant coupon input are usable",
+      "passed": true
+    },
+    {
+      "name": "Manual UAT evidence register and new screens fit phones and tablets",
+      "passed": true
+    }
+  ],
+  "layout": [],
+  "errors": [],
+  "pass": 4,
+  "fail": 0
+}

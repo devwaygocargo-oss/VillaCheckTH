@@ -94,14 +94,14 @@ export async function subscriptionInvoice(db, villa, appUrl, selectedPlan, payme
     .run(villa.owner_id, planId, id)
   const plan = await getPlan(db, planId)
   const paymentQr = await generatePaymentQr(db, id, appUrl)
-  const invoice = await db.prepare("SELECT months FROM invoices WHERE id=?").get(id)
+  const invoice = await db.prepare("SELECT months,amount FROM invoices WHERE id=?").get(id)
   const business=await cmsBusiness(db),fields={merchant:villa.merchant,package:plan.name,villa:villa.name}
   await db
     .prepare("UPDATE mails SET subject=?,body=? WHERE invoice_id=?")
     .run(
       paymentTemplate(business.paymentEmailSubject,fields).replace(/[\r\n]/g," "),
       paymentTemplate(business.paymentEmailIntro,fields)+"\n\n"+
-      `เรียน ${villa.merchant}\n\nแพ็กเกจบัญชี Merchant: ${plan.name}\nรองรับ ${plan.capacity} Villa · แต่ละ Villa มี QR ของตัวเอง\nยอดชำระ ฿${plan.amount / 100} ต่อบัญชีแพ็กเกจ (${invoice.months} เดือน)\nVilla: ${villa.name}\nเลขที่ใบแจ้งชำระ: ${id}\nPayment QR (เปิดหน้าชำระเงิน): ${paymentQr.payload}\nหมดอายุ: ${paymentQr.expiresAt}\n${appUrl}/#page=owner-package\n${
+      `เรียน ${villa.merchant}\n\nแพ็กเกจบัญชี Merchant: ${plan.name}\nรองรับ ${plan.capacity} Villa · แต่ละ Villa มี QR ของตัวเอง\nยอดชำระ ฿${invoice.amount / 100} ต่อบัญชีแพ็กเกจ (${invoice.months} เดือน)\nVilla: ${villa.name}\nเลขที่ใบแจ้งชำระ: ${id}\nPayment QR (เปิดหน้าชำระเงิน): ${paymentQr.payload}\nหมดอายุ: ${paymentQr.expiresAt}\n${appUrl}/#page=owner-package\n${
         plan.amount
           ? "กรุณาแนบสลิปเพื่อให้ Admin ยืนยันการชำระ แล้วระบบจะเปิดใช้ QR ของ Villa ที่อนุมัติแล้ว"
           : "Admin อนุมัติแล้ว เปิดใช้ QR ทดลองฟรี ไม่มีค่าใช้จ่าย"

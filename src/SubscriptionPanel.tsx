@@ -1,6 +1,6 @@
 import { useCms } from "./cms";
 import { usePackages, billingLabel, billingValidityLabel, packageIntentKey } from "./packagePlans";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Store } from "./merchantStore";
 
 export default function SubscriptionPanel({store,chosenPlan,setChosenPlan,busy,perform,onSubscribed}:{
@@ -9,6 +9,7 @@ export default function SubscriptionPanel({store,chosenPlan,setChosenPlan,busy,p
 }) {
  const {business}=useCms(),{plans,error}=usePackages(),initialized=useRef(false);
  const sub=store.subscription;
+ const [couponCode,setCouponCode]=useState("");
  useEffect(()=>{
   if(!plans.length)return;
   if(!initialized.current){setChosenPlan(sub?.packageId||plans.find(p=>p.id===chosenPlan||p.name===chosenPlan)?.id||plans[0].id);initialized.current=true;}
@@ -39,9 +40,9 @@ export default function SubscriptionPanel({store,chosenPlan,setChosenPlan,busy,p
  const confirm=async()=>{
   if(!selected||!action||busy)return;
   if(action==="subscribe"){
-   if(await perform("/subscription",{packageId:selected.id},"เลือกแพ็กเกจแล้ว กรุณาเพิ่ม Villa และส่งเอกสารให้ Admin ตรวจ")){sessionStorage.removeItem(packageIntentKey);onSubscribed();}
-  }else if(action==="upgrade")await perform("/subscription/upgrade",{packageId:selected.id},"สร้างใบแจ้งชำระแพ็กเกจที่เลือกแล้ว รอชำระและ Admin ยืนยันสลิป");
-  else if(renewalVilla)await perform(`/villas/${renewalVilla.id}/renew`,{packageId:selected.id},"สร้างใบแจ้งชำระสำหรับแพ็กเกจที่เลือกแล้ว");
+   if(await perform("/subscription",{packageId:selected.id,couponCode},"เลือกแพ็กเกจแล้ว กรุณาเพิ่ม Villa และส่งเอกสารให้ Admin ตรวจ")){sessionStorage.removeItem(packageIntentKey);onSubscribed();}
+  }else if(action==="upgrade")await perform("/subscription/upgrade",{packageId:selected.id,couponCode},"สร้างใบแจ้งชำระแพ็กเกจที่เลือกแล้ว รอชำระและ Admin ยืนยันสลิป");
+  else if(renewalVilla)await perform(`/villas/${renewalVilla.id}/renew`,{packageId:selected.id,couponCode},"สร้างใบแจ้งชำระสำหรับแพ็กเกจที่เลือกแล้ว");
  };
  return <section className="merchant-panel subscription-panel">
   <h2>เลือกแพ็กเกจ</h2>{error&&<p role="alert">{error}</p>}
@@ -49,6 +50,7 @@ export default function SubscriptionPanel({store,chosenPlan,setChosenPlan,busy,p
   <p>เลือกแพ็กเกจเพื่อดูราคาและสิทธิ์ จากนั้นกดยืนยันด้านล่าง การเลือกอย่างเดียวยังไม่เปลี่ยนสิทธิ์หรือเรียกเก็บเงิน</p>
   <div className="subscription-options" role="group" aria-label="แพ็กเกจที่เลือกได้">{plans.map(p=><button type="button" key={p.id} className={chosenPlan===p.id?"active":""} aria-pressed={chosenPlan===p.id} disabled={busy} onClick={()=>setChosenPlan(p.id)}><strong>{p.name}</strong><span>{p.amount?`฿${(p.amount/100).toLocaleString("th-TH")}/${billingLabel(p.billingCycle)}`:`ทดลองฟรี ${p.trialMonths} เดือน`}</span><small>รองรับ {p.capacity} Villa</small>{p.id===sub?.packageId&&<small>แพ็กเกจปัจจุบัน</small>}</button>)}</div>
   {selected&&<section className="subscription-selection" aria-label="รายละเอียดแพ็กเกจที่เลือก"><h3>แพ็กเกจที่เลือก: {selected.name}</h3><p>{selected.description}</p><p>{selected.amount?`ราคา ฿${(selected.amount/100).toLocaleString("th-TH")} ต่อ${billingLabel(selected.billingCycle)}`:`ทดลองฟรี ${selected.trialMonths} เดือน`} · {selected.capacity} Villa</p>{selected.amount>0&&<p>{billingValidityLabel(selected.billingCycle,business)}</p>}{!!selected.features.length&&<ul>{selected.features.map((feature,index)=><li key={index}>{feature}</li>)}</ul>}</section>}
+  <label>รหัสคูปอง (ถ้ามี)<input maxLength={32} value={couponCode} onChange={e=>setCouponCode(e.target.value.toUpperCase())}/></label><p>ตรวจช่วงเวลาและจำนวนสิทธิ์เมื่อสร้างใบแจ้งชำระ ส่วนลดใช้ครั้งเดียวต่อบัญชี ยอดสุดท้ายแสดงในใบแจ้งชำระก่อนโอน</p>{sub&&!unpaid&&<button disabled={busy} onClick={()=>void perform("/subscription/coupon",{couponCode},"บันทึกคูปองสำหรับรายการใหม่แล้ว")}>บันทึกหรือล้างคูปองก่อนสร้างใบแจ้งชำระ</button>}
   {reason&&<p role="status">{reason}</p>}
   <button className="primary-button subscription-confirm" disabled={busy||!action} onClick={()=>void confirm()}>{busy?"กำลังดำเนินการ…":action==="subscribe"?"ยืนยันแพ็กเกจและเพิ่ม Villa":action==="upgrade"?"ยืนยันแพ็กเกจและสร้างใบแจ้งชำระ":action==="renew"?"ยืนยันแพ็กเกจสำหรับต่ออายุ":"ยืนยันแพ็กเกจที่เลือก"}</button>
   <section className="bank-payment-details merchant-panel" aria-label="บัญชีและ QR สำหรับชำระเงิน"><div className="button-row"><h3>บัญชีและ QR สำหรับชำระเงินจาก Admin</h3><button className="outline-button" disabled={busy} onClick={()=>void perform("/state",undefined,"โหลดข้อมูลรับชำระจาก Admin ล่าสุดแล้ว")}>โหลดข้อมูลบัญชีและ QR ล่าสุด</button></div><p className="payment-instructions">{store.paymentInstructions}</p>

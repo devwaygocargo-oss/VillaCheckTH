@@ -117,6 +117,8 @@ export async function startServer(env = process.env, { listen = true, databaseFa
           : []),
       ],
       smtpFrom: env.SMTP_FROM,
+      requireDualApproval:true,
+      cronSecret:env.CRON_SECRET,
       facebookLoginEnabled:env.FACEBOOK_LOGIN_ENABLED==='true',
       paymentInstructions: env.PAYMENT_INSTRUCTIONS,
       staticDir:

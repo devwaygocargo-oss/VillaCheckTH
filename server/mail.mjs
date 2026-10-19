@@ -1,3 +1,5 @@
+import generatePayload from "promptpay-qr"
+import QRCode from "qrcode"
 import { drainBankNotifications } from "./bank-receiving.mjs"
 import {demoMode} from "./demo-payment.mjs"
 import { qrSvg, paymentQrDto } from "./payment-qr.mjs"
@@ -35,8 +37,12 @@ export function createMailWorker(db, config, transport) {
           continue
         }
         const qr = await paymentQrDto(db, mail.invoice_id)
+        const invoice=await db.prepare("SELECT amount,status FROM invoices WHERE id=?").get(mail.invoice_id)
+        const bankRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_receiving_bank:${mail.invoice_id}`)
+        const bank=bankRow?JSON.parse(bankRow.value):null
+        const attachments=bank&&invoice?.amount>0&&invoice.status==='pending'?[{filename:"villacheck-payment-promptpay.png",content:await QRCode.toBuffer(generatePayload(bank.promptpayId,{amount:invoice.amount/100}),{type:"png",width:512,margin:4}),contentType:"image/png"}]:[]
         await transport.sendMail({
-          attachments: qr?.payload
+          attachments: [...attachments,...(qr?.payload
             ? [
                 {
                   filename: "payment-qr.svg",
@@ -44,7 +50,7 @@ export function createMailWorker(db, config, transport) {
                   contentType: "image/svg+xml",
                 },
               ]
-            : [],
+            : [])],
           from: config.smtpFrom,
           to: mail.recipient,
           subject: mail.subject,

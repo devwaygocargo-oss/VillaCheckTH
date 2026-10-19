@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-19T06:34:16.730Z",
+  "realDelivery": true,
+  "singleRequestPerChannel": true,
+  "results": [
+    {
+      "channel": "sms",
+      "status": 200,
+      "passed": true,
+      "role": "user",
+      "error": null
+    },
+    {
+      "channel": "email",
+      "status": 200,
+      "passed": true,
+      "role": "admin",
+      "error": null
+    }
+  ]
+}

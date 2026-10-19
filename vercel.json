@@ -18,5 +18,11 @@
       ]
     }
   ],
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/ops/cron",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }

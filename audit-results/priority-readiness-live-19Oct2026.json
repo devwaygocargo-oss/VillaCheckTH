@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-19T06:35:02.647Z",
+  "status": 200,
+  "smtpConfigured": true,
+  "demoMode": true,
+  "facebookStatus": "waiting-approval",
+  "otpChannels": {
+    "email": true,
+    "sms": true
+  },
+  "mailCounts": [
+    {
+      "status": "demo",
+      "count": 5
+    }
+  ],
+  "missingGuestCapacities": 14,
+  "legacyInvoicesWithoutBankSnapshot": 2
+}

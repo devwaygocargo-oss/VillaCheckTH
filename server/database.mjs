@@ -1,3 +1,4 @@
+import {quoteCoupon} from "./promotions.mjs"
 import { receivingBank } from "./payment-account.mjs"
 import { cmsBusiness, monthlyValidity, cmsPaymentSnapshot } from "./cms-business.mjs"
 import { DatabaseSync } from "node:sqlite"
@@ -221,11 +222,15 @@ export function addMonths(value, months) {
   local.setUTCDate(Math.min(day, end))
   return new Date(local.getTime() - 7 * 3600000).toISOString()
 }
-export async function createInvoice(db, villa, appUrl, paymentInstructions="") {
+export async function createInvoice(db,villa,appUrl,paymentInstructions=""){return db.transaction(()=>createInvoiceInternal(db,villa,appUrl,paymentInstructions))}
+async function createInvoiceInternal(db, villa, appUrl, paymentInstructions="") {
   const id = randomUUID()
   const plan = await db
     .prepare("SELECT * FROM package_catalog WHERE id=?")
     .get(villa.package_id)
+  const couponRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get('merchant_coupon:'+villa.owner_id)
+  const coupon=plan.amount>0?await quoteCoupon(db,couponRow?JSON.parse(couponRow.value):'',villa.owner_id,plan):null
+  const amount=coupon?coupon.amount:plan.amount
   const months=monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
   const created = new Date().toISOString()
   const instructions=await cmsPaymentSnapshot(db,paymentInstructions)
@@ -236,14 +241,15 @@ export async function createInvoice(db, villa, appUrl, paymentInstructions="") {
     .prepare(
       "INSERT INTO invoices(id,villa_id,amount,months,created,updated_at) VALUES (?,?,?,?,?,?)",
     )
-    .run(id, villa.id, plan.amount, months, created, created)
+    .run(id, villa.id, amount, months, created, created)
+  if(coupon){await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_discount:${id}`,JSON.stringify(coupon));await db.prepare("DELETE FROM system_settings WHERE key=?").run("merchant_coupon:"+villa.owner_id)}
   await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_bank_qr:${id}`,JSON.stringify(bankQrImage))
   const receiver=await receivingBank(db)
   if(receiver)await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_receiving_bank:${id}`,JSON.stringify(receiver))
   const subject = `VillaCheck: ${villa.name} ${
     villa.payments === 0 ? "ผ่านการอนุมัติ" : "ต่ออายุ QR"
   } กรุณาชำระแพ็กเกจ`
-  const body = `เรียน ${villa.merchant}\n\nVilla: ${villa.name}\nแพ็กเกจ: ${plan.name}\nยอดชำระ: ฿${(plan.amount / 100).toLocaleString("th-TH")}\nเลขที่ใบแจ้งชำระ: ${id}\n\nเข้าสู่ระบบที่ ${appUrl}/#page=owner-package เพื่อดูวิธีชำระและแนบสลิป\nAdmin จะตรวจยืนยันการชำระ จากนั้น QR มีอายุ ${months} เดือน\n1 Villa = 1 QR การต่ออายุใช้รหัสเดิม`
+  const body = `เรียน ${villa.merchant}\n\nVilla: ${villa.name}\nแพ็กเกจ: ${plan.name}\nยอดชำระ: ฿${(amount / 100).toLocaleString("th-TH")}\nเลขที่ใบแจ้งชำระ: ${id}\n\nเข้าสู่ระบบที่ ${appUrl}/#page=owner-package เพื่อดูวิธีชำระและแนบสลิป\nAdmin จะตรวจยืนยันการชำระ จากนั้น QR มีอายุ ${months} เดือน\n1 Villa = 1 QR การต่ออายุใช้รหัสเดิม`
   await db
     .prepare(
       "INSERT INTO mails(id,villa_id,invoice_id,recipient,subject,body,created,payment_instructions) VALUES (?,?,?,?,?,?,?,?)",

@@ -30,7 +30,9 @@ function validate(data) {
     if((11-sum%11)%10!==Number(promptpayId[12]))fail(400,"เลขประจำตัวผู้เสียภาษีไม่ถูกต้อง")
   }
   if(data.confirmedBinding!==true)fail(400,"กรุณายืนยันว่าพร้อมเพย์ผูกกับบัญชีรับเงินที่ระบุแล้ว")
-  return {bankName,accountName,accountNumber,promptpayType,promptpayId,instructions}
+  const accountType=data.accountType||"savings"
+  if(!["savings","current","other"].includes(accountType))fail(400,"ประเภทบัญชีไม่ถูกต้อง")
+  return {bankName,accountName,accountNumber,accountType,promptpayType,promptpayId,instructions}
 }
 async function payableMerchants(db) {
   const rows=await db.prepare("SELECT u.id,u.name,u.business_name,u.email,i.id AS invoice_id,i.amount,i.package_id AS selected_package_id,p.name AS package_name FROM users u JOIN invoices i ON i.subscription_owner=u.id JOIN villas v ON v.id=i.villa_id JOIN package_catalog p ON p.id=COALESCE(i.package_id,v.package_id) WHERE u.role='merchant' AND i.status='pending' AND i.amount>0 ORDER BY u.name,u.id").all()
@@ -48,7 +50,7 @@ async function view(db,config,transport) {
   const rows=await notifications(db)
   return {bank:await receivingBank(db),merchants:merchants.filter(m=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email)&&!m.email.endsWith("@phone.villacheck.invalid")),notifications:rows.slice(0,100).map(({id,merchantId,recipient,merchantName,subject,status,created,sentAt,error,attempts,bank,invoiceId,amount,packageName})=>({id,merchantId,recipient,merchantName,subject,status,created,sentAt,error,attempts,invoiceId,amount,packageName,bankRevision:bank.revision})),demoMode:await demoMode(db,config),smtpConfigured:Boolean(transport)}
 }
-export async function adminReceivingBank(db,user,req,path,readBody,config,transport) {
+export async function adminReceivingBank(db,user,req,path,readBody,config,transport,validateOnly=false) {
   if(!path.startsWith("/api/admin/receiving-bank"))return undefined
   if(user.role!=="admin")fail(403,"เฉพาะ Admin")
   if(path==="/api/admin/receiving-bank"&&req.method==="GET")return view(db,config,transport)
@@ -57,6 +59,7 @@ export async function adminReceivingBank(db,user,req,path,readBody,config,transp
     await db.transaction(async()=>{
       const current=await receivingBank(db)
       if(data.revision!==(current?.revision||0))fail(409,"ข้อมูลถูกแก้ไขแล้ว กรุณาโหลดล่าสุดก่อนบันทึก")
+      if(validateOnly)return
       const payload=generatePayload(fields.promptpayId,{})
       let qrDocumentId=current?.qrDocumentId,qrImage=current?.qrImage,generatedAt=current?.generatedAt
       if(!current||current.payload!==payload){

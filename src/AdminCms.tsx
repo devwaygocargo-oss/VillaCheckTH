@@ -1,3 +1,4 @@
+import AdminChangeApprovals from "./AdminChangeApprovals";
 import { useEffect, useState } from "react"
 import { api, currentAccount } from "./api"
 import { PortalShell, type Page } from "./prototype"
@@ -280,6 +281,10 @@ export default function AdminCms({
     setBusy(true)
     setError("")
     try {
+      if(action==="publish"){
+        await api("/admin/change-approvals",{kind:"cms",payload:{revision:state.draft.revision}});
+        setMessage("เสนอเผยแพร่แล้ว รอ Admin อีกบัญชีตรวจ Preview และอนุมัติ");return;
+      }
       const r = await api<CmsState>(`/admin/cms/${action}`, {
         revision: state.draft.revision,
         ...(action === "save"
@@ -290,13 +295,11 @@ export default function AdminCms({
       })
       accept(r)
       setMessage(
-        action === "publish"
-          ? "เผยแพร่แล้ว เว็บจริงใช้เนื้อหาเวอร์ชันนี้"
-          : action === "restore"
+        action === "restore"
             ? "คืนเวอร์ชันเป็นร่างแล้ว ตรวจ Preview และเผยแพร่เมื่อพร้อม"
             : "บันทึกร่างแล้ว เว็บจริงยังไม่เปลี่ยน",
       )
-      if (action === "publish") window.dispatchEvent(new Event("cms-published"))
+
     } catch (e) {
       setError(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ")
     } finally {
@@ -344,6 +347,7 @@ export default function AdminCms({
           go(target, item)
       }}
     >
+      <AdminChangeApprovals kind="cms"/>
       <div className="portal-head">
         <div>
           <h1>จัดการเว็บไซต์ CMS</h1>
