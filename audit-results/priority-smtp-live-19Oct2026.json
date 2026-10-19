@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-10-19T06:59:05.152Z",
+  "singleRequest": true,
+  "realDeliveryAttempt": true,
+  "recipient": "v***@gmail.com",
+  "status": 502,
+  "acceptedBySmtp": false,
+  "inboxConfirmed": false,
+  "error": "ส่งทดสอบไม่สำเร็จ กรุณาตรวจการตั้งค่า SMTP"
+}

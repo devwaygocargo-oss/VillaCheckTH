@@ -1,0 +1,134 @@
+{
+  "reviewDate": "2026-10-19",
+  "codeCommit": "a6e4b9a",
+  "deployment": "success",
+  "completedDevelopment": [
+    "Automatic invoice email includes amount-specific PromptPay PNG from invoice bank snapshot",
+    "Two different Admin accounts required for bank changes and CMS publishing in production runtime",
+    "Bank account type",
+    "Scheduled/package-limited/usage-limited fixed or percentage coupons with immutable invoice discount",
+    "Manual UAT acceptance register and SMTP smoke-test",
+    "Current README/Deployment/UAT/Operations procedures",
+    "Authenticated daily worker, backup-retention runner, monitoring script and Admin provisioning tool"
+  ],
+  "automatedUat": {
+    "backend": {
+      "checkedAt": "2026-10-19T06:50:08.117Z",
+      "dummyOnly": true,
+      "build": "pass",
+      "pass": 136,
+      "fail": 0,
+      "skip": 0
+    },
+    "responsive": [
+      {
+        "engine": "chromium",
+        "routes": 67,
+        "checks": 820,
+        "failures": 0,
+        "pageErrors": 0
+      },
+      {
+        "engine": "webkit",
+        "routes": 67,
+        "checks": 820,
+        "failures": 0,
+        "pageErrors": 0
+      }
+    ],
+    "newWorkflowBrowser": [
+      {
+        "engine": "chromium",
+        "pass": 4,
+        "fail": 0
+      },
+      {
+        "engine": "webkit",
+        "pass": 4,
+        "fail": 0
+      }
+    ]
+  },
+  "live": {
+    "otp": {
+      "checkedAt": "2026-10-19T06:34:16.730Z",
+      "realDelivery": true,
+      "singleRequestPerChannel": true,
+      "results": [
+        {
+          "channel": "sms",
+          "status": 200,
+          "passed": true,
+          "role": "user",
+          "error": null
+        },
+        {
+          "channel": "email",
+          "status": 200,
+          "passed": true,
+          "role": "admin",
+          "error": null
+        }
+      ]
+    },
+    "smtp": {
+      "checkedAt": "2026-10-19T06:59:05.152Z",
+      "singleRequest": true,
+      "realDeliveryAttempt": true,
+      "recipient": "v***@gmail.com",
+      "status": 502,
+      "acceptedBySmtp": false,
+      "inboxConfirmed": false,
+      "error": "ส่งทดสอบไม่สำเร็จ กรุณาตรวจการตั้งค่า SMTP"
+    },
+    "readiness": {
+      "status": 200,
+      "operations": {
+        "dualApprovalRequired": true,
+        "scheduledWorkerConfigured": false,
+        "lastScheduledRun": null
+      },
+      "demoMode": true,
+      "facebookStatus": "waiting-approval"
+    }
+  },
+  "remaining": [
+    {
+      "work": "Real bank/payment acceptance",
+      "status": "BLOCKED",
+      "reason": "User confirmed real receiving account not supplied; no real transfer attempted"
+    },
+    {
+      "work": "Facebook Public User",
+      "status": "BLOCKED_EXTERNAL_META",
+      "reason": "User confirmed Meta review still pending"
+    },
+    {
+      "work": "Payment SMTP inbox acceptance",
+      "status": "FAIL_CONFIGURATION_REVIEW",
+      "reason": "One authorized real SMTP smoke-test returned 502; no repeat sent"
+    },
+    {
+      "work": "Google/LINE live full login and physical iPhone/iPad",
+      "status": "PENDING_MANUAL_ACCEPTANCE",
+      "reason": "Production OAuth start verified, full provider sign-in and physical device interaction not performed"
+    },
+    {
+      "work": "Scheduled worker/backup storage/alerts",
+      "status": "PENDING_OPERATOR_CONFIGURATION",
+      "reason": "CLI logged out; CRON_SECRET, backup destination/key/schedule and alert recipient not configured by this task"
+    },
+    {
+      "work": "Production business data and business UAT sign-off",
+      "status": "PENDING_BUSINESS_INPUT",
+      "reason": "Demo still enabled; real content/finance rules and named sign-off not supplied"
+    },
+    {
+      "work": "Independent reviewer identity",
+      "status": "PENDING_REVIEWER_ACCOUNT",
+      "reason": "Provided Gmail already has an Admin account; no duplicate identity or password reset created. Need another authorized Admin account for peer approval."
+    }
+  ],
+  "acceptanceRecords": "audit-results/priority-acceptance-records-live-19Oct2026.json",
+  "noSecretsInReport": true
+}

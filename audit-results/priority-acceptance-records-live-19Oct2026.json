@@ -1,0 +1,66 @@
+{
+  "checkedAt": "2026-10-19T07:01:22.881Z",
+  "authorizedAdminOtpSession": true,
+  "results": [
+    {
+      "area": "otp",
+      "outcome": "pass",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "live-email",
+      "outcome": "fail",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "meta",
+      "outcome": "blocked",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "payment",
+      "outcome": "blocked",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "google",
+      "outcome": "blocked",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "line",
+      "outcome": "blocked",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "physical-device",
+      "outcome": "blocked",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "uat",
+      "outcome": "blocked",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "backup-restore",
+      "outcome": "blocked",
+      "status": 200,
+      "recorded": true
+    },
+    {
+      "area": "monitoring",
+      "outcome": "blocked",
+      "status": 200,
+      "recorded": true
+    }
+  ]
+}
