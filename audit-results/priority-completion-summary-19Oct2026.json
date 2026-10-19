@@ -135,7 +135,7 @@
     {
       "work": "Real bank/payment acceptance",
       "status": "BLOCKED",
-      "reason": "User confirmed real receiving account not supplied; no real transfer attempted"
+      "reason": "Waiting for new VillaCheck company account. Bank/account/PromptPay fields already implemented; preserve dummy data until approved actual details arrive."
     },
     {
       "work": "Facebook Public User",
@@ -144,8 +144,8 @@
     },
     {
       "work": "Payment SMTP inbox acceptance",
-      "status": "BLOCKED_SMTP_AUTHENTICATION",
-      "reason": "Latest connection-only Production verification failed SMTP 535 AUTHENTICATION. Authorized provider SMTP credential must be updated securely in Vercel; no additional email was sent and inbox acceptance remains pending."
+      "status": "BLOCKED_EXTERNAL_PROVIDER_CONFIRMATION",
+      "reason": "User confirmed sending provider/account not yet finalized. Historical SMTP 535 preserved; configure authorized credentials after confirmation and then test delivery."
     },
     {
       "work": "Google/LINE live full login and physical iPhone/iPad",
@@ -165,8 +165,13 @@
     },
     {
       "work": "Independent reviewer identity",
-      "status": "PENDING_REVIEWER_ACCOUNT",
-      "reason": "Provided Gmail already has an Admin account; no duplicate identity or password reset created. Need another authorized Admin account for peer approval."
+      "status": "ACCOUNT_CREATED_POLICY_IMPLEMENTED",
+      "reason": "support@villacheckth.com Admin created; initial credential privately stored outside Git. Designated reviewer policy implemented and isolated tests passed; live verification after deployment."
+    },
+    {
+      "work": "ThaiBulkSMS approved Sender Name",
+      "status": "BLOCKED_EXTERNAL_PROVIDER_APPROVAL",
+      "reason": "User confirmed token purchased and Sender Name submitted. Wait approval, configure approved sender/token securely and verify real delivery; historical OTP success does not prove this Sender Name approval."
     }
   ],
   "acceptanceRecords": "audit-results/priority-acceptance-records-live-19Oct2026.json",
@@ -226,6 +231,28 @@
         "Local notification command accepted; actual user receipt not confirmed"
       ]
     },
-    "smtp": "Production verify-only failed AUTHENTICATION / SMTP 535; no email sent. Correct authorized SMTP credential needed in Vercel."
+    "smtp": "Production verify-only failed AUTHENTICATION / SMTP 535; no email sent. Correct authorized SMTP credential needed in Vercel.",
+    "confirmedScopeBackend": {
+      "checkedAt": "2026-10-19T08:10:59.180Z",
+      "dummyOnly": true,
+      "build": "pass",
+      "pass": 141,
+      "fail": 0,
+      "skip": 0
+    }
+  },
+  "confirmedManagementScope": {
+    "confirmedAt": "2026-10-19",
+    "bank": "รอเปิดบัญชีบริษัท VillaCheck ใหม่ เตรียมช่องธนาคารและพร้อมเพย์แล้ว ใช้ Dummy ระหว่างทดสอบ",
+    "smtp": "รอยืนยันผู้ให้บริการหรือบัญชีส่งอีเมล ระบบเดิมตรวจพบ SMTP authentication 535 เก็บเป็นประวัติ ไม่ถือเป็นงานพัฒนาที่ยังไม่เสร็จ",
+    "thaiBulkSms": "ผู้ใช้ยืนยันว่าซื้อ Token และยื่น Sender Name แล้ว รอผลอนุมัติ ยังไม่ได้ยืนยันส่งผ่าน Sender Name ใหม่นี้",
+    "approvalAdmin": "support@villacheckth.com",
+    "approvalSeparation": "ผู้อนุมัติที่กำหนดเสนอคำขอ bank/CMS ไม่ได้ และ Admin ผู้เสนออนุมัติคำขอไม่ได้",
+    "uatOwners": [
+      "คุณปริ้นท์",
+      "คุณเกมส์"
+    ],
+    "uatStatus": "PENDING REVIEW — ยังไม่มีผลตรวจรับจริงจากผู้รับผิดชอบ",
+    "facebook": "ปิดไว้จนกว่า Meta อนุมัติ"
   }
 }

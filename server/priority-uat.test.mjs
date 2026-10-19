@@ -84,4 +84,16 @@ test('Priority UAT: independent approvals, coupon invoice, automatic bank QR, ma
   assert.equal((await req('/admin/email-test',{recipient:'dummy@example.test',confirmed:true},editor)).status,429)
   const r=await req('/admin/acceptance',{area:'uat',outcome:'blocked',evidence:'DUMMY - real bank not supplied; no actual transfer made',confirmed:true},editor);assert.equal(r.status,200);assert.equal(r.value.records[0].reviewer,'UAT Editor')
  })
+ await t.test('Designated approval account cannot propose and other Admins cannot review',async()=>{
+  await db.prepare("INSERT INTO system_settings(key,value) VALUES ('approval:reviewer_email',?)").run(JSON.stringify(b.email))
+  const queue=await req('/admin/change-approvals',undefined,editor);assert.equal(queue.value.canReview,false);assert.equal(queue.value.canPropose,true)
+  const reviewerQueue=await req('/admin/change-approvals',undefined,approver);assert.equal(reviewerQueue.value.canReview,true);assert.equal(reviewerQueue.value.canPropose,false)
+  const state=(await req('/admin/cms',undefined,editor)).value
+  const payload={kind:'cms',payload:{revision:state.draft.revision}}
+  assert.equal((await req('/admin/change-approvals',payload,approver)).status,403)
+  const proposed=await req('/admin/change-approvals',payload,editor);assert.equal(proposed.status,200)
+  assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},editor)).status,403)
+  assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},approver)).status,200)
+ })
+
 })

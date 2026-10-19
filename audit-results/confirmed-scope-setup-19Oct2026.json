@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-10-19T08:11:34.314Z",
+  "targetIdentityVerified": true,
+  "email": "support@villacheckth.com",
+  "adminAccountCreated": true,
+  "existingPasswordsChanged": false,
+  "passwordDelivered": false,
+  "access": "Dedicated /admin password login; initial credential stored in private operator keys folder, never in Git or chat",
+  "designatedReviewerConfigured": true,
+  "bankChanged": false,
+  "paymentMade": false,
+  "emailSent": false,
+  "smsSent": false,
+  "initialCredentialStoredPrivately": true,
+  "credentialFileMode": "0600"
+}

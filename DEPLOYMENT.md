@@ -70,3 +70,12 @@ LaunchAgents `com.villacheck.backup` (every 24 hours and login) and `com.villach
 Inspect jobs with `launchctl print gui/$(id -u)/com.villacheck.backup` or `.monitor`, inspect sanitized JSONL logs, and keep the recovery key secure. Stop a job using `launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.villacheck.backup.plist` (or monitor); stopping does not delete backups or keys.
 
 SMTP connection-only verification is available in Admin Settings and does not send an email. SMTP host/credentials are not exposed; diagnostics expose category, port/TLS settings and presence flags only. Port 465 selects implicit TLS automatically when SMTP_SECURE is unset; explicit settings remain authoritative. A connection-only success is not an inbox acceptance result.
+
+## Management confirmations — 19 October 2026
+
+- Receiving account: waiting for the new VillaCheck company account. Existing bank/name/number/account-type/PromptPay fields remain available; preserve Dummy testing and do not claim a real account or transfer is approved.
+- SMTP: provider or sending account awaiting confirmation. Preserve historical SMTP 535 evidence; configure provider-approved credentials only after confirmation.
+- ThaiBulkSMS: user confirmed Token purchased and Sender Name submitted, pending provider approval. Existing OTP results do not certify the new Sender Name. No additional test messages sent for this confirmation.
+- Designated approval Admin: support@villacheckth.com. The private `approval:reviewer_email` setting limits bank/CMS review to this account and prevents it proposing bank/CMS requests. Other Admins can propose but cannot approve/reject. Self-approval protection remains enforced. Manage this setting through authorized operator configuration, not public signup. Initial login credential is stored privately in the operator keys directory, outside Git; do not paste it into reports or chat.
+- UAT owners: คุณปริ้นท์ and คุณเกมส์. Naming owners is not a Pass or Production Acceptance; record their actual evidence in the acceptance register.
+- Facebook stays disabled pending Meta approval; preserve OAuth implementation and callback configuration.
