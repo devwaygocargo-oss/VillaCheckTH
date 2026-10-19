@@ -17,7 +17,7 @@ import VillaMap from "./VillaMap";
 import ProvinceExplorer, { popularProvinces } from "./ProvinceExplorer";
 import { UserRegistration, AdminUsers, MemberDashboard } from "./UserAccounts";
 import Backoffice, { MerchantVerification } from "./Backoffice";
-import { openSupport } from "./support";
+import { openSupport, supportHref } from "./support";
 import { usePageNavigation } from "./navigation";
 import { useEffect, useRef, useState } from "react";
 import type { BrowserQRCodeReader, IScannerControls } from "@zxing/browser";
@@ -651,7 +651,7 @@ function Footer({ go, account }: { go: (p: Page, item?: string) => void; account
       <div className="footer-brand">
         <button className="footer-logo" onClick={() => go("home")}><Logo light /></button>
         <p>{site.description}</p>
-        <div className="footer-social"><button aria-label="Facebook" onClick={() => openSupport("facebook")}><Icon name="facebook" size={16} /></button><button aria-label="Instagram" onClick={() => go("social-instagram")}><Icon name="instagram" size={16} /></button><button aria-label="LINE Official" onClick={() => openSupport("line")}><Icon name="message" size={16} /></button></div>
+        <div className="footer-social"><a aria-label="Facebook" href={supportHref("facebook")} target="_blank" rel="noopener noreferrer"><Icon name="facebook" size={16} /></a><button aria-label="Instagram" onClick={() => go("social-instagram")}><Icon name="instagram" size={16} /></button><a aria-label="LINE Official" href={supportHref("line")} target="_blank" rel="noopener noreferrer"><Icon name="message" size={16} /></a></div>
       </div>
       <div><strong>เกี่ยวกับ VillaCheck</strong><button onClick={() => go("about")}>เกี่ยวกับเรา</button><button onClick={() => go("verification-standard")}>มาตรฐานการตรวจสอบ</button><button onClick={() => go("articles")}>บทความและข่าวสาร</button><button onClick={() => go(account ? accountHome(account) : "login")}>{account ? accountLabel(account) : "เข้าสู่ระบบ"}</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
       <div><strong>สำหรับผู้ใช้งาน</strong><button onClick={() => go("directory")}>ค้นหาที่พัก</button><button onClick={() => go("scan")}>ตรวจสอบ QR</button><button onClick={() => go("user-precheck")}>ตรวจสอบก่อนโอน</button><button onClick={() => go("villa-report")}>แจ้งปัญหา</button></div>

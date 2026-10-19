@@ -484,8 +484,8 @@ footer { background: var(--ocean); color: white; padding: 72px 0 24px; }
 .footer-logo:hover { transform: none !important; }
 .footer-brand .logo { font-size: 23px; }
 .footer-social { display: flex; gap: 8px; }
-.footer-social button { width: 34px; height: 34px; padding: 0; border: 1px solid rgba(255,255,255,.15); border-radius: 50%; display: grid; place-items: center; color: rgba(255,255,255,.72); }
-.footer-social button:hover { color: var(--ocean); background: var(--teal); border-color: var(--teal); transform: translateY(-2px); }
+.footer-social button, .footer-social a { width: 34px; height: 34px; padding: 0; border: 1px solid rgba(255,255,255,.15); border-radius: 50%; display: grid; place-items: center; color: rgba(255,255,255,.72); }
+.footer-social button:hover, .footer-social a:hover { color: var(--ocean); background: var(--teal); border-color: var(--teal); transform: translateY(-2px); }
 .footer-support button { display: flex; align-items: center; gap: 7px; }
 .footer-support small { color: rgba(255,255,255,.36); font-size: 9px; line-height: 1.6; margin-top: 8px; }
 .footer-bottom { margin-top: 56px; padding-top: 21px; border-top: 1px solid rgba(255,255,255,.12); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 25px; color: rgba(255,255,255,.38); font: 500 9px "Noto Sans Display"; }
@@ -1011,7 +1011,7 @@ footer { background: var(--ocean); color: white; padding: 72px 0 24px; }
   .footer-grid { grid-template-columns: 1fr; gap: 30px; }
   .footer-grid > div:first-child { grid-column: auto; }
   .footer-grid button { min-height: 44px; }
-  .footer-social button { width: 40px; height: 40px; min-height: 40px; }
+  .footer-social button, .footer-social a { width: 40px; height: 40px; min-height: 40px; }
   .footer-bottom { margin-top: 40px; }
   .flow-card, .auth-card { padding: 25px 20px; }
   .plan-grid { padding-top: 12px; }
