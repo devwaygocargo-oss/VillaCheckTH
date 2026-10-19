@@ -1,0 +1,465 @@
+{
+  "checkedAt": "2026-10-19T11:59:32.396Z",
+  "origin": "https://design-villacheck.vercel.app",
+  "readOnly": true,
+  "noRealOtpOrEmailSent": true,
+  "noPaymentMade": true,
+  "physicalDeviceTest": false,
+  "productionAdminLogin": "not attempted; explicit authorization required by automatic approval review",
+  "results": [
+    {
+      "name": "Public API health, CMS, package catalog and Villa directory",
+      "passed": true,
+      "evidence": [
+        {
+          "path": "/health",
+          "status": 200
+        },
+        {
+          "path": "/public/cms",
+          "status": 200
+        },
+        {
+          "path": "/packages",
+          "status": 200
+        },
+        {
+          "path": "/public/villas",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "name": "Unauthenticated users cannot read protected Admin and Merchant state",
+      "passed": true,
+      "evidence": [
+        {
+          "path": "/admin/users",
+          "status": 401
+        },
+        {
+          "path": "/admin/readiness",
+          "status": 401
+        },
+        {
+          "path": "/admin/change-approvals",
+          "status": 401
+        },
+        {
+          "path": "/admin/receiving-bank",
+          "status": 401
+        },
+        {
+          "path": "/admin/cms",
+          "status": 401
+        },
+        {
+          "path": "/admin/payments",
+          "status": 401
+        },
+        {
+          "path": "/state",
+          "status": 401
+        },
+        {
+          "path": "/merchant/profile",
+          "status": 401
+        }
+      ]
+    },
+    {
+      "name": "Public Villa QR masks guest contact and bank details",
+      "passed": true,
+      "evidence": {
+        "locked": true,
+        "privateFieldsAbsent": true
+      }
+    },
+    {
+      "name": "Facebook OAuth disabled; Google and LINE authorization routes available",
+      "passed": true,
+      "evidence": [
+        {
+          "provider": "facebook",
+          "status": 302,
+          "fullLoginTested": false
+        },
+        {
+          "provider": "google",
+          "status": 302,
+          "fullLoginTested": false
+        },
+        {
+          "provider": "line",
+          "status": 302,
+          "fullLoginTested": false
+        }
+      ]
+    },
+    {
+      "name": "Private scheduled worker refuses requests without its secret",
+      "passed": true,
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "name": "Live public UI home 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI directory 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI pricing 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI about 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI verification-standard 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI articles 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI owner-guide 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI help 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI contact 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI privacy 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI terms 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI login 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI owner-auth 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI scan 390",
+      "passed": true,
+      "evidence": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "name": "Live public UI home 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI directory 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI pricing 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI about 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI verification-standard 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI articles 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI owner-guide 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI help 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI contact 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI privacy 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI terms 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI login 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI owner-auth 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI scan 820",
+      "passed": true,
+      "evidence": {
+        "width": 820,
+        "height": 1180
+      }
+    },
+    {
+      "name": "Live public UI home 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI directory 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI pricing 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI about 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI verification-standard 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI articles 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI owner-guide 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI help 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI contact 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI privacy 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI terms 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI login 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI owner-auth 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Live public UI scan 1440",
+      "passed": true,
+      "evidence": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "name": "Footer Facebook and LINE use direct external anchors",
+      "passed": true,
+      "evidence": [
+        {
+          "name": "Facebook",
+          "url": "https://www.facebook.com/villacheckth/",
+          "directLink": true
+        },
+        {
+          "name": "LINE Official",
+          "url": "https://line.me/R/ti/p/@villacheckth",
+          "directLink": true
+        }
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "summary": {
+    "pass": 48,
+    "fail": 0,
+    "pageErrors": 0
+  }
+}

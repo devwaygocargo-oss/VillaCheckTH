@@ -249,7 +249,7 @@
     "approvalAdmin": "support@villacheckth.com",
     "approvalSeparation": "ผู้อนุมัติที่กำหนดเสนอคำขอ bank/CMS ไม่ได้ และ Admin ผู้เสนออนุมัติคำขอไม่ได้",
     "uatOwners": [
-      "คุณปริ้นท์",
+      "คุณปรินท์",
       "คุณเกมส์"
     ],
     "uatStatus": "PENDING REVIEW — ยังไม่มีผลตรวจรับจริงจากผู้รับผิดชอบ",
@@ -274,6 +274,26 @@
       "emailsSent": 0,
       "smsSent": 0,
       "bankChanged": false
-    }
+    },
+    "uatContacts": [
+      {
+        "name": "คุณปรินท์",
+        "email": "waritkritnarong@gmail.com"
+      },
+      {
+        "name": "คุณเกมส์",
+        "email": "gamefz.fzz@gmail.com"
+      }
+    ]
+  },
+  "latestRecheck": {
+    "checkedAt": "2026-10-19T12:06:46.315Z",
+    "report": "audit-results/full-recheck-summary-19Oct2026.json",
+    "newFunctionalDefectsFound": 0,
+    "backend": 141,
+    "responsiveChecks": 1640,
+    "liveChecks": 48,
+    "physicalDeviceTest": false,
+    "productionAcceptance": false
   }
 }

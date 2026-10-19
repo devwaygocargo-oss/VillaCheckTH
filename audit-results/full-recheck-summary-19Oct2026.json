@@ -1,0 +1,160 @@
+{
+  "checkedAt": "2026-10-19T12:06:46.315Z",
+  "scope": "Latest company main source; isolated dummy functional tests; read-only Production public checks",
+  "deployment": {
+    "checkedAt": "2026-10-19T12:00:54.639Z",
+    "name": "design-villacheck",
+    "framework": "nextjs",
+    "gitLink": {
+      "type": "github",
+      "org": "devwaygocargo-oss",
+      "repo": "VillaCheckTH",
+      "productionBranch": "main"
+    },
+    "localCommit": "ac5161d9d31265e5b9f518bf8a94309eded3e8da",
+    "localOrigin": "https://github.com/devwaygocargo-oss/VillaCheckTH.git"
+  },
+  "build": "pass",
+  "typecheck": "pass",
+  "lint": "pass",
+  "scriptSyntax": {
+    "files": 75,
+    "fail": 0
+  },
+  "backend": {
+    "checkedAt": "2026-10-19T11:56:05.175Z",
+    "dummyOnly": true,
+    "build": "pass",
+    "pass": 141,
+    "fail": 0,
+    "skip": 0
+  },
+  "workflow": [
+    {
+      "engine": "chromium",
+      "pass": 5,
+      "fail": 0,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "pass": 5,
+      "fail": 0,
+      "errors": []
+    }
+  ],
+  "responsive": [
+    {
+      "engine": "chromium",
+      "routes": 67,
+      "checks": 820,
+      "failures": 0,
+      "pageErrors": 0,
+      "interactions": [
+        {
+          "name": "Responsive touch: iPhone user precheck submit",
+          "role": "user",
+          "status": "pass",
+          "ms": 1175
+        },
+        {
+          "name": "Responsive touch: iPad merchant uploads ownership document",
+          "role": "merchant",
+          "status": "pass",
+          "ms": 750
+        },
+        {
+          "name": "Responsive touch: iPad Admin confirms dummy slip",
+          "role": "admin",
+          "status": "pass",
+          "ms": 1407
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "routes": 67,
+      "checks": 820,
+      "failures": 0,
+      "pageErrors": 0,
+      "interactions": [
+        {
+          "name": "Responsive touch: iPhone user precheck submit",
+          "role": "user",
+          "status": "pass",
+          "ms": 1237
+        },
+        {
+          "name": "Responsive touch: iPad merchant uploads ownership document",
+          "role": "merchant",
+          "status": "pass",
+          "ms": 788
+        },
+        {
+          "name": "Responsive touch: iPad Admin confirms dummy slip",
+          "role": "admin",
+          "status": "pass",
+          "ms": 1207
+        }
+      ]
+    }
+  ],
+  "live": {
+    "pass": 48,
+    "fail": 0,
+    "pageErrors": 0
+  },
+  "liveEvidence": "audit-results/full-recheck-live-19Oct2026.json",
+  "productionAdmin": "Not logged in during this recheck; user selected dummy-only Admin testing. No private credential file read.",
+  "newFunctionalDefectsFound": 0,
+  "remaining": [
+    {
+      "area": "Company bank and real payment",
+      "status": "WAITING_COMPANY_ACCOUNT",
+      "detail": "Fields implemented; Dummy scope retained. No actual transfer."
+    },
+    {
+      "area": "SMTP",
+      "status": "WAITING_PROVIDER_CONFIRMATION",
+      "detail": "Historical Production authentication 535; no new email sent in this recheck."
+    },
+    {
+      "area": "ThaiBulkSMS Sender Name",
+      "status": "WAITING_EXTERNAL_APPROVAL",
+      "detail": "Token purchase and submission confirmed by user; no new SMS sent."
+    },
+    {
+      "area": "Facebook Login",
+      "status": "BLOCKED_EXTERNAL_META",
+      "detail": "Disabled and start route blocked; footer Facebook/LINE links remain enabled."
+    },
+    {
+      "area": "Google/LINE complete provider login",
+      "status": "PENDING_MANUAL_ACCEPTANCE",
+      "detail": "Production authorization redirect only verified; dummy consent/linking covered by backend tests."
+    },
+    {
+      "area": "Physical iPhone/iPad and business UAT",
+      "status": "PENDING_REVIEW",
+      "reviewers": [
+        {
+          "name": "คุณปรินท์",
+          "email": "waritkritnarong@gmail.com"
+        },
+        {
+          "name": "คุณเกมส์",
+          "email": "gamefz.fzz@gmail.com"
+        }
+      ],
+      "detail": "Browser viewport/WebKit simulation does not replace physical device or business acceptance."
+    },
+    {
+      "area": "Offsite backup and hosted monitoring",
+      "status": "PENDING_OPERATOR_SETUP",
+      "detail": "Local Mac automation/previous restore evidence retained; not 24/7 offsite acceptance."
+    }
+  ],
+  "realMessagesSent": 0,
+  "realPaymentsMade": 0,
+  "productionAcceptance": false
+}

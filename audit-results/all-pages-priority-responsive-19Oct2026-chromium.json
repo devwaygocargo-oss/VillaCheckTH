@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-19T06:46:42.490Z",
+  "checkedAt": "2026-10-19T12:05:32.570Z",
   "engine": "chromium",
   "dummyOnly": true,
   "physicalDeviceTest": false,
@@ -12486,7 +12486,26 @@
     }
   ],
   "errors": [],
-  "interactions": [],
+  "interactions": [
+    {
+      "name": "Responsive touch: iPhone user precheck submit",
+      "role": "user",
+      "status": "pass",
+      "ms": 1175
+    },
+    {
+      "name": "Responsive touch: iPad merchant uploads ownership document",
+      "role": "merchant",
+      "status": "pass",
+      "ms": 750
+    },
+    {
+      "name": "Responsive touch: iPad Admin confirms dummy slip",
+      "role": "admin",
+      "status": "pass",
+      "ms": 1407
+    }
+  ],
   "summary": {
     "routes": 67,
     "checks": 820,
