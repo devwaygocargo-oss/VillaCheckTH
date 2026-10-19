@@ -66,7 +66,7 @@ export const cmsDefaults = {
     phone: "",
     facebook: "https://www.facebook.com/villacheckth/",
     instagram: "",
-    line: "",
+    line: "https://line.me/R/ti/p/@villacheckth",
     hours: "จันทร์–ศุกร์ 09:00–18:00 น.",
     paymentInstructions: "",
     paymentQrImage: "",

@@ -7,7 +7,7 @@ export function supportHref(channel: Channel) {
     phone: process.env.NEXT_PUBLIC_SUPPORT_PHONE,
     facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://www.facebook.com/villacheckth/",
     instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL,
-    line: process.env.NEXT_PUBLIC_LINE_URL,
+    line: process.env.NEXT_PUBLIC_LINE_URL || "https://line.me/R/ti/p/@villacheckth",
   };
   const value = (configured[channel] || values[channel])?.trim();
   if (!value) return undefined;
