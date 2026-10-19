@@ -5,7 +5,7 @@ export function supportHref(channel: Channel) {
   const values: Record<Channel, string | undefined> = {
     email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "villacheck69@gmail.com",
     phone: process.env.NEXT_PUBLIC_SUPPORT_PHONE,
-    facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL,
+    facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://www.facebook.com/villacheckth/",
     instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL,
     line: process.env.NEXT_PUBLIC_LINE_URL,
   };

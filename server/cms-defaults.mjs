@@ -64,7 +64,7 @@ export const cmsDefaults = {
     description: "Trust before transfer.",
     email: "",
     phone: "",
-    facebook: "",
+    facebook: "https://www.facebook.com/villacheckth/",
     instagram: "",
     line: "",
     hours: "จันทร์–ศุกร์ 09:00–18:00 น.",
