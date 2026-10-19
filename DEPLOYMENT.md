@@ -79,3 +79,11 @@ SMTP connection-only verification is available in Admin Settings and does not se
 - Designated approval Admin: support@villacheckth.com. The private `approval:reviewer_email` setting limits bank/CMS review to this account and prevents it proposing bank/CMS requests. Other Admins can propose but cannot approve/reject. Self-approval protection remains enforced. Manage this setting through authorized operator configuration, not public signup. Initial login credential is stored privately in the operator keys directory, outside Git; do not paste it into reports or chat.
 - UAT owners: คุณปริ้นท์ and คุณเกมส์. Naming owners is not a Pass or Production Acceptance; record their actual evidence in the acceptance register.
 - Facebook stays disabled pending Meta approval; preserve OAuth implementation and callback configuration.
+
+## Canonical Git and Vercel connection
+
+- GitHub: https://github.com/devwaygocargo-oss/VillaCheckTH (`main`).
+- Local `origin` points to the company repository; local `legacy` preserves https://github.com/dewpm/DesignVillaCheck-finish as a historical remote. Push releases with `git push origin main`.
+- Vercel team/project: `villa-check/design-villacheck`. Git integration deploys company `main`.
+- Production: https://design-villacheck.vercel.app/
+- Vercel Dashboard Framework Preset: `nextjs`, matching `vercel.json`. Build command `npm run build` and output `.next` are declared in `vercel.json`; Dashboard overrides may remain unset.
