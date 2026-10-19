@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-19T08:07:59.003Z",
+  "commit": "6b60c56",
+  "smtp": {
+    "verifyOnly": true,
+    "emailSent": false,
+    "status": 502,
+    "error": "SMTP ยืนยันตัวตนไม่สำเร็จ ตรวจชื่อผู้ใช้ credential สำหรับ SMTP และสิทธิ์ส่งอีเมล"
+  },
+  "cron": {
+    "manualAuthenticatedTrigger": true,
+    "status": 200,
+    "ok": true
+  },
+  "readiness": {
+    "status": 200,
+    "operations": {
+      "dualApprovalRequired": true,
+      "scheduledWorkerConfigured": true,
+      "lastScheduledRun": "2026-10-19T08:07:54.431Z"
+    },
+    "smtpConfiguration": {
+      "port": 587,
+      "secure": false,
+      "requireTLS": true,
+      "authenticationConfigured": true,
+      "credentialConfigured": true
+    },
+    "smtpTest": {
+      "at": "2026-10-19T08:07:52.922Z",
+      "status": "failed",
+      "category": "AUTHENTICATION",
+      "message": "SMTP ยืนยันตัวตนไม่สำเร็จ ตรวจชื่อผู้ใช้ credential สำหรับ SMTP และสิทธิ์ส่งอีเมล",
+      "responseCode": 535
+    },
+    "demoMode": true,
+    "facebookStatus": "waiting-approval"
+  }
+}

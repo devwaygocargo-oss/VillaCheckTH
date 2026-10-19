@@ -2,7 +2,7 @@
   "owner": "Dew",
   "vercelAuthenticated": true,
   "productionCronSecretConfigured": true,
-  "workerLiveVerification": "pending-deployment",
+  "workerLiveVerification": "pass authenticated manual trigger; automatic clock run not yet observed",
   "localBackupScheduled": true,
   "localMonitoringScheduled": true,
   "backupIntervalSeconds": 86400,

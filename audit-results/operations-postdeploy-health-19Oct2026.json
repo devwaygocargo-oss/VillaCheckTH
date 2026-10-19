@@ -1,0 +1,31 @@
+{
+  "checkedAt": "2026-10-19T08:08:03.012Z",
+  "commit": "6b60c56",
+  "results": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "path": "/api/public/cms",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "path": "/api/packages",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "path": "/api/public/villas",
+      "status": 200,
+      "passed": true
+    }
+  ],
+  "monitor": {
+    "ok": true,
+    "failed": [],
+    "alert": "not-needed"
+  }
+}
