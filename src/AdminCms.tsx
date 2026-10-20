@@ -1,3 +1,6 @@
+import CmsPreviewFrame from "./CmsPreviewFrame";
+import HomeDiscoveryEditor from "./HomeDiscoveryEditor";
+import { publicDestinations } from "../server/cms-home-config.mjs";
 import BannerEditor from "./BannerEditor";
 import AdminChangeApprovals from "./AdminChangeApprovals";
 import { useEffect, useState } from "react"
@@ -11,7 +14,7 @@ import {
   type CmsState,
 } from "./cms"
 
-const sectionLabels:Record<string,string>={hero:"ภาพและหัวข้อหน้าแรก",promotion:"แพ็กเกจแนะนำ",how:"ขั้นตอนการใช้งาน",provinces:"ค้นหาตามจังหวัด",showcase:"ที่พักแนะนำ",qr:"แนะนำ QR",merchant:"สำหรับเจ้าของที่พัก",pricing:"แนะนำแพ็กเกจ",custom:"Section ที่เพิ่มเอง"};
+const sectionLabels:Record<string,string>={hero:"Carousel / ค้นหา / เมนูลัด",promotion:"แพ็กเกจแนะนำ",how:"ขั้นตอนการใช้งาน",provinces:"ค้นหาตามจังหวัด",showcase:"ที่พักแนะนำ",qr:"แนะนำ QR",merchant:"สำหรับเจ้าของที่พัก",pricing:"แนะนำ Member Room",custom:"Section ที่เพิ่มเอง"};
 const makeId = () => `item-${crypto.randomUUID()}`
 const blankBlock = (): CmsBlock => ({
   id: makeId(),
@@ -429,7 +432,7 @@ export default function AdminCms({
           {preview && (
             <section className="cms-preview" aria-label="ตัวอย่างเนื้อหาก่อนเผยแพร่">
               <p>Preview ก่อนเผยแพร่ · ใช้ตัวแสดงเดียวกับเว็บไซต์จริง</p>
-              {tab === "home" ? (
+              <CmsPreviewFrame>{["home","navigation","site"].includes(tab) ? (
                 <CmsScope content={content}>{renderHome}</CmsScope>
               ) : (
                 <CmsPublicPage
@@ -457,7 +460,7 @@ export default function AdminCms({
                   }}
                 />
               )}
-            </section>
+            </CmsPreviewFrame></section>
           )}
           <fieldset
             disabled={busy}
@@ -466,8 +469,9 @@ export default function AdminCms({
             {tab === "home" && (
               <>
                 <nav className="cms-home-panels" aria-label="ส่วนแก้ไขหน้าแรก">
-                  {[["hero","ข้อความหน้าแรก"],["sections","ลำดับ Section"],["slides","ภาพสไลด์"],["blocks","Section เพิ่มเติม"]].map(([key,label])=><button key={key} type="button" aria-pressed={homePanel===key} className={homePanel===key?"active":""} onClick={()=>setHomePanel(key)}>{label}</button>)}
+                  {[["hero","ข้อความหน้าแรก"],["discovery","ช่องค้นหา / เมนูลัด"],["sections","ลำดับ Section"],["slides","ภาพสไลด์"],["blocks","Section เพิ่มเติม"]].map(([key,label])=><button key={key} type="button" aria-pressed={homePanel===key} className={homePanel===key?"active":""} onClick={()=>setHomePanel(key)}>{label}</button>)}
                 </nav>
+                {homePanel==="discovery"&&<HomeDiscoveryEditor content={content} onChange={change} media={media}/>}
                 {homePanel==="hero"&&<>
                 <Field
                   label="ข้อความเหนือหัวข้อ"
@@ -495,10 +499,11 @@ export default function AdminCms({
                     })
                   }
                 />
+                <Field label="ข้อความปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonLabel??"ค้นหาที่พัก"} onChange={buttonLabel=>change({...content,home:{...content.home,buttonLabel}})}/><Field label="ลิงก์ปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonHref??"#page=directory"} onChange={buttonHref=>change({...content,home:{...content.home,buttonHref}})}/><p>ข้อความหัวข้อและปุ่มชุดนี้ใช้กับภาพสำรอง ส่วนสไลด์แต่ละภาพแก้ได้ในแท็บภาพสไลด์</p>
                 </>}
                 {homePanel==="sections"&&<>
                 <h2>ลำดับ Section หน้าแรก</h2>
-                {content.home.sections.map((s, i) => (
+                {content.home.sections.filter(s=>s.id!=="promotion").map((s, i, visibleSections) => (
                   <div className="cms-block-editor" key={s.id}>
                     <strong>{sectionLabels[s.id] || s.id}</strong>
                     <label className="cms-checkbox">
@@ -525,37 +530,37 @@ export default function AdminCms({
                       <button
                         disabled={i === 0}
                         onClick={() => {
-                          const sections = [...content.home.sections]
+                          const sections = [...visibleSections]
                           ;[sections[i - 1], sections[i]] = [
                             sections[i],
                             sections[i - 1],
                           ]
                           change({
                             ...content,
-                            home: { ...content.home, sections },
+                            home: { ...content.home, sections:[...sections,...content.home.sections.filter(x=>x.id==="promotion")] },
                           })
                         }}
                       >
                         ↑ ขึ้น
                       </button>
                       <button
-                        disabled={i === content.home.sections.length - 1}
+                        disabled={i === visibleSections.length - 1}
                         onClick={() => {
-                          const sections = [...content.home.sections]
+                          const sections = [...visibleSections]
                           ;[sections[i + 1], sections[i]] = [
                             sections[i],
                             sections[i + 1],
                           ]
                           change({
                             ...content,
-                            home: { ...content.home, sections },
+                            home: { ...content.home, sections:[...sections,...content.home.sections.filter(x=>x.id==="promotion")] },
                           })
                         }}
                       >
                         ↓ ลง
                       </button>
                     </div>
-                    {["how", "showcase", "qr", "merchant", "pricing"].includes(
+                    {["how", "provinces", "showcase", "qr", "merchant", "pricing"].includes(
                       s.id,
                     ) && (
                       <details className="cms-card-details">
@@ -680,7 +685,7 @@ export default function AdminCms({
             )}
             {tab === "navigation" && (
               <>
-                <h2>เมนูเว็บไซต์</h2>
+                <h2>เมนูเว็บไซต์</h2><p>เมนูติดต่อเราจะแสดงเสมอ เมนูหน้าหลัก วิธีการทำงาน และแพ็กเกจไม่ได้ใช้ในแถบเมนูหลักแล้ว</p>
                 {content.navigation.map((n, i) => (
                   <div className="cms-block-editor" key={n.id}>
                     <Field
@@ -696,7 +701,7 @@ export default function AdminCms({
                       }
                     />
                     <Field
-                      label="ลิงก์ (HTTPS, #page=about หรือ #how)"
+                      label="ลิงก์ (HTTPS หรือหน้าสาธารณะในระบบ)"
                       value={n.href}
                       onChange={(href) =>
                         change({
@@ -709,12 +714,13 @@ export default function AdminCms({
                     />
                     <label>เลือกหน้าปลายทาง<select aria-label="เลือกหน้าปลายทาง" value="" onChange={e=>{if(e.target.value)change({...content,navigation:content.navigation.map(x=>x.id===n.id?{...x,href:e.target.value}:x)});}}>
                       <option value="">เลือกหน้าเพื่อใส่ลิงก์อัตโนมัติ…</option>
-                      {[['home','หน้าหลัก'],['directory','ค้นหาที่พัก'],['scan','สแกน QR'],['pricing','แพ็กเกจ'],['articles','บทความ'],['gallery','รูปที่พัก'],['villa-report','แจ้งปัญหา'],['login','เข้าสู่ระบบ']].map(([key,label])=><option key={key} value={`#page=${key}`}>{label}</option>)}
+                      {publicDestinations.map(x=><option key={x.href} value={x.href}>{x.label}</option>)}
                       {content.pages.map(p=><option key={p.slug} value={`#page=cms-page&item=${p.slug}`}>{p.title}</option>)}
                     </select></label>
                     <label className="cms-checkbox">
                       <input
                         type="checkbox"
+                        disabled={n.href==="#page=contact"}
                         checked={n.visible}
                         onChange={(e) =>
                           change({
@@ -741,6 +747,7 @@ export default function AdminCms({
                         ↑ ขึ้น
                       </button>
                       <button
+                        disabled={n.href==="#page=contact"}
                         onClick={() =>
                           change({
                             ...content,

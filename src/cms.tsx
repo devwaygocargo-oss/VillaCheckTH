@@ -53,6 +53,9 @@ export type CmsHomeSection = {
   description: string
 }
 export type HomeBannerItem = { id:string; image:string; mobileImage:string; title:string; description:string; href:string; label:string; visible:boolean; sponsored:boolean; startsAt:string; endsAt:string };
+export type ShortcutIconName = "find" | "scan" | "transfer" | "status" | "owner" | "contact";
+export type HomeShortcut = {id:string;icon:ShortcutIconName;label:string;href:string;description:string;visible:boolean;image:string};
+export type HomeDiscovery = {visible:boolean;searchVisible:boolean;heading:string;placeholder:string;buttonLabel:string;showProvinceHint:boolean;provinceHint:string;showFreeHint:boolean;freeHint:string;background:string;iconColor:string;accentColor:string;shortcuts:HomeShortcut[]};
 export type CmsContent = {
   schemaVersion: number
   business: {emailOtpSubject:string;emailOtpBody:string;smsOtpBody:string;emailOtpTemplateId:string;facebookLoginEnabled:boolean;monthlyInitialMonths:number;monthlyRenewalMonths:number;paymentEmailSubject:string;paymentEmailIntro:string}
@@ -71,6 +74,9 @@ export type CmsContent = {
     accent: string
   }
   home: {
+    discovery?: HomeDiscovery
+    buttonLabel?: string
+    buttonHref?: string
     banners?: HomeBannerItem[]
     slideIntervalMs?: number
     eyebrow: string
@@ -123,7 +129,7 @@ export function CmsHomeLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       {home.sections
-        .filter((s) => s.visible)
+        .filter((s) => s.visible && s.id!=="promotion")
         .map((s) => (
           <Fragment key={s.id}>{nodes[ids.indexOf(s.id)]}</Fragment>
         ))}

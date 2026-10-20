@@ -1,3 +1,4 @@
+import {discoveryDefaults} from "./cms-home-config.mjs";
 const pages = {
   about: {
     kicker: "ABOUT VILLACHECK",
@@ -91,6 +92,8 @@ export const cmsDefaults = {
     { id: "login", label: "เข้าสู่ระบบ", href: "#page=login", visible: true },
   ],
   home: {
+    discovery: discoveryDefaults,
+    buttonLabel:"ค้นหาที่พัก",buttonHref:"#page=directory",
     eyebrow: "TRUST INTELLIGENCE FOR TRAVEL",
     title: "เช็กให้ชัด\nก่อนออกเดินทาง\nก่อนโอนทุกครั้ง",
     description:
@@ -99,7 +102,7 @@ export const cmsDefaults = {
     blocks: [],
     sections: [
       { id: "hero", visible: true, title: "", description: "" },
-      { id: "promotion", visible: true, title: "", description: "" },
+      { id: "promotion", visible: false, title: "", description: "" },
       {
         id: "how",
         visible: true,

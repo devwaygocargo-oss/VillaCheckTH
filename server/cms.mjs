@@ -1,3 +1,4 @@
+import { homeConfig, publicNavigation, shortcutMediaUrls, shortcutIcons, publicDestinations } from "./cms-home-config.mjs"
 import { receivingBank, bankInstructions } from "./payment-account.mjs"
 import { randomUUID } from "node:crypto"
 import { cmsDefaults } from "./cms-defaults.mjs"
@@ -78,6 +79,22 @@ export function validateCms(data) {
     fail(400, "รูปแบบข้อมูล CMS ไม่ถูกต้อง")
   }
 }
+function discoveryConfig(home, pages) {
+  const d=homeConfig(home).discovery;
+  for(const k of ["visible","searchVisible","showProvinceHint","showFreeHint"]) if(typeof d[k]!=="boolean") fail(400,"สถานะเมนูลัดไม่ถูกต้อง");
+  const result={};
+  for(const k of ["visible","searchVisible","showProvinceHint","showFreeHint"])result[k]=d[k];
+  for(const k of ["heading","placeholder","buttonLabel","provinceHint","freeHint"])result[k]=string(d[k],300);
+  if(!result.placeholder.trim()||!result.buttonLabel.trim())fail(400,"กรุณาระบุข้อความช่องค้นหาและปุ่มค้นหา");
+  for(const k of ["background","iconColor","accentColor"]){result[k]=string(d[k],7);if(!/^#[a-fA-F0-9]{6}$/.test(result[k]))fail(400,"สีต้องเป็นรหัส #RRGGBB");}
+  result.shortcuts=unique(list(d.shortcuts,12).map(item=>{
+    if(typeof item.visible!=="boolean"||!shortcutIcons.some(x=>x.id===item.icon)||!item.label?.trim())fail(400,"ชื่อ ไอคอน หรือสถานะเมนูลัดไม่ถูกต้อง");
+    const href=cmsUrl(item.href);
+    if(!href || href.startsWith("#")&&!publicDestinations.some(x=>x.href===href)&&!pages.some(p=>href===`#page=cms-page&item=${p.slug}`))fail(400,"กรุณาเลือกหน้าปลายทางสาธารณะสำหรับเมนูลัด");
+    return {id:slug(item.id),icon:item.icon,label:string(item.label,80),description:string(item.description,300),href,visible:item.visible,image:cmsUrl(item.image,true)};
+  }),"id");
+  return result;
+}
 function normalizeCms(data) {
   if (!data || data.schemaVersion !== 1 || !data.site || !data.home)
     fail(400, "ข้อมูล CMS ไม่ครบ")
@@ -120,7 +137,7 @@ function normalizeCms(data) {
   site.accent = string(data.site.accent, 7)
   if (!/^#[a-fA-F0-9]{6}$/.test(site.accent))
     fail(400, "สีหลักต้องเป็นรหัสสี #RRGGBB")
-  const navigation = unique(
+  const navigation = publicNavigation(unique(
     list(data.navigation, 12).map((n) => {
       if (typeof n.visible !== "boolean" || !n.label?.trim() || !n.href)
         fail(400, "เมนูต้องมีชื่อและลิงก์")
@@ -132,7 +149,8 @@ function normalizeCms(data) {
       }
     }),
     "id",
-  )
+  ))
+  if(navigation.length>12)fail(400,"เพิ่มเมนูได้สูงสุด 12 รายการ รวมเมนูติดต่อเรา")
   const sections = unique(
     list(data.home.sections, 9).map((s) => {
       if (
@@ -151,6 +169,9 @@ function normalizeCms(data) {
   )
   if (sections.length !== 9) fail(400, "Section หน้าแรกไม่ครบ ใช้การซ่อนแทนการลบ")
   const home = {
+    discovery: discoveryConfig(data.home,data.pages),
+    buttonLabel:string(data.home.buttonLabel??"ค้นหาที่พัก",100),
+    buttonHref:cmsUrl(data.home.buttonHref??"#page=directory"),
     banners: unique(list(data.home.banners || [], 40).map(b => {
       if (typeof b.visible !== "boolean" || typeof b.sponsored !== "boolean") fail(400,"สถานะแบนเนอร์ไม่ถูกต้อง")
       if(b.sponsored) fail(400,"กรุณาจัดการโฆษณาที่พักในระบบโฆษณาเพื่อให้ตรวจสิทธิ์แพ็กเกจ")
@@ -232,7 +253,7 @@ async function read(db, key, fallback) {
     .prepare("SELECT value FROM system_settings WHERE key=?")
     .get(key)
   const value=row?JSON.parse(row.value):clone(fallback)
-  if (["cms_draft","cms_published"].includes(key)) { value.content.business={...cmsDefaults.business,...value.content.business}; value.content.site={...cmsDefaults.site,...value.content.site}; }
+  if (["cms_draft","cms_published"].includes(key)) { value.content.home=homeConfig(value.content.home); value.content.navigation=publicNavigation(value.content.navigation); value.content.business={...cmsDefaults.business,...value.content.business}; value.content.site={...cmsDefaults.site,...value.content.site}; }
   return value
 }
 async function write(db, key, value) {
@@ -259,6 +280,7 @@ function mediaReferences(content) {
     content.site.logo,
     content.site.paymentQrImage || "",
     ...content.home.images,
+    ...shortcutMediaUrls(content),
     ...(content.home.banners || []).flatMap(b=>[b.image,b.mobileImage]),
     ...content.home.blocks.map((x) => x.image),
     ...content.pages.flatMap((p) => p.blocks.map((x) => x.image)),

@@ -36,8 +36,8 @@ export default function HomeBanner() {
         mobileImage: "",
         title: home.title,
         description: home.description,
-        href: "#page=directory",
-        label: "ค้นหาที่พัก",
+        href: home.buttonHref ?? "#page=directory",
+        label: home.buttonLabel ?? "ค้นหาที่พัก",
         sponsored: false,
       }))
   const slides = [
@@ -118,7 +118,7 @@ export default function HomeBanner() {
                 พื้นที่โฆษณา · ไม่ใช่สถานะการตรวจสอบ
               </span>
             )}
-            <span className="kicker">VILLACHECK · TRUST BEFORE TRANSFER</span>
+            <span className="kicker">{home.eyebrow}</span>
             <h2>{slide.title}</h2>
             <p>{slide.description}</p>
             {slide.href && (

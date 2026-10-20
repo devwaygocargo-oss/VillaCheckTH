@@ -1,3 +1,4 @@
+import { shortcutMediaUrls } from "./cms-home-config.mjs"
 import {propertyMediaApi,propertyMediaFile} from "./property-media.mjs";
 import {advertisingApi} from "./advertising.mjs";
 import {reviewsApi} from "./reviews.mjs";
@@ -421,7 +422,7 @@ export function createApp(db, config, transport) {
       const cmsMedia = path.match(/^\/api\/public\/cms-media\/([a-f0-9-]+)$/)
       if (cmsMedia && req.method === "GET") {
         const release = await publishedCms(db)
-        const imageUrls = [release.content.site.logo,...release.content.home.images,...(release.content.home.banners || []).filter(b=>b.visible && (!b.startsAt || Date.parse(b.startsAt)<=Date.now()) && (!b.endsAt || Date.parse(b.endsAt)>Date.now())).flatMap(b=>[b.image,b.mobileImage]), ...release.content.home.blocks.filter(x=>x.visible).map(x=>x.image), ...release.content.pages.flatMap(p=>p.blocks.filter(x=>x.visible).map(x=>x.image)), ...release.content.articles.filter(x=>x.visible).map(x=>x.image)]
+        const imageUrls = [release.content.site.logo,...shortcutMediaUrls(release.content,true),...release.content.home.images,...(release.content.home.banners || []).filter(b=>b.visible && (!b.startsAt || Date.parse(b.startsAt)<=Date.now()) && (!b.endsAt || Date.parse(b.endsAt)>Date.now())).flatMap(b=>[b.image,b.mobileImage]), ...release.content.home.blocks.filter(x=>x.visible).map(x=>x.image), ...release.content.pages.flatMap(p=>p.blocks.filter(x=>x.visible).map(x=>x.image)), ...release.content.articles.filter(x=>x.visible).map(x=>x.image)]
         if (!imageUrls.includes(path)) {
           for(const placement of ["home","detail"]) {
             const result=await advertisingApi(db,null,{method:"GET"},"/api/public/advertisements",new URL("http://localhost?placement="+placement),body)

@@ -1,3 +1,4 @@
+import { useCms } from "./cms";
 import { useState } from "react";
 
 export const popularProvinces = ["ชลบุรี", "ประจวบคีรีขันธ์", "นครราชสีมา", "ภูเก็ต", "เชียงใหม่", "กระบี่", "สุราษฎร์ธานี", "ระยอง", "เพชรบุรี", "กรุงเทพมหานคร"];
@@ -10,6 +11,7 @@ const pinPositions = [
 ];
 
 export default function ProvinceExplorer({ onSearch }: { onSearch: (query: string, province: string) => void }) {
+  const {home}=useCms();const section=home.sections.find(s=>s.id==="provinces");
   const [selected, setSelected] = useState(popularProvinces[0]);
   const openProvince = (province: string) => {
     setSelected(province);
@@ -20,8 +22,8 @@ export default function ProvinceExplorer({ onSearch }: { onSearch: (query: strin
       <div className="container province-layout">
         <div className="province-copy">
           <span className="kicker">EXPLORE BY PROVINCE</span>
-          <h2>เริ่มจากจุดหมาย<br />ที่คุณกำลังจะไป</h2>
-          <p>เลือกจังหวัดหรือกดหมุดบนแผนที่ เพื่อดู Villa ในจังหวัดนั้น พร้อมตัวกรองที่พักทันที</p>
+          <h2 style={{whiteSpace:"pre-line"}}>{section?.title||"เริ่มจากจุดหมาย\nที่คุณกำลังจะไป"}</h2>
+          <p>{section?.description||"เลือกจังหวัดหรือกดหมุดบนแผนที่ เพื่อดู Villa ในจังหวัดนั้น พร้อมตัวกรองที่พักทันที"}</p>
           <div className="province-chips">
             {popularProvinces.map(province => (
               <button key={province} className={province === selected ? "active" : ""} onClick={() => openProvince(province)}>
