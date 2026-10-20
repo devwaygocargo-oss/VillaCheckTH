@@ -1,3 +1,4 @@
+import {loadTrustContext,selectByIds} from "./villa-read-context.mjs"
 import { randomUUID } from "node:crypto"
 import { audit } from "./database.mjs"
 import { getPlan } from "./catalog.mjs"
@@ -20,8 +21,8 @@ const save = async (db, prefix, item) =>
   db.prepare(
     "INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
   ).run(prefix + ":" + item.id, JSON.stringify(item))
-export async function advertisingEntitlement(db, villaId, placement) {
-  const villa = await db.prepare("SELECT * FROM villas WHERE id=?").get(villaId)
+export async function advertisingEntitlement(db, villaId, placement, context) {
+  const villa = context ? context.villas.get(villaId) : await db.prepare("SELECT * FROM villas WHERE id=?").get(villaId)
   if (
     !villa ||
     villa.payments === 0 ||
@@ -29,11 +30,11 @@ export async function advertisingEntitlement(db, villaId, placement) {
     Date.parse(villa.expires) <= Date.now()
   )
     return false
-  const sub = await db
+  const sub = context ? context.subscriptions.get(villa.owner_id) : await db
     .prepare("SELECT lifecycle FROM subscriptions WHERE owner_id=?")
     .get(villa.owner_id)
   if (["SUSPENDED", "CANCELLED"].includes(sub?.lifecycle)) return false
-  const plan = await getPlan(db, villa.package_id)
+  const plan = context?.plans.get(villa.package_id) || await getPlan(db, villa.package_id)
   return (
     villa.status === "approved" &&
     plan.active &&
@@ -56,17 +57,12 @@ export async function advertisingApi(db, user, req, path, url, body) {
     const placement =
         url.searchParams.get("placement") === "home" ? "home" : "detail",
       now = Date.now()
-    const eligible = []
-    for (const ad of await list(db, "advertisement"))
-      if (
-        ad.placement === placement &&
-        ad.approved &&
-        ad.visible &&
-        Date.parse(ad.startsAt) <= now &&
-        Date.parse(ad.endsAt) > now &&
-        (await advertisingEntitlement(db, ad.villaId, placement))
-      )
-        eligible.push(ad)
+    const candidates=(await list(db,"advertisement")).filter(ad=>ad.placement===placement&&ad.approved&&ad.visible&&Date.parse(ad.startsAt)<=now&&Date.parse(ad.endsAt)>now);
+    const villas=await selectByIds(db,"SELECT * FROM villas WHERE id",candidates.map(ad=>ad.villaId));
+    const context=await loadTrustContext(db,villas,{qr:false});
+    context.villas=new Map(villas.map(v=>[v.id,v]));
+    const eligible=[];
+    for(const ad of candidates)if(await advertisingEntitlement(db,ad.villaId,placement,context))eligible.push(ad);
     return {
       advertisements: eligible
         .sort((a, b) => a.order - b.order)

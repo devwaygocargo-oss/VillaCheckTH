@@ -57,6 +57,7 @@ model invoices {
   villas                                   villas       @relation(fields: [villa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   mails                                    mails?
   payment_qrs                              payment_qrs?
+  @@index([villa_id,created],map:"invoices_villa_created")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -91,6 +92,7 @@ model mails {
   payment_instructions String?
   invoices     invoices @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   villas       villas   @relation(fields: [villa_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  @@index([villa_id,created],map:"mails_villa_created")
 }
 
 model oauth_identities {
@@ -143,6 +145,7 @@ model payment_qrs {
   created      String
   updated      String
   invoices     invoices @relation(fields: [payment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  @@index([payment_id,status,created],map:"payment_qrs_payment_status_created")
 }
 
 model rate_limits {
@@ -236,6 +239,8 @@ model villas {
   mails              mails[]
   documents          documents @relation(fields: [document_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users              users     @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  @@index([owner_id,created],map:"villas_owner_created")
+  @@index([status,created],map:"villas_status_created")
 }
 
 model support_reports {

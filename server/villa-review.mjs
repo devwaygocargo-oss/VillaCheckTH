@@ -1,8 +1,8 @@
 import {randomUUID} from 'node:crypto'
 const fields={name_en:'ชื่อที่พักภาษาอังกฤษ',name:'ชื่อ Villa',province:'จังหวัด',merchant:'ชื่อ Merchant',phone:'เบอร์โทร',bank_name:'ธนาคาร',account_name:'ชื่อบัญชี',account_number:'เลขบัญชี',guest_capacity:'จำนวนผู้เข้าพักสูงสุด',photo_url:'รูป Villa'}
 const key=id=>'villa_review:'+id
-export async function villaReview(db,villa){
- const row=await db.prepare('SELECT value FROM system_settings WHERE key=?').get(key(villa.id))
+export async function villaReview(db,villa,prefetched){
+ const row=prefetched===undefined?await db.prepare('SELECT value FROM system_settings WHERE key=?').get(key(villa.id)):prefetched
  if(row){try{return JSON.parse(row.value)}catch{ /* Legacy invalid metadata has no usable change history. */ }}
  const legacy=String(villa.reason||'').includes('Information changed')
  return {id:null,kind:legacy?'legacy_update':'registration',submittedAt:legacy?null:villa.created,submittedBy:null,changes:[],summary:legacy?'แก้ไขข้อมูล Villa — รายการเดิมไม่มีประวัติระบุช่องที่เปลี่ยน':'รอตรวจเอกสารกรรมสิทธิ์และข้อมูล Villa ที่ลงทะเบียน'}

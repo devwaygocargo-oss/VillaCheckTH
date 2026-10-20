@@ -2,7 +2,7 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import {randomUUID} from "node:crypto"
 import {spawn} from "node:child_process"
-import {readFileSync} from "node:fs"
+import {readFileSync,readdirSync} from "node:fs"
 import pg from "pg"
 test("Prisma migrations baseline populated databases and preserve QR across repeat deploys",{skip:!process.env.TEST_DATABASE_URL,timeout:60000},async()=>{
  const pool=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL});
@@ -18,6 +18,8 @@ test("Prisma migrations baseline populated databases and preserve QR across repe
   }finally{await client.query('RESET search_path');client.release();}
   await deploy(schemas[1]);await deploy(schemas[1]);
   assert.equal((await pool.query(`SELECT qr FROM "${schemas[1]}".villas WHERE id='villa'`)).rows[0].qr,'VC-persistent');
-  assert.equal((await pool.query(`SELECT count(*) AS n FROM "${schemas[1]}"._prisma_migrations WHERE finished_at IS NOT NULL`)).rows[0].n,'10');
+  assert.equal((await pool.query(`SELECT count(*) AS n FROM "${schemas[1]}"._prisma_migrations WHERE finished_at IS NOT NULL`)).rows[0].n,String(readdirSync('prisma/migrations',{withFileTypes:true}).filter(entry=>entry.isDirectory()).length));
+ const expectedIndexes=['villas_owner_created','villas_status_created','invoices_villa_created','mails_villa_created','payment_qrs_payment_status_created'].sort();
+ for(const schema of schemas){const indexes=await pool.query('SELECT indexname FROM pg_indexes WHERE schemaname=$1 AND indexname=ANY($2::text[])',[schema,expectedIndexes]);assert.deepEqual(indexes.rows.map(row=>row.indexname).sort(),expectedIndexes);}
  }finally{for(const schema of schemas)await pool.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);await pool.end();}
 })

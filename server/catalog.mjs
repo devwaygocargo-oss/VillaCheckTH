@@ -45,6 +45,9 @@ export async function getPlan(db, id) {
     .prepare("SELECT * FROM package_catalog WHERE id=?")
     .get(id)
   if (!row) throw Object.assign(Error("ไม่พบแพ็กเกจ"), { status: 400 })
+  return planDto(row)
+}
+function planDto(row) {
   return {
     ...row,
     features: JSON.parse(row.features),
@@ -59,12 +62,12 @@ export async function getPlan(db, id) {
 export async function listPlans(db, all = false) {
   const rows = await db
     .prepare(
-      `SELECT id FROM package_catalog ${
+      `SELECT * FROM package_catalog ${
         all ? "" : "WHERE active=1"
       } ORDER BY sort_order,id`,
     )
     .all()
-  return Promise.all(rows.map((row) => getPlan(db, row.id)))
+  return rows.map(planDto)
 }
 export async function getVerificationMode() {
   return "MANUAL"
@@ -81,12 +84,12 @@ export function qrState(villa, subscription, now = Date.now()) {
     ? "ACTIVE"
     : "EXPIRED"
 }
-export async function trustDto(db, villa) {
-  const sub = await db
+export async function trustDto(db, villa, context) {
+  const sub = context ? context.subscriptions.get(villa.owner_id) : await db
     .prepare("SELECT * FROM subscriptions WHERE owner_id=?")
     .get(villa.owner_id)
-  const plan = await getPlan(db, villa.payments === 0 ? "basic" : villa.package_id)
-  const override = await db.prepare("SELECT value FROM system_settings WHERE key=?").get("villa_qr:"+villa.id)
+  const plan = await readContextPlan(db,villa.payments === 0 ? "basic" : villa.package_id,context)
+  const override = context ? context.settings.get("villa_qr:"+villa.id) : await db.prepare("SELECT value FROM system_settings WHERE key=?").get("villa_qr:"+villa.id)
   const qrStatus = ["SUSPENDED","INACTIVE"].includes(override?.value) ? override.value : qrState(villa, sub)
   const actual = qrStatus === "ACTIVE" ? villa.verification_level : "REGISTERED"
   return {
@@ -113,3 +116,5 @@ export async function trustDto(db, villa) {
     packageName: plan.name,
   }
 }
+
+export async function readContextPlan(db,id,context){return context?.plans.has(id)?planDto(context.plans.get(id)):getPlan(db,id)}

@@ -1,3 +1,5 @@
+import { loadTrustContext, selectByIds } from "./villa-read-context.mjs"
+import { readContextPlan } from "./catalog.mjs"
 import { shortcutMediaUrls } from "./cms-home-config.mjs"
 import {propertyMediaApi,propertyMediaFile} from "./property-media.mjs";
 import {advertisingApi} from "./advertising.mjs";
@@ -246,15 +248,15 @@ export function createApp(db, config, transport) {
     const villa = await villaFor(user, invoice.villa_id)
     return { invoice, villa }
   }
-  async function invoiceDto(invoice) {
+  async function invoiceDto(invoice,context) {
     const file =
       invoice.proof_id &&
-      (await db
+      (context ? context.documents.get(invoice.proof_id) : await db
         .prepare("SELECT name,mime FROM documents WHERE id=?")
         .get(invoice.proof_id))
     return {
       id: invoice.id,
-      packageName: (await getPlan(db,invoice.package_id || (await db.prepare("SELECT package_id FROM villas WHERE id=?").get(invoice.villa_id)).package_id)).name,
+      packageName: (await readContextPlan(db,invoice.package_id || (context?.villas.get(invoice.villa_id) || await db.prepare("SELECT package_id FROM villas WHERE id=?").get(invoice.villa_id)).package_id,context)).name,
       bankQrImage: JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${invoice.id}`))?.value || '""'),
       paymentQr: await paymentQrDto(db, invoice.id),
       scope: invoice.subscription_owner ? "merchant" : "villa",
@@ -284,13 +286,14 @@ export function createApp(db, config, transport) {
         : null,
     }
   }
-  async function villaDto(v) {
-    const file = await db
+  async function villaDto(v,context) {
+    const file = context ? context.documents.get(v.document_id) : await db
       .prepare("SELECT name,mime FROM documents WHERE id=?")
       .get(v.document_id)
-    const invoices = await db
+    const invoices = context ? (context.invoices.get(v.id)||[]) : await db
       .prepare("SELECT * FROM invoices WHERE villa_id=? ORDER BY created DESC")
       .all(v.id)
+    const packagePlan=await readContextPlan(db,v.package_id,context)
     return {
       id: v.id,
       name: v.name,
@@ -300,11 +303,11 @@ export function createApp(db, config, transport) {
       photoUrl: v.photo_url,
       photoUploadedAt: v.photo_uploaded_at, photoTakenAt: v.photo_taken_at, photoReviewedAt: v.photo_reviewed_at,
       guestCapacity: v.guest_capacity,
-      reviewRequest: await villaReview(db,v),
+      reviewRequest: await villaReview(db,v,context ? context.settings.get("villa_review:"+v.id) ?? null : undefined),
       province: v.province,
       merchant: v.merchant,
       email: v.email,
-      package: `${(await getPlan(db, v.package_id)).name} · ฿${(await getPlan(db, v.package_id)).amount / 100} / เดือน`,
+      package: `${packagePlan.name} · ฿${packagePlan.amount / 100} / เดือน`,
       documentReviewStatus: {
         pending: "PENDING_REVIEW",
         approved: "APPROVED",
@@ -313,7 +316,7 @@ export function createApp(db, config, transport) {
       }[v.status],
       reviewedAt: v.reviewed_at,
       reviewedByAdminId: v.reviewed_by,
-      ...(await trustDto(db, v)),
+      ...(await trustDto(db, v, context)),
       packageId: v.package_id,
       phone: v.phone,
       bankName: v.bank_name,
@@ -330,7 +333,7 @@ export function createApp(db, config, transport) {
         type: file.mime,
         data: `/api/documents/${v.document_id}`,
       },
-      invoices: await Promise.all(invoices.map(invoiceDto)),
+      invoices: await Promise.all(invoices.map(invoice=>invoiceDto(invoice,context))),
     }
   }
   async function state(user) {
@@ -342,6 +345,17 @@ export function createApp(db, config, transport) {
               "SELECT * FROM villas WHERE owner_id=? ORDER BY created DESC",
             )
             .all(user.id)
+    const [context,invoiceRows]=await Promise.all([
+      loadTrustContext(db,villas,{reviews:true}),
+      selectByIds(db,"SELECT * FROM invoices WHERE villa_id",villas.map(v=>v.id)," ORDER BY created DESC"),
+    ]);
+    const documents=await selectByIds(db,"SELECT id,name,mime FROM documents WHERE id",[...villas.map(v=>v.document_id),...invoiceRows.map(i=>i.proof_id)]);
+    context.documents=new Map(documents.map(row=>[row.id,row]));
+    context.villas=new Map(villas.map(v=>[v.id,v]));
+    context.invoices=new Map();
+    for(const invoice of invoiceRows){const rows=context.invoices.get(invoice.villa_id)||[];rows.push(invoice);context.invoices.set(invoice.villa_id,rows);}
+    const isDemo=await demoMode(db,config);
+    const instructions=isDemo ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : await cmsPaymentInstructions(db,config.paymentInstructions);
     const mails =
       user.role === "admin"
         ? await db.prepare("SELECT * FROM mails ORDER BY created DESC").all()
@@ -351,7 +365,7 @@ export function createApp(db, config, transport) {
             )
             .all(user.id)
     return {
-      villas: await Promise.all(villas.map(villaDto)),
+      villas: await Promise.all(villas.map(v=>villaDto(v,context))),
       mails: mails.map((m) => ({
         id: m.id,
         villaId: m.villa_id,
@@ -370,16 +384,16 @@ export function createApp(db, config, transport) {
       },
       subscription: await subscriptionDto(db, user.id),
       packageModel: "PER_VILLA",
-      demoMode:await demoMode(db,config),
-      paymentBankQrImage: await demoMode(db,config) ? "" : ((await receivingBank(db))?.qrImage || (await publishedCms(db)).content.site.paymentQrImage || ""),
+      demoMode:isDemo,
+      paymentBankQrImage: isDemo ? "" : ((await receivingBank(db))?.qrImage || (await publishedCms(db)).content.site.paymentQrImage || ""),
       paymentInstructions:
-        (await demoMode(db,config) ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : await cmsPaymentInstructions(db, config.paymentInstructions)) ||
+        instructions ||
         "ยังไม่ได้ตั้งค่าบัญชีรับชำระ กรุณาติดต่อทีมงานก่อนโอนเงิน",
       paymentVerificationMode: await getVerificationMode(
         db,
         config.paymentVerificationMode || "MANUAL",
       ),
-      paymentConfigured: (await demoMode(db,config)) || Boolean(await cmsPaymentInstructions(db, config.paymentInstructions)),
+      paymentConfigured: isDemo || Boolean(instructions),
       smtpConfigured: Boolean(transport),
     }
   }
@@ -619,11 +633,11 @@ export function createApp(db, config, transport) {
         return json({ ok: true })
       }
       if (req.method === "GET" && path === "/api/public/villas") {
-        const rows = await db
-          .prepare(
-            "SELECT * FROM villas WHERE status='approved' AND qr IS NOT NULL ORDER BY created DESC",
-          )
-          .all()
+        const requestedLimit=url.searchParams.get("limit");
+        const limit=requestedLimit===null?null:Number(requestedLimit);
+        if(requestedLimit!==null&&(!/^\d+$/.test(requestedLimit)||!Number.isInteger(limit)||limit<1||limit>100))fail(400,"จำนวนที่พักต้องเป็นจำนวนเต็ม 1–100");
+        const rows = await db.prepare("SELECT * FROM villas WHERE status='approved' AND qr IS NOT NULL ORDER BY created DESC,id DESC"+(limit?" LIMIT ?":"")).all(...(limit?[limit]:[]));
+        const context=await loadTrustContext(db,rows)
         return json({
           villas: await Promise.all(
             rows.map(async (v) => ({
@@ -637,7 +651,7 @@ export function createApp(db, config, transport) {
               guestCapacity: v.guest_capacity,
               updated: v.reviewed_at || null,
               createdAt: v.created,
-              ...(await trustDto(db, v)),
+              ...(await trustDto(db, v, context)),
             })),
           ),
         })

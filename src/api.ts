@@ -8,7 +8,7 @@ export class ApiError extends Error {
     super(message)
   }
 }
-export async function api<T>(path: string, data?: unknown): Promise<T> {
+async function request<T>(path: string, data?: unknown): Promise<T> {
   let response: Response
   try {
     response = await fetch(`/api${path}`, {
@@ -32,6 +32,14 @@ export async function api<T>(path: string, data?: unknown): Promise<T> {
     window.dispatchEvent(new Event("auth-session-changed"))
   }
   return value as T
+}
+// Share only simultaneous public reads. Settled responses are never cached.
+const publicReads=new Map<string,Promise<unknown>>();
+export function api<T>(path:string,data?:unknown):Promise<T>{
+  if(data!==undefined || !(/^\/public\/(?:cms|villas|advertisements)(?:\?|$)/.test(path) || path==="/config"))return request<T>(path,data);
+  const existing=publicReads.get(path);if(existing)return existing as Promise<T>;
+  const pending=request<T>(path).then(value=>{publicReads.delete(path);return value;},error=>{publicReads.delete(path);throw error;});
+  publicReads.set(path,pending);return pending;
 }
 export async function currentAccount() {
   const session = await api<{ user: Account; csrf: string }>("/auth/me")

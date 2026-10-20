@@ -51,3 +51,10 @@ CREATE TABLE IF NOT EXISTS login_otps (
  purpose TEXT NOT NULL DEFAULT 'login' CHECK(purpose IN ('login','register','link_identity'))
 );
 CREATE INDEX IF NOT EXISTS login_otps_destination_created ON login_otps(destination,created);
+
+-- Read paths used by Directory and Member Room.
+CREATE INDEX IF NOT EXISTS villas_owner_created ON villas(owner_id,created);
+CREATE INDEX IF NOT EXISTS villas_status_created ON villas(status,created);
+CREATE INDEX IF NOT EXISTS invoices_villa_created ON invoices(villa_id,created);
+CREATE INDEX IF NOT EXISTS mails_villa_created ON mails(villa_id,created);
+CREATE INDEX IF NOT EXISTS payment_qrs_payment_status_created ON payment_qrs(payment_id,status,created);
