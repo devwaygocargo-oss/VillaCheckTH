@@ -9,6 +9,8 @@ const db=new PrismaDatabaseService();
 try{
  const result=await seedDemo(db,{password:process.env.DEMO_PASSWORD || randomBytes(24).toString('base64url')});
  console.log('Public labelled sample data ready:',result.villas,'Villas. No demo Admin or payment emails created.');
+ const home=await advertisingApi(db,null,{method:'GET'},'/api/public/advertisements',new URL('http://localhost?placement=home'),()=>{});
+ console.log('Labelled carousel samples:',{advertisements:home.advertisements.length,dummy:home.advertisements.filter(a=>a.demo).length});
  const footer=await advertisingApi(db,null,{method:'GET'},'/api/public/advertisements',new URL('http://localhost?placement=footer'),()=>{});
  const pro=await db.prepare("SELECT active,amount FROM package_catalog WHERE id='pro'").get();
  console.log('Labelled footer sample:',{advertisements:footer.advertisements.length,proActive:Boolean(pro?.active),monthlyAmount:pro?.amount});

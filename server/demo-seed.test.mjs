@@ -65,3 +65,17 @@ test('Premium demo carousel uses eligible ad records, retains admin edits and re
   const other=(await getAds()).advertisements[0];const stored=JSON.parse((await db.prepare('SELECT value FROM system_settings WHERE key=?').get('advertisement:'+other.id)).value);await db.prepare("UPDATE villas SET expires='2000-01-01T00:00:00.000Z' WHERE id=?").run(stored.villaId);assert.equal((await getAds()).advertisements.length,6);
  }finally{await db.close();}
 });
+
+test('Eight carousel examples use existing paid Premium fixtures when legacy dummy Villas have lower plans',async()=>{
+ const {advertisingApi}=await import('./advertising.mjs'),db=await openTestDatabase();try{
+  await seedDemo(db,{password:'DemoTestPassword123'});
+  await db.prepare("DELETE FROM system_settings WHERE key LIKE 'advertisement:%'").run();
+  for(const [before,after] of [['Sea Sky Demo Villa','Chiang Mai Pool Villa Online Dummy'],['Khao Yai Forest Demo Villa','Khao Yai Pool Villa Online Dummy 3'],['Phuket Demo Villa','Krabi Pool Villa Online Dummy 4'],['Cha Am Garden Demo Villa','Phang Nga Pool Villa Online Dummy 5']])await db.prepare('UPDATE villas SET name=? WHERE name=?').run(after,before);
+  const legacy=['Chiang Mai Demo Villa','Krabi Cliff Demo Villa','Rayong Ocean Demo Villa','Phang Nga Lagoon Demo Villa','Bangkok Garden Demo Villa'];
+  for(const name of legacy)await db.prepare("UPDATE villas SET package_id='starter' WHERE name=?").run(name);
+  await seedDemo(db,{password:'DemoTestPassword123'});
+  const {advertisements}=await advertisingApi(db,null,{method:'GET'},'/api/public/advertisements',new URL('http://localhost?placement=home'),()=>{});
+  assert.equal(advertisements.length,8);assert.equal(new Set(advertisements.map(a=>a.id)).size,8);
+  for(const name of legacy)assert.equal((await db.prepare('SELECT package_id FROM villas WHERE name=?').get(name)).package_id,'starter');
+ }finally{await db.close();}
+});
