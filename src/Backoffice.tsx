@@ -1,4 +1,5 @@
 import PropertyMedia from "./PropertyMedia";
+import SocialMaterials from "./SocialMaterials";
 import Advertising, {DetailAdvertisement} from "./Advertising";
 import Reviews from "./Reviews";
 import PaymentQr from "./PaymentQr";
@@ -540,6 +541,7 @@ export default function Backoffice({
                 }}><h2>แก้ไขข้อมูล Villa</h2><p role="status" className="merchant-status">สถานะ: {status(active)}</p><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><label>วันที่ถ่ายภาพ (หากทราบ)<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","nameEn","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{({name:"ชื่อที่พักภาษาไทย",nameEn:"ชื่อที่พักภาษาอังกฤษ"} as Record<string,string>)[k] || k}<input required={["name","nameEn","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
                 {!editing&&active.photoUrl&&<img src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/>}
                 <PropertyMedia villaId={active.id} mode={admin?"admin":"merchant"}/>
+                {!admin&&!editing&&<SocialMaterials villaId={active.id}/>}
                 <h2>เอกสารกรรมสิทธิ์ · {active.name}</h2>
                 <p>{active.document.name}</p>
                 <div className="merchant-villa-meta">

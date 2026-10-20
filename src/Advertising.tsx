@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { api } from "./api"
+import SocialMaterials from "./SocialMaterials"
 import type { MerchantVilla } from "./merchantStore"
 import type { HomeBannerItem } from "./cms"
 type Ad = HomeBannerItem & {
@@ -95,7 +96,7 @@ export default function Advertising({
     }
   }
   return (
-    <section className="merchant-panel">
+    <><SocialMaterials admin={!merchant}/><section className="merchant-panel">
       <h2>โฆษณาและคอนเทนต์ Social</h2>
       <p>
         2,990: ภาพเดี่ยว 1 โพสต์ / เดือน บนทุก Social ของ VillaCheck · 4,990: ภาพเดี่ยว 1 โพสต์ + วิดีโอ 1
@@ -363,7 +364,7 @@ export default function Advertising({
           </button>
         </form>
       )}
-    </section>
+    </section></>
   )
 }
 export function DetailAdvertisement() {

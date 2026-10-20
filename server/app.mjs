@@ -3,6 +3,7 @@ import { readContextPlan } from "./catalog.mjs"
 import { shortcutMediaUrls } from "./cms-home-config.mjs"
 import {propertyMediaApi,propertyMediaFile} from "./property-media.mjs";
 import {advertisingApi} from "./advertising.mjs";
+import {socialMaterialsApi,socialMaterialFile,cleanupSocialUploads} from "./social-materials.mjs";
 import {reviewsApi} from "./reviews.mjs";
 import { createInvoice } from "./database.mjs";
 import { mediaDate } from "./media-date.mjs";
@@ -711,6 +712,7 @@ export function createApp(db, config, transport) {
         if(!expected)fail(503,"Scheduled worker ยังไม่ได้ตั้งค่า")
         if(actual.length!==expected.length||!timingSafeEqual(actual,expected))fail(401,"Unauthorized")
         await worker.run()
+        await cleanupSocialUploads(db)
         await db.prepare("INSERT INTO system_settings(key,value) VALUES ('ops:last_cron',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(new Date().toISOString())
         return json({ok:true})
       }
@@ -783,6 +785,14 @@ export function createApp(db, config, transport) {
           res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':'inline; filename="DUMMY-ownership-sample.pdf"','Cache-Control':'private, no-store'});
           return res.end(dummyPdf());
         }
+        const socialFile=path.match(/^\/api\/social-material-files\/([a-f0-9-]{36})$/)
+        if(socialFile&&req.method==="GET"){
+          const file=await socialMaterialFile(db,user,socialFile[1],req.headers.range)
+          res.writeHead(file.partial?206:200,{"Content-Type":file.mime,"Content-Length":file.bytes.length,"Accept-Ranges":"bytes",...(file.partial?{"Content-Range":`bytes ${file.start}-${file.end}/${file.size}`} : {}),"Content-Disposition":`inline; filename="social-material"; filename*=UTF-8''${encodeURIComponent(file.name)}`,"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"})
+          return res.end(file.bytes)
+        }
+        const materials=await socialMaterialsApi(db,user,req,path,url,body)
+        if(materials!==undefined)return json(materials)
         const propertyMedia=await propertyMediaApi(db,user,req,path,url,body)
         if(propertyMedia!==undefined)return json(propertyMedia)
         const advertising=await advertisingApi(db,user,req,path,url,body)
