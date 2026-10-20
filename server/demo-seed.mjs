@@ -53,6 +53,12 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const ad={id,villaId:villa.id,villaName:villa.name,placement:'home',image:villa.photo_url,mobileImage:villa.photo_url,title:headline,description:copy+' — '+villa.name+' · ข้อมูลโฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+id,JSON.stringify(ad));
   }
+  const footerVilla=await db.prepare("SELECT * FROM villas WHERE package_id='pro' AND payments>0 AND status='approved' AND expires>? AND (name='Hua Hin Pool Villa Online Dummy 2' OR merchant='ธุรกิจสาธิต — ไม่ใช่ที่พักจริง') ORDER BY created,id LIMIT 1").get(now);
+  if(footerVilla){
+   const id=uuid(footerVilla.id+'-footer-ad');
+   const ad={id,villaId:footerVilla.id,villaName:footerVilla.name,placement:'footer',image:footerVilla.photo_url,mobileImage:footerVilla.photo_url,title:'วันพักผ่อนของคุณ เริ่มที่'+footerVilla.province,description:footerVilla.name+' · โฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(footerVilla.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:footerVilla.expires,visible:true,approved:true,order:0,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
+   await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+id,JSON.stringify(ad));
+  }
   // Explicit simulated highest-level Admin results for two labelled demo records only.
   for(const name of ['Sea Sky Demo Villa','Khao Yai Forest Demo Villa'])await db.prepare("UPDATE villas SET verification_level='PREMIUM_VERIFIED' WHERE id=? AND status='approved' AND merchant='ธุรกิจสาธิต — ไม่ใช่ที่พักจริง' AND reviewed_by IS NULL").run(uuid(name))
   // An expired subscription must be separate: QR status follows the account subscription.

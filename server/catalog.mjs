@@ -1,4 +1,4 @@
-import {packageContent} from './package-content.mjs'
+import {packageContent,footerAdFeature} from './package-content.mjs'
 import { packages } from "./database.mjs"
 export const levels = [
   "REGISTERED",
@@ -37,6 +37,14 @@ export async function seedCatalog(db) {
     await db.prepare("UPDATE villas SET payments=0,expires=NULL WHERE package_id='basic' AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.status='paid' AND i.amount>0 AND (i.villa_id=villas.id OR i.subscription_owner=villas.owner_id))").run()
     await db.prepare("INSERT INTO system_settings(key,value) VALUES ('package_model_v2','true')").run()
   }
+  if(!(await db.prepare("SELECT value FROM system_settings WHERE key='package_footer_ad_v1'").get())){
+    for(const id of ["pro","premium"]){
+      const row=await db.prepare("SELECT features FROM package_catalog WHERE id=?").get(id);
+      if(row){const features=JSON.parse(row.features);if(!features.includes(footerAdFeature))await db.prepare("UPDATE package_catalog SET features=? WHERE id=?").run(JSON.stringify([...features,footerAdFeature]),id);}
+    }
+    await db.prepare("INSERT INTO system_settings(key,value) VALUES ('package_footer_ad_v1','true') ON CONFLICT(key) DO NOTHING").run();
+  }
+
 }
 export async function getPlan(db, id) {
   if (typeof id !== "string" || !id)

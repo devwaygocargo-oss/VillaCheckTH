@@ -1,3 +1,4 @@
+import FooterAd from "./FooterAd";
 import HomeNews from "./HomeNews";
 import {publicNavigation} from "../server/cms-home-config.mjs";
 import HomeShortcuts from "./HomeShortcuts";
@@ -664,7 +665,7 @@ function AppContent() {
     page === "admin-receiving-bank" ? <AdminReceivingBank go={go}/> :
     page === "admin-approved-villas" ? <AdminApprovedVillas go={go}/> :
     page === "admin-pending-villas" ? <AdminPendingVillas go={go}/> :
-    page === "admin-cms" ? <AdminCms go={go} renderHome={<><Header page="home" go={()=>{}} account={null} preview/><Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/><Footer go={()=>{}} account={null}/></>}/> :
+    page === "admin-cms" ? <AdminCms go={go} renderHome={<><Header page="home" go={()=>{}} account={null} preview/><Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/><FooterAd/><Footer go={()=>{}} account={null}/></>}/> :
     ["admin-packages","admin-leads","admin-settings","admin-subscriptions"].includes(page) ? <AdminBusiness page={page} go={go} /> :
     page === "admin-users" ? <AdminUsers go={go} /> :
     ["admin-owners","admin-checks","admin-reports","admin-qr","owner-analytics","owner-reports"].includes(page) || page.startsWith("user-") ? <OperationsPortal page={page} go={go} item={selectedItem} /> :
@@ -681,7 +682,7 @@ function AppContent() {
     <UserPages page={page} go={go} reports={[]} selectedReference={selectedItem} />;
   const isStandalone = page === "scan" || page === "verify" || page === "login" || page === "owner-auth" || page === "owner-registration" || page === "owner-information" || page === "owner-onboarding-villa" || page === "owner-select-villa" || page === "package-confirmation" || page === "package-request-pending" || isOwnerPage || isAdminPage || isUserPage;
   const showPublicFooter = ["home", "directory", "detail", "pricing", "scan", "verify", "villa-report", "villa-report-success"].includes(page) || isPublicInfoPage;
-  return <div className="app" style={{"--cms-accent":site.accent} as React.CSSProperties}>{!isStandalone && <Header page={page} go={go} account={account} />}{!isAdminPage&&!isOwnerPage&&!isUserPage&&<DemoNotice/>}{isAdminPage&&page!=="admin-login"?<AdminAccess go={go}>{content}</AdminAccess>:content}{showPublicFooter && <Footer go={go} account={account} />}</div>;
+  return <div className="app" style={{"--cms-accent":site.accent} as React.CSSProperties}>{!isStandalone && <Header page={page} go={go} account={account} />}{!isAdminPage&&!isOwnerPage&&!isUserPage&&<DemoNotice/>}{isAdminPage&&page!=="admin-login"?<AdminAccess go={go}>{content}</AdminAccess>:content}{page==="home"&&<FooterAd/>}{showPublicFooter && <Footer go={go} account={account} />}</div>;
 }
 
 export default function App() { return <CmsProvider><AppContent/></CmsProvider>; }

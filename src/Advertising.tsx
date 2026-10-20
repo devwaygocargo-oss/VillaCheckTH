@@ -148,6 +148,7 @@ export default function Advertising({
               >
                 <option value="detail">หน้ารายละเอียดที่พัก (2,990 ขึ้นไป)</option>
                 <option value="home">หน้าแรก (4,990)</option>
+                <option value="footer">โฆษณาเล็กก่อน Footer · 1 ชิ้น (2,990 ขึ้นไป)</option>
               </select>
             </label>
             {([

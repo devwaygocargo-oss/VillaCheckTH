@@ -25,7 +25,7 @@ test("Encrypted online application backup remains consistent during writes and r
  const schema=new URL(target.testConnectionString).searchParams.get('options').split('search_path=')[1]
  await assert.rejects(()=>restoreSnapshot(target.testConnectionString,file,secret,{schema}),/empty/)
  await target.prepare('DELETE FROM package_catalog').run()
- await target.prepare("DELETE FROM system_settings WHERE key='package_model_v2'").run()
+ await target.prepare("DELETE FROM system_settings WHERE key IN ('package_model_v2','package_footer_ad_v1')").run()
  const restored=await restoreSnapshot(target.testConnectionString,file,secret,{schema})
  assert.equal(restored.rows,result.rows);assert.equal(restored.transientSessionsRestored,false)
  assert.equal((await target.prepare('SELECT name FROM users WHERE id=?').get(owner.id)).name,'Before backup')

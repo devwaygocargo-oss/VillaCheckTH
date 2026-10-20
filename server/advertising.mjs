@@ -55,7 +55,7 @@ export async function advertisingApi(db, user, req, path, url, body) {
     return undefined
   if (path === "/api/public/advertisements" && req.method === "GET") {
     const placement =
-        url.searchParams.get("placement") === "home" ? "home" : "detail",
+        ["home","footer"].includes(url.searchParams.get("placement")) ? url.searchParams.get("placement") : "detail",
       now = Date.now()
     const candidates=(await list(db,"advertisement")).filter(ad=>ad.placement===placement&&ad.approved&&ad.visible&&Date.parse(ad.startsAt)<=now&&Date.parse(ad.endsAt)>now);
     const villas=await selectByIds(db,"SELECT * FROM villas WHERE id",candidates.map(ad=>ad.villaId));
@@ -191,7 +191,7 @@ export async function advertisingApi(db, user, req, path, url, body) {
       return { job }
     }
     if (
-      !["home", "detail"].includes(data.placement) ||
+      !["home", "detail", "footer"].includes(data.placement) ||
       typeof data.visible !== "boolean" ||
       typeof data.approved !== "boolean" ||
       !Number.isInteger(data.order) ||
@@ -240,8 +240,14 @@ export async function advertisingApi(db, user, req, path, url, body) {
       approvedBy: data.approved ? user.id : null,
       approvedAt: data.approved ? now : null,
     }
-    await save(db, "advertisement", ad)
-    await audit(db, user, "advertisement.save", id)
+    await db.transaction(async()=>{
+      if(ad.placement==="footer"&&ad.visible&&ad.approved){
+        const overlap=(await list(db,"advertisement")).some(other=>other.id!==id&&other.villaId===ad.villaId&&other.placement==="footer"&&other.visible&&other.approved&&Date.parse(other.startsAt)<Date.parse(ad.endsAt)&&Date.parse(other.endsAt)>Date.parse(ad.startsAt));
+        if(overlap)fail(409,"แต่ละที่พักแสดงโฆษณาก่อน Footer ได้ 1 ชิ้นในช่วงเวลาเดียวกัน");
+      }
+      await save(db,"advertisement",ad);
+      await audit(db,user,"advertisement.save",id);
+    })
     return { advertisement: ad }
   })
 }
