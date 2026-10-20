@@ -39,6 +39,18 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    await db.prepare('UPDATE villas SET guest_capacity=? WHERE id=? AND guest_capacity IS NULL AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)').run(index % 2 ? 8 : 12,id,'villa_review:'+id)
    await db.prepare("UPDATE villas SET photo_url=? WHERE id=? AND (photo_url='' OR photo_url=?) AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)").run(`/demo/villas/villa-${imageIndex??(index>=6?index-2:index%3+1)}.jpg`,id,`/demo/villas/villa-${index%3+1}.jpg`,'villa_review:'+id)
   }
+  // Labelled advertising fixtures use the same paid Premium entitlement checks as real ads.
+  for(const [order,name,headline,copy] of [
+   [0,'Sea Sky Demo Villa','พักริมทะเล ชิลกับพูลวิลล่าส่วนตัว','ชลบุรี · สระว่ายน้ำส่วนตัว พร้อมพื้นที่พักผ่อนสำหรับทริปกับคนที่คุณรัก'],
+   [1,'Khao Yai Forest Demo Villa','พักกลางธรรมชาติ สูดอากาศดีที่เขาใหญ่','นครราชสีมา · วิลล่าท่ามกลางสีเขียว เหมาะกับวันพักผ่อนของครอบครัว'],
+   [2,'Phuket Demo Villa','เติมวันหยุดให้สดใส ที่ภูเก็ต','ภูเก็ต · พูลวิลล่าสำหรับวันพักผ่อน กับบรรยากาศสบาย ๆ ในจุดหมายยอดนิยม'],
+  ]){
+   const villa=await db.prepare('SELECT * FROM villas WHERE id=?').get(uuid(name));
+   if(!villa || villa.package_id!=='premium' || villa.payments<1 || villa.status!=='approved')continue;
+   const id=uuid(name+'-home-ad');
+   const ad={id,villaId:villa.id,villaName:villa.name,placement:'home',image:villa.photo_url,mobileImage:villa.photo_url,title:headline,description:copy+' — '+name+' · ข้อมูลโฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
+   await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+id,JSON.stringify(ad));
+  }
   // Explicit simulated highest-level Admin results for two labelled demo records only.
   for(const name of ['Sea Sky Demo Villa','Khao Yai Forest Demo Villa'])await db.prepare("UPDATE villas SET verification_level='PREMIUM_VERIFIED' WHERE id=? AND status='approved' AND merchant='ธุรกิจสาธิต — ไม่ใช่ที่พักจริง' AND reviewed_by IS NULL").run(uuid(name))
   // An expired subscription must be separate: QR status follows the account subscription.

@@ -79,6 +79,7 @@ export async function advertisingApi(db, user, req, path, url, body) {
           href: a.href,
           label: a.label,
           sponsored: true,
+          demo: a.demo === true,
           visible: true,
           startsAt: a.startsAt,
           endsAt: a.endsAt,
@@ -220,8 +221,11 @@ export async function advertisingApi(db, user, req, path, url, body) {
       title = text(data.title),
       href = cmsUrl(data.href || "")
     if (!image || !title) fail(400, "ระบุรูปและหัวข้อ")
+    const previousAdRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get("advertisement:"+id)
+    const previousAd=previousAdRow?JSON.parse(previousAdRow.value):null
     const ad = {
       id,
+      demo: previousAd?.demo === true,
       villaId: villa.id,
       villaName: villa.name,
       placement: data.placement,

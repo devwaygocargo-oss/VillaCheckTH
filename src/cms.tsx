@@ -52,7 +52,7 @@ export type CmsHomeSection = {
   title: string
   description: string
 }
-export type HomeBannerItem = { id:string; image:string; mobileImage:string; title:string; description:string; href:string; label:string; visible:boolean; sponsored:boolean; startsAt:string; endsAt:string };
+export type HomeBannerItem = { demo?:boolean; id:string; image:string; mobileImage:string; title:string; description:string; href:string; label:string; visible:boolean; sponsored:boolean; startsAt:string; endsAt:string };
 export type ShortcutIconName = "find" | "scan" | "transfer" | "status" | "owner" | "contact";
 export type HomeShortcut = {id:string;icon:ShortcutIconName;label:string;href:string;description:string;visible:boolean;image:string};
 export type HomeDiscovery = {visible:boolean;searchVisible:boolean;heading:string;placeholder:string;buttonLabel:string;showProvinceHint:boolean;provinceHint:string;showFreeHint:boolean;freeHint:string;background:string;iconColor:string;accentColor:string;shortcuts:HomeShortcut[]};

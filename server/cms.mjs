@@ -35,6 +35,7 @@ const slug = (value) => {
 export function cmsUrl(value, image = false) {
   string(value, 2000)
   if (!value) return value
+  if (image && /^\/demo\/villas\/villa-[1-9]\.jpg$/.test(value)) return value
   if (!image && value === "#how") return value
   if (image && /^\/api\/public\/cms-media\/[a-f0-9-]+$/.test(value))
     return value

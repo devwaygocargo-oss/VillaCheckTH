@@ -40,14 +40,10 @@ export default function HomeBanner() {
         label: home.buttonLabel ?? "ค้นหาที่พัก",
         sponsored: false,
       }))
-  const slides = [
-    ...editorial,
-    ...advertisements.filter(
-      (b) =>
-        (!b.startsAt || Date.parse(b.startsAt) <= now) &&
-        (!b.endsAt || Date.parse(b.endsAt) > now),
-    ),
-  ]
+  const activeAdvertisements = advertisements.filter(
+    b => (!b.startsAt || Date.parse(b.startsAt) <= now) && (!b.endsAt || Date.parse(b.endsAt) > now),
+  )
+  const slides: (HomeBannerItem | (typeof editorial)[number])[] = activeAdvertisements.length ? activeAdvertisements : editorial
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const touch = useRef<number | null>(null)
@@ -115,10 +111,10 @@ export default function HomeBanner() {
           <div className="container vc-banner-copy">
             {slide.sponsored && (
               <span className="vc-ad-label">
-                พื้นที่โฆษณา · ไม่ใช่สถานะการตรวจสอบ
+                {"demo" in slide && slide.demo ? "โฆษณาตัวอย่าง · แพ็กเกจ 4,990 บาท/เดือน" : "พื้นที่โฆษณา · ไม่ใช่สถานะการตรวจสอบ"}
               </span>
             )}
-            <span className="kicker">{home.eyebrow}</span>
+            <span className="kicker">{slide.sponsored ? "FEATURED VILLA / PREMIUM MEMBER" : home.eyebrow}</span>
             <h2>{slide.title}</h2>
             <p>{slide.description}</p>
             {slide.href && (
