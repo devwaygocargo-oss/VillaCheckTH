@@ -71,6 +71,20 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const ad={id,villaId:footerVilla.id,villaName:footerVilla.name,placement:'footer',image:footerVilla.photo_url,mobileImage:footerVilla.photo_url,title:'วันพักผ่อนของคุณ เริ่มที่'+footerVilla.province,description:footerVilla.name+' · โฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(footerVilla.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:footerVilla.expires,visible:true,approved:true,order:0,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+id,JSON.stringify(ad));
   }
+  const extraFooterSamples=[
+   ['Khao Yai Footer Ad Demo Villa','นครราชสีมา',5,'พักกลางสีเขียว เติมพลังให้วันหยุด','ชวนคนโปรดมาเปลี่ยนบรรยากาศ กับไอเดียทริปพักผ่อนที่เขาใหญ่'],
+   ['Rayong Footer Ad Demo Villa','ระยอง',6,'ปิดโหมดงาน เปิดวันพักที่ระยอง','เก็บกระเป๋าแล้วออกไปหามุมพักผ่อน สำหรับทริปครั้งใหม่ของคุณ'],
+   ['Phang Nga Footer Ad Demo Villa','พังงา',7,'ให้วันพักผ่อน มีภาพจำใหม่ที่พังงา','เติมไอเดียเที่ยวธรรมชาติ แล้วเลือกที่พักที่เข้ากับวันหยุดของคุณ'],
+  ];
+  for(const [index,[name,province,image,title,copy]] of extraFooterSamples.entries()){
+   const owner=await add(`demo-footer-${index+1}@villacheck.example`,'Merchant โฆษณาย่อยตัวอย่าง '+(index+1),'merchant');
+   await db.prepare("INSERT INTO subscriptions(owner_id,package_id,expires,payments,created,lifecycle) VALUES (?,'pro',?,1,?,'ACTIVE') ON CONFLICT(owner_id) DO NOTHING").run(owner.id,expires,now);
+   const id=uuid(name),doc=uuid(name+'-document');
+   await db.prepare('INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING').run(doc,owner.id,'dummy-ownership.pdf','application/pdf',dummyPdf({'Villa ID':id,'Villa name':name,'Merchant email':owner.email,'Purpose':'DUMMY Pro footer advertising - no real property rights'}));
+   await db.prepare("INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level,payments,photo_url,guest_capacity) VALUES (?,?,?,?,?,?,?,'pro',?,'approved',?,?,?,?,?,?,?,'VERIFIED',1,?,8) ON CONFLICT(id) DO NOTHING").run(id,owner.id,name,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,'VC-DEMO-'+id,expires,now,'0800000000','ธนาคารตัวอย่าง — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000',`/demo/villas/villa-${image}.jpg`);
+   const villa=await db.prepare("SELECT * FROM villas WHERE id=? AND package_id='pro' AND payments>0 AND status='approved' AND expires>?").get(id,now);
+   if(villa){const adId=uuid(id+'-footer-ad'),ad={id:adId,villaId:id,villaName:villa.name,placement:'footer',image:villa.photo_url,mobileImage:villa.photo_url,title,description:copy+' · โฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order:index+1,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+adId,JSON.stringify(ad));}
+  }
   // Explicit simulated highest-level Admin results for two labelled demo records only.
   for(const name of ['Sea Sky Demo Villa','Khao Yai Forest Demo Villa'])await db.prepare("UPDATE villas SET verification_level='PREMIUM_VERIFIED' WHERE id=? AND status='approved' AND merchant='ธุรกิจสาธิต — ไม่ใช่ที่พักจริง' AND reviewed_by IS NULL").run(uuid(name))
   // An expired subscription must be separate: QR status follows the account subscription.
@@ -84,7 +98,7 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    await db.prepare("INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING").run(doc,owner.id,'dummy-ownership.pdf','application/pdf',dummyPdf())
    await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,created,photo_url,phone,bank_name,account_name,account_number,verification_level,payments) VALUES (?,?,?,'ชลบุรี',?,?,?,?, 'pending',?, '/demo/villas/villa-1.jpg','0800000000','DEMO BANK','DEMO ACCOUNT','0000000000','REGISTERED',0) ON CONFLICT(id) DO NOTHING").run(id,owner.id,name,'DEMO business - no real bookings',email,plan,doc,now)
   }
-  await synchronizeDemoProfilesAndDocuments(db,[...samples.map(([name])=>name),'Payment Workflow Demo Villa','Free Trial Demo Villa',footerName],merchant)
+  await synchronizeDemoProfilesAndDocuments(db,[...samples.map(([name])=>name),'Payment Workflow Demo Villa','Free Trial Demo Villa',footerName,...extraFooterSamples.map(([name])=>name)],merchant)
   const sampleId=uuid('Sea Sky Demo Villa')
   const sample=await db.prepare('SELECT * FROM villas WHERE id=?').get(sampleId)
   const reportDetails=[
@@ -109,7 +123,7 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const stamp=new Date(Date.now()-day*86400000).toISOString(),id=uuid('event-'+stamp.slice(0,10)+'-'+index)
    await db.prepare('INSERT INTO villa_events VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING').run(id,sampleId,kind,stamp)
   }
-  return {merchant:'demo-merchant@villacheck.example',user:'demo-user@villacheck.example',villas:samples.length+3,workflowMerchants:["demo-payment@villacheck.example","demo-trial@villacheck.example"]}
+  return {merchant:'demo-merchant@villacheck.example',user:'demo-user@villacheck.example',villas:samples.length+6,workflowMerchants:["demo-payment@villacheck.example","demo-trial@villacheck.example"]}
  // Remote fixture bootstrap may exceed the normal 30s write limit.
  },{timeout:120000})
 }
@@ -117,7 +131,7 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
 // Repair only our deterministic fixtures and their untouched legacy defaults.
 // Merchant edits, replacement documents, review decisions and historical snapshots remain intact.
 async function synchronizeDemoProfilesAndDocuments(db,names,originalMerchant){
- const emails=['demo-merchant@villacheck.example','demo-regional@villacheck.example','demo-expired@villacheck.example','demo-payment@villacheck.example','demo-trial@villacheck.example','demo-footer@villacheck.example']
+ const emails=['demo-merchant@villacheck.example','demo-regional@villacheck.example','demo-expired@villacheck.example','demo-payment@villacheck.example','demo-trial@villacheck.example','demo-footer@villacheck.example','demo-footer-1@villacheck.example','demo-footer-2@villacheck.example','demo-footer-3@villacheck.example']
  const placeholders=values=>values.map(()=>'?').join(',')
  const ownerRows=await db.prepare(`SELECT * FROM users WHERE role='merchant' AND email IN (${placeholders(emails)})`).all(...emails)
  const owners=new Map(ownerRows.map(owner=>[owner.id,owner]))
