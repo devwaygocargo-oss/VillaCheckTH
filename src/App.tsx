@@ -407,6 +407,7 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
   const [errorMessage, setErrorMessage] = useState("");
   const [scannedReference, setScannedReference] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const readerRef = useRef<BrowserQRCodeReader | null>(null);
@@ -530,7 +531,8 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
         {errorMessage && <div className="scanner-error"><Icon name="info" size={18} /><span>{errorMessage}</span><button onClick={startCamera}>ลองอีกครั้ง</button></div>}
         <div className="scanner-actions">
           {!cameraActive && <button className="primary-button" onClick={startCamera} disabled={busy}><Icon name="camera" size={18} />ลองเปิดกล้องอีกครั้ง</button>}
-          <label className="outline-button upload-button"><Icon name="upload" size={18} />อัปโหลดรูป QR<input type="file" accept="image/*" onChange={uploadQr} disabled={busy} /></label>
+          <button type="button" className="outline-button upload-button" disabled={scanState === "loading" || scanState === "success"} onClick={() => { stopCamera();setErrorMessage("");setScanState("idle");const input=galleryRef.current;if(input){input.value="";if(typeof input.showPicker==="function"){try{input.showPicker();}catch{input.click();}}else input.click();} }}><Icon name="upload" size={18} />เลือกรูป QR จากแกลเลอรี</button>
+          <input ref={galleryRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif,image/heic,image/heif" aria-label="เลือกรูป QR จากแกลเลอรี" hidden onChange={uploadQr} />
         </div>
       </div>
       <p className="scan-security"><Icon name="shield" size={15} />VillaCheck ไม่มีบริการรับจองหรือรับชำระเงิน</p>

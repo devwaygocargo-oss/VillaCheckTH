@@ -435,7 +435,7 @@ img { display: block; width: 100%; object-fit: cover; }
 .camera-scanner p { position: relative; color: var(--muted); font-size: 11px; margin: 3px 0 0; }
 .scan-line { position: absolute; left: calc(50% - 85px); top: 90px; width: 170px; height: 2px; background: var(--sea); box-shadow: 0 0 12px var(--sea); animation: scan 1.1s ease-in-out infinite alternate; }
 @keyframes scan { from { transform: translateY(0); } to { transform: translateY(135px); } }
-.scanner-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.scanner-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 16px; }
 .scanner-actions .outline-button, .scanner-actions .primary-button { padding: 0 10px; }
 .scanner-error { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; margin-top: 12px; padding: 10px 12px; border-radius: 9px; color: #b3433e; background: #fff0ef; font-size: 11px; }
 .scanner-error button { border: 0; background: transparent; color: var(--ocean); font-weight: 700; padding: 5px; }
