@@ -40,15 +40,17 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    await db.prepare("UPDATE villas SET photo_url=? WHERE id=? AND (photo_url='' OR photo_url=?) AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)").run(`/demo/villas/villa-${imageIndex??(index>=6?index-2:index%3+1)}.jpg`,id,`/demo/villas/villa-${index%3+1}.jpg`,'villa_review:'+id)
   }
   // Labelled advertising fixtures use the same paid Premium entitlement checks as real ads.
-  for(const [order,name,headline,copy] of [
-   [0,'Sea Sky Demo Villa','พักริมทะเล ชิลกับพูลวิลล่าส่วนตัว','ชลบุรี · สระว่ายน้ำส่วนตัว พร้อมพื้นที่พักผ่อนสำหรับทริปกับคนที่คุณรัก'],
-   [1,'Khao Yai Forest Demo Villa','พักกลางธรรมชาติ สูดอากาศดีที่เขาใหญ่','นครราชสีมา · วิลล่าท่ามกลางสีเขียว เหมาะกับวันพักผ่อนของครอบครัว'],
-   [2,'Phuket Demo Villa','เติมวันหยุดให้สดใส ที่ภูเก็ต','ภูเก็ต · พูลวิลล่าสำหรับวันพักผ่อน กับบรรยากาศสบาย ๆ ในจุดหมายยอดนิยม'],
+  for(const [order,name,paidName] of [
+   [0,'Sea Sky Demo Villa','Chiang Mai Pool Villa Online Dummy'],
+   [1,'Khao Yai Forest Demo Villa','Khao Yai Pool Villa Online Dummy 3'],
+   [2,'Phuket Demo Villa','Krabi Pool Villa Online Dummy 4'],
   ]){
-   const villa=await db.prepare('SELECT * FROM villas WHERE id=?').get(uuid(name));
+   const villa=await db.prepare("SELECT * FROM villas WHERE name=? AND package_id='premium' AND payments>0 AND status='approved' AND expires>? ORDER BY created,id LIMIT 1").get(paidName,now) || await db.prepare('SELECT * FROM villas WHERE id=?').get(uuid(name));
    if(!villa || villa.package_id!=='premium' || villa.payments<1 || villa.status!=='approved')continue;
-   const id=uuid(name+'-home-ad');
-   const ad={id,villaId:villa.id,villaName:villa.name,placement:'home',image:villa.photo_url,mobileImage:villa.photo_url,title:headline,description:copy+' — '+name+' · ข้อมูลโฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
+   const id=uuid(villa.name+'-home-ad');
+   const headline='พักผ่อนกับพูลวิลล่าส่วนตัว ที่'+villa.province;
+   const copy=villa.province+' · สระว่ายน้ำส่วนตัว พร้อมพื้นที่พักผ่อนสำหรับทริปกับคนที่คุณรัก';
+   const ad={id,villaId:villa.id,villaName:villa.name,placement:'home',image:villa.photo_url,mobileImage:villa.photo_url,title:headline,description:copy+' — '+villa.name+' · ข้อมูลโฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+id,JSON.stringify(ad));
   }
   // Explicit simulated highest-level Admin results for two labelled demo records only.
