@@ -8,6 +8,7 @@ if(process.env.VERCEL!=='1'||process.env.SEED_PUBLIC_DEMO_DATA==='false')process
 const db=new PrismaDatabaseService();
 try{
  const result=await seedDemo(db,{password:process.env.DEMO_PASSWORD || randomBytes(24).toString('base64url')});
+ console.log('Free Basic dummy fixtures:',result.freeVillas);
  console.log('Public labelled sample data ready:',result.villas,'Villas. No demo Admin or payment emails created.');
  const home=await advertisingApi(db,null,{method:'GET'},'/api/public/advertisements',new URL('http://localhost?placement=home'),()=>{});
  console.log('Labelled carousel samples:',{advertisements:home.advertisements.length,dummy:home.advertisements.filter(a=>a.demo).length});

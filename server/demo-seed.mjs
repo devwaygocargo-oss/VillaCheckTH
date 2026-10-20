@@ -1,6 +1,7 @@
 import {createHash,randomUUID} from "node:crypto"
 import {createUser,addMonths} from "./database.mjs"
 import {seedCatalog,trustDto} from "./catalog.mjs"
+import {seedFreeDemo} from "./demo-free-seed.mjs"
 const uuid=(name)=>{const h=createHash('sha256').update(`villacheck-demo:${name}`).digest('hex');return `${h.slice(0,8)}-${h.slice(8,12)}-4${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`}
 export function dummyPdf(details={}){
  const pdfText=value=>String(value).replace(/[^\x20-\x7e]/g,'?').replace(/[()\\]/g,'\\$&');
@@ -123,7 +124,8 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const stamp=new Date(Date.now()-day*86400000).toISOString(),id=uuid('event-'+stamp.slice(0,10)+'-'+index)
    await db.prepare('INSERT INTO villa_events VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING').run(id,sampleId,kind,stamp)
   }
-  return {merchant:'demo-merchant@villacheck.example',user:'demo-user@villacheck.example',villas:samples.length+6,workflowMerchants:["demo-payment@villacheck.example","demo-trial@villacheck.example"]}
+  const freeVillas=await seedFreeDemo(db,password,dummyPdf)
+  return {merchant:'demo-merchant@villacheck.example',user:'demo-user@villacheck.example',villas:samples.length+6+freeVillas,freeVillas,workflowMerchants:["demo-payment@villacheck.example","demo-trial@villacheck.example"]}
  // Remote fixture bootstrap may exceed the normal 30s write limit.
  },{timeout:120000})
 }

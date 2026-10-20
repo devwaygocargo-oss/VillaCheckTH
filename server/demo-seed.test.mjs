@@ -4,8 +4,8 @@ import {openTestDatabase} from './test-database.mjs';import{seedDemo}from'./demo
 test('dummy seed is idempotent, private documents follow ownership and expired QR stays stable',async()=>{
  const db=await openTestDatabase();try{
   await seedDemo(db,{password:'DemoTestPassword123'});const first=await db.prepare('SELECT id,qr FROM villas ORDER BY id').all();
-  await seedDemo(db,{password:'DemoTestPassword123'});assert.equal(first.length,20);assert.equal((await db.prepare("SELECT count(*) AS n FROM villas WHERE photo_url LIKE '/demo/villas/%'").get()).n,20);assert.deepEqual(await db.prepare('SELECT id,qr FROM villas ORDER BY id').all(),first);
-  assert.equal((await db.prepare("SELECT count(*) AS n FROM villas WHERE status='approved'").get()).n,16);
+  await seedDemo(db,{password:'DemoTestPassword123'});assert.equal(first.length,40);assert.equal((await db.prepare("SELECT count(*) AS n FROM villas WHERE photo_url LIKE '/demo/villas/%'").get()).n,40);assert.deepEqual(await db.prepare('SELECT id,qr FROM villas ORDER BY id').all(),first);
+  assert.equal((await db.prepare("SELECT count(*) AS n FROM villas WHERE status='approved'").get()).n,36);
   const owners=await db.prepare('SELECT owner_id,count(*) AS n FROM villas GROUP BY owner_id').all();assert.ok(owners.every(x=>x.n<=10));
   const expired=await db.prepare("SELECT * FROM villas WHERE name='Expired Demo Villa'").get();assert.equal((await trustDto(db,expired)).qrStatus,'EXPIRED');
   assert.equal((await db.prepare('SELECT owner_id FROM documents WHERE id=?').get(expired.document_id)).owner_id,expired.owner_id);
@@ -77,5 +77,15 @@ test('Eight carousel examples use existing paid Premium fixtures when legacy dum
   const {advertisements}=await advertisingApi(db,null,{method:'GET'},'/api/public/advertisements',new URL('http://localhost?placement=home'),()=>{});
   assert.equal(advertisements.length,8);assert.equal(new Set(advertisements.map(a=>a.id)).size,8);
   for(const name of legacy)assert.equal((await db.prepare('SELECT package_id FROM villas WHERE name=?').get(name)).package_id,'starter');
+ }finally{await db.close();}
+});
+
+test('Twenty free Basic demo Villas never purchase paid rights and retain later edits on reseed',async()=>{
+ const {advertisingEntitlement}=await import('./advertising.mjs'),db=await openTestDatabase();try{
+  const result=await seedDemo(db,{password:'DemoTestPassword123'});assert.equal(result.freeVillas,20);
+  const rows=await db.prepare("SELECT v.* FROM villas v JOIN users u ON u.id=v.owner_id WHERE u.email LIKE 'demo-free-%@villacheck.example'").all();assert.equal(rows.length,20);
+  for(const villa of rows){assert.equal(villa.package_id,'basic');assert.equal(villa.payments,0);assert.equal(villa.expires,null);assert.match(villa.name,/DUMMY/);assert.ok(existsSync('public'+villa.photo_url));const trust=await trustDto(db,villa);assert.equal(trust.qrStatus,'ACTIVE');assert.equal(trust.verificationLevel,'BASIC_CHECKED');assert.equal(trust.premiumBanner,false);assert.equal(await advertisingEntitlement(db,villa.id,'footer'),false);assert.equal(await advertisingEntitlement(db,villa.id,'home'),false);}
+  const edited=rows[0];await db.prepare("UPDATE villas SET name='Edited Free Dummy',package_id='pro',payments=1,expires=? WHERE id=?").run(new Date(Date.now()+86400000).toISOString(),edited.id);await seedDemo(db,{password:'DemoTestPassword123'});const saved=await db.prepare('SELECT * FROM villas WHERE id=?').get(edited.id);assert.equal(saved.name,'Edited Free Dummy');assert.equal(saved.package_id,'pro');assert.equal(saved.payments,1);assert.equal(saved.qr,edited.qr);assert.equal((await db.prepare('SELECT count(*) AS n FROM villas').get()).n,40);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM invoices').get()).n,0);assert.equal((await db.prepare('SELECT count(*) AS n FROM mails').get()).n,0);
  }finally{await db.close();}
 });
