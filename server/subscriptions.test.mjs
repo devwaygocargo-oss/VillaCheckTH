@@ -1,242 +1,51 @@
-import { openTestDatabase } from "./test-database.mjs"
-import { test } from "node:test"
-import assert from "node:assert/strict"
-import { createApp } from "./app.mjs"
-import {
-  openDatabase,
-  createUser,
-  hashPassword,
-  packages,
-} from "./database.mjs"
-test("merchant package capacity, one bill, separate villa QR, shared renewal and Basic trial", async (t) => {
-  const db = await openTestDatabase()
-  await createUser(
-    db,
-    "admin@example.com",
-    "Admin-password-123",
-    "Admin",
-    "admin",
-  )
-  const server = createApp(db, {
-    appUrl: "http://localhost:3001",
-    allowedOrigins: [],
-    paymentInstructions: "Bank",
-    fakeHash: hashPassword("fake-password-placeholder"),
-  })
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
-  t.after(async () => {
-    await new Promise((resolve) => server.close(resolve))
-    await db.close()
-  })
-  const base = `http://127.0.0.1:${server.address().port}`
-  const request = async (path, data, auth) => {
-    const response = await fetch(base + path, {
-      method: data === undefined ? "GET" : "POST",
-      headers: {
-        ...(data === undefined ? {} : { "Content-Type": "application/json" }),
-        ...(auth ? { cookie: auth.cookie, "X-CSRF-Token": auth.csrf } : {}),
-      },
-      body: data === undefined ? undefined : JSON.stringify(data),
-    })
-    const value = await response.json()
-    return {
-      status: response.status,
-      value,
-      cookie: response.headers.get("set-cookie")?.split(";")[0],
-      csrf: value.csrf,
-    }
+import {openTestDatabase} from './test-database.mjs';
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createApp} from './app.mjs';
+import {createUser,hashPassword,packages,addMonths} from './database.mjs';
+test('four monthly packages: each property starts free, purchases and renewals remain independent',async t=>{
+ const db=await openTestDatabase(),password='Merchant-password-123';
+ await createUser(db,'admin@example.com',password,'Admin','admin');
+ const server=createApp(db,{appUrl:'http://localhost:3001',allowedOrigins:[],paymentInstructions:'Bank',fakeHash:hashPassword('fake-password-placeholder')});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ t.after(async()=>{await new Promise(r=>server.close(r));await db.close()});
+ const request=async(path,data,auth)=>{
+  const r=await fetch(`http://127.0.0.1:${server.address().port}/api${path}`,{method:data===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(auth?{Cookie:auth.cookie,'X-CSRF-Token':auth.csrf}:{})},body:data===undefined?undefined:JSON.stringify(data)});
+  const value=await r.json();return {status:r.status,value,cookie:r.headers.get('set-cookie')?.split(';')[0],csrf:value.csrf};
+ };
+ const admin=await request('/auth/login',{email:'admin@example.com',password});
+ const document={name:'proof.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from('%PDF-1.4\nfixture').toString('base64')};
+ for(const [planId,plan] of Object.entries(packages))await t.test(plan.name,async()=>{
+  await createUser(db,`${planId}@example.com`,password,plan.name);
+  const owner=await request('/auth/login',{email:`${planId}@example.com`,password});
+  assert.equal((await request('/subscription',{packageId:planId},owner)).status,409);
+  const ids=[];
+  for(let i=0;i<2;i++){
+   const r=await request('/villas',{name:`บ้าน ${i}`,nameEn:`Villa ${i}`,province:'ชลบุรี',merchant:plan.name,email:`${planId}@example.com`,document,packageId:planId},owner);
+   assert.equal(r.status,201);ids.push(r.value.createdId);
+   assert.equal((await request(`/villas/${r.value.createdId}/review`,{status:'approved',verificationLevel:'BASIC_CHECKED'},admin)).status,200);
   }
-  const admin = await request("/api/auth/login", {
-    email: "admin@example.com",
-    password: "Admin-password-123",
-  })
-  const document = {
-    name: "proof.pdf",
-    data:
-      "data:application/pdf;base64," +
-      Buffer.from("%PDF-1.4\nfixture").toString("base64"),
-  }
-  for (const [planId, plan] of Object.entries(packages)) {
-    await t.test(
-      `${plan.name}: ${plan.capacity} villas, ${plan.capacity} unique QR codes`,
-      async () => {
-        await createUser(
-          db,
-          `${planId}@example.com`,
-          "Merchant-password-123",
-          plan.name,
-        )
-        const owner = await request("/api/auth/login", {
-          email: `${planId}@example.com`,
-          password: "Merchant-password-123",
-        })
-        const villaData = {
-          name: "Villa",
-          province: "Chonburi",
-          merchant: plan.name,
-          email: `${planId}@example.com`,
-          document,
-          packageId: "premium",
-        }
-        assert.equal(
-          (await request("/api/villas", villaData, owner)).status,
-          409,
-        )
-        assert.equal(
-          (await request("/api/subscription", { packageId: planId }, owner))
-            .status,
-          200,
-        )
-        assert.equal(
-          (await request("/api/subscription", { packageId: "invalid" }, owner))
-            .status,
-          400,
-        )
-        const ids = []
-        for (let i = 0; i < plan.capacity; i++) {
-          const created = await request(
-            "/api/villas",
-            { ...villaData, name: `Villa ${i}` },
-            owner,
-          )
-          assert.equal(created.status, 201)
-          ids.push(created.value.createdId)
-          assert.equal(
-            created.value.villas.find((v) => v.id === created.value.createdId)
-              .packageId,
-            planId,
-          )
-        }
-        assert.equal(
-          (await request("/api/villas", villaData, owner)).status,
-          409,
-        )
-        for (const id of ids)
-          assert.equal(
-            (
-              await request(
-                `/api/villas/${id}/review`,
-                { status: "approved" },
-                admin,
-              )
-            ).status,
-            200,
-          )
-        let state = (await request("/api/state", undefined, owner)).value
-        const invoices = state.villas.flatMap((v) => v.invoices)
-        assert.equal(invoices.length, plan.amount ? 1 : 0)
-        if (plan.amount) {
-          assert.equal(invoices[0].amount, plan.amount / 100)
-          assert.equal(invoices[0].scope, "merchant")
-        }
-        const invoice = invoices[0]
-        if (plan.amount) {
-          assert.ok(state.villas.every((v) => !v.qr))
-          await request(
-            `/api/invoices/${invoice.id}/proof`,
-            { document, reference: `BANK-TRANSFER-${invoice.id}` },
-            owner,
-          )
-          assert.equal(
-            (await request(`/api/invoices/${invoice.id}/confirm`, {}, admin))
-              .status,
-            200,
-          )
-        } else assert.equal(invoices.length, 0)
-        state = (await request("/api/state", undefined, owner)).value
-        assert.equal(state.subscription.active, true)
-        assert.equal(state.subscription.used, plan.capacity)
-        assert.equal(new Set(state.villas.map((v) => v.qr)).size, plan.capacity)
-        assert.ok(
-          state.villas.every(
-            (v) => v.qr && v.expires === state.subscription.expires,
-          ),
-        )
-        const before = state.villas.map((v) => v.qr).sort()
-        const expiry = state.subscription.expires
-        if (planId === "basic") {
-          assert.equal(
-            (await request(`/api/villas/${ids[0]}/renew`, {}, owner)).status,
-            400,
-          )
-          await request(
-            `/api/villas/${ids[0]}/renew`,
-            { packageId: "premium" },
-            owner,
-          )
-          // Upgrade capacity is not granted until payment is confirmed.
-          assert.equal(
-            (await request("/api/state", undefined, owner)).value.subscription
-              .capacity,
-            1,
-          )
-          assert.equal(
-            (await request("/api/villas", villaData, owner)).status,
-            409,
-          )
-        } else {
-          await Promise.all(
-            ids.map((id) => request(`/api/villas/${id}/renew`, {}, owner)),
-          )
-        }
-        state = (await request("/api/state", undefined, owner)).value
-        const pending = state.villas
-          .flatMap((v) => v.invoices)
-          .filter((i) => i.status === "pending")
-        assert.equal(pending.length, 1)
-        assert.equal(pending[0].months, 1)
-        assert.equal(pending[0].paymentStatus, "WAITING_FOR_SLIP")
-        if (plan.amount) {
-          const reused = await request(
-            `/api/payments/${pending[0].id}/slip`,
-            { document, reference: `BANK-TRANSFER-${invoice.id}` },
-            owner,
-          )
-          assert.equal(reused.status, 409)
-        }
-        const reviewList = await request(
-          "/api/admin/payments",
-          undefined,
-          admin,
-        )
-        assert.equal(reviewList.status, 200)
-        assert.equal(
-          (await request("/api/admin/payments", undefined, owner)).status,
-          403,
-        )
-        await request(
-          `/api/invoices/${pending[0].id}/proof`,
-          { document, reference: `RENEWAL-TRANSFER-${pending[0].id}` },
-          owner,
-        )
-        const paymentStatus = await request(
-          `/api/payments/${pending[0].id}/status`,
-          undefined,
-          owner,
-        )
-        assert.equal(paymentStatus.value.paymentStatus, "PENDING_REVIEW")
-        await request(`/api/invoices/${pending[0].id}/confirm`, {}, admin)
-        state = (await request("/api/state", undefined, owner)).value
-        assert.deepEqual(state.villas.map((v) => v.qr).sort(), before)
-        assert.ok(state.subscription.expires > expiry)
-        assert.ok(
-          state.villas.every((v) => v.expires === state.subscription.expires),
-        )
-        if (planId === "basic") assert.equal(state.subscription.capacity, 10)
-        const renewed = state.subscription.expires
-        const confirmedStatus = await request(
-          `/api/payments/${pending[0].id}/status`,
-          undefined,
-          owner,
-        )
-        assert.equal(confirmedStatus.value.paymentStatus, "VERIFIED")
-        await request(`/api/invoices/${pending[0].id}/confirm`, {}, admin)
-        assert.equal(
-          (await request("/api/state", undefined, owner)).value.subscription
-            .expires,
-          renewed,
-        )
-      },
-    )
-  }
-})
+  let state=(await request('/state',undefined,owner)).value;
+  assert.equal(new Set(state.villas.map(v=>v.qr)).size,2);assert.ok(state.villas.every(v=>v.trialUnlimited&&v.qr));
+  assert.equal(state.villas.flatMap(v=>v.invoices).length,0);
+  const buy=await request('/merchant/villa-package',{villaId:ids[0],packageId:planId},owner);assert.equal(buy.status,200);
+  const invoice=buy.value.villas.find(v=>v.id===ids[0]).invoices[0];assert.equal(invoice.amount,plan.amount/100);assert.equal(invoice.months,1);assert.equal(invoice.scope,'villa');
+  assert.equal((await request(`/invoices/${invoice.id}/proof`,{document,reference:`BUY-${invoice.id}`},owner)).status,200);
+  assert.equal((await request(`/invoices/${invoice.id}/confirm`,{},admin)).status,200);
+  state=(await request('/state',undefined,owner)).value;
+  let villa=state.villas.find(v=>v.id===ids[0]),free=state.villas.find(v=>v.id===ids[1]);
+  assert.equal(villa.packageId,planId);assert.equal(villa.verificationLevel,'BASIC_CHECKED');assert.equal(villa.trialUnlimited,false);assert.equal(free.trialUnlimited,true);assert.equal(free.expires,'');
+  const qr=villa.qr,expires=villa.expires;
+  await Promise.all([request(`/villas/${villa.id}/renew`,{},owner),request(`/villas/${villa.id}/renew`,{},owner)]);
+  state=(await request('/state',undefined,owner)).value;const pending=state.villas.find(v=>v.id===villa.id).invoices.filter(i=>i.status!=='paid');assert.equal(pending.length,1);assert.equal(pending[0].months,1);
+  assert.equal((await request(`/payments/${pending[0].id}/slip`,{document,reference:`BUY-${invoice.id}`},owner)).status,409);
+  assert.equal((await request('/admin/payments',undefined,owner)).status,403);
+  await request(`/invoices/${pending[0].id}/proof`,{document,reference:`RENEW-${pending[0].id}`},owner);
+  assert.equal((await request(`/payments/${pending[0].id}/status`,undefined,owner)).value.paymentStatus,'PENDING_REVIEW');
+  await request(`/invoices/${pending[0].id}/confirm`,{},admin);
+  const confirmed=await request(`/invoices/${pending[0].id}/confirm`,{},admin);
+  villa=confirmed.value.villas.find(v=>v.id===ids[0]);free=confirmed.value.villas.find(v=>v.id===ids[1]);
+  assert.equal(villa.qr,qr);assert.equal(villa.expires,addMonths(expires,1));assert.equal(villa.payments,2);assert.equal(free.trialUnlimited,true);
+  assert.equal((await request(`/payments/${pending[0].id}/status`,undefined,owner)).value.paymentStatus,'VERIFIED');
+ });
+});

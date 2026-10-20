@@ -39,9 +39,10 @@ export async function confirmPayment(db, invoice, villa, adminId) {
     )
   } else {
     const base =
-      villa.expires && new Date(villa.expires) > now
+      invoice.package_id === villa.package_id && villa.expires && new Date(villa.expires) > now
         ? new Date(villa.expires)
         : now
+    if(invoice.package_id) await db.prepare("UPDATE villas SET package_id=? WHERE id=?").run(invoice.package_id,villa.id)
     await db
       .prepare(
         "UPDATE villas SET qr=?,expires=?,payments=payments+1 WHERE id=?",

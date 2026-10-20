@@ -9,7 +9,7 @@ export const selectedPlanKey = "villacheck-selected-package";
 export const packageIntentKey = "villacheck-package-intent";
 export const billingLabel = (cycle: string) => ({MONTHLY:"เดือน",QUARTERLY:"3 เดือน",YEARLY:"ปี"})[cycle] || "รอบ";
 export const billingValidityLabel = (cycle: string, business={monthlyInitialMonths:3,monthlyRenewalMonths:1}) => cycle === "MONTHLY"
-  ? `ชำระครั้งแรกได้สิทธิ์ ${business.monthlyInitialMonths} เดือน · ต่ออายุครั้งละ ${business.monthlyRenewalMonths} เดือน หลัง Admin ยืนยันสลิป`
+  ? `ค่าบริการต่อที่พัก รวมภาษี · ครั้งละ 1 เดือน หลัง Admin ยืนยันสลิป`
   : `อายุสิทธิ์ตามรอบ ${billingLabel(cycle)} หลัง Admin ยืนยันสลิป`;
 export function planId(name: string) { return sessionStorage.getItem(selectedPlanKey) || name; }
 export function usePackages() {

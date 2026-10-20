@@ -58,7 +58,7 @@ const images = [
 ]
 export const cmsDefaults = {
   schemaVersion: 1,
-  business:{emailOtpSubject:"VillaCheck: รหัสเข้าสู่ระบบ",emailOtpBody:"รหัส OTP ของคุณคือ {{code}} ใช้ได้ {{minutes}} นาที ห้ามให้รหัสนี้กับผู้อื่น",smsOtpBody:"VillaCheck OTP: {{code}}. Expires in {{minutes}} minutes. Do not share.",emailOtpTemplateId:"",facebookLoginEnabled:false,monthlyInitialMonths:3,monthlyRenewalMonths:1,paymentEmailSubject:"VillaCheck: {{package}} แจ้งชำระแพ็กเกจ",paymentEmailIntro:"เรียน {{merchant}}\nกรุณาตรวจยอดและระยะเวลาในใบแจ้งชำระ แล้วแนบสลิปให้ Admin ตรวจสอบ"},
+  business:{emailOtpSubject:"VillaCheck: รหัสเข้าสู่ระบบ",emailOtpBody:"รหัส OTP ของคุณคือ {{code}} ใช้ได้ {{minutes}} นาที ห้ามให้รหัสนี้กับผู้อื่น",smsOtpBody:"VillaCheck OTP: {{code}}. Expires in {{minutes}} minutes. Do not share.",emailOtpTemplateId:"",facebookLoginEnabled:false,monthlyInitialMonths:1,monthlyRenewalMonths:1,paymentEmailSubject:"VillaCheck: {{package}} แจ้งชำระแพ็กเกจ",paymentEmailIntro:"เรียน {{merchant}}\nกรุณาตรวจยอดและระยะเวลาในใบแจ้งชำระ แล้วแนบสลิปให้ Admin ตรวจสอบ"},
   site: {
     name: "VillaCheck",
     description: "Trust before transfer.",
@@ -74,7 +74,6 @@ export const cmsDefaults = {
     accent: "#173e51",
   },
   navigation: [
-    { id: "home", label: "หน้าหลัก", href: "#page=home", visible: true },
     {
       id: "directory",
       label: "ค้นหาวิลล่า",
@@ -89,12 +88,7 @@ export const cmsDefaults = {
       visible: true,
     },
     { id: "how", label: "วิธีการทำงาน", href: "#how", visible: true },
-    {
-      id: "pricing",
-      label: "แพ็กเกจเจ้าของที่พัก",
-      href: "#page=pricing",
-      visible: true,
-    },
+    { id: "contact", label: "ติดต่อเรา", href: "#page=contact", visible: true },
     { id: "login", label: "เข้าสู่ระบบ", href: "#page=login", visible: true },
   ],
   home: {

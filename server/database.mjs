@@ -1,3 +1,5 @@
+const invoicePerVilla = id => ["basic","starter","pro","premium"].includes(id);
+import {packageContent} from "./package-content.mjs";
 import {quoteCoupon} from "./promotions.mjs"
 import { receivingBank } from "./payment-account.mjs"
 import { cmsBusiness, monthlyValidity, cmsPaymentSnapshot } from "./cms-business.mjs"
@@ -12,11 +14,10 @@ import {
   timingSafeEqual,
 } from "node:crypto"
 export const packages = {
-  basic: { name: "Basic Trust QR", amount: 0, capacity: 1 },
-  starter: { name: "Trust Starter", amount: 99000, capacity: 1 },
-  pro: { name: "Trust Pro", amount: 290000, capacity: 1 },
-  plus: { name: "Trust Plus", amount: 490000, capacity: 2 },
-  premium: { name: "Trust Premium", amount: 990000, capacity: 10 },
+  basic: { name: "Basic Verify", amount: 99000, capacity: 1 },
+  starter: { name: "Online Verify", amount: 199000, capacity: 1 },
+  pro: { name: "Social Verify", amount: 299000, capacity: 1 },
+  premium: { name: "Premium Verify", amount: 499000, capacity: 1 },
 }
 export function hashPassword(password) {
   const salt = randomBytes(16).toString("hex")
@@ -99,6 +100,9 @@ export function openDatabase(path) {
     )
       db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
   }
+  migrate("users", "business_name_en", "TEXT NOT NULL DEFAULT ''")
+  migrate("villas", "name_en", "TEXT NOT NULL DEFAULT ''")
+  for (const column of ["photo_uploaded_at","photo_taken_at","photo_reviewed_at"]) migrate("villas", column, "TEXT")
   migrate(
     "invoices",
     "payment_status",
@@ -170,6 +174,12 @@ export function openDatabase(path) {
       new Date().toISOString(),
       new Date().toISOString(),
     )
+  if(!db.prepare("SELECT value FROM system_settings WHERE key='package_model_v2'").get()) {
+    db.prepare("UPDATE package_catalog SET active=0").run()
+    for(const [id,plan] of Object.entries(packages)) db.prepare("UPDATE package_catalog SET name=?,amount=?,capacity=1,trial_months=0,billing_cycle='MONTHLY',description=?,features=?,active=1,max_level=?,banner=?,sort_order=? WHERE id=?").run(plan.name,plan.amount,packageContent[id].description,JSON.stringify(packageContent[id].features),id==='basic'?'BASIC_CHECKED':id==='premium'?'PREMIUM_VERIFIED':'VERIFIED',id==='premium'?1:0,Object.keys(packages).indexOf(id),id)
+    db.exec("UPDATE villas SET payments=0,expires=NULL WHERE package_id='basic' AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.status='paid' AND i.amount>0 AND (i.villa_id=villas.id OR i.subscription_owner=villas.owner_id));")
+    db.prepare("INSERT INTO system_settings(key,value) VALUES ('package_model_v2','true')").run()
+  }
   db.exec(
     "INSERT INTO leads(id,user_id,type,name,email,source,created,updated) SELECT id,id,UPPER(role),name,email,'REGISTRATION',created,created FROM users WHERE role IN ('user','merchant') AND id NOT IN (SELECT user_id FROM leads WHERE user_id IS NOT NULL)",
   )
@@ -231,7 +241,7 @@ async function createInvoiceInternal(db, villa, appUrl, paymentInstructions="") 
   const couponRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get('merchant_coupon:'+villa.owner_id)
   const coupon=plan.amount>0?await quoteCoupon(db,couponRow?JSON.parse(couponRow.value):'',villa.owner_id,plan):null
   const amount=coupon?coupon.amount:plan.amount
-  const months=monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
+  const months=invoicePerVilla(plan.id) && plan.billing_cycle === "MONTHLY" ? 1 : monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
   const created = new Date().toISOString()
   const instructions=await cmsPaymentSnapshot(db,paymentInstructions)
   const release=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()

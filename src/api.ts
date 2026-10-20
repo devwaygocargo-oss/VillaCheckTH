@@ -43,10 +43,11 @@ export async function authenticate(
   password: string,
   name?: string,
   role: "merchant" | "user" = "merchant",
+  businessNameEn?: string,
 ) {
   const session = await api<{ user: Account; csrf: string }>(
     name === undefined ? "/auth/login" : role === "user" ? "/auth/register-user" : "/auth/register",
-    { email, password, name },
+    { email, password, name, businessNameEn },
   )
   csrf = session.csrf
   return session.user

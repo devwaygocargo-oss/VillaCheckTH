@@ -1,6 +1,8 @@
+import PropertyMedia from "./PropertyMedia";
+import Advertising, {DetailAdvertisement} from "./Advertising";
+import Reviews from "./Reviews";
 import PaymentQr from "./PaymentQr";
-import { planId } from "./packagePlans";
-import SubscriptionPanel from "./SubscriptionPanel";
+import VillaPackagePanel from "./VillaPackagePanel";
 import { useEffect, useRef, useState } from "react"
 import { PortalShell, type Page } from "./prototype"
 import type { Document, MerchantVilla, Store, Invoice } from "./merchantStore"
@@ -21,7 +23,7 @@ function status(v: MerchantVilla) {
   if (v.status === "rejected") return "ไม่ผ่านการอนุมัติ"
   if (["SUSPENDED","INACTIVE"].includes(v.qrStatus))return "QR ถูกระงับหรือปิดใช้งาน"
   if (!v.qr) return "อนุมัติแล้ว · รอชำระเงิน"
-  return new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
+  return v.trialUnlimited ? "QR ใช้งานได้ · Basic Verify ฟรีไม่มีกำหนด" : new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
 }
 const approvalStatus = (value: MerchantVilla["status"]) => ({pending:"รออนุมัติ",approved:"อนุมัติแล้ว",changes:"ต้องแก้ไข",rejected:"ไม่อนุมัติ"})[value];
 export function VillaQr({ villa, admin = false }: { villa: MerchantVilla; admin?: boolean }) {
@@ -50,7 +52,7 @@ export function VillaQr({ villa, admin = false }: { villa: MerchantVilla; admin?
     <div className="merchant-qr">
       <div ref={qrRef} />
       <strong>{villa.qr}</strong><p>{villa.qrStatus} · {villa.verificationLevel}</p>
-      <small>หมดอายุ {date(villa.expires)}</small>
+      <small>{villa.trialUnlimited ? "Basic Verify ฟรีไม่มีกำหนดจนกว่าจะซื้อแพ็กเกจ" : `หมดอายุ ${date(villa.expires)}`}</small>
       <a href={admin?`/admin#${new URLSearchParams({page:"admin-verify",item:villa.qr})}`:url}>เปิดหน้าตรวจสอบ ↗</a>
       {downloadUrl && <a className="outline-button" href={downloadUrl} download={`VillaCheck-${villa.qr}.svg`}>ดาวน์โหลด QR (SVG)</a>}
     </div>
@@ -66,7 +68,7 @@ function VillaPhotoInput({url,photo,onChange}:{url:string;photo:Document|null;on
 export default function Backoffice({
   page,
   go,
-  initialPackage = "Trust Starter",
+  initialPackage = "Basic Verify",
   initialItem = "",
 }: {
   page: Page
@@ -79,7 +81,6 @@ export default function Backoffice({
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
-  const [chosenPlan, setChosenPlan] = useState(planId(initialPackage));
   const [selected, setSelected] = useState(initialItem)
   const [message, setMessage] = useState("")
   const [search, setSearch] = useState("")
@@ -88,7 +89,7 @@ export default function Backoffice({
   const [uploading, setUploading] = useState(false)
   const [mailOpen, setMailOpen] = useState("")
   const [form, setForm] = useState({
-    name: "",
+    name: "", nameEn: "", photoTakenAt: "",
     province: "",
     merchant: "",
     email: "",
@@ -121,6 +122,10 @@ export default function Backoffice({
             )
           return
         }
+        if(!admin && ["owner-add-villa","owner-onboarding-villa"].includes(page)) {
+          const profile=await api<{businessName:string;businessNameEn:string}>("/merchant/profile")
+          if(!profile.businessName || !profile.businessNameEn) { if(!cancelled)go("owner-information");return; }
+        }
         const next = await api<Store>("/state")
         const attempt=new URLSearchParams(window.location.search).get("paymentAttempt")
         if(attempt && !admin) {
@@ -130,7 +135,7 @@ export default function Backoffice({
         if (!cancelled && !busyRef.current) setStore(next)
       } catch (error) {
         if (!cancelled) {
-          if (error instanceof ApiError && error.status === 401) go(admin ? "admin-login" : "owner-auth")
+          if (error instanceof ApiError && error.status === 401) { if(page === "owner-package")sessionStorage.setItem("villacheck-merchant-return","owner-package"); go(admin ? "admin-login" : "owner-auth"); }
           else
             setMessage(
               error instanceof Error ? error.message : "โหลดข้อมูลไม่สำเร็จ",
@@ -158,7 +163,7 @@ export default function Backoffice({
       setMessage(success)
       return next
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) go(admin ? "admin-login" : "owner-auth")
+      if (error instanceof ApiError && error.status === 401) { if(page === "owner-package")sessionStorage.setItem("villacheck-merchant-return","owner-package"); go(admin ? "admin-login" : "owner-auth"); }
       setMessage(error instanceof Error ? error.message : "ดำเนินการไม่สำเร็จ")
       return null
     } finally {
@@ -202,7 +207,7 @@ export default function Backoffice({
     if(page === "owner-villa-edit" && initializedEdit.current === v.id) return;
     if(page === "owner-villa-edit") initializedEdit.current = v.id;
     setSelected(v.id);
-    setForm(current=>({...current,name:v.name,province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId}));
+    setForm(current=>({...current,name:v.name,nameEn:v.nameEn || "",photoTakenAt:v.photoTakenAt || "",province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId}));
   },[initialItem,store,page]);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -225,7 +230,7 @@ export default function Backoffice({
       setPhoto(null)
       setUpload(null)
       setForm({
-        name: "",
+        name: "", nameEn:"", photoTakenAt:"",
         province: "",
         merchant: "",
         email: "",
@@ -263,7 +268,7 @@ export default function Backoffice({
   )
   const showDetails = (v: MerchantVilla, edit=false) => {
     setSelected(v.id)
-    setForm({...form,name:v.name,province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId})
+    setForm({...form,name:v.name,nameEn:v.nameEn || "",photoTakenAt:v.photoTakenAt || "",province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId})
     setUpload(null)
     go(edit ? "owner-villa-edit" : "owner-villa-detail",v.id)
   }
@@ -284,7 +289,7 @@ export default function Backoffice({
                     : page === "admin-qr"
                       ? "ทะเบียน QR"
                       : dashboard
-                        ? `${admin ? "Admin" : "Merchant"} Dashboard`
+                        ? admin ? "Admin Dashboard" : "Member Room"
                         : "Villa ของคุณ"}
           </h1>
           <p>1 Villa = 1 QR · อายุใช้งานตามแพ็กเกจและใบแจ้งชำระ · ต่ออายุใช้ QR เดิม</p>
@@ -292,7 +297,7 @@ export default function Backoffice({
         {!admin && !adding && (
           <button
             className="primary-button"
-            disabled={Boolean(store.subscription && store.subscription.used >= store.subscription.capacity)}
+            disabled={false}
             onClick={() => go("owner-add-villa")}
           >
             + เพิ่ม Villa
@@ -300,18 +305,19 @@ export default function Backoffice({
         )}
       </div>
       <div className="merchant-demo">
-        แพ็กเกจผูกกับบัญชี Merchant · แต่ละ Villa มี QR ของตัวเองและต้องผ่าน Admin อนุมัติ
-        · แพ็กเกจชำระเงินต้องยืนยันการชำระก่อนเปิดใช้ QR
+        แพ็กเกจคิดต่อที่พัก ต่อเดือน รวมภาษี · แต่ละที่พักต้องผ่าน Admin อนุมัติ
+        · Basic Verify ใช้ฟรีไม่มีกำหนดจนกว่าจะเลือกซื้อแพ็กเกจ
       </div>
-      {!admin&&store.subscription&&store.subscription.used>=store.subscription.capacity&&!billing&&<section className="merchant-panel"><p>ใช้สิทธิ์ครบ {store.subscription.used}/{store.subscription.capacity} Villa แล้ว ไม่สามารถเพิ่ม Villa ได้</p><button className="outline-button" onClick={()=>go("owner-package")}>ดูสิทธิ์แพ็กเกจและตัวเลือกอัปเกรด</button></section>}
-      {!admin && (billing || dashboard || (adding && !store.subscription)) && <SubscriptionPanel store={store} chosenPlan={chosenPlan} setChosenPlan={setChosenPlan} busy={busy} perform={perform} onSubscribed={() => go("owner-add-villa")} />}
-      {billing && <section className="merchant-panel"><h2>{admin ? "ตรวจสอบการชำระเงิน" : "การชำระแพ็กเกจบัญชี Merchant"}</h2><p>ชำระแพ็กเกจครั้งเดียว ครอบคลุม Villa ภายในจำนวนสิทธิ์ แต่ละแห่งมี QR ของตัวเอง</p>{!store.villas.some(v => v.invoices.length > 0) && <p>ยังไม่มีใบแจ้งชำระ</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.demoMode ? store.paymentInstructions : (invoice.paymentInstructions ?? store.paymentInstructions)} configured={store.paymentConfigured}
+
+      {!admin && (billing || dashboard || (adding && !store.subscription)) && <VillaPackagePanel store={store} busy={busy} perform={perform} onAdd={()=>go("owner-add-villa")}/>}
+      {billing && <section className="merchant-panel"><h2>{admin ? "ตรวจสอบการชำระเงิน" : "การชำระแพ็กเกจต่อที่พัก"}</h2><p>แต่ละใบแจ้งชำระระบุที่พักและแพ็กเกจของตัวเอง ราคาต่อเดือนรวมภาษี</p>{!store.villas.some(v => v.invoices.length > 0) && <p>ยังไม่มีใบแจ้งชำระ</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.demoMode ? store.paymentInstructions : (invoice.paymentInstructions ?? store.paymentInstructions)} configured={store.paymentConfigured}
                       demo={store.demoMode} busy={busy} perform={perform} />)}</section>}
       {message && (
         <div className="form-message" role="status">
           {message}
         </div>
       )}
+      {!admin && dashboard && <><Reviews mode="merchant"/><Advertising merchant/></>}
       {dashboard && (
         <>
           <div className="metric-grid">
@@ -341,9 +347,9 @@ export default function Backoffice({
           </div>
           <div className="merchant-steps">
             {[
-              "01 สมัครแพ็กเกจบัญชี Merchant",
-              "02 เพิ่ม Villa ตามจำนวนสิทธิ์",
-              "03 Admin อนุมัติ / ชำระแพ็กเกจ",
+              "01 สมัคร Merchant และเพิ่มที่พักฟรี",
+              "02 ส่งเอกสารให้ทีมตรวจสอบ",
+              "03 ทีมอนุมัติตามเกณฑ์",
               "04 1 Villa ได้ 1 QR แยกกัน",
             ].map((step) => (
               <span key={step}>{step}</span>
@@ -351,12 +357,13 @@ export default function Backoffice({
           </div>
         </>
       )}
-      {adding && store.subscription && store.subscription.used >= store.subscription.capacity ? <section className="merchant-panel"><h2>สิทธิ์ Villa เต็มแล้ว</h2><p>ไม่สามารถเพิ่ม Villa ได้ กรุณาดูตัวเลือกอัปเกรดที่หน้า Package</p></section> : adding && store.subscription ? (
+      {false ? <section className="merchant-panel"><h2>สิทธิ์ Villa เต็มแล้ว</h2><p>ไม่สามารถเพิ่ม Villa ได้ กรุณาดูตัวเลือกอัปเกรดที่หน้า Package</p></section> : adding ? (
         <form className="portal-form merchant-panel" onSubmit={submit}>
           <h2>ข้อมูลที่พักและ Merchant</h2>
           <div className="merchant-form-grid">
             {([
-              ["name", "ชื่อ Villa"],
+              ["name", "ชื่อที่พักภาษาไทย"],
+              ["nameEn", "ชื่อที่พักภาษาอังกฤษ"],
               ["province", "จังหวัด"],
               ["merchant", "ชื่อ Merchant / บริษัท"],
               ["email", "อีเมลรับแจ้งชำระเงิน"],
@@ -377,7 +384,7 @@ export default function Backoffice({
               </label>
             ))}
           </div>
-          <label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/>
+          <label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><label>วันที่ถ่ายภาพ (หากทราบ)<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label>
           <label className="merchant-upload">
             <strong>แนบหลักฐานการเป็นเจ้าของ Villa *</strong>
             <span>
@@ -396,7 +403,7 @@ export default function Backoffice({
           <button
             type="submit"
             className="primary-button"
-            disabled={uploading || busy || store.subscription.used >= store.subscription.capacity}
+            disabled={uploading || busy}
           >
             ส่งให้ Admin ตรวจสอบ →
           </button>
@@ -439,7 +446,7 @@ export default function Backoffice({
               {!admin && (
           <button
             className="primary-button"
-            disabled={Boolean(store.subscription && store.subscription.used >= store.subscription.capacity)}
+            disabled={false}
             onClick={() => go("owner-add-villa")}
                 >
                   + เพิ่ม Villa
@@ -530,8 +537,9 @@ export default function Backoffice({
                     if(error instanceof ApiError && error.status===401)go(admin ? "admin-login" : "owner-auth");
                     setMessage(error instanceof Error?error.message:"บันทึกไม่สำเร็จ กรุณาลองใหม่");
                   }finally{busyRef.current=false;setBusy(false);}
-                }}><h2>แก้ไขข้อมูล Villa</h2><p role="status" className="merchant-status">สถานะ: {status(active)}</p><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{k}<input required={["name","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
+                }}><h2>แก้ไขข้อมูล Villa</h2><p role="status" className="merchant-status">สถานะ: {status(active)}</p><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><label>วันที่ถ่ายภาพ (หากทราบ)<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","nameEn","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{({name:"ชื่อที่พักภาษาไทย",nameEn:"ชื่อที่พักภาษาอังกฤษ"} as Record<string,string>)[k] || k}<input required={["name","nameEn","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
                 {!editing&&active.photoUrl&&<img src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/>}
+                <PropertyMedia villaId={active.id} mode={admin?"admin":"merchant"}/>
                 <h2>เอกสารกรรมสิทธิ์ · {active.name}</h2>
                 <p>{active.document.name}</p>
                 <div className="merchant-villa-meta">
@@ -663,6 +671,11 @@ export function MerchantVerification({
 }) {
   const [villa, setVilla] = useState<{
     name: string
+    nameEn?: string
+    trialUnlimited?: boolean
+    photoUploadedAt?: string | null
+    photoTakenAt?: string | null
+    photoReviewedAt?: string | null
     province: string
     photoUrl: string
     verificationLevel: string
@@ -686,7 +699,7 @@ export function MerchantVerification({
     setLoading(true)
     setVilla(null)
     setError("")
-    void api<{ photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
+    void api<{ nameEn?: string; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
       `${adminView?"/admin/qr-verification":"/public/qr"}/${encodeURIComponent(reference)}`,
     )
       .then((value) => {
@@ -732,6 +745,7 @@ export function MerchantVerification({
   };
   return (
     <main className="page-bg">
+      <div className="container"><button className="logo-button" onClick={()=>go("home")}>VillaCheck</button></div>
       <div className="container merchant-verification merchant-panel">
         <span className="kicker">{isAdmin?"VILLACHECK / ADMIN QR VERIFICATION":"VILLACHECK / QR VERIFICATION"}</span>
         <h1>
@@ -743,13 +757,13 @@ export function MerchantVerification({
             <span className="merchant-status">
               {villa.valid
                 ? "QR ใช้งานได้ · Admin อนุมัติแล้ว"
-                : "QR หมดอายุหรือไม่พร้อมใช้งาน"}
+                : ({EXPIRED:"QR หมดอายุ",SUSPENDED:"QR ถูกระงับ",INACTIVE:"QR ปิดใช้งาน",PENDING:"QR อยู่ระหว่างรออนุมัติ"} as Record<string,string>)[villa.qrStatus] || "QR ไม่พร้อมใช้งาน"}
             </span>
             {villa.photoUrl && <img src={villa.photoUrl} alt={villa.name} style={{maxWidth:"100%",maxHeight:360}}/>}
-            <p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
+            <p>{villa.nameEn}</p><p>อัปเดตรูปภาพล่าสุดเมื่อ {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"}</p>{villa.photoUrl && <p>วันที่อัปโหลด: {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"} · วันที่ถ่าย: {villa.photoTakenAt ? date(villa.photoTakenAt) : "ไม่ระบุ"}{villa.photoReviewedAt && <> · วันที่ทีมตรวจสื่อ: {date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
             {villa.premiumBanner && <p className="merchant-status">✦ Premium Verified · เอกสารผ่านและ Subscription ใช้งานได้</p>}
             <a href={`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:`${villa.name} ${villa.province}`})}`} target="_blank" rel="noopener noreferrer">ดูที่ตั้งบน Google Maps</a>
-            <p>วันหมดอายุ: {date(villa.expires)}</p>
+            <p>วันหมดอายุ: {villa.trialUnlimited ? "ไม่มีกำหนด · ใช้ฟรี Basic Verify จนกว่าจะซื้อแพ็กเกจ" : date(villa.expires)}</p>
             {!isAdmin&&<button onClick={()=>go("villa-report",reference)}>แจ้งปัญหาเกี่ยวกับที่พักนี้</button>}
             <section className={`verification-contact ${villa.locked ? "locked" : ""}`}>
               <div className="verification-contact-head"><h2>ข้อมูลติดต่อและบัญชีรับเงิน</h2><span>{isAdmin?"ข้อมูลเต็มสำหรับ Admin":villa.locked ? "สำหรับสมาชิก User" : "เข้าสู่ระบบ User แล้ว"}</span></div>
@@ -763,6 +777,7 @@ export function MerchantVerification({
             </section>
           </>
         )}
+        {villa && !isAdmin && <><PropertyMedia key={`media-${reference}`} qr={reference}/><DetailAdvertisement key={reference}/><Reviews qr={reference}/></>}
         <p>QR Reference: {reference}</p>
         <button className="outline-button" disabled={returning} onClick={()=>void backToAccount()}>
           {returning?"กำลังกลับหน้าบัญชี…":isAdmin?"กลับหน้าหลัก Admin":villa?.viewerRole==="merchant"?"กลับหน้าหลัก Merchant":villa?.viewerRole==="user"?"กลับหน้าหลัก User":"กลับหน้าหลัก"}

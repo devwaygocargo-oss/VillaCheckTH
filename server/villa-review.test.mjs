@@ -14,7 +14,7 @@ test('Villa approval requests retain actual changes, documents, permissions and 
  const login=async email=>{const r=await request('/auth/login',{email,password:'DummyPassword1234'});assert.equal(r.status,200);return {cookie:r.cookie,csrf:r.value.csrf}}
  const admin=await login('review-admin@example.test'),merchant=await login('demo-merchant@villacheck.example')
  const villa=await db.prepare("SELECT * FROM villas WHERE name='Sea Sky Demo Villa'").get()
- const edit={name:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photoUrl:villa.photo_url,guestCapacity:20}
+ const edit={name:villa.name,nameEn:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photoUrl:villa.photo_url,guestCapacity:20}
  const state=async()=>(await request('/state',undefined,admin)).value.villas.find(v=>v.id===villa.id)
  let submission
  await t.test('capacity update records before and after, and Admin sees full contact/bank data',async()=>{

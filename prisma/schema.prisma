@@ -183,6 +183,7 @@ model users {
   role                                        String
   created                                     String             @default("")
   last_login                                  String?
+  business_name_en String @default("")
   business_name                               String             @default("")
   phone                                       String             @default("")
   address                                     String             @default("")
@@ -222,6 +223,10 @@ model villas {
   verification_level String    @default("VERIFIED")
   reviewed_at        String?
   reviewed_by        String?
+  name_en String @default("")
+  photo_uploaded_at String?
+  photo_taken_at String?
+  photo_reviewed_at String?
   photo_url          String    @default("")
   guest_capacity     Int?
   support_reports support_reports[]

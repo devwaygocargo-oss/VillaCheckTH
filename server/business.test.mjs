@@ -74,6 +74,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
             "/api/merchant/profile",
             {
               businessName: "Business",
+              businessNameEn: "Business English",
               contactName: "Contact",
               phone: "0812345678",
               address: "Bangkok",
@@ -115,7 +116,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
         (await request("/api/admin/packages/starter", changed, a)).status,
         200,
       )
-      const catalog = await request("/api/packages")
+      const catalog = await request("/api/packages",undefined,m)
       assert.equal(
         catalog.value.packages.find((x) => x.id === "starter").amount,
         123400,
@@ -172,6 +173,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
     "/api/villas",
     {
       name: "Dynamic Villa",
+      nameEn: "Dynamic Villa English",
       province: "ชลบุรี",
       merchant: "Merchant",
       email: merchant.email,
@@ -191,7 +193,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
     },
   )
   await t.test(
-    "config-driven two-month trial makes no invoice or payment QR",
+    "unlimited Basic trial makes no invoice or payment QR",
     async () => {
       assert.equal(
         (await request(`/api/villas/${id}/review`, { status: "approved" }, a))
@@ -200,13 +202,13 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
       )
       state = (await request("/api/state", undefined, m)).value
       assert.equal(state.villas[0].invoices.length, 0)
-      assert.equal(state.subscription.status, "ACTIVE")
+      assert.equal(state.villas[0].trialUnlimited, true)
       assert.ok(state.villas[0].qr)
       assert.equal(state.villas[0].premiumBanner, false)
-      assert.equal(state.villas[0].verificationLevel, "VERIFIED")
+      assert.equal(state.villas[0].verificationLevel, "BASIC_CHECKED")
     assert.equal((await request(`/api/villas/${id}/verification-level`,{verificationLevel:"PREMIUM_VERIFIED"},m)).status,403)
-    assert.equal((await request(`/api/villas/${id}/verification-level`,{verificationLevel:"PREMIUM_VERIFIED"},a)).status,200)
-    assert.equal((await request("/api/state",undefined,m)).value.villas[0].premiumBanner,true)
+    assert.equal((await request(`/api/villas/${id}/verification-level`,{verificationLevel:"PREMIUM_VERIFIED"},a)).status,400)
+    assert.equal((await request("/api/state",undefined,m)).value.villas[0].premiumBanner,false)
     },
   )
   const original = state.villas[0].qr
@@ -218,6 +220,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
           "UPDATE subscriptions SET expires='2000-01-01T00:00:00Z' WHERE owner_id=?",
         )
         .run(merchant.id)
+      await db.prepare("UPDATE villas SET payments=1,expires='2000-01-01T00:00:00Z' WHERE id=?").run(id)
       let v = await db.prepare("SELECT * FROM villas WHERE id=?").get(id)
       assert.equal((await trustDto(db, v)).qrStatus, "EXPIRED")
       assert.equal(v.qr, original)

@@ -383,7 +383,7 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
       assert.equal((await request("/api/public/cms")).value.revision, 2)
     },
   )
-  await t.test("Published business rules affect new invoices, preserve old terms, support annual billing and render email tokens",async()=>{
+  await t.test("Monthly per-villa invoices stay one month, preserve snapshots, support legacy annual billing and render email tokens",async()=>{
     const owner=(await db.prepare("SELECT id FROM users WHERE email=?").get("cms-owner@example.test")).id
     const fixture=async(payments=0)=>{
       const id=randomUUID(),doc=randomUUID(),stamp=new Date().toISOString()
@@ -392,16 +392,16 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
       return db.prepare("SELECT * FROM villas WHERE id=?").get(id)
     }
     const old=await createInvoice(db,await fixture(),config.appUrl)
-    assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(old)).months,3)
+    assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(old)).months,1)
     const c=structuredClone(cmsDefaults);c.site.paymentQrImage=media.url;c.business.monthlyInitialMonths=6;c.business.monthlyRenewalMonths=2;c.business.paymentEmailSubject="CMS {{package}} / {{villa}}";c.business.paymentEmailIntro="Hello {{merchant}}"
     assert.equal((await request("/api/admin/cms/save",{revision:3,content:c},admin)).status,200)
     assert.equal((await request("/api/admin/cms/publish",{revision:4},admin)).status,200)
     const first=await createInvoice(db,await fixture(),config.appUrl),renew=await createInvoice(db,await fixture(1),config.appUrl)
-    assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(first)).months,6)
+    assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(first)).months,1)
     assert.equal(JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${first}`)).value),media.url)
     assert.equal(JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${old}`)).value),"")
-    assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(renew)).months,2)
-    assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(old)).months,3)
+    assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(renew)).months,1)
+    assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(old)).months,1)
     await db.prepare("UPDATE package_catalog SET billing_cycle='YEARLY' WHERE id='starter'").run()
     const annual=await createInvoice(db,await fixture(),config.appUrl)
     assert.equal((await db.prepare("SELECT months FROM invoices WHERE id=?").get(annual)).months,12)
@@ -409,9 +409,9 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
     await db.prepare("INSERT INTO subscriptions(owner_id,package_id,created) VALUES (?,?,?)").run(owner,"starter",new Date().toISOString())
     const invoice=await subscriptionInvoice(db,await fixture(),config.appUrl,"starter")
     const mail=await db.prepare("SELECT subject,body FROM mails WHERE invoice_id=?").get(invoice)
-    assert.ok(mail.subject.startsWith("CMS Trust Starter / CMS Dummy Villa"))
+    assert.ok(mail.subject.startsWith("CMS Online Verify / CMS Dummy Villa"))
     assert.ok(mail.body.startsWith("Hello Dummy Merchant"))
-    assert.ok(mail.body.includes(invoice)&&mail.body.includes("6 เดือน"))
+    assert.ok(mail.body.includes(invoice)&&mail.body.includes("1 เดือน"))
     const bad=structuredClone(c);bad.business.monthlyInitialMonths=0
     assert.equal((await request("/api/admin/cms/save",{revision:4,content:bad},admin)).status,400)
     bad.business.monthlyInitialMonths=3;bad.business.paymentEmailSubject="Bad {{unsupported}}"

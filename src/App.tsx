@@ -1,3 +1,5 @@
+import {qrReference as parseQrReference} from "./qrReference";
+import HomeBanner from "./HomeBanner";
 import AdminReceivingBank from "./AdminReceivingBank";
 import AdminApprovedVillas from "./AdminApprovedVillas";
 import AdminPendingVillas from "./AdminPendingVillas";
@@ -7,10 +9,9 @@ import AdminCms from "./AdminCms";
 import DemoNotice from "./DemoNotice";
 import { CmsProvider, CmsBlocks, CmsHomeLayout, useCms } from "./cms";
 import OperationsPortal from "./OperationsPortal";
-import PremiumBanner from "./PremiumBanner";
 import MerchantProfile from "./MerchantProfile";
 import AdminBusiness from "./AdminBusiness";
-import { usePackages, billingLabel, billingValidityLabel, selectedPlanKey, packageIntentKey } from "./packagePlans";
+import { selectedPlanKey, packageIntentKey } from "./packagePlans";
 import type { Account } from "./merchantStore";
 import { api, ApiError, currentAccount, logout } from "./api";
 import VillaMap from "./VillaMap";
@@ -151,9 +152,10 @@ function Header({ page, go, account }: { page: Page; go: (page: Page) => void; a
     <div className="container nav">
       <button className="logo-button" onClick={() => navigate("home")}><Logo /></button>
       <nav id="public-menu" className={mobileMenuOpen ? "mobile-open" : ""}>
-        {navigation.filter(n=>n.visible && !(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href))).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
+        {navigation.filter(n=>n.visible && !["#page=home","#page=pricing","#page=owner-package"].includes(n.href) && !(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href))).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
+        {!navigation.some(n=>n.visible && n.href==="#page=contact") && <button onClick={()=>navigate("contact")}>ติดต่อเรา</button>}
       </nav>
-      <div className="nav-actions">{account && <div className="nav-account" ref={accountMenu}><button className="outline-button nav-account-button" title={`${account.name} · ${accountLabel(account)}`} aria-expanded={accountMenuOpen} aria-controls="account-dropdown" onClick={() => setAccountMenuOpen(open => !open)}><span className="nav-session-status" role="status"><span aria-hidden="true">●</span> เข้าสู่ระบบอยู่</span><strong>{accountLabel(account)} <span aria-hidden="true">▾</span></strong></button>{accountMenuOpen && <div id="account-dropdown" className="account-dropdown"><strong>{account.name}</strong><button onClick={() => navigate(accountHome(account))}>ไปยังบัญชี {account.role === "admin" ? "Admin" : account.role === "merchant" ? "Merchant" : "User"}</button><button disabled={loggingOut} onClick={() => void signOut()}>{loggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}</button>{logoutError && <p role="alert">{logoutError}</p>}</div>}</div>}<button className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
+      <div className="nav-actions">{account && <div className="nav-account" ref={accountMenu}><button className="outline-button nav-account-button" title={`${account.name} · ${accountLabel(account)}`} aria-expanded={accountMenuOpen} aria-controls="account-dropdown" onClick={() => setAccountMenuOpen(open => !open)}><span className="nav-session-status" role="status"><span aria-hidden="true">●</span> เข้าสู่ระบบอยู่</span><strong>{accountLabel(account)} <span aria-hidden="true">▾</span></strong></button>{accountMenuOpen && <div id="account-dropdown" className="account-dropdown"><strong>{account.name}</strong><button onClick={() => navigate(accountHome(account))}>ไปยังบัญชี {account.role === "admin" ? "Admin" : account.role === "merchant" ? "Merchant" : "User"}</button><button disabled={loggingOut} onClick={() => void signOut()}>{loggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}</button>{logoutError && <p role="alert">{logoutError}</p>}</div>}</div>}<button aria-label="ตรวจสอบ QR" className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
     </div>
   </header>;
 }
@@ -192,8 +194,8 @@ function ShowcaseCard({ villa, featured = false, onClick }: { villa: typeof vill
 function VillaShowcase({ go }: { go: (p: Page, item?: string) => void }) {
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
-  const [items,setItems]=useState<(typeof villas[number] & {qr:string;premiumBanner:boolean;createdAt:string})[]>([]);
-  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setItems(data.villas.slice(0,4).map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(()=>{});return()=>{active=false;};},[]);
+  const [items,setItems]=useState<(typeof villas[number] & {qr:string;nameEn:string;premiumBanner:boolean;createdAt:string})[]>([]);
+  useEffect(()=>{let active=true;void api<{villas:{name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setItems(data.villas.slice(0,4).map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(()=>{});return()=>{active=false;};},[]);
   const scrollToSlide = (index: number) => {
     const next = Math.max(0, Math.min(items.length - 1, index));
     const element = trackRef.current?.children[next] as HTMLElement | undefined;
@@ -214,68 +216,12 @@ function VillaShowcase({ go }: { go: (p: Page, item?: string) => void }) {
   </div>;
 }
 
-function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void; onSearch: (query: string, province: string) => void; onSelect: (id: string) => void }) {
+function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch: (query: string, province: string) => void; onSelect: (id: string) => void }) {
   const {home}=useCms();
-  const photos=home.images;
   const section=(id:string)=>home.sections.find(s=>s.id===id)!;
-  const {plans}=usePackages();
-  const trial=plans.find(p=>p.trialMonths>0);
-  const [heroSlide, setHeroSlide] = useState(0);
-  useEffect(()=>setHeroSlide(0),[photos]);
-  const [heroAutoPlay, setHeroAutoPlay] = useState(true);
-  const heroTouchStart = useRef(0);
-  const changeHeroSlide = (next: number, userInitiated = true) => {
-    setHeroSlide((next + photos.length) % photos.length);
-    if (userInitiated) setHeroAutoPlay(false);
-  };
-  useEffect(() => {
-    if (!heroAutoPlay) return;
-    const timer = window.setInterval(() => setHeroSlide(current => (current + 1) % photos.length), 5200);
-    return () => window.clearInterval(timer);
-  }, [heroAutoPlay]);
-
   return <CmsHomeLayout>
-    <section className="hero">
-      <div className="hero-orb hero-orb-one" /><div className="hero-orb hero-orb-two" />
-      <div className="hero-map-line hero-map-line-one" /><div className="hero-map-line hero-map-line-two" />
-      <div className="hero-brand-monogram" aria-hidden="true">VC</div>
-      <div className="hero-launch-index" aria-hidden="true"><span>01</span><i /><small>PUBLIC TRUST LAYER</small></div>
-      <div className="container hero-grid">
-        <div className="hero-copy">
-          <div className="eyebrow"><Icon name="shield" size={16} />{home.eyebrow}</div>
-          <h1 className="cms-prose">{home.title}</h1>
-          <p>{home.description}</p>
-          <SearchBox onSearch={onSearch} />
-          <div className="trust-row"><span><Icon name="check" size={14} />ตรวจสอบฟรี</span><span><Icon name="check" size={14} />ไม่ต้องสมัครสมาชิก</span><span><Icon name="check" size={14} />ข้อมูลอัปเดตสม่ำเสมอ</span></div>
-        </div>
-        <div className="hero-visual">
-          <div className="hero-image-frame" />
-          <div className="hero-photo" onMouseEnter={() => setHeroAutoPlay(false)} onPointerDown={() => setHeroAutoPlay(false)} onTouchStart={event => { heroTouchStart.current = event.touches[0].clientX; setHeroAutoPlay(false); }} onTouchEnd={event => { const distance = event.changedTouches[0].clientX - heroTouchStart.current; if (Math.abs(distance) > 45) changeHeroSlide(heroSlide + (distance < 0 ? 1 : -1)); }}>
-            {photos.map((photo, index) => <img key={photo} className={`hero-slide ${heroSlide === index ? "active" : ""}`} src={photo} alt={`พูลวิลล่าตัวอย่างภาพที่ ${index + 1}`} />)}
-            <div className="hero-photo-caption"><span>SEA SKY / CHONBURI</span><strong>Travel with proof.</strong></div>
-            <button className="hero-slide-arrow previous" aria-label="ภาพ Hero ก่อนหน้า" onClick={() => changeHeroSlide(heroSlide - 1)}>←</button><button className="hero-slide-arrow next" aria-label="ภาพ Hero ถัดไป" onClick={() => changeHeroSlide(heroSlide + 1)}>→</button>
-            <div className="hero-slide-indicator"><span>{heroSlide + 1}/{photos.length}</span>{photos.map((photo, index) => <button key={photo} aria-label={`ไปภาพ Hero ที่ ${index + 1}`} className={heroSlide === index ? "active" : ""} onClick={() => changeHeroSlide(index)} />)}</div>
-          </div>
-          <div className="hero-secondary-photo"><img src={photos[3]||photos[0]} alt="รายละเอียดสถาปัตยกรรมพูลวิลล่า" /><span>PROPERTY / 01842</span></div>
-          <div className="hero-trust-radar" aria-hidden="true"><i /><i /><i /><span><Icon name="shield" size={20} /></span></div>
-          <div className="verified-float trust-float">
-            <span className="verified-seal"><Icon name="shield" size={27} /></span>
-            <div><strong>VillaCheck VERIFIED</strong><span>Verified Property</span><small>Last checked · 18 Jun 2025</small></div>
-          </div>
-          <div className="hero-qr-float"><div className="hero-mini-qr"><QrPattern /></div><div><small>QR ACTIVE</small><strong>VC-01842</strong></div></div>
-          <div className="hero-location-float"><Icon name="pin" size={18} /><div><small>PROVINCE</small><strong>ชลบุรี</strong></div></div>
-          <div className="hero-data-rail"><span><i />Verified</span><span>98<small>/100 Trust</small></span></div>
-        </div>
-      </div>
-      <div className="container hero-signal-strip">
-        <div><span className="signal-pulse" /><small>TRUST SIGNAL</small><strong>Live prototype</strong></div>
-        <div><small>VERIFICATION LAYER</small><strong>Identity · Contact · Account</strong></div>
-        <div><small>DESTINATION INTELLIGENCE</small><strong>10 popular destinations</strong></div>
-        <button onClick={() => go("scan")}><span>SCAN / VERIFY</span><Icon name="arrow" size={17} /></button>
-      </div>
-    </section>
-
-    <div className="container premium-promo-wrap"><PremiumBanner onSelect={onSelect} /></div>
+    <section><HomeBanner/><div className="container banner-search"><span className="kicker">ค้นหาและตรวจสอบที่พักฟรี</span><h1>ค้นหาและตรวจสอบที่พัก</h1><p>ค้นหาด้วยชื่อภาษาไทย ภาษาอังกฤษ หรือเลือกจังหวัด</p><SearchBox onSearch={onSearch}/></div></section>
+    <div />
     <section className="section how-section" id="how">
       <div className="container">
         <div className="timeline-head"><div><span className="kicker">TRUST JOURNEY / 01—03</span><h2 className="cms-prose">{section("how").title}</h2></div><p className="cms-prose">{section("how").description}</p></div>
@@ -311,7 +257,7 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
 
     <section className="section owner-section">
       <div className="container owner-grid">
-        <div><span className="kicker">FOR VILLA MERCHANTS</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><button className="primary-button" onClick={() => go("pricing")}>ดูแพ็กเกจทั้งหมด <Icon name="arrow" size={18} /></button></div>
+        <div><span className="kicker">FOR VILLA MERCHANTS</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><button className="primary-button" onClick={() => go("pricing")}>เข้าสู่ Member Room <Icon name="arrow" size={18} /></button></div>
         <div className="feature-stack">
           <div><span><Icon name="shield" /></span><p><strong>Trust Profile</strong>โปรไฟล์ที่พักพร้อมสถานะตรวจสอบ</p></div>
           <div><span><Icon name="qr" /></span><p><strong>QR Verification</strong>QR เฉพาะสำหรับแชร์ให้ลูกค้าตรวจสอบ</p></div>
@@ -323,8 +269,8 @@ function Home({ go, onSearch, onSelect }: { go: (p: Page, item?: string) => void
     <section className="section pricing-preview">
       <div className="container pricing-banner premium-pricing">
         <div className="pricing-number">05</div>
-        <div><span className="kicker">TRUST INFRASTRUCTURE FOR MERCHANTS</span><h2 className="cms-prose">{section("pricing").title}</h2><p>{trial?`เริ่มต้น ${trial.name} ทดลองฟรี ${trial.trialMonths} เดือน พร้อม Trust Profile และ QR Verification`:"เลือกแพ็กเกจเพื่อสร้าง Trust Profile และ QR Verification"}</p></div>
-        <div><small>START FROM</small><strong>{trial?"ทดลองฟรี":"ดูแพ็กเกจ"}</strong>{trial&&<span>{trial.trialMonths} เดือน · หลังเอกสารผ่านการอนุมัติ</span>}<button className="sun-button" onClick={() => go("pricing")}>สำรวจทุกแพ็กเกจ</button></div>
+        <div><span className="kicker">TRUST INFRASTRUCTURE FOR MERCHANTS</span><h2 className="cms-prose">{section("pricing").title}</h2><p>{"จัดการที่พักและดูสิทธิ์บริการใน Member Room"}</p></div>
+        <div><small>START FROM</small><strong>{"Member Room"}</strong><button className="sun-button" onClick={() => go("pricing")}>เข้าสู่ระบบเจ้าของที่พัก</button></div>
       </div>
     </section>
     <div className="container"><CmsBlocks blocks={home.blocks}/></div>
@@ -337,11 +283,11 @@ function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Pa
   const [status, setStatus] = useState("");
   const [guests, setGuests] = useState("");
   const [sort, setSort] = useState("ล่าสุด");
-  const [liveVillas,setLiveVillas]=useState<(typeof villas[number] & {qr:string;premiumBanner:boolean;createdAt:string})[]>([]);
+  const [liveVillas,setLiveVillas]=useState<(typeof villas[number] & {qr:string;nameEn:string;premiumBanner:boolean;createdAt:string})[]>([]);
   const [directoryError,setDirectoryError]=useState("");
-  useEffect(()=>{let active=true;void api<{villas:{name:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void api<{villas:{name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
   const filtered = [...liveVillas]
-    .filter(v => v.name.toLowerCase().includes(query.toLowerCase()))
+    .filter(v => `${v.name} ${v.nameEn || ""}`.toLowerCase().includes(query.trim().toLowerCase()))
     .filter(v => !province || v.province === province)
     .filter(v => !status || v.status === status)
     .filter(v => !guests || (guests === "unknown" ? v.guests === "ไม่ระบุ" : guests === "small" ? Number.parseInt(v.guests) <= 8 : guests === "medium" ? Number.parseInt(v.guests) >= 9 && Number.parseInt(v.guests) <= 14 : Number.parseInt(v.guests) >= 15))
@@ -460,10 +406,14 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
   const controlsRef = useRef<IScannerControls | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const readerRef = useRef<BrowserQRCodeReader | null>(null);
+  const cameraRequest = useRef(0);
   const cameraActive = scanState === "requesting" || scanState === "scanning";
   const busy = scanState === "requesting" || scanState === "loading" || scanState === "success";
 
   const stopCamera = () => {
+    cameraRequest.current += 1;
+    const stream = videoRef.current?.srcObject;
+    if (stream instanceof MediaStream) stream.getTracks().forEach(track => track.stop());
     controlsRef.current?.stop();
     controlsRef.current = null;
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
@@ -481,13 +431,16 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
   const completeScan = (reference: string, controls?: IScannerControls) => {
     controls?.stop();
     stopCamera();
-    setScannedReference(reference || "VC-TH-2025-01842");
+    const code=parseQrReference(reference);
+    if(!code) { setErrorMessage("QR ไม่ถูกต้อง กรุณาใช้ QR ของ VillaCheck หรืออัปโหลดรูป QR ใหม่");setScanState("error");return; }
+    setScannedReference(code);
     setErrorMessage("");
     setScanState("success");
   };
 
   const startCamera = async () => {
     stopCamera();
+    const request = cameraRequest.current;
     setErrorMessage("");
     setScanState("requesting");
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -497,13 +450,16 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
     }
     try {
       const reader = await getQrReader();
+      if (request !== cameraRequest.current) return;
       const controls = await reader.decodeFromConstraints(
         { audio: false, video: { facingMode: { ideal: "environment" } } },
         videoRef.current ?? undefined,
         (result, _error, activeControls) => {
+          if (request !== cameraRequest.current) { activeControls.stop(); return; }
           if (result) completeScan(result.getText(), activeControls);
         },
       );
+      if (request !== cameraRequest.current) { controls.stop(); return; }
       controlsRef.current = controls;
       setScanState("scanning");
       timeoutRef.current = window.setTimeout(() => {
@@ -512,9 +468,10 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
         setScanState("not-found");
       }, 15000);
     } catch (error) {
+      if (request !== cameraRequest.current) return;
       const cameraError = error as DOMException;
       const permissionDenied = cameraError.name === "NotAllowedError" || cameraError.name === "PermissionDeniedError";
-      setErrorMessage(permissionDenied ? "ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาต Camera permission แล้วลองอีกครั้ง" : "เปิดกล้องไม่สำเร็จ กรุณาตรวจสอบว่ากล้องไม่ได้ถูกใช้งานโดยแอปอื่น");
+      setErrorMessage(permissionDenied ? "ไม่ได้รับอนุญาตให้ใช้กล้อง คุณสามารถอัปโหลดรูป QR แทน หรือเปลี่ยนสิทธิ์กล้องในการตั้งค่าเบราว์เซอร์" : cameraError.name === "NotFoundError" ? "ไม่พบกล้องบนอุปกรณ์นี้ กรุณาอัปโหลดรูป QR" : "เปิดกล้องไม่สำเร็จ กรุณาอัปโหลดรูป QR หรือตรวจสอบว่ากล้องไม่ได้ถูกใช้งานโดยแอปอื่น");
       setScanState(permissionDenied ? "permission-error" : "error");
     }
   };
@@ -539,12 +496,6 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
     }
   };
 
-  const simulateScan = async () => {
-    stopCamera();setScanState("loading");
-    try { const data=await api<{villas:{qr:string;qrStatus:string}[]}>("/public/villas");const sample=data.villas.find(v=>v.qrStatus==="ACTIVE");if(!sample)throw Error("ยังไม่มี Villa QR สำหรับทดสอบ");completeScan(sample.qr); }
-    catch(e){setErrorMessage(e instanceof Error?e.message:"โหลด QR ไม่สำเร็จ");setScanState("not-found");}
-  };
-
   useEffect(() => {
     if (scanState === "success") {
       const resultTimer = window.setTimeout(() => onVerified(scannedReference), 700);
@@ -552,10 +503,10 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
     }
   }, [onVerified, scanState, scannedReference]);
 
-  useEffect(() => () => stopCamera(), []);
+  useEffect(() => { void startCamera(); return () => stopCamera(); }, []);
 
   return <main className="scan-page">
-    <div className="verify-top"><div className="container"><Logo light /><button onClick={() => { stopCamera(); go("home"); }}><Icon name="close" />ปิดหน้าสแกน</button></div></div>
+    <div className="verify-top"><div className="container"><button className="logo-button" aria-label="กลับหน้าแรก" onClick={()=>{stopCamera();go("home")}}><Logo light /></button><button onClick={() => { stopCamera(); go("home"); }}><Icon name="close" />ปิดหน้าสแกน</button></div></div>
     <div className="scan-bg">
       <div className="scan-intro">
         <span className="kicker light-kicker">SCAN QR CODE</span>
@@ -574,12 +525,8 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
         </div>
         {errorMessage && <div className="scanner-error"><Icon name="info" size={18} /><span>{errorMessage}</span><button onClick={startCamera}>ลองอีกครั้ง</button></div>}
         <div className="scanner-actions">
-          <button className="primary-button" onClick={startCamera} disabled={busy}><Icon name="camera" size={18} />{cameraActive ? "กำลังเปิดกล้อง" : "เปิดกล้อง"}</button>
+          {!cameraActive && <button className="primary-button" onClick={startCamera} disabled={busy}><Icon name="camera" size={18} />ลองเปิดกล้องอีกครั้ง</button>}
           <label className="outline-button upload-button"><Icon name="upload" size={18} />อัปโหลดรูป QR<input type="file" accept="image/*" onChange={uploadQr} disabled={busy} /></label>
-        </div>
-        <div className="prototype-scan">
-          <span>สำหรับ Prototype</span>
-          <button className="sun-button" onClick={simulateScan} disabled={busy}>{scanState === "loading" ? "กำลังสแกน..." : scanState === "success" ? "สแกนสำเร็จ" : "จำลองการสแกน QR"}</button>
         </div>
       </div>
       <p className="scan-security"><Icon name="shield" size={15} />VillaCheck ไม่มีบริการรับจองหรือรับชำระเงิน</p>
@@ -623,27 +570,6 @@ function Verify({ go, reference }: { go: (p: Page, item?: string) => void; refer
   </main>;
 }
 
-function Pricing({ onSelect, go }: { onSelect: (name: string) => void; go: (page: Page) => void }) {
-  const {business}=useCms();
-  const {plans,error} = usePackages();
-  return <main className="page-bg pricing-page">
-    <div className="page-hero container"><span className="kicker">PRICING FOR MERCHANTS</span><h1>แพ็กเกจที่เติบโตไปพร้อมธุรกิจคุณ</h1><p>สมัครแพ็กเกจที่บัญชี Merchant แล้วเพิ่ม Villa ตามจำนวนสิทธิ์<br />1 Villa = 1 QR · ตรวจเอกสารโดย Admin ก่อนเปิดใช้งาน</p></div>
-    {error && <p role="alert" className="container">{error}</p>}
-    <div className="container premium-promo-wrap"><PremiumBanner onSelect={onSelect} /></div>
-    <div className="container plan-grid">
-      {plans.map(plan => <article className={`plan-card ${plan.showPremiumBanner ? "recommended" : ""}`} key={plan.name}>
-        {plan.showPremiumBanner && <div className="recommended-label">แนะนำสำหรับคุณ</div>}
-        <div className="plan-head"><h2>{plan.name}</h2><p>{plan.description}</p><div><strong>{plan.amount ? `฿${(plan.amount / 100).toLocaleString("th-TH")}` : "ฟรี"}</strong><span>{plan.amount ? `/ ${billingLabel(plan.billingCycle)}` : `${plan.trialMonths} เดือน`}</span></div></div>
-        {plan.amount > 0 && <p>{billingValidityLabel(plan.billingCycle,business)}</p>}
-        <hr /><ul>{plan.features.map(f => <li key={f}><span><Icon name="check" size={14} /></span>{f}</li>)}</ul>
-        <button className={plan.showPremiumBanner ? "primary-button full" : "outline-button full"} onClick={() => onSelect(plan.id)}>เลือกแพ็กเกจ</button>
-      </article>)}
-    </div>
-    <div className="container no-payment"><Icon name="info" /><p><strong>ชำระค่าบริการแพ็กเกจหลังเอกสารผ่านการอนุมัติ</strong><br />ระบบส่งอีเมลแจ้งยอดและลิงก์ชำระเงิน จากนั้น Merchant แนบสลิปให้ Admin ตรวจสอบ</p></div>
-    <section className="container compare-strip"><div><span className="kicker light-kicker">TRUST FIRST</span><h2>ไม่แน่ใจว่าแพ็กเกจไหนเหมาะกับคุณ?</h2><p>ทีมงานของเราพร้อมช่วยประเมินและแนะนำแพ็กเกจที่เหมาะกับธุรกิจ</p></div><button className="white-button" onClick={() => go("contact")}><Icon name="phone" size={18} />นัดคุยกับทีมงาน</button></section>
-  </main>;
-}
-
 function Footer({ go, account }: { go: (p: Page, item?: string) => void; account: Account | null }) {
   const {site,pages}=useCms();
   return <footer className="public-footer">
@@ -655,7 +581,7 @@ function Footer({ go, account }: { go: (p: Page, item?: string) => void; account
       </div>
       <div><strong>เกี่ยวกับ VillaCheck</strong><button onClick={() => go("about")}>เกี่ยวกับเรา</button><button onClick={() => go("verification-standard")}>มาตรฐานการตรวจสอบ</button><button onClick={() => go("articles")}>บทความและข่าวสาร</button><button onClick={() => go(account ? accountHome(account) : "login")}>{account ? accountLabel(account) : "เข้าสู่ระบบ"}</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
       <div><strong>สำหรับผู้ใช้งาน</strong><button onClick={() => go("directory")}>ค้นหาที่พัก</button><button onClick={() => go("scan")}>ตรวจสอบ QR</button><button onClick={() => go("user-precheck")}>ตรวจสอบก่อนโอน</button><button onClick={() => go("villa-report")}>แจ้งปัญหา</button></div>
-      <div><strong>สำหรับเจ้าของที่พัก</strong><button onClick={() => go("pricing")}>แพ็กเกจ</button><button onClick={() => go("owner-guide")}>สำหรับเจ้าของที่พัก</button><button onClick={() => go("owner-auth")}>ลงทะเบียนที่พัก</button><button onClick={() => go(account ? accountHome(account) : "login")}>{account ? accountLabel(account) : "เข้าสู่ระบบ"}</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
+      <div><strong>สำหรับเจ้าของที่พัก</strong><button onClick={() => go("owner-auth")}>Member Room</button><button onClick={() => go("owner-guide")}>สำหรับเจ้าของที่พัก</button><button onClick={() => go("owner-auth")}>ลงทะเบียนที่พัก</button><button onClick={() => go(account ? accountHome(account) : "login")}>{account ? accountLabel(account) : "เข้าสู่ระบบ"}</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
       <div className="footer-support"><strong>ช่วยเหลือและติดต่อ</strong><button onClick={() => go("help")}>Help / Support</button><button onClick={() => go("contact")}>Contact</button><button onClick={() => openSupport("email")}><Icon name="mail" size={14} />อีเมลทีมงาน</button><button onClick={() => openSupport("phone")}><Icon name="phone" size={14} />โทรทีมงาน</button><small>{site.hours}</small></div>
     </div>
     <div className="container footer-bottom"><span>© {new Date().getFullYear()} VillaCheck. สงวนลิขสิทธิ์</span><div><button onClick={() => go("privacy")}>นโยบายความเป็นส่วนตัว</button><button onClick={() => go("terms")}>ข้อกำหนดและเงื่อนไข</button></div><span>Trust before transfer.</span></div>
@@ -665,7 +591,7 @@ function Footer({ go, account }: { go: (p: Page, item?: string) => void; account
 function AppContent() {
   const {site}=useCms();
   const [page, navigate, selectedItem] = usePageNavigation<Page>();
-  const [selectedPackage, setSelectedPackage] = useState(() => sessionStorage.getItem(selectedPlanKey) || "Trust Starter");
+  const [selectedPackage, setSelectedPackage] = useState(() => sessionStorage.getItem(selectedPlanKey) || "Basic Verify");
   const [directorySearch, setDirectorySearch] = useState({ query: "", province: "" });
   const [qrReference, setQrReference] = useState("");
   const [account, setAccount] = useState<Account | null>(null);
@@ -689,6 +615,12 @@ function AppContent() {
 
 
   const go = (next: Page, item?: string) => { navigate(next, item); };
+  useEffect(() => {
+    if (page === "pricing") {
+      if (account?.role === "merchant") navigate("owner-package");
+      else { sessionStorage.setItem("villacheck-merchant-return", "owner-package"); navigate("owner-auth"); }
+    }
+  }, [page, account?.role, navigate]);
   const search = (query: string, province: string) => {
     setDirectorySearch({ query, province });
     go("directory");
@@ -723,7 +655,7 @@ function AppContent() {
     page === "detail" ? <MerchantVerification go={go} reference={selectedItem || qrReference} /> :
     page === "scan" ? <ScanQr go={go} onVerified={showVerificationResult} /> :
     page === "verify" ? <MerchantVerification go={go} reference={selectedItem || qrReference} /> :
-    page === "pricing" ? <Pricing onSelect={selectPackage} go={go} /> :
+    page === "pricing" ? <main className="container"><p role="status">กำลังเข้าสู่ Member Room…</p></main> :
     isPublicInfoPage ? <PublicInfoPage page={page} go={go} selectedArticle={selectedItem} /> :
     page === "villa-report" ? <PublicReportPage onSubmit={submitReport} reference={selectedItem} /> :
     page === "villa-report-success" ? <PublicReportSuccess go={go} reference={selectedItem||reportReference} linkedToUser={userLoggedIn} /> :

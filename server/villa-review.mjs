@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto'
-const fields={name:'ชื่อ Villa',province:'จังหวัด',merchant:'ชื่อ Merchant',phone:'เบอร์โทร',bank_name:'ธนาคาร',account_name:'ชื่อบัญชี',account_number:'เลขบัญชี',guest_capacity:'จำนวนผู้เข้าพักสูงสุด',photo_url:'รูป Villa'}
+const fields={name_en:'ชื่อที่พักภาษาอังกฤษ',name:'ชื่อ Villa',province:'จังหวัด',merchant:'ชื่อ Merchant',phone:'เบอร์โทร',bank_name:'ธนาคาร',account_name:'ชื่อบัญชี',account_number:'เลขบัญชี',guest_capacity:'จำนวนผู้เข้าพักสูงสุด',photo_url:'รูป Villa'}
 const key=id=>'villa_review:'+id
 export async function villaReview(db,villa){
  const row=await db.prepare('SELECT value FROM system_settings WHERE key=?').get(key(villa.id))

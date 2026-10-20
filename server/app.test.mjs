@@ -79,8 +79,8 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
   }
   const owner = await login("merchant@example.com", "Merchant-password-123")
   assert.equal(
-    (await request("/api/subscription", { packageId: "plus" }, owner)).status,
-    200,
+    (await request("/api/subscription", { packageId: "premium" }, owner)).status,
+    409,
   )
   const operator = await login("admin@example.com", "Admin-password-123")
   const other = await login("other@example.com", "Other-password-123")
@@ -92,7 +92,8 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       Buffer.from("%PDF-1.4\ntest fixture").toString("base64"),
   }
   const input = {
-    name: "Villa A",
+    name: "วิลล่าเอ",
+    nameEn: "Villa A",
     province: "ชลบุรี",
     merchant: "Merchant A",
     email: "merchant@example.com",
@@ -146,6 +147,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         (
           await request("/api/auth/register", {
             name: "C",
+        businessNameEn:"Company",
             email: "new@example.com",
             password: "short",
             role: "admin",
@@ -155,6 +157,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       )
       const response = await request("/api/auth/register", {
         name: "C",
+        businessNameEn:"Company",
         email: "new@example.com",
         password: "New-password-123",
         role: "admin",
@@ -209,7 +212,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
     },
   )
   await t.test(
-    "only admin approves, one invoice and one mail created atomically",
+    "only admin approves; a per-villa purchase creates one invoice and one mail",
     async () => {
       assert.equal(
         (
@@ -248,6 +251,8 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         ),
       ])
       assert.deepEqual(results.map((r) => r.status).sort(), [200, 409])
+      assert.equal((await db.prepare("SELECT count(*) AS n FROM invoices").get()).n,0)
+      assert.equal((await request("/api/merchant/villa-package",{villaId,packageId:"premium"},owner)).status,200)
       assert.equal(
         (await db.prepare("SELECT count(*) AS n FROM invoices").get()).n,
         1,
@@ -272,9 +277,9 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       let current = (await request("/api/state", undefined, owner)).value
         .villas[0]
       const invoice = current.invoices[0]
-      assert.equal(invoice.months, 3)
-      assert.equal(invoice.amount, 4900)
-      assert.equal(current.qr, "")
+      assert.equal(invoice.months, 1)
+      assert.equal(invoice.amount, 4990)
+      assert.ok(current.qr.startsWith("VC-"))
       assert.equal(
         (await request(`/api/invoices/${invoice.id}/confirm`, {}, owner))
           .status,
@@ -319,7 +324,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         .prepare("SELECT paid_at,confirmed_by FROM invoices WHERE id=?")
         .get(invoice.id)
       assert.equal(paid.confirmed_by, admin.id)
-      assert.equal(current.expires, addMonths(paid.paid_at, 3))
+      assert.equal(current.expires, addMonths(paid.paid_at, 1))
       const repeated = await request(
         `/api/invoices/${invoice.id}/confirm`,
         {},
@@ -365,7 +370,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
     },
   )
   await t.test(
-    "second villa gets its own QR under the already paid merchant package",
+    "second villa gets its own free QR independently of the first paid villa",
     async () => {
       const created = await request(
         "/api/villas",
@@ -407,7 +412,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       assert.equal(
         (await request("/api/villas", { ...input, name: "Villa C" }, owner))
           .status,
-        409,
+        201,
       )
       await request(`/api/villas/${villaId}/renew`, {}, owner)
       const invoice = (

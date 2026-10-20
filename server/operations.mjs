@@ -1,3 +1,4 @@
+import { mediaDate } from "./media-date.mjs";
 import {recordVillaReview} from './villa-review.mjs'
 import {saveVillaPhoto} from './villa-photo.mjs'
 import {guestCapacity} from './guest-capacity.mjs'
@@ -36,6 +37,7 @@ export async function operations(db,user,req,path,url,readBody){
  if(villaEdit&&['POST','PATCH'].includes(req.method)){
   const data=await readBody(req),villa=await db.prepare('SELECT * FROM villas WHERE id=? AND owner_id=?').get(villaEdit[1],user.id)
   if(!villa)error(404,'ไม่พบ Villa')
+  const nameEn=clean(data.nameEn||'','ชื่อที่พักภาษาอังกฤษ',200,true)
   const capacity = data.guestCapacity === undefined ? villa.guest_capacity : guestCapacity(data.guestCapacity)
   const values=['name','province','merchant','phone','bankName','accountName','accountNumber'].map(k=>clean(data[k]||'',k,200,['name','province','merchant'].includes(k)))
   const photo=clean(data.photoUrl||'','photo',2000,false)
@@ -45,8 +47,11 @@ export async function operations(db,user,req,path,url,readBody){
    if(!latest)error(404,'ไม่พบ Villa')
    const storedPhoto=data.photo?await saveVillaPhoto(db,user.id,data.photo):photo
    const savedCapacity=data.guestCapacity===undefined?latest.guest_capacity:capacity
-   await recordVillaReview(db,latest,{...latest,...Object.fromEntries(['name','province','merchant','phone','bank_name','account_name','account_number'].map((key,i)=>[key,values[i]])),guest_capacity:savedCapacity,photo_url:storedPhoto},'information_update',user)
+   await recordVillaReview(db,latest,{...latest,...Object.fromEntries(['name','province','merchant','phone','bank_name','account_name','account_number'].map((key,i)=>[key,values[i]])),guest_capacity:savedCapacity,photo_url:storedPhoto,name_en:nameEn},'information_update',user)
    await db.prepare("UPDATE villas SET name=?,province=?,merchant=?,phone=?,bank_name=?,account_name=?,account_number=?,photo_url=?,guest_capacity=?,status='pending',verification_level='REGISTERED',reason='Information changed; pending Admin review' WHERE id=?").run(...values,storedPhoto,savedCapacity,villa.id)
+   const changedPhoto = Boolean(data.photo) || storedPhoto !== latest.photo_url
+   const takenAt = data.photoTakenAt === undefined ? (changedPhoto ? null : latest.photo_taken_at) : data.photoTakenAt ? mediaDate(data.photoTakenAt) : null
+   await db.prepare("UPDATE villas SET name_en=?,photo_uploaded_at=?,photo_taken_at=?,photo_reviewed_at=? WHERE id=?").run(nameEn,changedPhoto?(storedPhoto?new Date().toISOString():null):latest.photo_uploaded_at,takenAt,changedPhoto?null:latest.photo_reviewed_at,villa.id)
    await audit(db,user,'villa.update',villa.id)
   })
   return {ok:true}

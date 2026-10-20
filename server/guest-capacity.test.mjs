@@ -28,7 +28,7 @@ test("capacity edits validate, persist, retain QR, and appear publicly only afte
   const merchant = await login("demo-merchant@villacheck.example")
   const admin = await login("capacity-admin@example.com")
   const villa = (await request("/state",undefined,merchant)).value.villas.find(v=>v.name==="Sea Sky Demo Villa")
-  const edit = {name:villa.name, province:villa.province, merchant:villa.merchant, phone:villa.phone, bankName:villa.bankName, accountName:villa.accountName, accountNumber:villa.accountNumber, photoUrl:villa.photoUrl}
+  const edit = {name:villa.name,nameEn:villa.nameEn||"Legacy Villa", province:villa.province, merchant:villa.merchant, phone:villa.phone, bankName:villa.bankName, accountName:villa.accountName, accountNumber:villa.accountNumber, photoUrl:villa.photoUrl}
   assert.equal((await request(`/merchant/villas/${villa.id}`,{...edit,guestCapacity:1.5},merchant)).status,400)
   assert.equal((await request(`/merchant/villas/${villa.id}`,{...edit,guestCapacity:"6"},merchant)).status,200)
   let saved = await db.prepare("SELECT * FROM villas WHERE id=?").get(villa.id)
@@ -37,7 +37,7 @@ test("capacity edits validate, persist, retain QR, and appear publicly only afte
   assert.equal(saved.status,"pending")
   await request(`/merchant/villas/${villa.id}`,edit,merchant)
   assert.equal((await db.prepare("SELECT guest_capacity FROM villas WHERE id=?").get(villa.id)).guest_capacity,6)
-  assert.equal((await request(`/villas/${villa.id}/review`,{status:"approved",verificationLevel:"VERIFIED"},admin)).status,200)
+  assert.equal((await request(`/villas/${villa.id}/review`,{status:"approved",verificationLevel:"BASIC_CHECKED"},admin)).status,200)
   const publicVilla = (await request("/public/villas")).value.villas.find(v=>v.id===villa.id)
   assert.equal(publicVilla.guestCapacity,6)
   const reviewed = await db.prepare("SELECT reviewed_at,created FROM villas WHERE id=?").get(villa.id)

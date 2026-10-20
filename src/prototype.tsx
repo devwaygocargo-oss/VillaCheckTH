@@ -101,6 +101,8 @@ export function LoginPage({ go, onAuthenticated, reference = "", accountType="us
     const role=account.role==="merchant"?"Merchant":"User";
     onAuthenticated?.(role);
     if(role==="Merchant"){
+      const destination = sessionStorage.getItem("villacheck-merchant-return");
+      if(destination === "owner-package") { sessionStorage.removeItem("villacheck-merchant-return"); go("owner-package"); return; }
       if(accountType!=="merchant"){go(sessionStorage.getItem(packageIntentKey)?"owner-information":"owner-dashboard");return;}
       const profile=await api<{businessName:string;phone:string;address:string;email:string}>("/merchant/profile");
       go(sessionStorage.getItem(packageIntentKey)||!profile.businessName||!profile.phone||!profile.address||profile.email.endsWith("@phone.villacheck.invalid")?"owner-information":"owner-dashboard");
@@ -119,7 +121,7 @@ export function LoginPage({ go, onAuthenticated, reference = "", accountType="us
   return <main className="login-screen">
     <div className="login-sheet">
       <div className="login-topbar"><button aria-label="กลับหน้าหลัก" onClick={()=>go("home")}><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 5-7 7 7 7"/></svg></button><button aria-label="ช่วยเหลือการเข้าสู่ระบบ" onClick={()=>go("help")}><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4"/><path d="M12 16h.01"/></svg></button></div>
-      <div className="login-brand"><span className="login-brand-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></span><strong>Villa<span>Check</span></strong></div>
+      <button type="button" className="login-brand" aria-label="VillaCheck กลับหน้าแรก" style={{border:0,background:"transparent",padding:0}} onClick={()=>go("home")}><span className="login-brand-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></span><strong>Villa<span>Check</span></strong></button>
       <h1 className="login-title">{accountType==="merchant"?"เข้าสู่ระบบ Merchant":"เข้าสู่ระบบ VillaCheck"}</h1>
       {accountType==="merchant"&&<p className="login-account-note">{packageName?`แพ็กเกจที่สนใจ: ${packageName} · `:""}เลือกช่องทางเข้าสู่ระบบหรือสร้างบัญชี Merchant</p>}
       {!passwordMode&&error&&<p className="login-error" role="alert">{error}</p>}
@@ -151,6 +153,7 @@ export function OwnerPackageAuth({ go, packageName }: { go: Go; packageName: str
 
 export function OwnerRegistration({ go, packageName }: { go: Go; packageName: string }) {
   const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -158,11 +161,11 @@ export function OwnerRegistration({ go, packageName }: { go: Go; packageName: st
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); if (busy) return;
     setBusy(true); setError("");
-    try { await authenticate(email, password, name); go("owner-information"); }
+    try { await authenticate(email, password, name, "merchant", nameEn); go("owner-information"); }
     catch (error) { setError(error instanceof Error ? error.message : "สมัครไม่สำเร็จ"); }
     finally { setBusy(false); }
   };
-  return <FlowPage kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle={`แพ็กเกจที่สนใจ: ${packageName}`} onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัท</span><input required value={name} onChange={e => setName(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
+  return <FlowPage kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle={`แพ็กเกจที่สนใจ: ${packageName}`} onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัทภาษาไทย</span><input required value={name} onChange={e => setName(e.target.value)} /></label><label><span>ชื่อ Merchant / บริษัทภาษาอังกฤษ</span><input required value={nameEn} onChange={e => setNameEn(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
 }
 
 export function OwnerOnboardingVilla({ go, onVillaAdded }: { go: Go; onVillaAdded: (name: string) => void }) {
@@ -210,7 +213,7 @@ function FlowPage({ kicker, title, subtitle, onBack, children }: { kicker: strin
 
 const ownerNav: [string, Page][] = [
   ["Dashboard", "owner-dashboard"], ["Villas", "owner-villas"], ["Add Villa", "owner-add-villa"],
-  ["QR และการต่ออายุ", "owner-villa-detail"], ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["Package", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
+  ["QR และการต่ออายุ", "owner-villa-detail"], ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["แพ็กเกจและสิทธิ์", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
 ];
 const adminNav: [string, Page][] = [
   ["CMS เว็บไซต์", "admin-cms"], ["Dashboard", "admin-dashboard"], ["Villa รออนุมัติ", "admin-pending-villas"], ["Villa ที่อนุมัติแล้ว", "admin-approved-villas"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
@@ -242,7 +245,7 @@ export function PortalShell({ role, page, go, children }: { role: "Merchant" | "
         <button className="portal-brand" onClick={() => navigate("home")}>Villa<span>Check</span></button>
         <button className="portal-menu-toggle" aria-expanded={menuOpen} aria-controls="portal-menu" onClick={() => setMenuOpen(value => !value)}>{menuOpen ? "ปิดเมนู ✕" : "เมนู ☰"}</button>
       </div>
-      <small>{role === "Merchant" ? "MERCHANT" : role.toUpperCase()} PORTAL</small>
+      <small>{role === "Merchant" ? "MEMBER ROOM" : role.toUpperCase()} PORTAL</small>
       <nav id="portal-menu" aria-label={`เมนู ${role === "Merchant" ? "Merchant" : role}`}>{nav.map(([label, target]) => <button key={`${target}:${label}`} aria-current={page === target ? "page" : undefined} className={page === target ? "active" : ""} onClick={() => navigate(target)}>{label}</button>)}</nav>
       <button className="portal-logout" onClick={() => void signOut()}>ออกจากระบบ</button>{logoutError && <p role="alert">{logoutError}</p>}
     </aside>

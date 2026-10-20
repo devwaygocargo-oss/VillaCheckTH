@@ -37,13 +37,14 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
   await request(`/admin/qr/${villa.id}`,{status:'DEFAULT'},a);assert.equal((await request('/public/qr/'+villa.qr)).value.qrStatus,'ACTIVE');assert.equal((await db.prepare('SELECT qr FROM villas WHERE id=?').get(villa.id)).qr,villa.qr)
  })
  await t.test('paid demo creates expiring QR, synthetic slip needs Admin and mail never sends',async()=>{
-  const v=await db.prepare("SELECT * FROM villas WHERE name='Payment Workflow Demo Villa'").get();assert.equal((await request(`/villas/${v.id}/review`,{status:'approved',verificationLevel:'VERIFIED'},a)).status,200)
-  let state=(await request('/state',undefined,payer)).value;const invoice=state.villas[0].invoices[0];assert.ok(invoice.paymentQr);assert.equal(invoice.paymentQr.kind,'DEMO_PAYMENT');assert.equal(state.villas[0].qr,'')
+  const v=await db.prepare("SELECT * FROM villas WHERE name='Payment Workflow Demo Villa'").get();assert.equal((await request(`/villas/${v.id}/review`,{status:'approved',verificationLevel:'BASIC_CHECKED'},a)).status,200)
+  assert.equal((await request('/merchant/villa-package',{villaId:v.id,packageId:'starter'},payer)).status,200)
+  let state=(await request('/state',undefined,payer)).value;const invoice=state.villas[0].invoices[0];assert.ok(invoice.paymentQr);assert.equal(invoice.paymentQr.kind,'DEMO_PAYMENT');assert.ok(state.villas[0].qr)
   const slip=await request(`/payments/${invoice.id}/demo-slip`,{},payer);assert.equal(slip.status,200);assert.match(slip.value.reference,/^DEMO-/);assert.match(Buffer.from(slip.value.document.data.split(',')[1],'base64').toString(),/NO REAL MONEY/)
   assert.equal((await request(`/payments/${invoice.id}/demo-slip`,{},m)).status,404)
-  assert.equal((await request(`/invoices/${invoice.id}/proof`,slip.value,payer)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].invoices[0].paymentStatus,'PENDING_REVIEW');assert.equal(state.villas[0].qr,'')
+  assert.equal((await request(`/invoices/${invoice.id}/proof`,slip.value,payer)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].invoices[0].paymentStatus,'PENDING_REVIEW');assert.ok(state.villas[0].qr)
   assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},payer)).status,403)
-  assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},a)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.subscription.status,'ACTIVE');assert.equal(state.villas[0].qrStatus,'ACTIVE')
+  assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},a)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].qrStatus,'ACTIVE');assert.equal(state.villas[0].qrStatus,'ACTIVE')
   await app.runMail();assert.equal(sends,0);assert.equal((await db.prepare('SELECT status FROM mails WHERE invoice_id=?').get(invoice.id)).status,'demo')
   await request('/admin/settings',{paymentVerificationMode:'MANUAL',demoMode:false},a);assert.equal((await request(`/payments/${invoice.id}/demo-slip`,{},payer)).status,403);await request('/admin/settings',{paymentVerificationMode:'MANUAL',demoMode:true},a)
  })
@@ -53,7 +54,7 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
  })
  await t.test('Merchant photo uploads persist, remain separate from private documents, and validate ownership/type',async()=>{
   const image={name:'villa.jpg',type:'image/jpeg',data:'data:image/jpeg;base64,'+readFileSync('public/demo/villas/villa-1.jpg').toString('base64')};
-  const input={name:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photo:image};
+  const input={name:villa.name,nameEn:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photo:image};
   assert.equal((await request(`/merchant/villas/${villa.id}`,input,outsider)).status,404);
   assert.equal((await request(`/merchant/villas/${villa.id}`,{...input,photo:{...image,data:'data:image/jpeg;base64,aGVsbG8='}},m)).status,400);
   assert.equal((await request(`/merchant/villas/${villa.id}`,input,m)).status,200);
@@ -63,34 +64,25 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
  })
  await t.test('Merchant edits require fresh document review but preserve QR identity',async()=>{
   assert.equal((await request(`/merchant/villas/${villa.id}`,{name:'Bad'},outsider)).status,404)
-  assert.equal((await request(`/merchant/villas/${villa.id}`,{name:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photoUrl:villa.photo_url},m)).status,200)
+  assert.equal((await request(`/merchant/villas/${villa.id}`,{name:villa.name,nameEn:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photoUrl:villa.photo_url},m)).status,200)
   const result=(await request('/public/qr/'+villa.qr)).value;assert.equal(result.valid,false);assert.equal(result.qrStatus,'PENDING');assert.equal(result.premiumBanner,false);assert.equal((await db.prepare('SELECT qr FROM villas WHERE id=?').get(villa.id)).qr,villa.qr);assert.equal((await request(`/villas/${villa.id}/review`,{status:'changes',reason:'Line one\nLine two'},a)).status,200)
  })
  await t.test('free trial bypasses invoice and quarterly catalog changes actually affect payment period',async()=>{
-  const v=await db.prepare("SELECT * FROM villas WHERE name='Free Trial Demo Villa'").get();await request(`/villas/${v.id}/review`,{status:'approved',verificationLevel:'VERIFIED'},a);const state=(await request('/state',undefined,trial)).value;assert.equal(state.subscription.status,'ACTIVE');assert.equal(state.villas[0].invoices.length,0)
-  const plan=await getPlan(db,'starter');assert.equal((await request('/admin/packages/starter',{...plan,billingCycle:'QUARTERLY'},a)).status,200);assert.equal((await request('/packages')).value.packages.find(p=>p.id==='starter').billingCycle,'QUARTERLY')
+  const v=await db.prepare("SELECT * FROM villas WHERE name='Free Trial Demo Villa'").get();await request(`/villas/${v.id}/review`,{status:'approved',verificationLevel:'BASIC_CHECKED'},a);const state=(await request('/state',undefined,trial)).value;assert.equal(state.villas[0].qrStatus,'ACTIVE');assert.equal(state.villas[0].invoices.length,0)
+  const plan=await getPlan(db,'starter');assert.equal((await request('/admin/packages/starter',{...plan,billingCycle:'QUARTERLY'},a)).status,200);assert.equal((await request('/packages',undefined,m)).value.packages.find(p=>p.id==='starter').billingCycle,'QUARTERLY')
   const p=(await request('/state',undefined,payer)).value.villas[0];await request(`/villas/${p.id}/renew`,{},payer);const invoice=(await request('/state',undefined,payer)).value.villas[0].invoices.find(i=>i.status!=='paid');assert.equal(invoice.months,3)
  })
- await t.test('full capacity requires a paid upgrade and highest tier rejects further upgrade',async()=>{
-  await request('/subscription',{packageId:'starter'},outsider);
-  const input={name:'Upgrade Dummy Villa',province:'ชลบุรี',merchant:'Dummy Upgrade',email:'other-merchant@test.com',document:{name:'ownership.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from('%PDF-1.4 dummy').toString('base64')}};
-  assert.equal((await request('/villas',input,outsider)).status,201);
-  assert.equal((await request('/villas',{...input,name:'Over capacity'},outsider)).status,409);
-  let state=(await request('/state',undefined,outsider)).value;const v=state.villas[0];await request(`/villas/${v.id}/review`,{status:'approved'},a);
-  const pay=async()=>{const invoice=(await request('/state',undefined,outsider)).value.villas[0].invoices.find(i=>i.status!=='paid');const slip=(await request(`/payments/${invoice.id}/demo-slip`,{},outsider)).value;assert.equal((await request(`/invoices/${invoice.id}/proof`,slip,outsider)).status,200);assert.equal((await request(`/invoices/${invoice.id}/confirm`,{},a)).status,200)};
-  await pay();const qr=(await request('/state',undefined,outsider)).value.villas[0].qr;
-  assert.equal((await request('/subscription/upgrade',{packageId:'pro'},outsider)).status,200);
-  assert.equal((await request('/state',undefined,outsider)).value.subscription.packageId,'starter');
-  await pay();
-  assert.equal((await request('/state',undefined,outsider)).value.subscription.packageId,'pro');
-  assert.equal((await request('/subscription/upgrade',{packageId:'starter'},outsider)).status,409);
-  assert.equal((await request('/subscription/upgrade',{packageId:'plus'},outsider)).status,200);
-  assert.equal((await request('/state',undefined,outsider)).value.subscription.capacity,1);
-  assert.equal((await request('/villas',{...input,name:'Before upgrade payment'},outsider)).status,409);
+ await t.test('adding a second free property never changes a paid property; account upgrade routes are blocked',async()=>{
+  const input={name:'บ้านทดสอบ',nameEn:'Upgrade Dummy Villa',province:'ชลบุรี',merchant:'Dummy Upgrade',email:'other-merchant@test.com',document:{name:'ownership.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from('%PDF-1.4 dummy').toString('base64')}};
+  const first=await request('/villas',input,outsider);assert.equal(first.status,201);const id=first.value.createdId;
+  assert.equal((await request('/villas',{...input,name:'Second free property'},outsider)).status,201);
+  assert.equal((await request(`/villas/${id}/review`,{status:'approved'},a)).status,200);
+  assert.equal((await request('/merchant/villa-package',{villaId:id,packageId:'pro'},outsider)).status,200);
+  let state=(await request('/state',undefined,outsider)).value,invoice=state.villas.find(v=>v.id===id).invoices[0],qr=state.villas.find(v=>v.id===id).qr;
+  const slip=(await request(`/payments/${invoice.id}/demo-slip`,{},outsider)).value;
+  assert.equal((await request(`/invoices/${invoice.id}/proof`,slip,outsider)).status,200);assert.equal((await request(`/invoices/${invoice.id}/confirm`,{},a)).status,200);
+  state=(await request('/state',undefined,outsider)).value;assert.equal(state.villas.find(v=>v.id===id).packageId,'pro');assert.equal(state.villas.find(v=>v.id===id).qr,qr);assert.equal(state.villas.find(v=>v.id!==id).trialUnlimited,true);
   assert.equal((await request('/subscription/upgrade',{packageId:'premium'},outsider)).status,409);
-  await pay();state=(await request('/state',undefined,outsider)).value;assert.equal(state.subscription.capacity,2);assert.equal(state.villas[0].qr,qr);
-  assert.equal((await request('/villas',{...input,name:'After upgrade payment'},outsider)).status,201);
-  assert.equal((await request('/subscription/upgrade',{packageId:'premium'},m)).status,409);
  })
 
 })

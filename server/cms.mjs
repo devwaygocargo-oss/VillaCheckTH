@@ -151,6 +151,16 @@ function normalizeCms(data) {
   )
   if (sections.length !== 9) fail(400, "Section หน้าแรกไม่ครบ ใช้การซ่อนแทนการลบ")
   const home = {
+    banners: unique(list(data.home.banners || [], 40).map(b => {
+      if (typeof b.visible !== "boolean" || typeof b.sponsored !== "boolean") fail(400,"สถานะแบนเนอร์ไม่ถูกต้อง")
+      if(b.sponsored) fail(400,"กรุณาจัดการโฆษณาที่พักในระบบโฆษณาเพื่อให้ตรวจสิทธิ์แพ็กเกจ")
+      const startsAt=string(b.startsAt,40),endsAt=string(b.endsAt,40)
+      if ([startsAt,endsAt].some(d=>d&&!Number.isFinite(Date.parse(d))) || (startsAt&&endsAt&&Date.parse(endsAt)<=Date.parse(startsAt))) fail(400,"ช่วงเวลาแบนเนอร์ไม่ถูกต้อง")
+      const image=cmsUrl(b.image,true)
+      if(!image || !b.title?.trim()) fail(400,"แบนเนอร์ต้องมีรูปและชื่อ")
+      return {id:slug(b.id),image,mobileImage:cmsUrl(b.mobileImage,true),title:string(b.title,300),description:string(b.description,4000),label:string(b.label,100),href:cmsUrl(b.href),visible:b.visible,sponsored:b.sponsored,startsAt,endsAt}
+    }),"id"),
+    slideIntervalMs: data.home.slideIntervalMs ?? 5200,
     eyebrow: string(data.home.eyebrow, 300),
     title: string(data.home.title, 300),
     description: string(data.home.description),
@@ -158,6 +168,7 @@ function normalizeCms(data) {
     blocks: blocks(data.home.blocks),
     sections,
   }
+  if (!Number.isInteger(home.slideIntervalMs) || home.slideIntervalMs < 2000 || home.slideIntervalMs > 60000) fail(400,"ช่วงเวลาเลื่อนต้องอยู่ระหว่าง 2–60 วินาที")
   if (!home.title.trim() || !home.images.length || home.images.some((x) => !x))
     fail(400, "หน้าแรกต้องมีหัวข้อและรูปอย่างน้อยหนึ่งรูป")
   const pages = unique(
@@ -248,6 +259,7 @@ function mediaReferences(content) {
     content.site.logo,
     content.site.paymentQrImage || "",
     ...content.home.images,
+    ...(content.home.banners || []).flatMap(b=>[b.image,b.mobileImage]),
     ...content.home.blocks.map((x) => x.image),
     ...content.pages.flatMap((p) => p.blocks.map((x) => x.image)),
     ...content.articles.map((x) => x.image),
@@ -324,6 +336,8 @@ export async function adminCms(db, user, req, path, readBody) {
         draft = await read(db, "cms_draft", published),
         history = await read(db, "cms_history", [])
       const url = `/api/public/cms-media/${data.id}`
+      const ads=await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'advertisement:%'").all()
+      if(ads.some(row=>{const ad=JSON.parse(row.value);return ad.image===url||ad.mobileImage===url}))fail(409,"รูปนี้อ้างอิงในแบนเนอร์โฆษณา จึงยังลบไม่ได้")
       if (await db.prepare("SELECT key FROM system_settings WHERE key LIKE 'invoice_bank_qr:%' AND value=?").get(JSON.stringify(url)))
         fail(409, "QR นี้อ้างอิงในใบแจ้งชำระ จึงยังลบไม่ได้")
       if (

@@ -25,6 +25,12 @@ export type MerchantVilla = {
   reviewRequest?: VillaReviewRequest
   id: string
   name: string
+  createdAt: string
+  trialUnlimited: boolean
+  nameEn: string
+  photoUploadedAt: string | null
+  photoTakenAt: string | null
+  photoReviewedAt: string | null
   photoUrl: string
   guestCapacity: number | null
   province: string
@@ -65,6 +71,7 @@ export type Account = {
   role: "merchant" | "admin" | "user"
 }
 export type Store = {
+  packageModel?: "PER_VILLA"
   subscription: { packageId: string; name: string; amount: number; billingCycle: string; billingMonths: number; capacity: number; used: number; expires: string | null; active: boolean; status: string; renewalDate: string | null; payments: number } | null
   villas: MerchantVilla[]
   mails: Mail[]

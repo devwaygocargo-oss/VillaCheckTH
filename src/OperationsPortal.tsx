@@ -1,3 +1,4 @@
+import Reviews from "./Reviews";
 import { useEffect, useState } from "react";
 import { api, currentAccount } from "./api";
 import { PortalShell, type Page } from "./prototype";
@@ -39,5 +40,5 @@ export default function OperationsPortal({page,go,item=""}:{page:Page;go:(p:Page
  page==="admin-qr"?<><p>{r.merchant} · {r.verificationLevel} · {r.qr||"รอเปิดใช้ QR"}</p>{r.qr&&<button onClick={()=>go("admin-verify",r.qr)}>เปิดหน้าตรวจสอบ</button>}<div className="button-row">{[["SUSPENDED","ระงับ QR"],["INACTIVE","ปิด QR"],["DEFAULT","ใช้สถานะตามเอกสาร/Subscription"]].map(([status,label])=><button disabled={busy} key={status} onClick={()=>void save(`/admin/qr/${r.id}`,{status})}>{label}</button>)}</div></>:
  <>{page==="admin-checks"&&<p>User: {r.user_name}</p>}<p>{r.result||r.detail}</p>{r.public_note&&<p>คำตอบ: {r.public_note}</p>}{page==="user-checks"&&<button onClick={()=>go("user-check-detail",r.reference)}>รายละเอียด</button>}{page==="user-reports"&&<button onClick={()=>go("user-report-detail",r.reference)}>รายละเอียด</button>}{page==="admin-reports"&&<><p>ผู้แจ้ง: {r.reporter||"ไม่ระบุ"} · ติดต่อ: {r.contact||"ไม่ระบุ"}</p><button onClick={()=>{setSelected(r.id);setEdit({status:r.status||"NEW",adminNote:r.admin_note||"",publicNote:r.public_note||""})}}>ตรวจสอบ/ตอบกลับ</button>{selected===r.id&&<div className="portal-form"><select value={edit.status} onChange={e=>setEdit({...edit,status:e.target.value})}>{["NEW","UNDER_REVIEW","RESOLVED","REJECTED"].map(s=><option key={s}>{s}</option>)}</select><label>บันทึกภายใน Admin<textarea value={edit.adminNote} onChange={e=>setEdit({...edit,adminNote:e.target.value})}/></label><label>คำตอบที่ผู้แจ้งและ Merchant เห็น<textarea value={edit.publicNote} onChange={e=>setEdit({...edit,publicNote:e.target.value})}/></label><button disabled={busy} onClick={()=>void save(`/admin/reports/${r.id}`,edit)}>บันทึก</button></div>}</>}</>}
  </article>)}{!visible.length&&<p>ยังไม่มีรายการ</p>}</>}
- </>}</PortalShell>;
+ {page==="user-dashboard"&&<Reviews mode="user"/>}</>}</PortalShell>;
 }

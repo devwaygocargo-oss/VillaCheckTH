@@ -20,16 +20,22 @@ export async function seedCatalog(db) {
         plan.amount,
         "THB",
         "MONTHLY",
-        id === "basic" ? 3 : 0,
+        0,
         plan.capacity,
         JSON.stringify(packageContent[id]?.features || ["1 Villa = 1 QR", `รองรับ ${plan.capacity} Villa`]),
-        id === "premium" ? "PREMIUM_VERIFIED" : "VERIFIED",
+        id === "basic" ? "BASIC_CHECKED" : id === "premium" ? "PREMIUM_VERIFIED" : "VERIFIED",
         id === "premium" ? 1 : 0,
         1,
         Object.keys(packages).indexOf(id),
         new Date().toISOString(),
         new Date().toISOString(),
       )
+  }
+  if(!(await db.prepare("SELECT value FROM system_settings WHERE key='package_model_v2'").get())) {
+    await db.prepare("UPDATE package_catalog SET active=0").run()
+    for(const [id,plan]of Object.entries(packages))await db.prepare("UPDATE package_catalog SET name=?,amount=?,capacity=1,trial_months=0,billing_cycle='MONTHLY',description=?,features=?,active=1,max_level=?,banner=?,sort_order=? WHERE id=?").run(plan.name,plan.amount,packageContent[id].description,JSON.stringify(packageContent[id].features),id==='basic'?'BASIC_CHECKED':id==='premium'?'PREMIUM_VERIFIED':'VERIFIED',id==='premium'?1:0,Object.keys(packages).indexOf(id),id)
+    await db.prepare("UPDATE villas SET payments=0,expires=NULL WHERE package_id='basic' AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.status='paid' AND i.amount>0 AND (i.villa_id=villas.id OR i.subscription_owner=villas.owner_id))").run()
+    await db.prepare("INSERT INTO system_settings(key,value) VALUES ('package_model_v2','true')").run()
   }
 }
 export async function getPlan(db, id) {
@@ -47,6 +53,7 @@ export async function getPlan(db, id) {
     showPremiumBanner: Boolean(row.banner),
     isActive: Boolean(row.active),
     billingCycle: row.billing_cycle,
+    billingScope: "VILLA", taxIncluded: true,
   }
 }
 export async function listPlans(db, all = false) {
@@ -69,7 +76,8 @@ export function qrState(villa, subscription, now = Date.now()) {
     return "SUSPENDED"
   if (subscription?.lifecycle === "CANCELLED") return "INACTIVE"
   if (villa.status !== "approved" || !villa.qr) return "PENDING"
-  return new Date(subscription?.expires || villa.expires).getTime() > now
+  if (villa.payments === 0) return "ACTIVE"
+  return new Date(villa.expires).getTime() > now
     ? "ACTIVE"
     : "EXPIRED"
 }
@@ -77,7 +85,7 @@ export async function trustDto(db, villa) {
   const sub = await db
     .prepare("SELECT * FROM subscriptions WHERE owner_id=?")
     .get(villa.owner_id)
-  const plan = await getPlan(db, sub?.package_id || villa.package_id)
+  const plan = await getPlan(db, villa.payments === 0 ? "basic" : villa.package_id)
   const override = await db.prepare("SELECT value FROM system_settings WHERE key=?").get("villa_qr:"+villa.id)
   const qrStatus = ["SUSPENDED","INACTIVE"].includes(override?.value) ? override.value : qrState(villa, sub)
   const actual = qrStatus === "ACTIVE" ? villa.verification_level : "REGISTERED"

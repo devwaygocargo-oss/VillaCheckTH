@@ -1,8 +1,9 @@
-// Copy from the public VillaCheck reference pricing page; catalog remains Admin-editable.
-export const packageContent = {
- basic: {description:'เริ่มต้นสร้างความน่าเชื่อถือ',features:['Trust Profile พื้นฐาน','QR Verification','Verified Badge','อัปเดตข้อมูล 1 ครั้ง']},
- starter: {description:'เหมาะสำหรับที่พักเริ่มต้น',features:['ทุกอย่างใน Basic','อัปเดตข้อมูลรายเดือน','สถิติการเข้าชมพื้นฐาน','QR ดาวน์โหลดคุณภาพสูง']},
- pro: {description:'เพิ่มความมั่นใจให้ลูกค้า',features:['ทุกอย่างใน Starter','ระดับ Pro Verification','Analytics แบบละเอียด','แสดงผลเด่นใน Directory','ตรวจสอบทุก 90 วัน']},
- plus: {description:'สำหรับธุรกิจที่กำลังเติบโต',features:['ทุกอย่างใน Pro','รองรับที่พัก 2 แห่ง','รายงานประจำเดือน','Priority Support','Trust Score Insights']},
- premium: {description:'สำหรับเครือที่พักมืออาชีพ',features:['รองรับสูงสุด 10 แห่ง','Premium Verification','Portfolio Dashboard','Dedicated Account Manager','Custom Trust Report']},
+const basic=['QR ประจำที่พัก','อัปโหลดรูปภาพ','ตรวจเอกสารและผู้มีสิทธิ์ดูแลเบื้องต้น','ลูกค้าเขียนรีวิวได้','Basic Verify แสดงหลังทีมอนุมัติ'];
+const online=[...basic,'อัปโหลดวิดีโอ','ตรวจสอบผู้มีสิทธิ์ดูแลผ่านช่องทางออนไลน์'];
+const social=[...online,'แบนเนอร์โฆษณาในหน้ารายละเอียดที่พัก','ภาพเดี่ยว 1 โพสต์ต่อเดือนบนทุก Social ของ VillaCheck','ทีมตรวจสอบรีวิวตามกติกาก่อนเผยแพร่','รวมงบโฆษณาบนทุก Social ของ VillaCheck'];
+export const packageContent={
+ basic:{description:'Basic Verify · ใช้สิทธิ์ฟรีไม่มีกำหนดจนกว่าจะเลือกซื้อ',features:basic},
+ starter:{description:'ตรวจสอบออนไลน์และสื่อวิดีโอ',features:online},
+ pro:{description:'โฆษณาที่พักและคอนเทนต์รายเดือน',features:social},
+ premium:{description:'สิทธิ์ทั้งหมด พร้อมแบนเนอร์หน้าแรกและการตรวจบ้านตรงปก',features:[...social,'แบนเนอร์ขนาดใหญ่หน้าแรก','วิดีโอ 1 ชิ้นต่อเดือนบนทุก Social ของ VillaCheck','รับการตรวจบ้านตรงปกตามเกณฑ์ที่ทีมอนุมัติ']},
 };

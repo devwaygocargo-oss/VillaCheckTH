@@ -34,8 +34,8 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const owner=index>=6?regional:merchant
    const id=uuid(name),doc=uuid(`${name}-document`),expired=name.startsWith('Expired')
    await db.prepare("INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING").run(doc,owner.id,'dummy-ownership.pdf','application/pdf',dummyPdf())
-   await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level) VALUES (?,?,?,?,?,?,'premium',?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING")
-    .run(id,owner.id,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,status,status==='approved'?`VC-DEMO-${id}`:null,expired?'2000-01-01T00:00:00.000Z':status==='approved'?(ownerExpiry.get(owner.id)||expires):null,now,'0800000000','ธนาคารตัวอย่าง — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000',status==='approved'?'VERIFIED':'REGISTERED')
+   await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level,payments) VALUES (?,?,?,?,?,?,'premium',?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING")
+    .run(id,owner.id,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,status,status==='approved'?`VC-DEMO-${id}`:null,expired?'2000-01-01T00:00:00.000Z':status==='approved'?(ownerExpiry.get(owner.id)||expires):null,now,'0800000000','ธนาคารตัวอย่าง — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000',status==='approved'?'VERIFIED':'REGISTERED',status==='approved'?1:0)
    await db.prepare('UPDATE villas SET guest_capacity=? WHERE id=? AND guest_capacity IS NULL AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)').run(index % 2 ? 8 : 12,id,'villa_review:'+id)
    await db.prepare("UPDATE villas SET photo_url=? WHERE id=? AND (photo_url='' OR photo_url=?) AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)").run(`/demo/villas/villa-${imageIndex??(index>=6?index-2:index%3+1)}.jpg`,id,`/demo/villas/villa-${index%3+1}.jpg`,'villa_review:'+id)
   }
@@ -50,7 +50,7 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const owner=await add(email,name+' Merchant','merchant'),id=uuid(name),doc=uuid(name+'-document')
    await db.prepare("INSERT INTO subscriptions(owner_id,package_id,payments,created,lifecycle) VALUES (?,?,0,?,'PENDING_RENEWAL') ON CONFLICT(owner_id) DO NOTHING").run(owner.id,plan,now)
    await db.prepare("INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING").run(doc,owner.id,'dummy-ownership.pdf','application/pdf',dummyPdf())
-   await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,created,photo_url,phone,bank_name,account_name,account_number,verification_level) VALUES (?,?,?,'ชลบุรี',?,?,?,?, 'pending',?, '/demo/villas/villa-1.jpg','0800000000','DEMO BANK','DEMO ACCOUNT','0000000000','REGISTERED') ON CONFLICT(id) DO NOTHING").run(id,owner.id,name,'DEMO business - no real bookings',email,plan,doc,now)
+   await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,created,photo_url,phone,bank_name,account_name,account_number,verification_level,payments) VALUES (?,?,?,'ชลบุรี',?,?,?,?, 'pending',?, '/demo/villas/villa-1.jpg','0800000000','DEMO BANK','DEMO ACCOUNT','0000000000','REGISTERED',0) ON CONFLICT(id) DO NOTHING").run(id,owner.id,name,'DEMO business - no real bookings',email,plan,doc,now)
   }
   await synchronizeDemoProfilesAndDocuments(db,[...samples.map(([name])=>name),'Payment Workflow Demo Villa','Free Trial Demo Villa'],merchant)
   const sampleId=uuid('Sea Sky Demo Villa')

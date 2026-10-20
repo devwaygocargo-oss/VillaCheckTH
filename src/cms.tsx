@@ -52,6 +52,7 @@ export type CmsHomeSection = {
   title: string
   description: string
 }
+export type HomeBannerItem = { id:string; image:string; mobileImage:string; title:string; description:string; href:string; label:string; visible:boolean; sponsored:boolean; startsAt:string; endsAt:string };
 export type CmsContent = {
   schemaVersion: number
   business: {emailOtpSubject:string;emailOtpBody:string;smsOtpBody:string;emailOtpTemplateId:string;facebookLoginEnabled:boolean;monthlyInitialMonths:number;monthlyRenewalMonths:number;paymentEmailSubject:string;paymentEmailIntro:string}
@@ -70,6 +71,8 @@ export type CmsContent = {
     accent: string
   }
   home: {
+    banners?: HomeBannerItem[]
+    slideIntervalMs?: number
     eyebrow: string
     title: string
     description: string
@@ -312,7 +315,7 @@ export function CmsPublicPage({
       <div className="page-hero container">
         <span className="kicker">{info?.kicker}</span>
         <h1>{info?.title || "ไม่พบหน้าเว็บ"}</h1>
-        <p>{info?.description}</p>
+        <p>{page === "contact" ? content.site.hours : info?.description}</p>
       </div>
       <div className="container info-body">
         <p className="cms-prose">{info?.body}</p>

@@ -11,7 +11,16 @@ export class AdminAuthGuard implements CanActivate {
   catch(error:any){throw error instanceof HttpException?error:new HttpException(error.status<500?error.message:"Backend ไม่พร้อม",error.status||503);}
  }
 }
+@Injectable()
+export class MerchantAuthGuard implements CanActivate {
+ constructor(private readonly domain:DomainService){}
+ async canActivate(context:ExecutionContext){
+  try{const user=await this.domain.authenticate(context.switchToHttp().getRequest());if(!["merchant","admin"].includes(user.role))throw new HttpException("แพ็กเกจสำหรับ Merchant ใน Member Room",403);return true;}
+  catch(error:any){throw error instanceof HttpException?error:new HttpException(error.status<500?error.message:"Backend ไม่พร้อม",error.status||503);}
+ }
+}
 @Controller("api")
+@UseGuards(MerchantAuthGuard)
 class PackageController {
  constructor(private readonly packages:PackageService){}
  @Get("packages") list(){return this.packages.listActive();}
@@ -27,5 +36,5 @@ class ApiController {
  constructor(private readonly domain:DomainService){}
  @All("{*path}") handle(@Req()req:Request,@Res()res:Response){return this.domain.handle(req,res);}
 }
-@Module({controllers:[PackageController,AdminController,ApiController],providers:[PrismaDatabaseService,DomainService,AdminAuthGuard,PackageService]})
+@Module({controllers:[PackageController,AdminController,ApiController],providers:[PrismaDatabaseService,DomainService,AdminAuthGuard,MerchantAuthGuard,PackageService]})
 export class AppModule {}

@@ -13,7 +13,9 @@ test("Next production serves React and routes API through NestJS/Prisma",{skip:!
  assert.ok(ready,"Next production started");assert.match(await (await fetch(base)).text(),/VillaCheck/);
  const image=await fetch(base+'/demo/villas/villa-1.jpg');assert.equal(image.status,200);assert.match(image.headers.get('content-type'),/image\/jpeg/);
  const health=await fetch(base+"/api/health");assert.equal(health.status,200);assert.deepEqual(await health.json(),{ok:true});
- const packages=await fetch(base+"/api/packages");assert.equal(packages.status,200);assert.equal((await packages.json()).packages.length,5);
+ const packages=await fetch(base+"/api/packages");assert.equal(packages.status,401);
+ const admin=await fetch(base+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json",Origin:"https://villacheck.test"},body:JSON.stringify({email:"admin@next.test",password:"AdminPassword123"})});assert.equal(admin.status,200);const adminCookie=admin.headers.get('set-cookie').split(';')[0];
+ const memberPackages=await fetch(base+"/api/packages",{headers:{Cookie:adminCookie}});assert.equal(memberPackages.status,200);assert.equal((await memberPackages.json()).packages.length,4);
  const r=await fetch(base+"/api/auth/register-user",{method:"POST",headers:{"Content-Type":"application/json",Origin:"https://villacheck.test"},body:JSON.stringify({name:"Customer",email:"customer@next.test",password:"CustomerPassword123"})});assert.equal(r.status,200);const session=await r.json();assert.equal(session.user.role,"user");const cookie=r.headers.get('set-cookie').split(';')[0];assert.match(r.headers.get('set-cookie'),/Secure/);
  const blocked=await fetch(base+"/api/admin/users",{headers:{Cookie:cookie}});assert.equal(blocked.status,403);
 })

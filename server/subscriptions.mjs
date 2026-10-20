@@ -66,6 +66,10 @@ export async function activateSubscription(
   }
 }
 export async function activateVilla(db, villa) {
+  if (villa.payments === 0) {
+    await db.prepare("UPDATE villas SET qr=?,expires=NULL WHERE id=?").run(villa.qr || `VC-${randomUUID()}`,villa.id);
+    return true;
+  }
   const sub = await getSubscription(db, villa.owner_id)
   if (["SUSPENDED", "CANCELLED"].includes(sub?.lifecycle)) return false
   if (!sub?.expires || new Date(sub.expires) <= new Date()) return false

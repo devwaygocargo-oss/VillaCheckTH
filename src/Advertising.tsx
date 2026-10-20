@@ -1,0 +1,410 @@
+import { useEffect, useState } from "react"
+import { api } from "./api"
+import type { MerchantVilla } from "./merchantStore"
+import type { HomeBannerItem } from "./cms"
+type Ad = HomeBannerItem & {
+  villaId: string
+  placement: string
+  approved: boolean
+  order: number
+}
+type Job = {
+  id: string
+  villaId: string
+  villaName?: string
+  month: string
+  type: string
+  status: string
+  channel: string
+  publishedAt: string
+  postUrl: string
+  links?: Record<string, string>
+  notes: string
+}
+const blankAd: Ad = {
+  id: "",
+  villaId: "",
+  placement: "detail",
+  approved: false,
+  order: 0,
+  image: "",
+  mobileImage: "",
+  title: "",
+  description: "",
+  href: "",
+  label: "ดูที่พัก",
+  visible: false,
+  sponsored: true,
+  startsAt: "",
+  endsAt: "",
+}
+const blankJob: Job = {
+  id: "",
+  villaId: "",
+  month: new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 7),
+  type: "image",
+  status: "pending",
+  channel: "",
+  publishedAt: "",
+  postUrl: "",
+  notes: "",
+}
+export default function Advertising({
+  merchant = false,
+}: {
+  merchant?: boolean
+}) {
+  const [villas, setVillas] = useState<MerchantVilla[]>([]),
+    [ads, setAds] = useState<Ad[]>([]),
+    [jobs, setJobs] = useState<Job[]>([]),
+    [ad, setAd] = useState<Ad>(blankAd),
+    [job, setJob] = useState<Job>(blankJob),
+    [error, setError] = useState(""),
+    [message, setMessage] = useState(""),
+    [busy, setBusy] = useState(false)
+  const load = async () => {
+    if (!merchant) {
+      setVillas((await api<{ villas: MerchantVilla[] }>("/state")).villas)
+      setAds(
+        (await api<{ advertisements: Ad[] }>("/admin/advertisements"))
+          .advertisements,
+      )
+    }
+    setJobs(
+      (
+        await api<{ jobs: Job[] }>(
+          merchant ? "/merchant/social-jobs" : "/admin/social-jobs",
+        )
+      ).jobs,
+    )
+  }
+  useEffect(() => {
+    void load().catch((e) => setError(e.message))
+  }, [merchant])
+  const save = async (path: string, value: unknown) => {
+    setBusy(true)
+    setError("")
+    try {
+      await api(path, value)
+      await load()
+      setMessage("บันทึกแล้ว")
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ")
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <section className="merchant-panel">
+      <h2>โฆษณาและคอนเทนต์ Social</h2>
+      <p>
+        2,990: ภาพเดี่ยว 1 โพสต์ / เดือน บนทุก Social ของ VillaCheck · 4,990: ภาพเดี่ยว 1 โพสต์ + วิดีโอ 1
+        ชิ้น / เดือน รวมงบโฆษณาและเผยแพร่บนทุก Social ของ VillaCheck สิทธิ์นับรวมทุกช่องทาง ไม่เพิ่มชิ้นงานตามจำนวนช่องทาง
+      </p>
+      {error && <p role="alert">{error}</p>}
+      {message && <p role="status">{message}</p>}
+      {!merchant && (
+        <>
+          <h3>ตารางแบนเนอร์โฆษณา</h3>
+          <p>
+            หน้าแรกหมุนเวียนทุกรายการที่มีสิทธิ์ตามลำดับ
+            หน้ารายละเอียดสุ่มหนึ่งรายการเมื่อเข้าหน้าและคงไว้ระหว่างอ่าน
+          </p>
+          <div className="button-row">
+            <button onClick={() => setAd({ ...blankAd })}>เพิ่มโฆษณา</button>
+            {ads.map((a) => (
+              <button key={a.id} onClick={() => setAd(a)}>
+                {a.title} · {a.placement}
+              </button>
+            ))}
+          </div>
+          <form
+            className="portal-form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void save("/admin/advertisements", ad)
+            }}
+          >
+            <label>
+              ที่พัก
+              <select
+                required
+                value={ad.villaId}
+                onChange={(e) => setAd({ ...ad, villaId: e.target.value })}
+              >
+                <option value="">เลือกที่พัก</option>
+                {villas.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              ตำแหน่ง
+              <select
+                value={ad.placement}
+                onChange={(e) => setAd({ ...ad, placement: e.target.value })}
+              >
+                <option value="detail">หน้ารายละเอียดที่พัก (2,990 ขึ้นไป)</option>
+                <option value="home">หน้าแรก (4,990)</option>
+              </select>
+            </label>
+            {([
+              "title",
+              "description",
+              "image",
+              "mobileImage",
+              "href",
+              "label",
+            ] as const).map((k) => (
+              <label key={k}>
+                {
+                  {
+                    title: "หัวข้อ",
+                    description: "คำอธิบาย",
+                    image: "ภาพคอมพิวเตอร์ URL",
+                    mobileImage: "ภาพมือถือ URL",
+                    href: "ลิงก์ปลายทาง",
+                    label: "ข้อความปุ่ม",
+                  }[k]
+                }
+                <input
+                  value={ad[k]}
+                  onChange={(e) => setAd({ ...ad, [k]: e.target.value })}
+                />
+              </label>
+            ))}
+            {(["startsAt", "endsAt"] as const).map((k) => (
+              <label key={k}>
+                {k === "startsAt" ? "เริ่มแสดง (เวลาไทย)" : "สิ้นสุด (เวลาไทย)"}
+                <input
+                  required
+                  type="datetime-local"
+                  value={
+                    ad[k]
+                      ? new Date(Date.parse(ad[k]) + 7 * 3600000)
+                          .toISOString()
+                          .slice(0, 16)
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setAd({
+                      ...ad,
+                      [k]: e.target.value
+                        ? new Date(e.target.value + ":00+07:00").toISOString()
+                        : "",
+                    })
+                  }
+                />
+              </label>
+            ))}
+            <label>
+              ลำดับ
+              <input
+                type="number"
+                min="0"
+                value={ad.order}
+                onChange={(e) =>
+                  setAd({ ...ad, order: Number(e.target.value) })
+                }
+              />
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={ad.visible}
+                onChange={(e) => setAd({ ...ad, visible: e.target.checked })}
+              />
+              เปิดใช้งาน
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={ad.approved}
+                onChange={(e) => setAd({ ...ad, approved: e.target.checked })}
+              />
+              Admin อนุมัติโฆษณา
+            </label>
+            <button className="primary-button" disabled={busy}>
+              บันทึกแบนเนอร์
+            </button>
+          </form>
+        </>
+      )}
+      <h3>สิทธิ์คอนเทนต์รายเดือน</h3>
+      {!jobs.length && <p>ยังไม่มีงานคอนเทนต์</p>}
+      {jobs.map((j) => (
+        <article key={j.id}>
+          <strong>
+            {j.villaName} · {j.month} ·{" "}
+            {j.type === "image" ? "ภาพเดี่ยว" : "วิดีโอ"} · {j.status}
+          </strong>
+          <p>
+            {j.channel || "ทุก Social ของ VillaCheck"}{" "}
+            {j.publishedAt &&
+              new Date(j.publishedAt).toLocaleString("th-TH", {
+                timeZone: "Asia/Bangkok",
+              })}
+          </p>
+          {j.postUrl && (
+            <a href={j.postUrl} target="_blank" rel="noopener noreferrer">
+              ดูโพสต์ที่เผยแพร่ ↗
+            </a>
+          )}
+          {Object.entries(j.links || {}).filter(([,url])=>url).map(([channel,url])=><p key={channel}><a href={url} target="_blank" rel="noopener noreferrer">{channel} ↗</a></p>)}
+          {!merchant && <button onClick={() => setJob(j)}>แก้ไขงาน</button>}
+        </article>
+      ))}
+      {!merchant && (
+        <form
+          className="portal-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void save("/admin/social-jobs", job)
+          }}
+        >
+          <button type="button" onClick={() => setJob({ ...blankJob })}>
+            เพิ่มงานใหม่
+          </button>
+          <label>
+            ที่พัก
+            <select
+              required
+              value={job.villaId}
+              onChange={(e) => setJob({ ...job, villaId: e.target.value })}
+            >
+              <option value="">เลือกที่พัก</option>
+              {villas.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            เดือนที่ใช้สิทธิ์
+            <input
+              type="month"
+              required
+              value={job.month}
+              onChange={(e) => setJob({ ...job, month: e.target.value })}
+            />
+          </label>
+          <label>
+            ประเภท
+            <select
+              value={job.type}
+              onChange={(e) => setJob({ ...job, type: e.target.value })}
+            >
+              <option value="image">ภาพเดี่ยว</option>
+              <option value="video">วิดีโอ</option>
+            </select>
+          </label>
+          <label>
+            สถานะ
+            <select
+              value={job.status}
+              onChange={(e) => setJob({ ...job, status: e.target.value })}
+            >
+              <option value="pending">รอดำเนินการ</option>
+              <option value="production">กำลังผลิต</option>
+              <option value="review">รอตรวจ</option>
+              <option value="published">เผยแพร่</option>
+            </select>
+          </label>
+          <label>
+            ช่องทาง
+            <input
+              value={job.channel}
+              onChange={(e) => setJob({ ...job, channel: e.target.value })}
+            />
+          </label>
+          <label>
+            วันเผยแพร่ (เวลาไทย)
+            <input
+              type="datetime-local"
+              value={
+                job.publishedAt
+                  ? new Date(Date.parse(job.publishedAt) + 7 * 3600000)
+                      .toISOString()
+                      .slice(0, 16)
+                  : ""
+              }
+              onChange={(e) =>
+                setJob({
+                  ...job,
+                  publishedAt: e.target.value
+                    ? new Date(e.target.value + ":00+07:00").toISOString()
+                    : "",
+                })
+              }
+            />
+          </label>
+          <label>
+            ลิงก์โพสต์
+            <input
+              type="url"
+              value={job.postUrl}
+              onChange={(e) => setJob({ ...job, postUrl: e.target.value })}
+            />
+          </label>
+          {["Facebook","Instagram","TikTok"].map(channel=><label key={channel}>ลิงก์ {channel}<input type="url" required={job.status === "published"} value={job.links?.[channel] || ""} onChange={e=>setJob({...job,links:{...job.links,[channel]:e.target.value}})}/></label>)}
+          <label>
+            บันทึกงาน / งบโฆษณาที่ตกลง
+            <textarea
+              value={job.notes}
+              onChange={(e) => setJob({ ...job, notes: e.target.value })}
+            />
+          </label>
+          <button className="primary-button" disabled={busy}>
+            บันทึกงาน
+          </button>
+        </form>
+      )}
+    </section>
+  )
+}
+export function DetailAdvertisement() {
+  const [ad, setAd] = useState<HomeBannerItem | null>(null)
+  useEffect(() => {
+    let active = true
+    void api<{ advertisements: HomeBannerItem[] }>(
+      "/public/advertisements?placement=detail",
+    )
+      .then(({ advertisements }) => {
+        if (active && advertisements.length)
+          setAd(
+            advertisements[Math.floor(Math.random() * advertisements.length)],
+          )
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
+  if (!ad) return null
+  return (
+    <aside className="merchant-panel">
+      <small>พื้นที่โฆษณาที่พัก · แยกจากสถานะการตรวจสอบ</small>
+      <a href={ad.href || "#page=directory"}>
+        <picture>
+          {ad.mobileImage && (
+            <source media="(max-width:640px)" srcSet={ad.mobileImage} />
+          )}
+          <img
+            src={ad.image}
+            alt={ad.title}
+            style={{
+              width: "100%",
+              maxHeight: 300,
+              objectFit: "cover",
+              borderRadius: 12,
+            }}
+          />
+        </picture>
+        <strong>{ad.title}</strong>
+      </a>
+    </aside>
+  )
+}

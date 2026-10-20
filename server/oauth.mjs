@@ -5,7 +5,7 @@ export function safeReturn(value) {
   if (typeof value !== "string" || !value.startsWith("#") || value.length > 500)
     return "#page=user-dashboard"
   const params = new URLSearchParams(value.slice(1))
-  if(['owner-dashboard','owner-information','owner-profile'].includes(params.get('page')))return `#page=${params.get('page')}`
+  if(['owner-dashboard','owner-information','owner-profile','owner-package'].includes(params.get('page')))return `#page=${params.get('page')}`
   if (
     params.get("page") !== "verify" ||
     !/^VC-[a-zA-Z0-9-]+$/.test(params.get("item") || "")
@@ -253,7 +253,7 @@ export function createOAuth(db, config, issueSession, fetchProvider = fetch) {
       if(isMerchant()&&user.role!=='merchant')throw Error('account_type_mismatch')
       const sessionCookie = (await issueSession(req, user)).cookie
       res.setHeader("Set-Cookie", [stateCookie("", 0), sessionCookie])
-      const onboarding=user.role==='merchant'&&(!user.business_name||!user.phone||!user.address||user.email.endsWith('@phone.villacheck.invalid'))
+      const onboarding=user.role==='merchant'&&(!user.business_name||!user.business_name_en||!user.phone||!user.address||user.email.endsWith('@phone.villacheck.invalid'))
       const target=user.role==='admin'?'#page=admin-dashboard':user.role==='merchant'?(bindingId?'#page=owner-profile':onboarding?'#page=owner-information':isMerchant()?returnTo:'#page=owner-dashboard'):returnTo
       redirect(`${config.appUrl}/${target}`)
     } catch (error) {

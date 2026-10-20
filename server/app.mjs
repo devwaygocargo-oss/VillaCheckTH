@@ -1,3 +1,8 @@
+import {propertyMediaApi,propertyMediaFile} from "./property-media.mjs";
+import {advertisingApi} from "./advertising.mjs";
+import {reviewsApi} from "./reviews.mjs";
+import { createInvoice } from "./database.mjs";
+import { mediaDate } from "./media-date.mjs";
 import {smtpDiagnostic} from "./smtp-diagnostics.mjs"
 import {acceptanceApi} from "./acceptance.mjs"
 import {promotionsApi,selectCoupon} from "./promotions.mjs"
@@ -28,9 +33,7 @@ import { confirmPayment } from "./payment-service.mjs"
 import {
   getSubscription,
   subscriptionDto,
-  activateSubscription,
   activateVilla,
-  subscriptionInvoice,
 } from "./subscriptions.mjs"
 import { createOAuth, oauthProviders } from "./oauth.mjs"
 import { createServer } from "node:http"
@@ -40,10 +43,8 @@ import { resolve, sep } from "node:path"
 import {
   audit,
   createUser,
-  packages,
   transaction,
   verifyPassword,
-  addMonths,
 } from "./database.mjs"
 import { createMailWorker } from "./mail.mjs"
 class ApiError extends Error {
@@ -292,7 +293,11 @@ export function createApp(db, config, transport) {
     return {
       id: v.id,
       name: v.name,
+      nameEn: v.name_en,
+      trialUnlimited: v.payments === 0,
+      createdAt: v.created,
       photoUrl: v.photo_url,
+      photoUploadedAt: v.photo_uploaded_at, photoTakenAt: v.photo_taken_at, photoReviewedAt: v.photo_reviewed_at,
       guestCapacity: v.guest_capacity,
       reviewRequest: await villaReview(db,v),
       province: v.province,
@@ -363,6 +368,7 @@ export function createApp(db, config, transport) {
         role: user.role,
       },
       subscription: await subscriptionDto(db, user.id),
+      packageModel: "PER_VILLA",
       demoMode:await demoMode(db,config),
       paymentBankQrImage: await demoMode(db,config) ? "" : ((await receivingBank(db))?.qrImage || (await publishedCms(db)).content.site.paymentQrImage || ""),
       paymentInstructions:
@@ -403,10 +409,25 @@ export function createApp(db, config, transport) {
         content.pages = content.pages.map(p => ({...p, blocks:p.blocks.filter(x => x.visible)}))
         return json({revision:release.revision, content})
       }
+      if(path === "/api/public/property-media" && req.method === "GET") return json(await propertyMediaApi(db,null,req,path,url,body));
+      const mediaFile=path.match(/^\/api\/public\/property-media-file\/([a-f0-9-]{36})$/)
+      if(mediaFile && req.method === "GET") {
+        const viewer=await session(req).catch(e=>{if(e.status===401)return null;throw e})
+        const file=await propertyMediaFile(db,mediaFile[1],viewer)
+        res.writeHead(200,{"Content-Type":file.mime,"Cache-Control":"private, no-store","Content-Length":Buffer.byteLength(file.bytes),"X-Content-Type-Options":"nosniff"});return res.end(Buffer.from(file.bytes))
+      }
+      if(path === "/api/public/advertisements" && req.method === "GET") return json(await advertisingApi(db,null,req,path,url,body));
+      if(path === "/api/public/reviews" && req.method === "GET") return json(await reviewsApi(db,null,req,path,url,body));
       const cmsMedia = path.match(/^\/api\/public\/cms-media\/([a-f0-9-]+)$/)
       if (cmsMedia && req.method === "GET") {
         const release = await publishedCms(db)
-        const imageUrls = [release.content.site.logo,...release.content.home.images, ...release.content.home.blocks.filter(x=>x.visible).map(x=>x.image), ...release.content.pages.flatMap(p=>p.blocks.filter(x=>x.visible).map(x=>x.image)), ...release.content.articles.filter(x=>x.visible).map(x=>x.image)]
+        const imageUrls = [release.content.site.logo,...release.content.home.images,...(release.content.home.banners || []).filter(b=>b.visible && (!b.startsAt || Date.parse(b.startsAt)<=Date.now()) && (!b.endsAt || Date.parse(b.endsAt)>Date.now())).flatMap(b=>[b.image,b.mobileImage]), ...release.content.home.blocks.filter(x=>x.visible).map(x=>x.image), ...release.content.pages.flatMap(p=>p.blocks.filter(x=>x.visible).map(x=>x.image)), ...release.content.articles.filter(x=>x.visible).map(x=>x.image)]
+        if (!imageUrls.includes(path)) {
+          for(const placement of ["home","detail"]) {
+            const result=await advertisingApi(db,null,{method:"GET"},"/api/public/advertisements",new URL("http://localhost?placement="+placement),body)
+            imageUrls.push(...result.advertisements.flatMap(a=>[a.image,a.mobileImage]))
+          }
+        }
         if (!imageUrls.includes(path)) {
           const viewer = await session(req).catch(error => { if (error.status === 401) return null; throw error })
           const merchantQr = viewer?.role === "merchant" && (release.content.site.paymentQrImage === path || await db.prepare("SELECT i.id FROM invoices i JOIN villas v ON v.id=i.villa_id JOIN system_settings s ON s.key='invoice_bank_qr:' || i.id WHERE v.owner_id=? AND s.value=?").get(viewer.id,JSON.stringify(path)))
@@ -466,8 +487,11 @@ export function createApp(db, config, transport) {
           .run(randomUUID(), data.type, name, address, phone, now, now)
         return json({ ok: true })
       }
-      if (req.method === "GET" && path === "/api/packages")
+      if (req.method === "GET" && path === "/api/packages") {
+        const viewer=await auth(req)
+        if(!["merchant","admin"].includes(viewer.role))fail(403,"แพ็กเกจสำหรับ Merchant ใน Member Room")
         return json({ packages: await listPlans(db) })
+      }
       if (req.method === "GET" && path === "/api/health")
         return json({ ok: true })
       if (req.method === "GET" && path === "/api/config")
@@ -523,6 +547,7 @@ export function createApp(db, config, transport) {
             await db.prepare("SELECT id FROM users WHERE email=?").get(address)
           )
             fail(409, "อีเมลนี้ถูกใช้งานแล้ว")
+          if (path === "/api/auth/register") text(data.businessNameEn, "ชื่อ Merchant ภาษาอังกฤษ");
           user = await createUser(
             db,
             address,
@@ -530,6 +555,11 @@ export function createApp(db, config, transport) {
             name,
             path.endsWith("register-user") ? "user" : "merchant",
           )
+          if (path === "/api/auth/register") {
+            const businessName = text(data.name, "ชื่อ Merchant ภาษาไทย");
+            const businessNameEn = text(data.businessNameEn, "ชื่อ Merchant ภาษาอังกฤษ");
+            await db.prepare("UPDATE users SET business_name=?,business_name_en=? WHERE id=?").run(businessName,businessNameEn,user.id);
+          }
         } else {
           const address = email(data.email)
           if (typeof data.password !== "string" || data.password.length > 128)
@@ -598,9 +628,11 @@ export function createApp(db, config, transport) {
             rows.map(async (v) => ({
               id: v.id,
               name: v.name,
+              nameEn: v.name_en,
               province: v.province,
               qr: v.qr,
               photoUrl: v.photo_url,
+      photoUploadedAt: v.photo_uploaded_at, photoTakenAt: v.photo_taken_at, photoReviewedAt: v.photo_reviewed_at,
               guestCapacity: v.guest_capacity,
               updated: v.reviewed_at || null,
               createdAt: v.created,
@@ -625,7 +657,10 @@ export function createApp(db, config, transport) {
         const unlocked = viewer?.role === "user" || viewer?.role === "admin"
         return json({
           name: v.name,
+          nameEn: v.name_en,
+          trialUnlimited: v.payments === 0,
           photoUrl: v.photo_url,
+      photoUploadedAt: v.photo_uploaded_at, photoTakenAt: v.photo_taken_at, photoReviewedAt: v.photo_reviewed_at,
           province: v.province,
           status: v.status,
           qr: v.qr,
@@ -731,6 +766,12 @@ export function createApp(db, config, transport) {
           res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':'inline; filename="DUMMY-ownership-sample.pdf"','Cache-Control':'private, no-store'});
           return res.end(dummyPdf());
         }
+        const propertyMedia=await propertyMediaApi(db,user,req,path,url,body)
+        if(propertyMedia!==undefined)return json(propertyMedia)
+        const advertising=await advertisingApi(db,user,req,path,url,body)
+        if(advertising!==undefined)return json(advertising)
+        const reviews=await reviewsApi(db,user,req,path,url,body)
+        if(reviews!==undefined)return json(reviews)
         const operation=await operations(db,user,req,path,url,body)
         if(operation!==undefined)return json(operation)
         if (path === "/api/merchant/profile") {
@@ -741,11 +782,12 @@ export function createApp(db, config, transport) {
             await db.transaction(async () => {
               await db
                 .prepare(
-                  "UPDATE users SET name=?,business_name=?,phone=?,address=? WHERE id=?",
+                  "UPDATE users SET name=?,business_name=?,business_name_en=?,phone=?,address=? WHERE id=?",
                 )
                 .run(
                   text(data.contactName, "ชื่อผู้ติดต่อ"),
-                  text(data.businessName, "ชื่อธุรกิจ"),
+                  text(data.businessName, "ชื่อธุรกิจภาษาไทย"),
+                  text(data.businessNameEn, "ชื่อธุรกิจภาษาอังกฤษ"),
                   text(data.phone, "เบอร์โทร", 30),
                   text(data.address, "ที่อยู่", 2000),
                   user.id,
@@ -764,12 +806,13 @@ export function createApp(db, config, transport) {
           }
           const profile = await db
             .prepare(
-              "SELECT name,business_name,phone,address,email FROM users WHERE id=?",
+              "SELECT name,business_name,business_name_en,phone,address,email FROM users WHERE id=?",
             )
             .get(user.id)
           return json({
             contactName: profile.name,
             businessName: profile.business_name,
+            businessNameEn: profile.business_name_en,
             phone: profile.phone,
             address: profile.address,
             email: profile.email,
@@ -821,7 +864,7 @@ export function createApp(db, config, transport) {
           await db.transaction(async()=>{
             const villa=await villaFor(user,assignLevel[1])
             const sub=await getSubscription(db,villa.owner_id)
-            const plan=await getPlan(db,sub?.package_id || villa.package_id)
+            const plan=await getPlan(db,villa.payments === 0 ? "basic" : villa.package_id)
             if(villa.status!=="approved")fail(409,"เอกสารต้องผ่านการอนุมัติก่อน")
             if(!levels.includes(data.verificationLevel) || levels.indexOf(data.verificationLevel)>levels.indexOf(plan.max_level))fail(400,"ระดับเกินสิทธิ์แพ็กเกจ")
             await db.prepare("UPDATE villas SET verification_level=?,reviewed_at=?,reviewed_by=? WHERE id=?").run(data.verificationLevel,new Date().toISOString(),user.id,villa.id)
@@ -911,73 +954,42 @@ export function createApp(db, config, transport) {
           })
           return res.end(Buffer.from(file.bytes))
         }
-        if(req.method==='POST'&&path==='/api/subscription/upgrade'){
-          if(user.role!=='merchant')fail(403,'Merchant only')
+        if (req.method === "POST" && path === "/api/merchant/villa-package") {
+          if(user.role !== "merchant") fail(403,"เฉพาะ Merchant")
           const data=await body(req)
           await transaction(db,async()=>{
-            const sub=await getSubscription(db,user.id);if(!sub)fail(409,'No subscription')
-            if(['SUSPENDED','CANCELLED'].includes(sub.lifecycle))fail(409,'Subscription unavailable')
-            const current=await getPlan(db,sub.package_id),target=await getPlan(db,data.packageId)
-            if(!target.active||target.capacity<current.capacity||target.sort_order<=current.sort_order||target.amount<=0)fail(409,'Select a higher package without reducing Villa capacity')
-            if(await db.prepare("SELECT id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id))fail(409,'Complete the pending payment first')
-            const villa=await db.prepare("SELECT * FROM villas WHERE owner_id=? AND status='approved' ORDER BY created LIMIT 1").get(user.id)
-            if(!villa)fail(409,'An approved Villa is required')
-            await selectCoupon(db,user.id,target,data.couponCode)
-            await subscriptionInvoice(db,villa,config.appUrl,target.id,config.paymentInstructions)
-            await audit(db,user,'subscription.upgrade.request',user.id)
+            const villa=await db.prepare("SELECT * FROM villas WHERE id=? AND owner_id=?").get(data.villaId,user.id)
+            if(!villa) fail(404,"ไม่พบที่พัก")
+            if(villa.status!=="approved") fail(409,"ต้องผ่านการตรวจสอบที่พักก่อนซื้อแพ็กเกจ")
+            const sub=await getSubscription(db,user.id)
+            if(["SUSPENDED","CANCELLED"].includes(sub?.lifecycle))fail(409,"บัญชีถูกระงับ กรุณาติดต่อทีมงาน")
+            const plan=await getPlan(db,data.packageId)
+            if(!plan.active || plan.amount<=0) fail(400,"เลือกแพ็กเกจที่เปิดขาย")
+            if(await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status!='paid'").get(villa.id)) fail(409,"มีใบแจ้งชำระค้างสำหรับที่พักนี้")
+            await selectCoupon(db,user.id,plan,data.couponCode)
+            const id=await createInvoice(db,{...villa,package_id:plan.id},config.appUrl,config.paymentInstructions)
+            await db.prepare("UPDATE invoices SET package_id=? WHERE id=?").run(plan.id,id)
+            await generatePaymentQr(db,id,config.appUrl)
+            await audit(db,user,"villa.package.request",villa.id)
           })
           json(await state(user));void worker.run();return
         }
+        if(req.method==='POST'&&path==='/api/subscription/upgrade')fail(409,"กรุณาเลือกซื้อแพ็กเกจแยกตามที่พักใน Member Room")
         if(path==="/api/subscription/coupon"&&req.method==="POST"){
           if(user.role!=="merchant")fail(403,"เฉพาะ Merchant")
           const data=await body(req),sub=await getSubscription(db,user.id);if(!sub)fail(409,"ยังไม่มีแพ็กเกจ")
           await transaction(db,async()=>{if(await db.prepare("SELECT id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id))fail(409,"ใบแจ้งชำระสร้างแล้ว ไม่แก้ส่วนลดย้อนหลัง");await selectCoupon(db,user.id,await getPlan(db,sub.package_id),data.couponCode)})
           return json(await state(user))
         }
-        if (req.method === "POST" && path === "/api/subscription") {
-          if (user.role !== "merchant") fail(403, "เฉพาะ Merchant")
-          const data = await body(req)
-          const selected = await getPlan(db, data.packageId)
-          if (!selected.active) fail(400, "แพ็กเกจปิดใช้งาน")
-          await transaction(db, async () => {
-            await selectCoupon(db,user.id,selected,data.couponCode)
-            const current = await getSubscription(db, user.id)
-            if (current && current.package_id !== data.packageId) {
-              const used=await db.prepare("SELECT count(*) AS n FROM villas WHERE owner_id=?").get(user.id)
-              const invoice=await db.prepare("SELECT id FROM invoices WHERE subscription_owner=?").get(user.id)
-              if(used.n||invoice||current.expires||current.payments||["SUSPENDED","CANCELLED"].includes(current.lifecycle))
-                fail(409,"แพ็กเกจนี้มีการใช้งานแล้ว กรุณาเลือกอัปเกรดหรือต่ออายุ")
-              await db.prepare("UPDATE subscriptions SET package_id=? WHERE owner_id=?").run(selected.id,user.id)
-              await audit(db,user,"subscription.reselect",user.id)
-            }
-            if (!current) {
-              const count = (
-                await db
-                  .prepare("SELECT count(*) AS n FROM villas WHERE owner_id=?")
-                  .get(user.id)
-              ).n
-              if (count > selected.capacity)
-                fail(409, "จำนวน Villa เกินสิทธิ์แพ็กเกจ")
-              await db
-                .prepare(
-                  "INSERT INTO subscriptions(owner_id,package_id,created) VALUES (?,?,?)",
-                )
-                .run(user.id, data.packageId, new Date().toISOString())
-              await audit(db, user, "subscription.select", user.id)
-            }
-          })
-          return json(await state(user))
-        }
+        if (req.method === "POST" && path === "/api/subscription") fail(409,"เพิ่มที่พักเพื่อเริ่มใช้ฟรี แล้วเลือกซื้อแพ็กเกจแยกตามที่พักใน Member Room")
         if (req.method === "POST" && path === "/api/villas") {
           if (user.role !== "merchant") fail(403, "เฉพาะ Merchant")
           const data = await body(req)
-          const name = text(data.name, "ชื่อ Villa"),
+          const nameEn = text(data.nameEn, "ชื่อที่พักภาษาอังกฤษ")
+          const name = text(data.name, "ชื่อที่พักภาษาไทย"),
             province = text(data.province, "จังหวัด"),
             merchant = text(data.merchant, "ชื่อ Merchant"),
             address = email(data.email)
-          const subscription = await getSubscription(db, user.id)
-          if (!subscription)
-            fail(409, "กรุณาสมัครแพ็กเกจที่บัญชี Merchant ก่อนเพิ่ม Villa")
           const contacts = [
             data.phone || "",
             data.bankName || "",
@@ -998,28 +1010,23 @@ export function createApp(db, config, transport) {
           const capacity = guestCapacity(data.guestCapacity)
           const file = document(data.document)
           const id = await transaction(db, async () => {
-            const sub = await getSubscription(db, user.id)
-            const used = (
-              await db
-                .prepare("SELECT count(*) AS n FROM villas WHERE owner_id=?")
-                .get(user.id)
-            ).n
-            if (used >= (await getPlan(db, sub.package_id)).capacity)
-              fail(409, "จำนวน Villa ครบสิทธิ์แพ็กเกจแล้ว")
+            await db.prepare("INSERT INTO subscriptions(owner_id,package_id,created) VALUES (?,?,?) ON CONFLICT(owner_id) DO NOTHING").run(user.id,"basic",new Date().toISOString())
+
             const docId = await insertDocument(db, user.id, file)
             const id = randomUUID()
             await db
               .prepare(
-                "INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,created) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,created) VALUES (?,?,?,?,?,?,?,?,?,?)",
               )
               .run(
                 id,
                 user.id,
                 name,
+                nameEn,
                 province,
                 merchant,
                 address,
-                sub.package_id,
+                "basic",
                 docId,
                 new Date().toISOString(),
               )
@@ -1037,8 +1044,8 @@ export function createApp(db, config, transport) {
             )
               fail(400, "Photo URL ต้องเป็น HTTPS")
             await db
-              .prepare("UPDATE villas SET photo_url=?,guest_capacity=? WHERE id=?")
-              .run(photoUrl, capacity, id)
+              .prepare("UPDATE villas SET photo_url=?,guest_capacity=?,photo_uploaded_at=?,photo_taken_at=? WHERE id=?")
+              .run(photoUrl, capacity, photoUrl ? new Date().toISOString() : null, data.photoTakenAt ? mediaDate(data.photoTakenAt) : null, id)
             await audit(db, user, "villa.create", id)
             return id
           })
@@ -1063,8 +1070,8 @@ export function createApp(db, config, transport) {
                 data.status === "approved"
                   ? ""
                   : text(data.reason, "เหตุผล", 2000)
-              const level = data.verificationLevel || "VERIFIED"
-              const entitled = await getPlan(db, villa.package_id)
+              const level = data.verificationLevel || (villa.payments === 0 ? "BASIC_CHECKED" : "VERIFIED")
+              const entitled = await getPlan(db, villa.payments === 0 ? "basic" : villa.package_id)
               if (
                 !levels.includes(level) ||
                 levels.indexOf(level) > levels.indexOf(entitled.max_level)
@@ -1085,16 +1092,7 @@ export function createApp(db, config, transport) {
               if (data.status === "approved") {
                 const sub = await getSubscription(db, villa.owner_id)
                 if (!sub) fail(409, "Merchant ต้องสมัครแพ็กเกจที่บัญชีก่อน")
-                if (!(await activateVilla(db, villa))) {
-                  const plan = await getPlan(db, sub.package_id)
-                  if (plan.trial_months > 0 && sub.payments === 0)
-                    await activateSubscription(
-                      db,
-                      villa.owner_id,
-                      plan.trial_months,
-                    )
-                  else await subscriptionInvoice(db, villa, config.appUrl,undefined,config.paymentInstructions)
-                }
+                await activateVilla(db, villa)
               }
 
               await audit(db, user, `villa.${data.status}`, id)
@@ -1115,28 +1113,16 @@ export function createApp(db, config, transport) {
               if (user.role !== "merchant") fail(403, "เฉพาะ Merchant")
               if (villa.status !== "approved" || !villa.qr)
                 fail(409, "ต้องเปิดใช้ QR ก่อนต่ออายุแพ็กเกจ")
-              let sub = await getSubscription(db, villa.owner_id)
-              if (!sub) fail(409, "ไม่พบแพ็กเกจ Merchant")
-              if (["SUSPENDED", "CANCELLED"].includes(sub.lifecycle))
-                fail(409, "แพ็กเกจถูกระงับหรือยกเลิก กรุณาติดต่อ Admin")
-              const currentPlan=await getPlan(db,sub.package_id)
-              const target=await getPlan(db,data.packageId||sub.package_id)
-              if(!target.active||target.amount===0)fail(400,"กรุณาเลือกแพ็กเกจชำระเงินที่เปิดใช้งาน ทดลองฟรีใช้ได้ครั้งเดียว")
-              const used=await db.prepare("SELECT count(*) AS n FROM villas WHERE owner_id=?").get(user.id)
-              if(target.capacity<used.n)fail(409,"จำนวน Villa เกินสิทธิ์แพ็กเกจที่เลือก")
-              if(target.id!==currentPlan.id&&currentPlan.amount>0&&(!sub.expires||new Date(sub.expires)>new Date()))
-                fail(409,"แพ็กเกจยังไม่หมดอายุ กรุณาใช้การอัปเกรดหรือเลือกต่ออายุแพ็กเกจเดิม")
-              const pending=await db.prepare("SELECT package_id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id)
-              if(pending&&(pending.package_id||villa.package_id)!==target.id)fail(409,"กรุณาจัดการใบแจ้งชำระที่ค้างก่อนเปลี่ยนแพ็กเกจ")
-              if(!pending)await selectCoupon(db,user.id,target,data.couponCode)
-              await subscriptionInvoice(
-                db,
-                villa,
-                config.appUrl,
-                target.id,
-                config.paymentInstructions,
-              )
-              await audit(db, user, "subscription.renew", user.id)
+              const sub=await getSubscription(db,villa.owner_id)
+              if(["SUSPENDED","CANCELLED"].includes(sub?.lifecycle))fail(409,"บัญชีถูกระงับ กรุณาติดต่อทีมงาน")
+              const target=await getPlan(db,data.packageId||villa.package_id)
+              if(!target.active||target.amount<=0)fail(400,"เลือกแพ็กเกจที่เปิดขาย")
+              if(await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status!='paid'").get(villa.id))fail(409,"มีใบแจ้งชำระค้างสำหรับที่พักนี้")
+              await selectCoupon(db,user.id,target,data.couponCode)
+              const invoiceId=await createInvoice(db,{...villa,package_id:target.id},config.appUrl,config.paymentInstructions)
+              await db.prepare("UPDATE invoices SET package_id=? WHERE id=?").run(target.id,invoiceId)
+              await generatePaymentQr(db,invoiceId,config.appUrl)
+              await audit(db,user,"villa.package.renew",villa.id)
             }
           })
           json(await state(user))

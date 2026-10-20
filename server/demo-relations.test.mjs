@@ -32,7 +32,7 @@ test('User Merchant and Admin share the same demo Villa QR checks reports and re
  })
  await t.test('Admin approval updates the same Merchant Villa and becomes available to User using one QR',async()=>{
   const pending=m.villas.find(v=>v.status==='pending');assert.ok(pending);assert.ok(a.villas.some(v=>v.id===pending.id&&v.status==='pending'))
-  assert.equal((await req('/villas/'+pending.id+'/review',{status:'approved',verificationLevel:'VERIFIED'},admin)).status,200)
+  assert.equal((await req('/villas/'+pending.id+'/review',{status:'approved',verificationLevel:'BASIC_CHECKED'},admin)).status,200)
   const after=(await req('/state',undefined,merchant)).value.villas.find(v=>v.id===pending.id),adminAfter=(await req('/state',undefined,admin)).value.villas.find(v=>v.id===pending.id);assert.equal(after.status,'approved');assert.equal(after.qr,adminAfter.qr);assert.ok(after.qr)
   assert.equal((await req('/public/qr/'+after.qr,undefined,user)).value.name,pending.name)
   await seedDemo(db,{password:'DummyRelations1234'});const preserved=(await req('/state',undefined,merchant)).value.villas.find(v=>v.id===pending.id);assert.equal(preserved.status,'approved');assert.equal(preserved.qr,after.qr)
