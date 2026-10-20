@@ -87,7 +87,6 @@ export const cmsDefaults = {
       href: "#page=villa-report",
       visible: true,
     },
-    { id: "how", label: "วิธีการทำงาน", href: "#how", visible: true },
     { id: "contact", label: "ติดต่อเรา", href: "#page=contact", visible: true },
     { id: "login", label: "เข้าสู่ระบบ", href: "#page=login", visible: true },
   ],

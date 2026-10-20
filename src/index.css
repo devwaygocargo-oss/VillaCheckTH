@@ -1102,3 +1102,42 @@ footer { background: var(--ocean); color: white; padding: 72px 0 24px; }
 .banner-search{padding-top:32px;padding-bottom:40px}.banner-search h1{white-space:normal;font-size:26px;line-height:1.5;margin:8px 0}.banner-search p{color:#647067;margin-bottom:20px}.banner-search .search-box{max-width:100%}
 @media(max-width:640px){.vc-banner{height:500px;min-height:0}.vc-banner-copy{padding:40px 28px 70px}.vc-banner-copy h2{font-size:32px}.vc-banner-copy p{font-size:15px}.vc-banner-prev,.vc-banner-next{width:30px;height:30px;font-size:23px;top:auto;bottom:16px}.banner-search h1{font-size:22px}.banner-search{padding-top:24px;padding-bottom:24px}}
 @media(prefers-reduced-motion:reduce){.vc-banner-slide{transition:none}}
+
+/* Home discovery shortcuts: a shared duotone icon family. */
+.home-shortcuts { background: #102a33; color: #f0fbfc; padding: 28px 0 32px; }
+.shortcut-search { display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 8px 9px 8px 20px; border: 1px solid #3c5962; border-radius: 18px; background: #112e38; transition: border-color .2s, box-shadow .2s; }
+.shortcut-search:focus-within { border-color: #66d7d3; box-shadow: 0 0 0 3px #66d7d31c; }
+.shortcut-search-symbol { color: #6be0da; flex-shrink: 0; }
+.shortcut-search input { flex: 1; min-width: 0; width: 100%; padding: 8px 0; border: 0; outline: none; box-shadow: none; background: transparent; color: #f1ffff; font-size: 17px; }
+.shortcut-search input::placeholder { color: #b2c9d0; opacity: 1; }
+.shortcut-search button { flex-shrink: 0; display: flex; gap: 12px; align-items: center; justify-content: center; min-height: 50px; padding: 0 22px; border: 1px solid #39717c; border-radius: 12px; background: #205563; color: #f4ffff; font-weight: 600; font-size: 14px; transition: background .2s; }
+.shortcut-search button:hover { background: #2a6977; }
+.shortcut-search button span { color: #95ede3; font-size: 18px; }
+.shortcut-search-hint { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 10px 0 0; color: #aac3ca; font-size: 12px; line-height: 1.7; }
+.shortcut-search-hint button { color: #c6e2e7; background: transparent; border: 0; padding: 0; text-align: left; font: inherit; }
+.shortcut-search-hint button:hover { color: #7ee9df; text-decoration: underline; text-underline-offset: 4px; }
+.shortcut-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 16px; padding: 28px 0 4px; }
+.shortcut-item { display: flex; flex-direction: column; align-items: center; justify-content: start; gap: 12px; padding: 12px 6px; border-radius: 18px; color: #e0eff2; text-decoration: none; transition: background .2s, color .2s; }
+.shortcut-icon { display: grid; place-items: center; width: 66px; height: 66px; border: 1px solid #39636b; border-radius: 21px; background: linear-gradient(140deg,#25505b,#193f4a); box-shadow: inset 0 1px 0 #ffffff0e,0 6px 20px #03191f30; color: #7ce1da; transition: transform .2s,border-color .2s,background .2s; }
+.shortcut-icon svg { width: 36px; height: 36px; }
+.shortcut-icon-fill { fill: #69d4d5; fill-opacity: .13; stroke: none; }
+.shortcut-icon-accent { stroke: #f7d98b; }
+.shortcut-label { font-size: 14px; font-weight: 500; line-height: 1.6; text-align: center; }
+.shortcut-item:hover { color: #fff; background: #21434d66; }
+.shortcut-item:hover .shortcut-icon { transform: translateY(-4px); border-color: #7ce1da; background: linear-gradient(140deg,#2f626c,#21505d); }
+.shortcut-item:focus-visible,.shortcut-search button:focus-visible,.shortcut-search-hint button:focus-visible { outline: 2px solid #8bf1e5; outline-offset: 4px; }
+@media(max-width:640px) {
+ .home-shortcuts { padding: 20px 0 24px; }
+ .shortcut-search { min-height: 62px; padding: 7px 8px 7px 14px; gap: 10px; border-radius: 16px; }
+ .shortcut-search input { font-size: 16px; }
+ .shortcut-search-symbol { display: none; }
+ .shortcut-search button { min-height: 46px; padding: 0 16px; font-size: 13px; }
+ .shortcut-search button span { display: none; }
+ .shortcut-search-hint { font-size: 10px; gap: 3px; margin-top: 8px; }
+ .shortcut-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px 8px; padding: 20px 0 0; }
+ .shortcut-item { gap: 10px; padding: 8px 3px; border-radius: 14px; }
+ .shortcut-icon { width: 56px; height: 56px; border-radius: 18px; }
+ .shortcut-icon svg { width: 32px; height: 32px; }
+ .shortcut-label { font-size: 12px; }
+}
+@media(prefers-reduced-motion:reduce) { .shortcut-item,.shortcut-icon { transition: none; }.shortcut-item:hover .shortcut-icon { transform: none; } }

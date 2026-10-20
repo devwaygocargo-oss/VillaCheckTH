@@ -1,3 +1,4 @@
+import HomeShortcuts from "./HomeShortcuts";
 import {qrReference as parseQrReference} from "./qrReference";
 import HomeBanner from "./HomeBanner";
 import AdminReceivingBank from "./AdminReceivingBank";
@@ -152,7 +153,7 @@ function Header({ page, go, account }: { page: Page; go: (page: Page) => void; a
     <div className="container nav">
       <button className="logo-button" onClick={() => navigate("home")}><Logo /></button>
       <nav id="public-menu" className={mobileMenuOpen ? "mobile-open" : ""}>
-        {navigation.filter(n=>n.visible && !["#page=home","#page=pricing","#page=owner-package"].includes(n.href) && !(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href))).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
+        {navigation.filter(n=>n.visible && !["#page=home","#page=pricing","#page=owner-package","#how"].includes(n.href) && n.id !== "how" && n.label.trim() !== "วิธีการทำงาน" && !(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href))).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
         {!navigation.some(n=>n.visible && n.href==="#page=contact") && <button onClick={()=>navigate("contact")}>ติดต่อเรา</button>}
       </nav>
       <div className="nav-actions">{account && <div className="nav-account" ref={accountMenu}><button className="outline-button nav-account-button" title={`${account.name} · ${accountLabel(account)}`} aria-expanded={accountMenuOpen} aria-controls="account-dropdown" onClick={() => setAccountMenuOpen(open => !open)}><span className="nav-session-status" role="status"><span aria-hidden="true">●</span> เข้าสู่ระบบอยู่</span><strong>{accountLabel(account)} <span aria-hidden="true">▾</span></strong></button>{accountMenuOpen && <div id="account-dropdown" className="account-dropdown"><strong>{account.name}</strong><button onClick={() => navigate(accountHome(account))}>ไปยังบัญชี {account.role === "admin" ? "Admin" : account.role === "merchant" ? "Merchant" : "User"}</button><button disabled={loggingOut} onClick={() => void signOut()}>{loggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}</button>{logoutError && <p role="alert">{logoutError}</p>}</div>}</div>}<button aria-label="ตรวจสอบ QR" className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
@@ -220,7 +221,7 @@ function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch
   const {home}=useCms();
   const section=(id:string)=>home.sections.find(s=>s.id===id)!;
   return <CmsHomeLayout>
-    <section><HomeBanner/><div className="container banner-search"><span className="kicker">ค้นหาและตรวจสอบที่พักฟรี</span><h1>ค้นหาและตรวจสอบที่พัก</h1><p>ค้นหาด้วยชื่อภาษาไทย ภาษาอังกฤษ หรือเลือกจังหวัด</p><SearchBox onSearch={onSearch}/></div></section>
+    <section className="home-discovery"><HomeBanner/><HomeShortcuts go={go} onSearch={onSearch}/></section>
     <div />
     <section className="section how-section" id="how">
       <div className="container">
