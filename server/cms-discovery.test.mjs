@@ -20,3 +20,7 @@ test("Legacy CMS reads gain matching defaults and navigation without rewriting r
 test("News section preserves editor visibility and order while migrating old CMS drafts",()=>{
  const data=fresh();data.home.sections=data.home.sections.filter(s=>s.id!=="news");const migrated=validateCms(data);assert.equal(migrated.home.sections.length,10);assert.equal(migrated.home.sections.findIndex(s=>s.id==="news"),migrated.home.sections.findIndex(s=>s.id==="showcase")+1);const news=migrated.home.sections.find(s=>s.id==="news");news.visible=false;news.title="ข่าวสารจากเรา";migrated.home.sections=[news,...migrated.home.sections.filter(s=>s.id!=="news")];const saved=validateCms(migrated);assert.equal(saved.home.sections[0].title,"ข่าวสารจากเรา");assert.equal(saved.home.sections[0].visible,false);assert.equal(saved.home.sections.filter(s=>s.id==="news").length,1);
 });
+
+test("Home editorial images round-trip through CMS validation and reject unsafe URLs",()=>{
+ const data=fresh();const qr=data.home.sections.find(s=>s.id==="qr"),merchant=data.home.sections.find(s=>s.id==="merchant");qr.image="/api/public/cms-media/abcd-1234";merchant.image="/demo/villas/villa-3.jpg";const result=validateCms(data);assert.equal(result.home.sections.find(s=>s.id==="qr").image,qr.image);assert.equal(result.home.sections.find(s=>s.id==="merchant").image,merchant.image);qr.image="javascript:alert(1)";assert.throws(()=>validateCms(data),e=>e.status===400);
+});

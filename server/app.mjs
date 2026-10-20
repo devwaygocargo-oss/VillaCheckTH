@@ -436,7 +436,7 @@ export function createApp(db, config, transport) {
       const cmsMedia = path.match(/^\/api\/public\/cms-media\/([a-f0-9-]+)$/)
       if (cmsMedia && req.method === "GET") {
         const release = await publishedCms(db)
-        const imageUrls = [release.content.site.logo,...shortcutMediaUrls(release.content,true),...release.content.home.images,...(release.content.home.banners || []).filter(b=>b.visible && (!b.startsAt || Date.parse(b.startsAt)<=Date.now()) && (!b.endsAt || Date.parse(b.endsAt)>Date.now())).flatMap(b=>[b.image,b.mobileImage]), ...release.content.home.blocks.filter(x=>x.visible).map(x=>x.image), ...release.content.pages.flatMap(p=>p.blocks.filter(x=>x.visible).map(x=>x.image)), ...release.content.articles.filter(x=>x.visible).map(x=>x.image)]
+        const imageUrls = [...release.content.home.sections.filter(s=>s.visible).map(s=>s.image||""),release.content.site.logo,...shortcutMediaUrls(release.content,true),...release.content.home.images,...(release.content.home.banners || []).filter(b=>b.visible && (!b.startsAt || Date.parse(b.startsAt)<=Date.now()) && (!b.endsAt || Date.parse(b.endsAt)>Date.now())).flatMap(b=>[b.image,b.mobileImage]), ...release.content.home.blocks.filter(x=>x.visible).map(x=>x.image), ...release.content.pages.flatMap(p=>p.blocks.filter(x=>x.visible).map(x=>x.image)), ...release.content.articles.filter(x=>x.visible).map(x=>x.image)]
         if (!imageUrls.includes(path)) {
           for(const placement of ["home","detail","footer"]) {
             const result=await advertisingApi(db,null,{method:"GET"},"/api/public/advertisements",new URL("http://localhost?placement="+placement),body)
@@ -636,7 +636,9 @@ export function createApp(db, config, transport) {
         const requestedLimit=url.searchParams.get("limit");
         const limit=requestedLimit===null?null:Number(requestedLimit);
         if(requestedLimit!==null&&(!/^\d+$/.test(requestedLimit)||!Number.isInteger(limit)||limit<1||limit>100))fail(400,"จำนวนที่พักต้องเป็นจำนวนเต็ม 1–100");
-        const rows = await db.prepare("SELECT * FROM villas WHERE status='approved' AND qr IS NOT NULL ORDER BY created DESC,id DESC"+(limit?" LIMIT ?":"")).all(...(limit?[limit]:[]));
+        const province=(url.searchParams.get("province")||"").trim();
+        if(province.length>100||/[\x00-\x1f]/.test(province))fail(400,"จังหวัดไม่ถูกต้อง");
+        const rows = await db.prepare("SELECT * FROM villas WHERE status='approved' AND qr IS NOT NULL"+(province?" AND province=?":"")+" ORDER BY created DESC,id DESC"+(limit?" LIMIT ?":"")).all(...(province?[province]:[]),...(limit?[limit]:[]));
         const context=await loadTrustContext(db,rows)
         return json({
           villas: await Promise.all(

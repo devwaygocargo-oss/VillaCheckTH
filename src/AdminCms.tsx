@@ -564,7 +564,8 @@ export default function AdminCms({
                       s.id,
                     ) && (
                       <details className="cms-card-details">
-                        <summary>แก้ไขข้อความ Section</summary>
+                        <summary>แก้ไขข้อความ / ภาพ Section</summary>
+                        {["qr","merchant"].includes(s.id)&&<ImageField label="ภาพประกอบ Section (เว้นว่างใช้ภาพเริ่มต้น)" value={s.image||""} media={media} onChange={image=>change({...content,home:{...content.home,sections:content.home.sections.map(row=>row.id===s.id?{...row,image}:row)}})}/>}
                         <Field
                           label="หัวข้อ Section"
                           multiline

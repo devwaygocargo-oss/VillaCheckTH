@@ -47,6 +47,7 @@ export type CmsFaq = {
   visible: boolean
 }
 export type CmsHomeSection = {
+  image?:string
   id: string
   visible: boolean
   title: string

@@ -1,3 +1,4 @@
+import HomeVillaShowcase from "./HomeVillaShowcase";
 import FooterAd from "./FooterAd";
 import HomeNews from "./HomeNews";
 import {publicNavigation} from "../server/cms-home-config.mjs";
@@ -184,41 +185,6 @@ function SearchBox({ onSearch }: { onSearch: (query: string, province: string) =
   </div>;
 }
 
-function ShowcaseCard({ villa, featured = false, onClick }: { villa: typeof villas[0] & {premiumBanner?:boolean}; featured?: boolean; onClick: () => void }) {
-  return <article className={`showcase-card ${featured ? "featured" : ""}`} onClick={onClick}>
-    <img src={villa.image} alt={`ภาพ ${villa.name}`} />
-    <div className="showcase-overlay" />
-
-    <div className="showcase-status"><Icon name={villa.status === "ตรวจสอบข้อมูลแล้ว" ? "shield" : "clock"} size={14} />{villa.status === "ตรวจสอบข้อมูลแล้ว" ? "VillaCheck VERIFIED" : villa.status}</div>
-    <div className="showcase-copy"><span><Icon name="pin" size={14} />{villa.province}</span><h3>{villa.name}</h3><div><small>Last checked</small><strong>{villa.updated}</strong><button aria-label={`ดู Trust Profile ของ ${villa.name}`} onClick={event => { event.stopPropagation(); onClick(); }}><Icon name="arrow" size={18} /></button></div></div>
-  </article>;
-}
-
-function VillaShowcase({ go }: { go: (p: Page, item?: string) => void }) {
-  const [active, setActive] = useState(0);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [items,setItems]=useState<(typeof villas[number] & {qr:string;nameEn:string;premiumBanner:boolean;createdAt:string})[]>([]);
-  useEffect(()=>{let active=true;void api<{villas:{name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas?limit=4").then(data=>{if(active)setItems(data.villas.slice(0,4).map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(()=>{});return()=>{active=false;};},[]);
-  const scrollToSlide = (index: number) => {
-    const next = Math.max(0, Math.min(items.length - 1, index));
-    const element = trackRef.current?.children[next] as HTMLElement | undefined;
-    element?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-    setActive(next);
-  };
-  const updateActive = () => {
-    const track = trackRef.current;
-    if (!track) return;
-    const children = Array.from(track.children) as HTMLElement[];
-    const nearest = children.reduce((best, child, index) => Math.abs(child.offsetLeft - track.scrollLeft) < Math.abs(children[best].offsetLeft - track.scrollLeft) ? index : best, 0);
-    setActive(nearest);
-  };
-  if(!items.length)return <p>ยังไม่มี Villa ที่ผ่านการตรวจสอบ</p>;
-  return <div className="showcase-carousel">
-    <div className="showcase-track" ref={trackRef} onScroll={updateActive}>{items.map((villa, index) => <ShowcaseCard key={villa.name} villa={villa} featured={index === 0} onClick={() => go("verify", villa.qr)} />)}</div>
-    <div className="carousel-controls"><button aria-label="Villa ก่อนหน้า" onClick={() => scrollToSlide(active - 1)} disabled={active === 0}>←</button><div className="carousel-dots">{items.map((villa, index) => <button key={villa.name} aria-label={`ไป Villa ภาพที่ ${index + 1}`} className={active === index ? "active" : ""} onClick={() => scrollToSlide(index)} />)}</div><span>{active + 1}/{items.length}</span><button aria-label="Villa ถัดไป" onClick={() => scrollToSlide(active + 1)} disabled={active === items.length - 1}>→</button></div>
-  </div>;
-}
-
 function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch: (query: string, province: string) => void; onSelect: (id: string) => void }) {
   const {home}=useCms();
   const section=(id:string)=>home.sections.find(s=>s.id===id)!;
@@ -228,46 +194,28 @@ function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch
     <section className="section how-section" id="how">
       <div className="container">
         <div className="timeline-head"><div><span className="kicker">TRUST JOURNEY / 01—03</span><h2 className="cms-prose">{section("how").title}</h2></div><p className="cms-prose">{section("how").description}</p></div>
-        <div className="steps trust-timeline">
-          {[["01", "search", "ค้นหาวิลล่า", "ค้นหาจากชื่อที่พักหรือเลือกจังหวัดที่ต้องการ"], ["02", "shield", "เช็ก Trust Profile", "ตรวจสอบสถานะ ข้อมูลติดต่อ และบัญชีทางการ"], ["03", "qr", "สแกน QR ยืนยัน", "เช็ก QR Verification ที่ได้รับจากเจ้าของที่พัก"]].map((s, i) =>
-            <div className="step" key={s[0]}><span className="step-no">{s[0]}</span><span className="step-icon"><Icon name={s[1] as IconName} size={28} /></span><h3>{s[2]}</h3><p>{s[3]}</p>{i < 2 && <span className="step-line"><Icon name="arrow" size={18} /></span>}</div>
-          )}
+        <div className="home-service-grid">
+          {[["01","search","ค้นหาที่พัก","เลือกจังหวัดและดูข้อมูลที่พักที่ลงทะเบียน","directory"],["02","shield","เข้าใจสถานะ","อ่านความหมายและขอบเขตของผลการตรวจสอบ","verification-standard"],["03","qr","สแกน QR ก่อนโอน","เปิด QR เพื่อเทียบช่องทางติดต่อของที่พัก","scan"]].map(([number,icon,title,description,target])=><a key={number} className="home-service-card" href={`#page=${target}`} onClick={e=>{if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();go(target as Page);}}><div className={`home-service-art home-service-art-${number}`}><span>{number}</span><Icon name={icon as IconName} size={46}/><i aria-hidden="true"/></div><div className="home-service-body"><h3>{title}</h3><p>{description}</p><span>ดูรายละเอียด <Icon name="arrow" size={16}/></span></div></a>)}
         </div>
       </div>
     </section>
 
     <ProvinceExplorer onSearch={onSearch} />
 
-    <section className="section verified-section showcase-section">
-      <div className="container">
-        <div className="section-head"><div><span className="kicker">VERIFIED VILLA SHOWCASE</span><h2 className="cms-prose">{section("showcase").title}</h2><p>{section("showcase").description}</p></div><button className="text-button" onClick={() => go("directory")}>เปิด Directory <Icon name="arrow" size={18} /></button></div>
-        <VillaShowcase go={go} />
-      </div>
-    </section>
+    <HomeVillaShowcase go={go} onSearch={onSearch}/>
 
     <HomeNews go={go}/>
 
-    <section className="section qr-section">
-      <div className="container split-panel">
-        <div className="qr-copy"><span className="kicker light-kicker">LIVE TRUST SIGNAL</span><h2 className="cms-prose">{section("qr").title}</h2><p>{section("qr").description}</p><ul><li><Icon name="check" />Official Contact ที่ตรวจสอบข้อมูลแล้ว</li><li><Icon name="check" />บัญชีรับเงินแบบ Masked</li><li><Icon name="check" />Last Checked และ Expire Date</li></ul><button className="sun-button" onClick={() => go("scan")}>เปิด QR Scanner <Icon name="arrow" size={18} /></button></div>
-        <div className="qr-demo">
-          <div className="qr-orbit qr-orbit-one" /><div className="qr-orbit qr-orbit-two" />
-          <div className="phone-card">
-            <Logo /><div className="mini-qr"><QrPattern /></div><Badge>VillaCheck VERIFIED</Badge><h3>Sea Sky Pool Villa</h3><p>ชลบุรี · VC-TH-2025-01842</p><div className="mini-status"><Icon name="shield" /><div><span>สถานะการตรวจสอบ</span><strong>ตรวจสอบข้อมูลแล้ว</strong></div></div>
-          </div>
-          <div className="scan-preview-card"><span>SCAN PREVIEW</span><strong>Identity match</strong><small>Official contact · Active</small></div>
-        </div>
+    <section className="section home-feature-banner home-feature-qr">
+      <div className="container home-feature-layout">
+        <div className="home-feature-image"><img src={section("qr").image||"/demo/villas/villa-1.jpg"} alt="ภาพประกอบที่พักสำหรับตรวจสอบ QR" loading="lazy"/><div className="home-feature-image-note"><Icon name="qr" size={26}/><div><small>CHECK BEFORE YOU GO</small><strong>เช็กให้ชัด ก่อนโอน</strong></div></div></div>
+        <div className="home-feature-copy"><span className="kicker">SCAN & CHECK</span><h2 className="cms-prose">{section("qr").title}</h2><p>{section("qr").description}</p><ul><li><Icon name="check" size={17}/>ดูช่องทางติดต่อที่ลงทะเบียน</li><li><Icon name="check" size={17}/>อ่านสถานะและขอบเขตการตรวจสอบ</li><li><Icon name="check" size={17}/>เลือกสแกนกล้องหรือรูป QR จากแกลเลอรี</li></ul><button className="primary-button" onClick={()=>go("scan")}>เปิด QR Scanner <Icon name="arrow" size={17}/></button></div>
       </div>
     </section>
-
-    <section className="section owner-section">
-      <div className="container owner-grid">
-        <div><span className="kicker">FOR VILLA MERCHANTS</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><button className="primary-button" onClick={() => go("owner-auth")}>เข้าสู่ Member Room <Icon name="arrow" size={18} /></button></div>
-        <div className="feature-stack">
-          <div><span><Icon name="shield" /></span><p><strong>Trust Profile</strong>โปรไฟล์ที่พักพร้อมสถานะตรวจสอบ</p></div>
-          <div><span><Icon name="qr" /></span><p><strong>QR Verification</strong>QR เฉพาะสำหรับแชร์ให้ลูกค้าตรวจสอบ</p></div>
-          <div><span><Icon name="chart" /></span><p><strong>Analytics</strong>ดูสถิติการเข้าชมและการสแกน</p></div>
-        </div>
+    <section className="section home-feature-banner home-feature-merchant">
+      <div className="container home-feature-layout">
+        <div className="home-feature-image"><img src={section("merchant").image||"/demo/villas/villa-3.jpg"} alt="ภาพประกอบพูลวิลล่าสำหรับเจ้าของที่พัก" loading="lazy"/><div className="home-feature-image-note"><Icon name="shield" size={26}/><div><small>VILLACHECK FOR MERCHANTS</small><strong>ดูแลข้อมูลที่พัก ในที่เดียว</strong></div></div></div>
+        <div className="home-feature-copy"><span className="kicker">FOR VILLA MERCHANTS</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><div className="home-merchant-tools"><span><Icon name="shield" size={17}/>Trust Profile</span><span><Icon name="qr" size={17}/>QR Verification</span><span><Icon name="chart" size={17}/>Analytics</span></div><button className="primary-button" onClick={()=>go("owner-auth")}>เข้าสู่ Member Room <Icon name="arrow" size={17}/></button></div>
       </div>
     </section>
 

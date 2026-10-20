@@ -164,6 +164,7 @@ function normalizeCms(data) {
         visible: s.visible,
         title: string(s.title, 300),
         description: string(s.description),
+        ...(s.image===undefined?{}:{image:cmsUrl(s.image,true)}),
       }
     }),
     "id",
@@ -281,6 +282,7 @@ function mediaReferences(content) {
     content.site.logo,
     content.site.paymentQrImage || "",
     ...content.home.images,
+    ...content.home.sections.map(s=>s.image||""),
     ...shortcutMediaUrls(content),
     ...(content.home.banners || []).flatMap(b=>[b.image,b.mobileImage]),
     ...content.home.blocks.map((x) => x.image),
