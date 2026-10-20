@@ -503,7 +503,7 @@ export default function AdminCms({
                 </>}
                 {homePanel==="sections"&&<>
                 <h2>ลำดับ Section หน้าแรก</h2><p>ส่วนข่าวสารใช้รายการที่เปิดแสดงจากแท็บข่าวสาร / บทความ เรียงตามลำดับใน CMS</p>
-                {content.home.sections.filter(s=>s.id!=="promotion").map((s, i, visibleSections) => (
+                {content.home.sections.filter(s=>!["promotion","pricing"].includes(s.id)).map((s, i, visibleSections) => (
                   <div className="cms-block-editor" key={s.id}>
                     <strong>{sectionLabels[s.id] || s.id}</strong>
                     <label className="cms-checkbox">
@@ -537,7 +537,7 @@ export default function AdminCms({
                           ]
                           change({
                             ...content,
-                            home: { ...content.home, sections:[...sections,...content.home.sections.filter(x=>x.id==="promotion")] },
+                            home: { ...content.home, sections:[...sections,...content.home.sections.filter(x=>["promotion","pricing"].includes(x.id))] },
                           })
                         }}
                       >
@@ -553,7 +553,7 @@ export default function AdminCms({
                           ]
                           change({
                             ...content,
-                            home: { ...content.home, sections:[...sections,...content.home.sections.filter(x=>x.id==="promotion")] },
+                            home: { ...content.home, sections:[...sections,...content.home.sections.filter(x=>["promotion","pricing"].includes(x.id))] },
                           })
                         }}
                       >

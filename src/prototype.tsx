@@ -147,11 +147,11 @@ export function LoginPage({ go, onAuthenticated, reference = "", accountType="us
   </main>;
 }
 
-export function OwnerPackageAuth({ go, packageName }: { go: Go; packageName: string; onOwnerLogin: () => void }) {
-  return <LoginPage go={go} accountType="merchant" packageName={sessionStorage.getItem(packageIntentKey)?packageName:""}/>;
+export function OwnerPackageAuth({ go }: { go: Go; packageName: string; onOwnerLogin: () => void }) {
+  return <LoginPage go={go} accountType="merchant"/>;
 }
 
-export function OwnerRegistration({ go, packageName }: { go: Go; packageName: string }) {
+export function OwnerRegistration({ go }: { go: Go; packageName: string }) {
   const [name, setName] = useState("");
   const [nameEn, setNameEn] = useState("");
   const [email, setEmail] = useState("");
@@ -165,7 +165,7 @@ export function OwnerRegistration({ go, packageName }: { go: Go; packageName: st
     catch (error) { setError(error instanceof Error ? error.message : "สมัครไม่สำเร็จ"); }
     finally { setBusy(false); }
   };
-  return <FlowPage kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle={`แพ็กเกจที่สนใจ: ${packageName}`} onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัทภาษาไทย</span><input required value={name} onChange={e => setName(e.target.value)} /></label><label><span>ชื่อ Merchant / บริษัทภาษาอังกฤษ</span><input required value={nameEn} onChange={e => setNameEn(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
+  return <FlowPage kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle="สร้างบัญชีเพื่อจัดการที่พักและเลือกแพ็กเกจหลังเข้าสู่ระบบ" onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัทภาษาไทย</span><input required value={name} onChange={e => setName(e.target.value)} /></label><label><span>ชื่อ Merchant / บริษัทภาษาอังกฤษ</span><input required value={nameEn} onChange={e => setNameEn(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
 }
 
 export function OwnerOnboardingVilla({ go, onVillaAdded }: { go: Go; onVillaAdded: (name: string) => void }) {
@@ -213,7 +213,7 @@ function FlowPage({ kicker, title, subtitle, onBack, children }: { kicker: strin
 
 const ownerNav: [string, Page][] = [
   ["Dashboard", "owner-dashboard"], ["Villas", "owner-villas"], ["Add Villa", "owner-add-villa"],
-  ["QR และการต่ออายุ", "owner-villa-detail"], ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["แพ็กเกจและสิทธิ์", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
+  ["QR และการต่ออายุ", "owner-villa-detail"], ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["แพ็กเกจเจ้าของที่พัก", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
 ];
 const adminNav: [string, Page][] = [
   ["CMS เว็บไซต์", "admin-cms"], ["Dashboard", "admin-dashboard"], ["Villa รออนุมัติ", "admin-pending-villas"], ["Villa ที่อนุมัติแล้ว", "admin-approved-villas"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],

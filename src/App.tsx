@@ -261,7 +261,7 @@ function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch
 
     <section className="section owner-section">
       <div className="container owner-grid">
-        <div><span className="kicker">FOR VILLA MERCHANTS</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><button className="primary-button" onClick={() => go("pricing")}>เข้าสู่ Member Room <Icon name="arrow" size={18} /></button></div>
+        <div><span className="kicker">FOR VILLA MERCHANTS</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><button className="primary-button" onClick={() => go("owner-auth")}>เข้าสู่ Member Room <Icon name="arrow" size={18} /></button></div>
         <div className="feature-stack">
           <div><span><Icon name="shield" /></span><p><strong>Trust Profile</strong>โปรไฟล์ที่พักพร้อมสถานะตรวจสอบ</p></div>
           <div><span><Icon name="qr" /></span><p><strong>QR Verification</strong>QR เฉพาะสำหรับแชร์ให้ลูกค้าตรวจสอบ</p></div>
@@ -270,13 +270,7 @@ function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch
       </div>
     </section>
 
-    <section className="section pricing-preview">
-      <div className="container pricing-banner premium-pricing">
-        <div className="pricing-number">05</div>
-        <div><span className="kicker">TRUST INFRASTRUCTURE FOR MERCHANTS</span><h2 className="cms-prose">{section("pricing").title}</h2><p>{"จัดการที่พักและดูสิทธิ์บริการใน Member Room"}</p></div>
-        <div><small>START FROM</small><strong>{"Member Room"}</strong><button className="sun-button" onClick={() => go("pricing")}>เข้าสู่ระบบเจ้าของที่พัก</button></div>
-      </div>
-    </section>
+    <div />
     <div className="container"><CmsBlocks blocks={home.blocks}/></div>
   </CmsHomeLayout>;
 }
@@ -601,6 +595,7 @@ function AppContent() {
   const [directorySearch, setDirectorySearch] = useState({ query: "", province: "" });
   const [qrReference, setQrReference] = useState("");
   const [account, setAccount] = useState<Account | null>(null);
+  const [accountLoaded,setAccountLoaded]=useState(false);
   useEffect(() => {
     let active = true;
     let request = 0;
@@ -608,7 +603,7 @@ function AppContent() {
       const version = ++request;
       void currentAccount().then(value => { if (active && version === request) setAccount(value); }).catch(error => {
         if (active && version === request && error instanceof ApiError && error.status === 401) setAccount(null);
-      });
+      }).finally(()=>{if(active && version===request)setAccountLoaded(true);});
     };
     refresh();
     window.addEventListener("app-navigation", refresh);
@@ -622,11 +617,11 @@ function AppContent() {
 
   const go = (next: Page, item?: string) => { navigate(next, item); };
   useEffect(() => {
-    if (page === "pricing") {
+    if (page === "pricing" && accountLoaded) {
       if (account?.role === "merchant") navigate("owner-package");
       else { sessionStorage.setItem("villacheck-merchant-return", "owner-package"); navigate("owner-auth"); }
     }
-  }, [page, account?.role, navigate]);
+  }, [page, account?.role, accountLoaded, navigate]);
   const search = (query: string, province: string) => {
     setDirectorySearch({ query, province });
     go("directory");

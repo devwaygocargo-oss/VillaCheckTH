@@ -134,7 +134,7 @@ export const cmsDefaults = {
       },
       {
         id: "pricing",
-        visible: true,
+        visible: false,
         title: "ทำให้ความน่าเชื่อถือ\nมองเห็นและตรวจสอบได้",
         description: "",
       },

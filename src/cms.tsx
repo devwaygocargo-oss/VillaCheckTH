@@ -129,7 +129,7 @@ export function CmsHomeLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       {home.sections
-        .filter((s) => s.visible && s.id!=="promotion")
+        .filter((s) => s.visible && !["promotion","pricing"].includes(s.id))
         .map((s) => (
           <Fragment key={s.id}>{nodes[ids.indexOf(s.id)]}</Fragment>
         ))}
