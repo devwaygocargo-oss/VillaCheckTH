@@ -32,12 +32,12 @@ export class PrismaDatabaseService implements OnModuleDestroy {
   }};
  }
  async exec(sql:string) {return this.current().$executeRawUnsafe(sql);}
- async transaction<T>(work:()=>Promise<T>):Promise<T> {
+ async transaction<T>(work:()=>Promise<T>,options:{timeout?:number}={}):Promise<T> {
   if(this.context.getStore())return work();
   return this.client.$transaction(async client=>{
    await client.$queryRawUnsafe("SELECT pg_advisory_xact_lock(74639201)::text");
    return this.context.run(client,work);
-  },{maxWait:15000,timeout:30000});
+  },{maxWait:15000,timeout:options.timeout??30000});
  }
  async close(){await this.client.$disconnect();}
  async onModuleDestroy(){await this.close();}

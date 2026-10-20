@@ -105,7 +105,8 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    await db.prepare('INSERT INTO villa_events VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING').run(id,sampleId,kind,stamp)
   }
   return {merchant:'demo-merchant@villacheck.example',user:'demo-user@villacheck.example',villas:samples.length+3,workflowMerchants:["demo-payment@villacheck.example","demo-trial@villacheck.example"]}
- })
+ // Remote fixture bootstrap may exceed the normal 30s write limit.
+ },{timeout:120000})
 }
 
 // Repair only our deterministic fixtures and their untouched legacy defaults.
