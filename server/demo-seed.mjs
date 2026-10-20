@@ -40,16 +40,21 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    await db.prepare("UPDATE villas SET photo_url=? WHERE id=? AND (photo_url='' OR photo_url=?) AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)").run(`/demo/villas/villa-${imageIndex??(index>=6?index-2:index%3+1)}.jpg`,id,`/demo/villas/villa-${index%3+1}.jpg`,'villa_review:'+id)
   }
   // Labelled advertising fixtures use the same paid Premium entitlement checks as real ads.
-  for(const [order,name,paidName] of [
+  for(const [order,name,paidName,headlineText,descriptionText] of [
    [0,'Sea Sky Demo Villa','Chiang Mai Pool Villa Online Dummy'],
    [1,'Khao Yai Forest Demo Villa','Khao Yai Pool Villa Online Dummy 3'],
    [2,'Phuket Demo Villa','Krabi Pool Villa Online Dummy 4'],
+   [3,'Chiang Mai Demo Villa',null,'เปลี่ยนเช้าวุ่น ๆ เป็นเช้าที่เชียงใหม่','พักสายตากับบรรยากาศสีเขียว แล้วใช้วันพักผ่อนให้ช้าลงอีกนิด'],
+   [4,'Krabi Cliff Demo Villa',null,'ทริปกระบี่ครั้งนี้ ขอมีแค่คนรู้ใจ','ค้นหาไอเดียวันพักผ่อน ท่ามกลางวิวธรรมชาติและบรรยากาศส่วนตัว'],
+   [5,'Rayong Ocean Demo Villa',null,'ปิดแจ้งเตือน แล้วเปิดโหมดพักที่ระยอง','ชวนแก๊งคนโปรดมาเปลี่ยนบรรยากาศ กับทริปใกล้ทะเลที่เลือกได้เอง'],
+   [6,'Phang Nga Lagoon Demo Villa',null,'ให้พังงาเป็นฉากหลังของวันดี ๆ','เก็บภาพสวยและช่วงเวลาที่อยากจำ ในวันพักผ่อนที่ไม่ต้องเร่งรีบ'],
+   [7,'Bangkok Garden Demo Villa',null,'พักใกล้เมือง เติมวันธรรมดาให้พิเศษ','ไม่ต้องเดินทางไกล ก็หาไอเดียพักผ่อนสำหรับสุดสัปดาห์ครั้งใหม่ได้'],
   ]){
    const villa=await db.prepare("SELECT * FROM villas WHERE name=? AND package_id='premium' AND payments>0 AND status='approved' AND expires>? ORDER BY created,id LIMIT 1").get(paidName,now) || await db.prepare('SELECT * FROM villas WHERE id=?').get(uuid(name));
    if(!villa || villa.package_id!=='premium' || villa.payments<1 || villa.status!=='approved')continue;
    const id=uuid(villa.name+'-home-ad');
-   const headline='พักผ่อนกับพูลวิลล่าส่วนตัว ที่'+villa.province;
-   const copy=villa.province+' · สระว่ายน้ำส่วนตัว พร้อมพื้นที่พักผ่อนสำหรับทริปกับคนที่คุณรัก';
+   const headline=headlineText||'พักผ่อนกับพูลวิลล่าส่วนตัว ที่'+villa.province;
+   const copy=descriptionText||villa.province+' · สระว่ายน้ำส่วนตัว พร้อมพื้นที่พักผ่อนสำหรับทริปกับคนที่คุณรัก';
    const ad={id,villaId:villa.id,villaName:villa.name,placement:'home',image:villa.photo_url,mobileImage:villa.photo_url,title:headline,description:copy+' — '+villa.name+' · ข้อมูลโฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+id,JSON.stringify(ad));
   }

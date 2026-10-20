@@ -58,9 +58,10 @@ test('Premium demo carousel uses eligible ad records, retains admin edits and re
   await seedDemo(db,{password:'DemoTestPassword123'});
   const getAds=()=>advertisingApi(db,null,{method:'GET'},'/api/public/advertisements',new URL('http://localhost?placement=home'),()=>{});
   const {cmsUrl}=await import('./cms.mjs');assert.equal(cmsUrl('/demo/villas/villa-1.jpg',true),'/demo/villas/villa-1.jpg');assert.throws(()=>cmsUrl('/demo/villas/../secret',true));
-  const {advertisements}=await getAds();assert.equal(advertisements.length,3);assert.ok(advertisements.every(a=>a.demo&&a.sponsored&&a.href.startsWith('#page=verify&item=VC-DEMO-')));
+  const {advertisements}=await getAds();assert.equal(advertisements.length,8);assert.ok(advertisements.every(a=>a.demo&&a.sponsored&&a.href.startsWith('#page=verify&item=VC-DEMO-')));
+  assert.equal(new Set(advertisements.map(a=>a.id)).size,8);assert.equal(new Set(advertisements.map(a=>a.title)).size,8);for(const ad of advertisements)assert.ok(existsSync('public'+ad.image));
   const key='advertisement:'+advertisements[0].id,row=await db.prepare('SELECT value FROM system_settings WHERE key=?').get(key),ad=JSON.parse(row.value);ad.title='Admin edited';ad.visible=false;await db.prepare('UPDATE system_settings SET value=? WHERE key=?').run(JSON.stringify(ad),key);
-  await seedDemo(db,{password:'DemoTestPassword123'});assert.equal(JSON.parse((await db.prepare('SELECT value FROM system_settings WHERE key=?').get(key)).value).title,'Admin edited');assert.equal((await getAds()).advertisements.length,2);
-  const other=(await getAds()).advertisements[0];const stored=JSON.parse((await db.prepare('SELECT value FROM system_settings WHERE key=?').get('advertisement:'+other.id)).value);await db.prepare("UPDATE villas SET expires='2000-01-01T00:00:00.000Z' WHERE id=?").run(stored.villaId);assert.equal((await getAds()).advertisements.length,1);
+  await seedDemo(db,{password:'DemoTestPassword123'});assert.equal(JSON.parse((await db.prepare('SELECT value FROM system_settings WHERE key=?').get(key)).value).title,'Admin edited');assert.equal((await getAds()).advertisements.length,7);
+  const other=(await getAds()).advertisements[0];const stored=JSON.parse((await db.prepare('SELECT value FROM system_settings WHERE key=?').get('advertisement:'+other.id)).value);await db.prepare("UPDATE villas SET expires='2000-01-01T00:00:00.000Z' WHERE id=?").run(stored.villaId);assert.equal((await getAds()).advertisements.length,6);
  }finally{await db.close();}
 });
