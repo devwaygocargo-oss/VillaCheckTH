@@ -14,7 +14,7 @@ import {
   type CmsState,
 } from "./cms"
 
-const sectionLabels:Record<string,string>={hero:"Carousel / ค้นหา / เมนูลัด",promotion:"แพ็กเกจแนะนำ",how:"ขั้นตอนการใช้งาน",provinces:"ค้นหาตามจังหวัด",showcase:"ที่พักแนะนำ",qr:"แนะนำ QR",merchant:"สำหรับเจ้าของที่พัก",pricing:"แนะนำ Member Room",custom:"Section ที่เพิ่มเอง"};
+const sectionLabels:Record<string,string>={hero:"Carousel / ค้นหา / เมนูลัด",promotion:"แพ็กเกจแนะนำ",how:"ขั้นตอนการใช้งาน",provinces:"ค้นหาตามจังหวัด",showcase:"ที่พักแนะนำ",qr:"แนะนำ QR",merchant:"สำหรับเจ้าของที่พัก",pricing:"แนะนำ Member Room",news:"ข่าวสารและอัปเดต",custom:"Section ที่เพิ่มเอง"};
 const makeId = () => `item-${crypto.randomUUID()}`
 const blankBlock = (): CmsBlock => ({
   id: makeId(),
@@ -220,7 +220,7 @@ const tabs: [Tab, string][] = [
   ["home", "หน้าแรก"],
   ["navigation", "เมนูเว็บไซต์"],
   ["pages", "หน้าเว็บ"],
-  ["articles", "บทความ"],
+  ["articles", "ข่าวสาร / บทความ"],
   ["faqs", "FAQ"],
   ["site", "ตั้งค่าเว็บไซต์"],
   ["business", "กติกา / ข้อความอีเมล"],
@@ -502,7 +502,7 @@ export default function AdminCms({
                 <Field label="ข้อความปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonLabel??"ค้นหาที่พัก"} onChange={buttonLabel=>change({...content,home:{...content.home,buttonLabel}})}/><Field label="ลิงก์ปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonHref??"#page=directory"} onChange={buttonHref=>change({...content,home:{...content.home,buttonHref}})}/><p>ข้อความหัวข้อและปุ่มชุดนี้ใช้กับภาพสำรอง ส่วนสไลด์แต่ละภาพแก้ได้ในแท็บภาพสไลด์</p>
                 </>}
                 {homePanel==="sections"&&<>
-                <h2>ลำดับ Section หน้าแรก</h2>
+                <h2>ลำดับ Section หน้าแรก</h2><p>ส่วนข่าวสารใช้รายการที่เปิดแสดงจากแท็บข่าวสาร / บทความ เรียงตามลำดับใน CMS</p>
                 {content.home.sections.filter(s=>s.id!=="promotion").map((s, i, visibleSections) => (
                   <div className="cms-block-editor" key={s.id}>
                     <strong>{sectionLabels[s.id] || s.id}</strong>
@@ -560,7 +560,7 @@ export default function AdminCms({
                         ↓ ลง
                       </button>
                     </div>
-                    {["how", "provinces", "showcase", "qr", "merchant", "pricing"].includes(
+                    {["how", "provinces", "showcase", "news", "qr", "merchant", "pricing"].includes(
                       s.id,
                     ) && (
                       <details className="cms-card-details">

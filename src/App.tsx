@@ -1,3 +1,4 @@
+import HomeNews from "./HomeNews";
 import {publicNavigation} from "../server/cms-home-config.mjs";
 import HomeShortcuts from "./HomeShortcuts";
 import {qrReference as parseQrReference} from "./qrReference";
@@ -242,6 +243,8 @@ function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch
         <VillaShowcase go={go} />
       </div>
     </section>
+
+    <HomeNews go={go}/>
 
     <section className="section qr-section">
       <div className="container split-panel">

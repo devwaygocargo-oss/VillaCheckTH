@@ -153,7 +153,7 @@ function normalizeCms(data) {
   ))
   if(navigation.length>12)fail(400,"เพิ่มเมนูได้สูงสุด 12 รายการ รวมเมนูติดต่อเรา")
   const sections = unique(
-    list(data.home.sections, 9).map((s) => {
+    list(homeConfig(data.home).sections, 10).map((s) => {
       if (
         !cmsDefaults.home.sections.some((x) => x.id === s.id) ||
         typeof s.visible !== "boolean"
@@ -168,7 +168,7 @@ function normalizeCms(data) {
     }),
     "id",
   )
-  if (sections.length !== 9) fail(400, "Section หน้าแรกไม่ครบ ใช้การซ่อนแทนการลบ")
+  if (sections.length !== 10) fail(400, "Section หน้าแรกไม่ครบ ใช้การซ่อนแทนการลบ")
   const home = {
     discovery: discoveryConfig(data.home,data.pages),
     buttonLabel:string(data.home.buttonLabel??"ค้นหาที่พัก",100),

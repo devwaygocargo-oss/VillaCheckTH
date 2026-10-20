@@ -44,8 +44,11 @@ export function publicNavigation(items) {
   }
   return rows;
 }
+export const newsSectionDefault={id:"news",visible:true,title:"ข่าวสารและอัปเดต",description:"เรื่องน่ารู้และคำแนะนำ เพื่อทุกการเดินทางที่มั่นใจ"};
 export function homeConfig(home) {
-  return {...home,buttonLabel:home.buttonLabel??"ค้นหาที่พัก",buttonHref:home.buttonHref??"#page=directory",discovery:{...discoveryDefaults,...home.discovery,shortcuts:home.discovery?.shortcuts??discoveryDefaults.shortcuts}};
+  const sections=[...home.sections];
+  if(!sections.some(s=>s.id==="news"))sections.splice(Math.max(0,sections.findIndex(s=>s.id==="showcase")+1),0,{...newsSectionDefault});
+  return {...home,sections,buttonLabel:home.buttonLabel??"ค้นหาที่พัก",buttonHref:home.buttonHref??"#page=directory",discovery:{...discoveryDefaults,...home.discovery,shortcuts:home.discovery?.shortcuts??discoveryDefaults.shortcuts}};
 }
 export function shortcutMediaUrls(content,publicOnly=false) {
   const discovery=content.home.discovery;

@@ -1,4 +1,4 @@
-import {discoveryDefaults} from "./cms-home-config.mjs";
+import {discoveryDefaults,newsSectionDefault} from "./cms-home-config.mjs";
 const pages = {
   about: {
     kicker: "ABOUT VILLACHECK",
@@ -117,6 +117,7 @@ export const cmsDefaults = {
         title: "ที่พักพร้อมหลักฐาน\nไม่ใช่แค่ภาพสวย",
         description: "สำรวจ Trust metadata ที่สำคัญก่อนตัดสินใจ",
       },
+      {...newsSectionDefault},
       {
         id: "qr",
         visible: true,
