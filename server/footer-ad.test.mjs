@@ -9,7 +9,7 @@ import {footerAdFeature} from './package-content.mjs';
 test('Footer advertising supports paid Pro and Premium, one simultaneous creative, preserved dummy edits and expiry',async()=>{
  const db=await openTestDatabase();try{
   await seedDemo(db,{password:'FooterDummyPassword123',adminEmail:'footer-admin@example.test',adminPassword:'FooterDummyPassword123'});
-  const admin=await db.prepare('SELECT * FROM users WHERE email=?').get('footer-admin@example.test'),villa=await db.prepare("SELECT * FROM villas WHERE name='Sea Sky Demo Villa'").get();
+  const admin=await db.prepare('SELECT * FROM users WHERE email=?').get('footer-admin@example.test'),villa=await db.prepare("SELECT * FROM villas WHERE name='Hua Hin Footer Ad Demo Villa'").get();
   await db.prepare("UPDATE villas SET package_id='basic' WHERE id=?").run(villa.id);assert.equal(await advertisingEntitlement(db,villa.id,'footer'),false);
   await db.prepare("UPDATE villas SET package_id='premium' WHERE id=?").run(villa.id);assert.equal(await advertisingEntitlement(db,villa.id,'footer'),true);
   await db.prepare("UPDATE villas SET package_id='pro' WHERE id=?").run(villa.id);assert.equal(await advertisingEntitlement(db,villa.id,'footer'),true);assert.equal(await advertisingEntitlement(db,villa.id,'home'),false);
