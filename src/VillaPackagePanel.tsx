@@ -22,6 +22,7 @@ export default function VillaPackagePanel({
   const [couponCode, setCouponCode] = useState("")
   const villa = store.villas.find((v) => v.id === villaId)
   const plan = plans.find((p) => p.id === selected)
+  const featureRows=[...new Set(plans.flatMap(p=>p.features.map(feature=>feature.trim()).filter(Boolean)))];
   return (
     <section className="merchant-panel subscription-panel">
       <span className="kicker">MEMBER ROOM</span>
@@ -70,32 +71,28 @@ export default function VillaPackagePanel({
           </p>
         </div>
       )}
+      {!!featureRows.length&&<p className="package-feature-legend">✓ รวมในแพ็กเกจ · × ไม่รวมในแพ็กเกจ</p>}
       <div className="subscription-options">
-        {plans.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            aria-pressed={selected === p.id}
-            className={selected === p.id ? "active" : ""}
-            onClick={() => setSelected(p.id)}
-          >
-            <strong>{p.name}</strong>
-            <span>
-              ฿{(p.amount / 100).toLocaleString("th-TH")} / เดือน / ที่พัก
-            </span>
-            <small>รวมภาษี · ทุกแพ็กเกจเขียนรีวิวได้</small>
-          </button>
-        ))}
+        {plans.map((p) => {
+          const included=new Set(p.features.map(feature=>feature.trim()));
+          return <article key={p.id} data-plan-id={p.id} className={`subscription-plan${selected===p.id?" active":""}`}>
+            <button type="button" aria-pressed={selected===p.id} onClick={()=>setSelected(p.id)}>
+              <strong>{p.name}</strong><span>฿{(p.amount/100).toLocaleString("th-TH")} / เดือน / ที่พัก</span><small>รวมภาษี · ทุกแพ็กเกจเขียนรีวิวได้</small>
+            </button>
+            <ul className="package-feature-list" aria-label={`สิทธิ์ของ ${p.name}`}>
+              {featureRows.map(feature=>{
+                const available=included.has(feature);
+                return <li key={feature} className={available?"feature-included":"feature-excluded"}><span className="package-feature-symbol" aria-hidden="true">{available?"✓":"×"}</span><span><span className="sr-only">{available?"มีสิทธิ์: ":"ไม่มีสิทธิ์: "}</span>{feature}</span></li>;
+              })}
+            </ul>
+          </article>;
+        })}
       </div>
       {plan && (
         <section className="subscription-selection">
           <h3>{plan.name}</h3>
           <p>{plan.description}</p>
-          <ul>
-            {plan.features.map((feature, i) => (
-              <li key={i}>{feature}</li>
-            ))}
-          </ul>
+
         </section>
       )}
       {villa && (
