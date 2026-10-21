@@ -110,7 +110,7 @@ export default function Advertising({
     }
   }
   return (
-    <>{!adsOnly&&<SocialMaterials admin={!merchant}/>}<section className="merchant-panel">
+    <>{!adsOnly&&<SocialMaterials admin={!merchant}/>}<section className="merchant-panel advertising-panel">
       <h2>{adsOnly?"จัดการโฆษณาทุกตำแหน่ง":"โฆษณาและคอนเทนต์ Social"}</h2>
       {adsOnly&&<p>แบนเนอร์บันทึกแยกจากร่าง CMS เปิดแสดงเมื่ออนุมัติโฆษณา อยู่ในช่วงเวลา และที่พักมีสิทธิ์แพ็กเกจครบ</p>}
       <p>
@@ -127,21 +127,22 @@ export default function Advertising({
             หน้ารายละเอียดสุ่มหนึ่งรายการเมื่อเข้าหน้าและคงไว้ระหว่างอ่าน
           </p>
           <div className="merchant-toolbar"><input aria-label="ค้นหาโฆษณา" placeholder="ค้นหาหัวข้อหรือชื่อที่พัก" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="กรองตำแหน่งโฆษณา" value={placement} onChange={e=>setPlacement(e.target.value)}><option value="all">ทุกตำแหน่ง</option><option value="home">Carousel หน้าแรก</option><option value="detail">หน้ารายละเอียดที่พัก</option><option value="footer">ก่อน Footer</option></select></div>
-          <div className="button-row">
-            <button onClick={() => chooseAd({ ...blankAd })}>เพิ่มโฆษณา</button>
-            {ads.filter(a=>(placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).map((a) => (
-              <button key={a.id} onClick={() => chooseAd({...blankAd,...a})}>
-                {a.title} · {a.placement}
-              </button>
-            ))}
-          </div>
+          <div className="ad-management-layout">
+          <aside className="ad-campaign-list" aria-label="รายการแบนเนอร์">
+            <div className="ad-list-heading"><strong>รายการโฆษณา</strong><span>{ads.filter(a=>(placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).length} รายการ</span></div>
+            <button type="button" className="ad-create-button" onClick={()=>chooseAd({...blankAd})}>+ เพิ่มโฆษณาใหม่</button>
+            {ads.filter(a=>(placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).map(a=><button type="button" className={`ad-campaign-card${ad.id===a.id?" is-selected":""}`} aria-pressed={ad.id===a.id} aria-label={`${a.title} · ${a.placement}`} key={a.id} onClick={()=>chooseAd({...blankAd,...a})}>{a.image&&<img src={a.image} alt="" loading="lazy"/>}<span className="ad-campaign-copy"><strong>{a.title}</strong><small>{a.villaName||"ไม่ระบุที่พัก"}</small><span className="ad-campaign-meta"><span>{{home:"Carousel หน้าแรก",detail:"หน้ารายละเอียด",footer:"ก่อน Footer"}[a.placement]||a.placement}</span><span>{!a.visible?"ปิดแสดงผล":!a.approved?"รออนุมัติ":"อนุมัติแล้ว"}</span></span></span></button>)}
+            {!ads.some(a=>(placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase()))&&<p>ไม่พบโฆษณาตามเงื่อนไข</p>}
+          </aside>
           <form
-            className="portal-form"
+            className="portal-form ad-editor-form"
             onSubmit={(e) => {
               e.preventDefault()
               void save("/admin/advertisements", ad)
             }}
           >
+            <div className="ad-editor-heading"><span>แก้ไขแบนเนอร์</span><h3>{ad.id?ad.title:"โฆษณาใหม่"}</h3><p>เลือกที่พัก กำหนดเนื้อหาและช่วงเวลา แล้วบันทึกแบนเนอร์</p></div>
+            <fieldset className="ad-form-section"><legend>1. ที่พักและตำแหน่ง</legend><div className="ad-form-grid">
             <label>
               ที่พัก
               <select
@@ -170,8 +171,10 @@ export default function Advertising({
                 <option value="footer">โฆษณาเล็กก่อน Footer · 1 ชิ้น (2,990 ขึ้นไป)</option>
               </select>
             </label>
+            </div></fieldset><fieldset className="ad-form-section"><legend>2. รูปภาพโฆษณา</legend><div className="ad-form-grid">
             <CmsMediaPicker library={mediaLibrary??localMedia} onUploaded={mediaUploaded} label="ภาพคอมพิวเตอร์" value={ad.image} onChange={image=>setAd(current=>({...current,image}))}/>
-            <CmsMediaPicker label="ภาพมือถือ" value={ad.mobileImage} onChange={mobileImage=>setAd(current=>({...current,mobileImage}))}/>
+            <CmsMediaPicker library={mediaLibrary??localMedia} onUploaded={mediaUploaded} label="ภาพมือถือ" value={ad.mobileImage} onChange={mobileImage=>setAd(current=>({...current,mobileImage}))}/>
+            </div></fieldset><fieldset className="ad-form-section"><legend>3. ข้อความและลิงก์</legend><div className="ad-form-grid">
             {([
               "title",
               "description",
@@ -195,6 +198,7 @@ export default function Advertising({
                 />
               </label>
             ))}
+            </div></fieldset><fieldset className="ad-form-section"><legend>4. กำหนดเวลาและการแสดงผล</legend><div className="ad-form-grid">
             {(["startsAt", "endsAt"] as const).map((k) => (
               <label key={k}>
                 {k === "startsAt" ? "เริ่มแสดง (เวลาไทย)" : "สิ้นสุด (เวลาไทย)"}
@@ -246,10 +250,12 @@ export default function Advertising({
               />
               Admin อนุมัติโฆษณา
             </label>
-            <button className="primary-button" disabled={busy}>
+            </div></fieldset><div className="ad-save-bar"><span>การแก้ไขจะมีผลหลังบันทึก</span><button className="primary-button" disabled={busy}>
               บันทึกแบนเนอร์
             </button>
+            </div>
           </form>
+          </div>
         </>
       )}
       {!adsOnly&&<>
