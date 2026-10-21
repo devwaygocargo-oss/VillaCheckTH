@@ -1,0 +1,110 @@
+[
+  {
+    "file": "public/demo/villas/villa-1.jpg",
+    "url": "/demo/villas/villa-1.jpg",
+    "source": "https://unsplash.com/photos/tropical-resort-with-pool-and-palm-trees-mF5lw7vqHYM",
+    "photographer": "Ron Fijian",
+    "downloadUrl": "https://images.unsplash.com/photo-1760943013869-65a30a4fafd1?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "432dd3798a51a30e098de245f263d10de531b765b83523a70b1142a169c45c7e",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  },
+  {
+    "file": "public/demo/villas/villa-2.jpg",
+    "url": "/demo/villas/villa-2.jpg",
+    "source": "https://unsplash.com/photos/a-swimming-pool-in-a-resort-6pvIAIoipIU",
+    "photographer": "Rosemary Media",
+    "downloadUrl": "https://images.unsplash.com/photo-1660839638369-7aff0b6a83d0?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "9196bdb96b5a856e41f4f698415bfe40c385ad8de40b56bf4f3236497270c2b2",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  },
+  {
+    "file": "public/demo/villas/villa-3.jpg",
+    "url": "/demo/villas/villa-3.jpg",
+    "source": "https://unsplash.com/photos/tropical-villa-with-a-private-pool-and-outdoor-seating-DcRVVXSs_5w",
+    "photographer": "Marc Wieland",
+    "downloadUrl": "https://images.unsplash.com/photo-1774280960001-ce8169cfc38f?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "27976c94f8891183216fd4d7002bb761babda3fc73c833d871b838758fd1d435",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  },
+  {
+    "file": "public/demo/villas/villa-4.jpg",
+    "url": "/demo/villas/villa-4.jpg",
+    "source": "https://unsplash.com/photos/a-small-pool-with-lounge-chairs-next-to-it-A12OW0VfVMo",
+    "photographer": "Antonio Araujo",
+    "downloadUrl": "https://images.unsplash.com/photo-1694967456313-80d6c3acab32?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "a6e27ac4ce8de870185cbf8d0f3c1227224e0d3b5031fbc5d75cc4cde8d41bdd",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  },
+  {
+    "file": "public/demo/villas/villa-5.jpg",
+    "url": "/demo/villas/villa-5.jpg",
+    "source": "https://unsplash.com/photos/resort-swimming-pool-with-waterslide-and-tropical-foliage-168Xn8FVDu8",
+    "photographer": "Summer Liu",
+    "downloadUrl": "https://images.unsplash.com/photo-1755438938093-a29166eafde2?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "e687c2965b43f3cda65c805a6f6d728d808f2265e6ce919c39829247884cdf77",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  },
+  {
+    "file": "public/demo/villas/villa-6.jpg",
+    "url": "/demo/villas/villa-6.jpg",
+    "source": "https://unsplash.com/photos/resort-swimming-pool-with-sunbeds-and-lush-greenery-eEw2iGvqsW0",
+    "photographer": "Sara Abilova",
+    "downloadUrl": "https://images.unsplash.com/photo-1780989863103-3321f3d22a6c?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "b069ab06e30256af63b15ff8f56316f1bdddc8dad7f5c6f7597b15eec58c7888",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  },
+  {
+    "file": "public/demo/villas/villa-7.jpg",
+    "url": "/demo/villas/villa-7.jpg",
+    "source": "https://unsplash.com/photos/tropical-resort-with-pool-and-palm-trees-mF5lw7vqHYM",
+    "photographer": "Ron Fijian",
+    "downloadUrl": "https://images.unsplash.com/photo-1760943013869-65a30a4fafd1?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "432dd3798a51a30e098de245f263d10de531b765b83523a70b1142a169c45c7e",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  },
+  {
+    "file": "public/demo/villas/villa-8.jpg",
+    "url": "/demo/villas/villa-8.jpg",
+    "source": "https://unsplash.com/photos/a-swimming-pool-next-to-a-hut-iG3Wpl0J3p4",
+    "photographer": "sidath vimukthi",
+    "downloadUrl": "https://images.unsplash.com/photo-1750271328536-10fdab4f2f5e?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "4f1f3df56ce5bb722a0f295cab73292f24f29f945050800c538e804d8ed5e77f",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  },
+  {
+    "file": "public/demo/villas/villa-9.jpg",
+    "url": "/demo/villas/villa-9.jpg",
+    "source": "https://unsplash.com/photos/luxury-resort-swimming-pool-with-sun-loungers-and-terraced-landscaping-YDHVZK5YZb8",
+    "photographer": "Pavel Gromov",
+    "downloadUrl": "https://images.unsplash.com/photo-1781511832650-4001a029803a?auto=format&fit=max&w=1400&h=1000&q=75&fm=jpg",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "verifiedAt": "2026-10-21",
+    "sha256": "ad88c2b28fe8f092df1dae236689bb11008ffaaabb69d628df229d4e8e9ab6b4",
+    "usage": "DUMMY property and editorial illustration; no endorsement or booking representation"
+  }
+]

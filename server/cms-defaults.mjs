@@ -55,10 +55,10 @@ const articles = {
     "เปรียบเทียบเบอร์โทรและบัญชีสื่อสารกับข้อมูลใน Trust Profile หากมีผู้ขอเปลี่ยนบัญชีรับเงินหรือให้ติดต่อช่องทางใหม่ ควรยืนยันกับช่องทางเดิมก่อน",
 }
 const images = [
-  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1400&q=88",
-  "https://images.unsplash.com/photo-1514803400321-3ca29fc47334?auto=format&fit=crop&w=1200&q=86",
-  "https://images.unsplash.com/photo-1555426104-3a03a4e70b1d?auto=format&fit=crop&w=1200&q=86",
-  "https://images.unsplash.com/photo-1756115377696-0bdbf1c21a02?auto=format&fit=crop&w=1200&q=86",
+  "/demo/villas/villa-1.jpg",
+  "/demo/villas/villa-2.jpg",
+  "/demo/villas/villa-3.jpg",
+  "/demo/villas/villa-4.jpg",
 ]
 export const cmsDefaults = {
   presentation:presentationDefaults,

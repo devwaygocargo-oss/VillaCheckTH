@@ -331,7 +331,7 @@ export async function adminCms(db, user, req, path, readBody) {
   if (path === "/api/admin/cms/media" && req.method === "GET") {
     const media=(await db.prepare("SELECT id,name,mime FROM documents WHERE name LIKE 'cms-image:%' ORDER BY id").all()).map(m=>({...m,url:`/api/public/cms-media/${m.id}`,source:"upload"}));
     const seen=new Set(media.map(m=>m.url));
-    const add=(url,name)=>{if(typeof url!=="string"||!url.startsWith("https://")||seen.has(url))return;seen.add(url);media.push({id:`banner-${media.length}`,name,mime:"image/remote",url,source:"banner"});};
+    const add=(url,name)=>{if(typeof url!=="string"||!(url.startsWith("https://")||/^\/demo\/villas\/villa-[1-9]\.jpg$/.test(url))||seen.has(url))return;seen.add(url);media.push({id:`banner-${media.length}`,name,mime:"image/remote",url,source:"banner"});};
     const releases=[await read(db,"cms_published",empty),await read(db,"cms_draft",empty),...await read(db,"cms_history",[])];
     for(const release of releases){const home=release.content?.home;if(!home)continue;for(const [i,image] of (home.images||[]).entries())add(image,`Carousel ${i+1}`);for(const banner of home.banners||[]){add(banner.image,banner.title||"Banner");add(banner.mobileImage,(banner.title||"Banner")+" · มือถือ");}}
     const ads=await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'advertisement:%'").all();

@@ -1,3 +1,4 @@
+import {replaceLegacyStockImages} from "../server/licensed-demo-images.mjs";
 import {enrichStatusGuide} from "../server/status-guide.mjs";
 import {enrichPublishedNews} from "../server/news-content.mjs";
 import 'dotenv/config';
@@ -11,6 +12,7 @@ if(process.env.VERCEL!=='1'||process.env.SEED_PUBLIC_DEMO_DATA==='false')process
 const db=new PrismaDatabaseService();
 try{
  const result=await seedDemo(db,{password:process.env.DEMO_PASSWORD || randomBytes(24).toString('base64url')});
+ console.log('Licensed image replacements:',await replaceLegacyStockImages(db));
  console.log('Status guide expanded:',await enrichStatusGuide(db));
  console.log('News content expanded:',await enrichPublishedNews(db));
  console.log('Display wording updated:',await removeSampleWord(db));
