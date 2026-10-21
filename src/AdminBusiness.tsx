@@ -1,3 +1,4 @@
+import OwnerVerification from "./OwnerVerification";
 import Advertising from "./Advertising";
 import Reviews from "./Reviews";
 import AdminAcceptance from "./AdminAcceptance";
@@ -27,7 +28,7 @@ export default function AdminBusiness({page,go}:{page:Page;go:(page:Page)=>void}
  {page==="admin-leads"&&<section className="merchant-panel"><input placeholder="ค้นหาชื่อ อีเมล เบอร์โทร" value={query} onChange={e=>setQuery(e.target.value)}/><select value={type} onChange={e=>setType(e.target.value)}><option value="">ทุกประเภท</option><option>USER</option><option>MERCHANT</option></select>{leads.filter(l=>(!type||l.type===type)&&`${l.name} ${l.email} ${l.phone}`.toLowerCase().includes(query.toLowerCase())).map(l=><article key={l.id}><h3>{l.name} · {l.type}</h3><p>{l.email} · {l.phone} · {l.source} · {new Date(l.created).toLocaleString("th-TH")}</p><select value={l.status} onChange={e=>setLeads(rows=>rows.map(x=>x.id===l.id?{...x,status:e.target.value}:x))}>{["NEW","CONTACTED","QUALIFIED","CLOSED"].map(x=><option key={x}>{x}</option>)}</select><textarea aria-label="Notes" value={l.notes} onChange={e=>setLeads(rows=>rows.map(x=>x.id===l.id?{...x,notes:e.target.value}:x))}/><button disabled={busy} onClick={()=>void save(`/admin/leads/${l.id}`,{status:l.status,notes:l.notes})}>บันทึก</button></article>)}</section>}
  {page==="admin-subscriptions"&&<section className="merchant-panel">{subscriptions.map(s=><article key={s.owner_id}><h3>{s.name}</h3><p>{s.email} · {s.package_id} · {s.status} · {s.expires||"รอเปิดใช้งาน"}</p>{["ACTIVE","SUSPENDED","CANCELLED"].map(status=><button disabled={busy} key={status} onClick={()=>void save(`/admin/subscriptions/${s.owner_id}`,{status})}>{status}</button>)}</article>)}</section>}
  {page==="admin-settings"&&<section className="merchant-panel"><p><strong>ตรวจสลิปโดย Admin</strong> · ตรวจยอดและเลขธุรกรรมก่อนอนุมัติ หรือระบุเหตุผลเมื่อส่งกลับให้ Merchant แนบใหม่</p><label><input type="checkbox" checked={demo} onChange={e=>setDemo(e.target.checked)}/>Demo Mode · dummy slips and email outbox (no real money or emails)</label><button disabled={busy} className="primary-button" onClick={()=>void save("/admin/settings",{paymentVerificationMode:"MANUAL",demoMode:demo})}>บันทึกการตั้งค่า</button></section>}
- {page==="admin-settings"&&<><Reviews mode="admin"/><AdminReadiness/><AdminAcceptance/></>}
+ {page==="admin-settings"&&<><OwnerVerification admin/><Reviews mode="admin"/><AdminReadiness/><AdminAcceptance/></>}
  {page==="admin-packages"&&<><AdminPromotions/><Advertising/></>}
  </PortalShell>;
 }

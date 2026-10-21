@@ -1,3 +1,4 @@
+import OwnerVerification from "./OwnerVerification";
 import HomeLogoLink from "./HomeLogoLink";
 import PropertyMedia from "./PropertyMedia";
 import SocialMaterials from "./SocialMaterials";
@@ -319,7 +320,7 @@ export default function Backoffice({
           {message}
         </div>
       )}
-      {!admin && dashboard && <><Reviews mode="merchant"/><Advertising merchant/></>}
+      {!admin && dashboard && <><OwnerVerification/><Reviews mode="merchant"/><Advertising merchant/></>}
       {dashboard && (
         <>
           <div className="metric-grid">
@@ -544,7 +545,7 @@ export default function Backoffice({
                 }}><h2>แก้ไขข้อมูล Villa</h2><p role="status" className="merchant-status">สถานะ: {status(active)}</p><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><label>วันที่ถ่ายภาพ (หากทราบ)<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","nameEn","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{({name:"ชื่อที่พักภาษาไทย",nameEn:"ชื่อที่พักภาษาอังกฤษ"} as Record<string,string>)[k] || k}<input required={["name","nameEn","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
                 {!editing&&active.photoUrl&&<img src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/>}
                 <PropertyMedia villaId={active.id} mode={admin?"admin":"merchant"}/>
-                {!admin&&!editing&&<SocialMaterials villaId={active.id}/>}
+                {!admin&&!editing&&<><OwnerVerification villaId={active.id}/><SocialMaterials villaId={active.id}/></>}
                 <h2>เอกสารกรรมสิทธิ์ · {active.name}</h2>
                 <p>{active.document.name}</p>
                 <div className="merchant-villa-meta">
@@ -679,6 +680,8 @@ export function MerchantVerification({
     nameEn?: string
     trialUnlimited?: boolean
     basicVerificationNotice?: string | null
+    ownerVerificationRequired?: boolean
+    ownerVerification?: {status:string;reviewedAt:string;method:string} | null
     photoUploadedAt?: string | null
     photoTakenAt?: string | null
     photoReviewedAt?: string | null
@@ -705,7 +708,7 @@ export function MerchantVerification({
     setLoading(true)
     setVilla(null)
     setError("")
-    void api<{ nameEn?: string; basicVerificationNotice?: string | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
+    void api<{ nameEn?: string; basicVerificationNotice?: string | null; ownerVerificationRequired?: boolean; ownerVerification?: {status:string;reviewedAt:string;method:string} | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
       `${adminView?"/admin/qr-verification":"/public/qr"}/${encodeURIComponent(reference)}`,
     )
       .then((value) => {
@@ -765,6 +768,8 @@ export function MerchantVerification({
                 ? "QR ใช้งานได้ · Admin อนุมัติแล้ว"
                 : ({EXPIRED:"QR หมดอายุ",SUSPENDED:"QR ถูกระงับ",INACTIVE:"QR ปิดใช้งาน",PENDING:"QR อยู่ระหว่างรออนุมัติ"} as Record<string,string>)[villa.qrStatus] || "QR ไม่พร้อมใช้งาน"}
             </span>
+            {villa.ownerVerificationRequired && !villa.ownerVerification && <p className="verification-reminder">ยังไม่ผ่านการยืนยันเจ้าของบ้านด้วยใบหน้าและทะเบียนบ้าน</p>}
+            {villa.ownerVerification && <p className="merchant-status">ยืนยันเจ้าของบ้านแล้ว · ตรวจใบหน้าและทะเบียนบ้านโดย Admin · {date(villa.ownerVerification.reviewedAt)}</p>}
             {villa.basicVerificationNotice && <p className="verification-reminder">{villa.basicVerificationNotice}</p>}
             {villa.photoUrl && <img src={villa.photoUrl} alt={villa.name} style={{maxWidth:"100%",maxHeight:360}}/>}
             <p>{villa.nameEn}</p><p>อัปเดตรูปภาพล่าสุดเมื่อ {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"}</p>{villa.photoUrl && <p>วันที่อัปโหลด: {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"} · วันที่ถ่าย: {villa.photoTakenAt ? date(villa.photoTakenAt) : "ไม่ระบุ"}{villa.photoReviewedAt && <> · วันที่ทีมตรวจสื่อ: {date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>

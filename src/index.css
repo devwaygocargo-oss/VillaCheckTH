@@ -1176,3 +1176,8 @@ footer { background: var(--ocean); color: white; padding: 72px 0 24px; }
 .gallery-picker-copy { display: grid; gap: 4px; flex: 1; min-width: 0; }
 .gallery-picker-copy strong { font-size: 16px; }
 .gallery-picker-copy > span { font-size: 12px; color: var(--muted); }
+
+.owner-verification input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 18px; margin: 3px 0 0; }
+.owner-verification label:has(> input[type="checkbox"]) { display: flex; align-items: flex-start; gap: 10px; }
+.owner-verification input[type="file"] { max-width: 100%; }
+.owner-verification a { overflow-wrap: anywhere; }

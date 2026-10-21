@@ -1,4 +1,4 @@
-import {packageContent,footerAdFeature,premiumGuaranteeFeature,basicVerificationNotice} from './package-content.mjs'
+import {packageContent,footerAdFeature,premiumGuaranteeFeature,basicVerificationNotice,onlineVerificationFeatures} from './package-content.mjs'
 import { packages } from "./database.mjs"
 export const levels = [
   "REGISTERED",
@@ -59,6 +59,18 @@ export async function seedCatalog(db) {
     const row=await db.prepare("SELECT description FROM package_catalog WHERE id='basic'").get();
     if(row && !row.description.includes(basicVerificationNotice))await db.prepare("UPDATE package_catalog SET description=? WHERE id='basic'").run(row.description+' · '+basicVerificationNotice);
     await db.prepare("INSERT INTO system_settings(key,value) VALUES ('basic_verification_scope_v1','true') ON CONFLICT(key) DO NOTHING").run();
+  }
+
+  if(!(await db.prepare("SELECT value FROM system_settings WHERE key='online_owner_verification_v1'").get())) {
+    for(const id of ['starter','pro','premium']) {
+      const row=await db.prepare("SELECT features,description FROM package_catalog WHERE id=?").get(id);
+      if(!row)continue;
+      const features=JSON.parse(row.features).filter(feature=>feature!=='ตรวจสอบผู้มีสิทธิ์ดูแลผ่านช่องทางออนไลน์');
+      for(const feature of onlineVerificationFeatures)if(!features.includes(feature))features.push(feature);
+      const description=id==='starter' && row.description==='ตรวจสอบออนไลน์และสื่อวิดีโอ'?packageContent.starter.description:row.description;
+      await db.prepare("UPDATE package_catalog SET features=?,description=? WHERE id=?").run(JSON.stringify(features),description,id);
+    }
+    await db.prepare("INSERT INTO system_settings(key,value) VALUES ('online_owner_verification_v1','true') ON CONFLICT(key) DO NOTHING").run();
   }
 
 }

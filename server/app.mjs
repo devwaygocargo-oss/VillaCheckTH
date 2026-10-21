@@ -1,3 +1,4 @@
+import { ownerVerificationApi, publicOwnerVerification } from "./owner-verification.mjs"
 import { basicVerificationNotice } from "./package-content.mjs"
 import { loadTrustContext, selectByIds } from "./villa-read-context.mjs"
 import { readContextPlan } from "./catalog.mjs"
@@ -677,6 +678,8 @@ export function createApp(db, config, transport) {
         return json({
           name: v.name,
           nameEn: v.name_en,
+          ownerVerification: await publicOwnerVerification(db,v),
+          ownerVerificationRequired: ["starter","pro","premium"].includes(v.package_id),
           basicVerificationNotice: v.package_id === "basic" ? basicVerificationNotice : null,
           trialUnlimited: v.payments === 0,
           photoUrl: v.photo_url,
@@ -793,6 +796,8 @@ export function createApp(db, config, transport) {
           res.writeHead(file.partial?206:200,{"Content-Type":file.mime,"Content-Length":file.bytes.length,"Accept-Ranges":"bytes",...(file.partial?{"Content-Range":`bytes ${file.start}-${file.end}/${file.size}`} : {}),"Content-Disposition":`inline; filename="social-material"; filename*=UTF-8''${encodeURIComponent(file.name)}`,"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"})
           return res.end(file.bytes)
         }
+        const ownerVerification=await ownerVerificationApi(db,user,req,path,url,body)
+        if(ownerVerification!==undefined)return json(ownerVerification)
         const materials=await socialMaterialsApi(db,user,req,path,url,body)
         if(materials!==undefined)return json(materials)
         const propertyMedia=await propertyMediaApi(db,user,req,path,url,body)
@@ -980,6 +985,7 @@ export function createApp(db, config, transport) {
             "Content-Type": file.mime,
             "Content-Disposition": `${user.role === "admin" && url.searchParams.get("preview") === "1" ? "inline" : "attachment"}; filename="document"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
             "Content-Security-Policy": "default-src 'none'; sandbox",
+            "Cache-Control": "private, no-store",
           })
           return res.end(Buffer.from(file.bytes))
         }
