@@ -1,3 +1,4 @@
+import {useCopy} from "./cms";
 import OwnerVerification from "./OwnerVerification";
 import HomeLogoLink from "./HomeLogoLink";
 import PropertyMedia from "./PropertyMedia";
@@ -669,12 +670,14 @@ export default function Backoffice({
 export function MerchantVerification({
   reference,
   go,
-  adminView = false,
+  adminView = false,preview=false,
 }: {
   reference: string
   go: (page: Page, item?: string) => void
   adminView?: boolean
+  preview?: boolean
 }) {
+  const t=useCopy();
   const [villa, setVilla] = useState<{
     name: string
     nameEn?: string
@@ -714,7 +717,7 @@ export function MerchantVerification({
       .then((value) => {
         if (!cancelled) {
           setVilla(value)
-          if(value.viewerRole==="admin")return
+          if(preview || value.viewerRole==="admin")return
           const activityKey=reference+":"+value.locked
           if(activityLogged.current===activityKey)return
           activityLogged.current=activityKey
@@ -774,18 +777,18 @@ export function MerchantVerification({
             {villa.photoUrl && <img src={villa.photoUrl} alt={villa.name} style={{maxWidth:"100%",maxHeight:360}}/>}
             <p>{villa.nameEn}</p><p>อัปเดตรูปภาพล่าสุดเมื่อ {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"}</p>{villa.photoUrl && <p>วันที่อัปโหลด: {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"} · วันที่ถ่าย: {villa.photoTakenAt ? date(villa.photoTakenAt) : "ไม่ระบุ"}{villa.photoReviewedAt && <> · วันที่ทีมตรวจสื่อ: {date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
             {villa.premiumBanner && <p className="merchant-status">✦ Premium Verified · เอกสารผ่านและ Subscription ใช้งานได้</p>}
-            <a href={`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:`${villa.name} ${villa.province}`})}`} target="_blank" rel="noopener noreferrer">ดูที่ตั้งบน Google Maps</a>
+            <a href={`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:`${villa.name} ${villa.province}`})}`} target="_blank" rel="noopener noreferrer">{t("profile.map")}</a>
             <p>วันหมดอายุ: {villa.trialUnlimited ? "ไม่มีกำหนด · ใช้ฟรี Basic Verify จนกว่าจะซื้อแพ็กเกจ" : date(villa.expires)}</p>
-            {!isAdmin&&<button onClick={()=>go("villa-report",reference)}>แจ้งปัญหาเกี่ยวกับที่พักนี้</button>}
+            {!isAdmin&&<button onClick={()=>go("villa-report",reference)}>{t("profile.report")}</button>}
             <section className={`verification-contact ${villa.locked ? "locked" : ""}`}>
-              <div className="verification-contact-head"><h2>ข้อมูลติดต่อและบัญชีรับเงิน</h2><span>{isAdmin?"ข้อมูลเต็มสำหรับ Admin":villa.locked ? "สำหรับสมาชิก User" : "เข้าสู่ระบบ User แล้ว"}</span></div>
+              <div className="verification-contact-head"><h2>{t("profile.contacts")}</h2><span>{isAdmin?"ข้อมูลเต็มสำหรับ Admin":villa.locked ? "สำหรับสมาชิก User" : "เข้าสู่ระบบ User แล้ว"}</span></div>
               <dl>
-                <div><dt>เบอร์โทรศัพท์ทางการ</dt><dd>{villa.locked ? "•••-•••-••••" : villa.phone || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>ธนาคาร</dt><dd>{villa.locked ? "ข้อมูลถูกซ่อน" : villa.bankName || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>ชื่อบัญชี</dt><dd>{villa.locked ? "ข้อมูลถูกซ่อน" : villa.accountName || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>เลขที่บัญชีรับเงิน</dt><dd>{villa.locked ? "•••-•-•••••-•" : villa.accountNumber || "ยังไม่ได้ระบุ"}</dd></div>
+                <div><dt>{t("profile.phone")}</dt><dd>{villa.locked ? "•••-•••-••••" : villa.phone || "ยังไม่ได้ระบุ"}</dd></div>
+                <div><dt>{t("profile.bank")}</dt><dd>{villa.locked ? "ข้อมูลถูกซ่อน" : villa.bankName || "ยังไม่ได้ระบุ"}</dd></div>
+                <div><dt>{t("profile.bankName")}</dt><dd>{villa.locked ? "ข้อมูลถูกซ่อน" : villa.accountName || "ยังไม่ได้ระบุ"}</dd></div>
+                <div><dt>{t("profile.bankNumber")}</dt><dd>{villa.locked ? "•••-•-•••••-•" : villa.accountNumber || "ยังไม่ได้ระบุ"}</dd></div>
               </dl>
-              {villa.locked && !isAdmin ? <div className="verification-login"><p>เข้าสู่ระบบด้วยบัญชี User เพื่อดูเบอร์โทรและเลขบัญชีเต็ม โดยกลับมาตรวจ QR นี้ได้ทันที</p><div className="button-row"><button className="primary-button" onClick={() => go("login", reference)}>เข้าสู่ระบบเพื่อดูข้อมูล</button><button className="outline-button" onClick={() => go("user-registration", reference)}>สมัครสมาชิก User</button></div></div> : <p className="verification-reminder">{isAdmin?"ข้อมูลทะเบียนสำหรับผู้ดูแลระบบ":"ตรวจสอบชื่อบัญชีและช่องทางติดต่อให้ตรงกับประกาศก่อนโอนทุกครั้ง"}</p>}
+              {villa.locked && !isAdmin ? <div className="verification-login"><p>เข้าสู่ระบบด้วยบัญชี User เพื่อดูเบอร์โทรและเลขบัญชีเต็ม โดยกลับมาตรวจ QR นี้ได้ทันที</p><div className="button-row"><button className="primary-button" onClick={() => go("login", reference)}>เข้าสู่ระบบเพื่อดูข้อมูล</button><button className="outline-button" onClick={() => go("user-registration", reference)}>สมัครสมาชิก User</button></div></div> : <p className="verification-reminder">{isAdmin?"ข้อมูลทะเบียนสำหรับผู้ดูแลระบบ":t("profile.contactReminder")}</p>}
             </section>
           </>
         )}

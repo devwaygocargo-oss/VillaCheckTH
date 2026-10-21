@@ -1,8 +1,11 @@
+import CmsMediaPicker,{type CmsMedia} from "./CmsMediaPicker";
 import type { CmsContent, HomeBannerItem } from "./cms"
 export default function BannerEditor({
   content,
-  onChange,
+  onChange,media,onUploaded,
 }: {
+  media:CmsMedia[]
+  onUploaded:(media:CmsMedia)=>void
   content: CmsContent
   onChange: (content: CmsContent) => void
 }) {
@@ -39,11 +42,11 @@ export default function BannerEditor({
       {banners.map((b, i) => (
         <fieldset className="cms-block-editor" key={b.id}>
           <legend>แบนเนอร์ {i + 1}</legend>
+          <CmsMediaPicker library={media} onUploaded={onUploaded} label="รูปคอมพิวเตอร์" value={b.image} onChange={image=>update(i,{image})}/>
+          <CmsMediaPicker label="รูปมือถือ" value={b.mobileImage} onChange={mobileImage=>update(i,{mobileImage})}/>
           {([
             ["title", "หัวข้อ"],
             ["description", "คำอธิบาย"],
-            ["image", "รูปคอมพิวเตอร์ (URL HTTPS หรือ URL คลังรูป)"],
-            ["mobileImage", "รูปมือถือ (ไม่ระบุจะใช้รูปคอมพิวเตอร์)"],
             ["href", "ลิงก์ปลายทาง HTTPS หรือ #page=…"],
             ["label", "ข้อความปุ่ม"],
           ] as const).map(([key, label]) => (

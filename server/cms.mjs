@@ -1,3 +1,4 @@
+import {presentationConfig,copyDefaults,presentationMedia} from "./cms-presentation.mjs"
 import { homeConfig, publicNavigation, shortcutMediaUrls, shortcutIcons, publicDestinations } from "./cms-home-config.mjs"
 import { receivingBank, bankInstructions } from "./payment-account.mjs"
 import { randomUUID } from "node:crypto"
@@ -95,6 +96,25 @@ function discoveryConfig(home, pages) {
     return {id:slug(item.id),icon:item.icon,label:string(item.label,80),description:string(item.description,300),href,visible:item.visible,image:cmsUrl(item.image,true)};
   }),"id");
   return result;
+}
+function normalizePresentation(value) {
+  if(value !== undefined && (!value || typeof value !== "object" || Array.isArray(value)))fail(400,"รูปแบบเนื้อหาทั่วเว็บไซต์ไม่ถูกต้อง");
+  if(value && Object.hasOwn(value,"copy") && (!value.copy || typeof value.copy !== "object" || Array.isArray(value.copy)))fail(400,"รูปแบบข้อความหน้าเว็บไม่ถูกต้อง");
+  const p=presentationConfig(value);
+  if(value?.copy && (typeof value.copy !== "object" || Array.isArray(value.copy) || Object.keys(value.copy).some(k=>!Object.hasOwn(copyDefaults,k))))fail(400,"ข้อความหน้าเว็บมีรหัสที่ไม่รองรับ");
+  const copy=Object.fromEntries(Object.entries(p.copy).map(([k,v])=>[k,string(v,4000)]));
+  if(!['advertisers-first','editorial-first','mixed'].includes(p.bannerSource)||typeof p.footerVisible!=="boolean"||typeof p.footerAdsVisible!=="boolean")fail(400,"การตั้งค่าหน้าเว็บไม่ถูกต้อง");
+  for(const key of ['showcaseLimit','newsLimit','footerAdLimit'])if(!Number.isInteger(p[key])||p[key]<1||p[key]>12)fail(400,"จำนวนการ์ดต้องอยู่ระหว่าง 1–12");
+  const services=unique(list(p.services,12).map(item=>{
+    if(typeof item.visible!=="boolean"||!['search','shield','qr','home','pin','users','chart','camera','info'].includes(item.icon))fail(400,"ข้อมูลการ์ดบริการไม่ถูกต้อง");
+    return {id:slug(item.id),visible:item.visible,number:string(item.number,10),icon:item.icon,title:string(item.title,300),description:string(item.description,4000),label:string(item.label,100),href:cmsUrl(item.href),image:cmsUrl(item.image,true)};
+  }),"id");
+  const footerColumns=unique(list(p.footerColumns,5).map(column=>{
+    if(typeof column.visible!=="boolean")fail(400,"สถานะ Footer ไม่ถูกต้อง");
+    return {id:slug(column.id),title:string(column.title,300),visible:column.visible,links:unique(list(column.links,60).map(link=>{if(typeof link.visible!=="boolean")fail(400,"สถานะลิงก์ไม่ถูกต้อง");return {id:slug(link.id),label:string(link.label,100),href:cmsUrl(link.href),visible:link.visible}}),"id")};
+  }),"id");
+  const provinces=list(p.provinces,10).map(v=>string(v,100).trim());if(provinces.some(v=>!v)||new Set(provinces).size!==provinces.length)fail(400,"จังหวัดต้องไม่ว่างหรือซ้ำกัน");
+  return {copy,services,footerColumns,provinces,cta:{qr:cmsUrl(p.cta.qr),merchant:cmsUrl(p.cta.merchant)},footerAdsVisible:p.footerAdsVisible,bannerSource:p.bannerSource,showcaseLimit:p.showcaseLimit,newsLimit:p.newsLimit,footerAdLimit:p.footerAdLimit,footerVisible:p.footerVisible};
 }
 function normalizeCms(data) {
   if (!data || data.schemaVersion !== 1 || !data.site || !data.home)
@@ -238,6 +258,7 @@ function normalizeCms(data) {
   )
   const result = {
     schemaVersion: 1,
+    presentation:normalizePresentation(data.presentation),
     site,
     home,
     pages,
@@ -255,7 +276,7 @@ async function read(db, key, fallback) {
     .prepare("SELECT value FROM system_settings WHERE key=?")
     .get(key)
   const value=row?JSON.parse(row.value):clone(fallback)
-  if (["cms_draft","cms_published"].includes(key)) { value.content.home=homeConfig(value.content.home); value.content.navigation=publicNavigation(value.content.navigation); value.content.business={...cmsDefaults.business,...value.content.business}; value.content.site={...cmsDefaults.site,...value.content.site}; }
+  if (["cms_draft","cms_published"].includes(key)) { value.content.presentation=presentationConfig(value.content.presentation,value.content.pages); value.content.home=homeConfig(value.content.home); value.content.navigation=publicNavigation(value.content.navigation); value.content.business={...cmsDefaults.business,...value.content.business}; value.content.site={...cmsDefaults.site,...value.content.site}; }
   return value
 }
 async function write(db, key, value) {
@@ -284,6 +305,7 @@ function mediaReferences(content) {
     ...content.home.images,
     ...content.home.sections.map(s=>s.image||""),
     ...shortcutMediaUrls(content),
+    ...presentationMedia(content),
     ...(content.home.banners || []).flatMap(b=>[b.image,b.mobileImage]),
     ...content.home.blocks.map((x) => x.image),
     ...content.pages.flatMap((p) => p.blocks.map((x) => x.image)),

@@ -1,3 +1,5 @@
+import Advertising from "./Advertising";
+import CmsPresentationEditor from "./CmsPresentationEditor";
 import CmsPreviewFrame from "./CmsPreviewFrame";
 import HomeDiscoveryEditor from "./HomeDiscoveryEditor";
 import { publicDestinations } from "../server/cms-home-config.mjs";
@@ -215,9 +217,12 @@ function BlockEditor({
   )
 }
 type Media = { id: string; name: string; mime: string; url: string }
-type Tab = "business" | "navigation" | "home" | "pages" | "articles" | "faqs" | "site" | "media" | "history"
+type Tab = "presentation" | "advertising" | "data" | "business" | "navigation" | "home" | "pages" | "articles" | "faqs" | "site" | "media" | "history"
 const tabs: [Tab, string][] = [
   ["home", "หน้าแรก"],
+  ["presentation", "เนื้อหาทั่วเว็บไซต์"],
+  ["advertising", "โฆษณาทุกตำแหน่ง"],
+  ["data", "ข้อมูลที่พัก / แพ็กเกจ / บัญชี"],
   ["navigation", "เมนูเว็บไซต์"],
   ["pages", "หน้าเว็บ"],
   ["articles", "ข่าวสาร / บทความ"],
@@ -229,9 +234,10 @@ const tabs: [Tab, string][] = [
 ]
 export default function AdminCms({
   go,
-  renderHome,
+  renderHome,renderPreview,
 }: {
   go: (page: Page, item?: string) => void
+  renderPreview?:(page:Page,reference:string)=>React.ReactNode
   renderHome: React.ReactNode
 }) {
   const [state, setState] = useState<CmsState | null>(null),
@@ -245,6 +251,8 @@ export default function AdminCms({
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [preview, setPreview] = useState(false)
+  const [previewPage,setPreviewPage]=useState<Page>("home"),[previewReference,setPreviewReference]=useState(""),[previewReferenceInput,setPreviewReferenceInput]=useState("");
+  const [adsDirty,setAdsDirty]=useState(false),[visitedAds,setVisitedAds]=useState(false);
   const accept = (r: CmsState) => {
     setState(r)
     setContent(r.draft.content)
@@ -264,14 +272,14 @@ export default function AdminCms({
   }, [])
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (dirty) {
+      if (dirty || adsDirty) {
         event.preventDefault()
         event.returnValue = ""
       }
     }
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
-  }, [dirty])
+  }, [dirty,adsDirty])
   const change = (next: CmsContent) => {
     setContent(next)
     setDirty(true)
@@ -345,7 +353,7 @@ export default function AdminCms({
       page="admin-cms"
       go={(target, item) => {
         if (
-          !dirty ||
+          !(dirty || adsDirty) ||
           window.confirm("มีการแก้ไขที่ยังไม่บันทึก ต้องการออกจาก CMS หรือไม่?")
         )
           go(target, item)
@@ -388,7 +396,7 @@ export default function AdminCms({
             </span>
             <div className="button-row">
               <button
-                disabled={busy || !dirty}
+                disabled={busy || !dirty || tab==="advertising"}
                 onClick={() => void mutate("save")}
               >
                 บันทึกร่าง
@@ -400,6 +408,7 @@ export default function AdminCms({
                 className="primary-button"
                 disabled={
                   busy ||
+                  tab==="advertising" ||
                   dirty ||
                   !state.draft.revision ||
                   state.draft.revision === state.published.revision
@@ -421,6 +430,7 @@ export default function AdminCms({
                 className={tab === key ? "active" : ""}
                 onClick={() => {
                   setTab(key)
+                  if(key==="advertising")setVisitedAds(true)
                   setPreview(false)
                 }}
               >
@@ -432,7 +442,8 @@ export default function AdminCms({
           {preview && (
             <section className="cms-preview" aria-label="ตัวอย่างเนื้อหาก่อนเผยแพร่">
               <p>Preview ก่อนเผยแพร่ · ใช้ตัวแสดงเดียวกับเว็บไซต์จริง</p>
-              <CmsPreviewFrame>{["home","navigation","site"].includes(tab) ? (
+              {tab==="presentation"&&<><label>หน้าสำหรับ Preview<select aria-label="หน้าสำหรับ Preview" value={previewPage} onChange={e=>setPreviewPage(e.target.value as Page)}>{([["home","หน้าแรก"],["directory","ค้นหาที่พัก"],["scan","สแกน QR"],["login","เข้าสู่ระบบ User"],["owner-auth","เข้าสู่ระบบ Merchant"],["user-registration","สมัคร User"],["owner-registration","สมัคร Merchant"],["verify","หน้าที่พัก / QR"],["villa-report","แจ้งปัญหา"],["contact","ติดต่อเรา"]] as [Page,string][]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>{previewPage==="verify"&&<div><label>QR ที่พักสำหรับ Preview<input value={previewReferenceInput} onChange={e=>setPreviewReferenceInput(e.target.value)} placeholder="VC-…"/></label><button type="button" onClick={()=>setPreviewReference(previewReferenceInput)}>แสดงที่พักตัวอย่าง</button></div>}</>}
+              <CmsPreviewFrame>{tab==="presentation"&&previewPage!=="home"&&renderPreview?<CmsScope content={content}><div onSubmitCapture={e=>{e.preventDefault();e.stopPropagation()}} onClickCapture={e=>{if((e.target as HTMLElement).closest("button")){e.preventDefault();e.stopPropagation()}}}>{renderPreview(previewPage,previewReference)}</div></CmsScope> : ["home","navigation","site","presentation","advertising"].includes(tab) ? (
                 <CmsScope content={content}>{renderHome}</CmsScope>
               ) : (
                 <CmsPublicPage
@@ -466,6 +477,9 @@ export default function AdminCms({
             disabled={busy}
             className={`merchant-panel portal-form cms-editor cms-editor-${tab}`}
           >
+            {tab === "presentation" && <CmsPresentationEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
+            {tab === "advertising" && <p>แก้แบนเนอร์โฆษณาในส่วนด้านล่าง ทั้ง Carousel หน้าแรก หน้าที่พัก และก่อน Footer หากแก้สไลด์ CMS ให้ไป หน้าแรก → ภาพสไลด์</p>}
+            {tab === "data" && <section><h2>ข้อมูลที่แสดงบนหน้าเว็บ</h2><p>ข้อมูลจริงของที่พัก แพ็กเกจ และบัญชี จัดการผ่านเมนูที่เกี่ยวข้อง โดยใช้ฐานข้อมูลเดียวกับหน้าเว็บ</p><div className="button-row">{([["admin-villas","ข้อมูลที่พัก / รูป / สถานะ"],["admin-packages","ราคาและสิทธิ์แพ็กเกจ"],["admin-users","บัญชี User"],["admin-owners","บัญชี Merchant"],["admin-settings","รีวิว / ยืนยันเจ้าของบ้าน"],["admin-receiving-bank","บัญชีรับเงิน"]] as [Page,string][]).map(([target,label])=><button type="button" key={target} onClick={()=>{if(!(dirty||adsDirty)||window.confirm("มีการแก้ไขที่ยังไม่บันทึก ต้องการออกจาก CMS หรือไม่?"))go(target)}}>{label}</button>)}</div></section>}
             {tab === "home" && (
               <>
                 <nav className="cms-home-panels" aria-label="ส่วนแก้ไขหน้าแรก">
@@ -606,7 +620,7 @@ export default function AdminCms({
                 ))}
                 </>}
                 {homePanel==="slides"&&<>
-                <BannerEditor content={content} onChange={change}/><h2>ภาพสไลด์เดิม (ใช้เมื่อยังไม่มีรายการแบนเนอร์)</h2>
+                <BannerEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/><h2>ภาพสไลด์เดิม (ใช้เมื่อยังไม่มีรายการแบนเนอร์)</h2>
                 {content.home.images.map((url, i) => (
                   <div className="cms-block-editor" key={i}>
                     <ImageField
@@ -1231,6 +1245,8 @@ export default function AdminCms({
               </>
             )}
           </fieldset>
+          {visitedAds&&<div className="cms-ad-workspace" hidden={tab!=="advertising"}><Advertising adsOnly onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
+          {adsDirty&&<p role="status">มีแบนเนอร์โฆษณาที่ยังไม่บันทึก</p>}
           </div>
         </>
       )}

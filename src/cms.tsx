@@ -1,3 +1,4 @@
+import {presentationConfig,copyDefaults} from "../server/cms-presentation.mjs"
 import {
   Children,
   Fragment,
@@ -57,7 +58,9 @@ export type HomeBannerItem = { demo?:boolean; id:string; image:string; mobileIma
 export type ShortcutIconName = "find" | "scan" | "transfer" | "status" | "owner" | "contact";
 export type HomeShortcut = {id:string;icon:ShortcutIconName;label:string;href:string;description:string;visible:boolean;image:string};
 export type HomeDiscovery = {visible:boolean;searchVisible:boolean;heading:string;placeholder:string;buttonLabel:string;showProvinceHint:boolean;provinceHint:string;showFreeHint:boolean;freeHint:string;background:string;iconColor:string;accentColor:string;shortcuts:HomeShortcut[]};
+export type CmsPresentation = {copy:Record<string,string>;bannerSource:"advertisers-first"|"editorial-first"|"mixed";showcaseLimit:number;newsLimit:number;footerAdLimit:number;footerVisible:boolean;footerAdsVisible:boolean;cta:{qr:string;merchant:string};provinces:string[];services:{id:string;visible:boolean;number:string;icon:string;title:string;description:string;label:string;href:string;image:string}[];footerColumns:{id:string;title:string;visible:boolean;links:{id:string;label:string;href:string;visible:boolean}[]}[]}
 export type CmsContent = {
+  presentation?:CmsPresentation
   schemaVersion: number
   business: {emailOtpSubject:string;emailOtpBody:string;smsOtpBody:string;emailOtpTemplateId:string;facebookLoginEnabled:boolean;monthlyInitialMonths:number;monthlyRenewalMonths:number;paymentEmailSubject:string;paymentEmailIntro:string}
   site: {
@@ -106,6 +109,8 @@ export type CmsState = {
 export const defaultContent = cmsDefaults as CmsContent
 const Context = createContext<CmsContent>(defaultContent)
 export const useCms = () => useContext(Context)
+export const usePresentation = () => presentationConfig(useCms().presentation) as CmsPresentation
+export function useCopy(){const p=usePresentation();return (key:string)=>p.copy[key]??copyDefaults[key]??key;}
 export function CmsScope({
   content,
   children,

@@ -1,4 +1,5 @@
 import AdminAccounts from "./AdminAccounts";
+import {useCopy,usePresentation} from "./cms";
 import HomeLogoLink from "./HomeLogoLink";
 import HomeVillaShowcase from "./HomeVillaShowcase";
 import FooterAd from "./FooterAd";
@@ -120,6 +121,7 @@ const accountHome = (account: Account): Page => account.role === "admin" ? "admi
 const accountLabel = (account: Account) => `บัญชี ${account.role === "admin" ? "Admin" : account.role === "merchant" ? "Merchant" : "User"}`;
 
 function Header({ page, go, account, preview=false }: { page: Page; go: (page: Page) => void; account: Account | null; preview?:boolean }) {
+  const t=useCopy();
   const {navigation}=useCms();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -161,7 +163,7 @@ function Header({ page, go, account, preview=false }: { page: Page; go: (page: P
       <nav id="public-menu" className={mobileMenuOpen ? "mobile-open" : ""}>
         {publicNavigation(navigation).filter(n=>n.visible && !(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href))).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{if(preview)return;setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
       </nav>
-      <div className="nav-actions">{account && <div className="nav-account" ref={accountMenu}><button className="outline-button nav-account-button" title={`${account.name} · ${accountLabel(account)}`} aria-expanded={accountMenuOpen} aria-controls="account-dropdown" onClick={() => setAccountMenuOpen(open => !open)}><span className="nav-session-status" role="status"><span aria-hidden="true">●</span> เข้าสู่ระบบอยู่</span><strong>{accountLabel(account)} <span aria-hidden="true">▾</span></strong></button>{accountMenuOpen && <div id="account-dropdown" className="account-dropdown"><strong>{account.name}</strong><button onClick={() => navigate(accountHome(account))}>ไปยังบัญชี {account.role === "admin" ? "Admin" : account.role === "merchant" ? "Merchant" : "User"}</button><button disabled={loggingOut} onClick={() => void signOut()}>{loggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}</button>{logoutError && <p role="alert">{logoutError}</p>}</div>}</div>}<button aria-label="ตรวจสอบ QR" className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>ตรวจสอบ QR</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
+      <div className="nav-actions">{account && <div className="nav-account" ref={accountMenu}><button className="outline-button nav-account-button" title={`${account.name} · ${accountLabel(account)}`} aria-expanded={accountMenuOpen} aria-controls="account-dropdown" onClick={() => setAccountMenuOpen(open => !open)}><span className="nav-session-status" role="status"><span aria-hidden="true">●</span> เข้าสู่ระบบอยู่</span><strong>{accountLabel(account)} <span aria-hidden="true">▾</span></strong></button>{accountMenuOpen && <div id="account-dropdown" className="account-dropdown"><strong>{account.name}</strong><button onClick={() => navigate(accountHome(account))}>ไปยังบัญชี {account.role === "admin" ? "Admin" : account.role === "merchant" ? "Merchant" : "User"}</button><button disabled={loggingOut} onClick={() => void signOut()}>{loggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}</button>{logoutError && <p role="alert">{logoutError}</p>}</div>}</div>}<button aria-label={t("header.qr")} className="outline-button nav-qr-button" onClick={() => navigate("scan")}><Icon name="qr" size={17} /><span>{t("header.qr")}</span></button><button className="mobile-menu-button" aria-label={mobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"} aria-expanded={mobileMenuOpen} aria-controls="public-menu" onClick={() => setMobileMenuOpen(open => !open)}><Icon name={mobileMenuOpen ? "close" : "menu"} size={22} /></button></div>
     </div>
   </header>;
 }
@@ -188,16 +190,16 @@ function SearchBox({ onSearch }: { onSearch: (query: string, province: string) =
 }
 
 function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch: (query: string, province: string) => void; onSelect: (id: string) => void }) {
-  const {home}=useCms();
+  const {home}=useCms();const t=useCopy(),presentation=usePresentation();
   const section=(id:string)=>home.sections.find(s=>s.id===id)!;
   return <CmsHomeLayout>
     <section className="home-discovery"><HomeBanner/><HomeShortcuts go={go} onSearch={onSearch}/></section>
     <div />
     <section className="section how-section" id="how">
       <div className="container">
-        <div className="timeline-head"><div><span className="kicker">TRUST JOURNEY / 01—03</span><h2 className="cms-prose">{section("how").title}</h2></div><p className="cms-prose">{section("how").description}</p></div>
+        <div className="timeline-head"><div><span className="kicker">{t("home.journeyKicker")}</span><h2 className="cms-prose">{section("how").title}</h2></div><p className="cms-prose">{section("how").description}</p></div>
         <div className="home-service-grid">
-          {[["01","search","ค้นหาที่พัก","เลือกจังหวัดและดูข้อมูลที่พักที่ลงทะเบียน","directory"],["02","shield","เข้าใจสถานะ","อ่านความหมายและขอบเขตของผลการตรวจสอบ","verification-standard"],["03","qr","สแกน QR ก่อนโอน","เปิด QR เพื่อเทียบช่องทางติดต่อของที่พัก","scan"]].map(([number,icon,title,description,target])=><a key={number} className="home-service-card" href={`#page=${target}`} onClick={e=>{if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();go(target as Page);}}><div className={`home-service-art home-service-art-${number}`}><span>{number}</span><Icon name={icon as IconName} size={46}/><i aria-hidden="true"/></div><div className="home-service-body"><h3>{title}</h3><p>{description}</p><span>ดูรายละเอียด <Icon name="arrow" size={16}/></span></div></a>)}
+          {presentation.services.filter(item=>item.visible).map((item,index)=><a key={item.id} className="home-service-card" href={item.href} {...(item.href.startsWith("https:")?{target:"_blank",rel:"noopener noreferrer"}:{})}><div className={`home-service-art home-service-art-0${index%3+1}`}>{item.image?<img src={item.image} alt="" loading="lazy"/>:<><span>{item.number}</span><Icon name={item.icon as IconName} size={46}/><i aria-hidden="true"/></>}</div><div className="home-service-body"><h3>{item.title}</h3><p>{item.description}</p><span>{item.label} <Icon name="arrow" size={16}/></span></div></a>)}
         </div>
       </div>
     </section>
@@ -210,14 +212,14 @@ function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch
 
     <section className="section home-feature-banner home-feature-qr">
       <div className="container home-feature-layout">
-        <div className="home-feature-image"><img src={section("qr").image||"/demo/villas/villa-1.jpg"} alt="ภาพประกอบที่พักสำหรับตรวจสอบ QR" loading="lazy"/><div className="home-feature-image-note"><Icon name="qr" size={26}/><div><small>CHECK BEFORE YOU GO</small><strong>เช็กให้ชัด ก่อนโอน</strong></div></div></div>
-        <div className="home-feature-copy"><span className="kicker">SCAN & CHECK</span><h2 className="cms-prose">{section("qr").title}</h2><p>{section("qr").description}</p><ul><li><Icon name="check" size={17}/>ดูช่องทางติดต่อที่ลงทะเบียน</li><li><Icon name="check" size={17}/>อ่านสถานะและขอบเขตการตรวจสอบ</li><li><Icon name="check" size={17}/>เลือกสแกนกล้องหรือรูป QR จากแกลเลอรี</li></ul><button className="primary-button" onClick={()=>go("scan")}>เปิด QR Scanner <Icon name="arrow" size={17}/></button></div>
+        <div className="home-feature-image"><img src={section("qr").image||"/demo/villas/villa-1.jpg"} alt="ภาพประกอบที่พักสำหรับตรวจสอบ QR" loading="lazy"/><div className="home-feature-image-note"><Icon name="qr" size={26}/><div><small>{t("home.qrNoteKicker")}</small><strong>{t("home.qrNote")}</strong></div></div></div>
+        <div className="home-feature-copy"><span className="kicker">{t("home.qrKicker")}</span><h2 className="cms-prose">{section("qr").title}</h2><p>{section("qr").description}</p><ul><li><Icon name="check" size={17}/>{t("home.qrBullet1")}</li><li><Icon name="check" size={17}/>{t("home.qrBullet2")}</li><li><Icon name="check" size={17}/>{t("home.qrBullet3")}</li></ul><a className="primary-button" href={presentation.cta.qr}>{t("home.qrButton")} <Icon name="arrow" size={17}/></a></div>
       </div>
     </section>
     <section className="section home-feature-banner home-feature-merchant">
       <div className="container home-feature-layout">
-        <div className="home-feature-image"><img src={section("merchant").image||"/demo/villas/villa-3.jpg"} alt="ภาพประกอบพูลวิลล่าสำหรับเจ้าของที่พัก" loading="lazy"/><div className="home-feature-image-note"><Icon name="shield" size={26}/><div><small>VILLACHECK FOR MERCHANTS</small><strong>ดูแลข้อมูลที่พัก ในที่เดียว</strong></div></div></div>
-        <div className="home-feature-copy"><span className="kicker">FOR VILLA MERCHANTS</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><div className="home-merchant-tools"><span><Icon name="shield" size={17}/>Trust Profile</span><span><Icon name="qr" size={17}/>QR Verification</span><span><Icon name="chart" size={17}/>Analytics</span></div><button className="primary-button" onClick={()=>go("owner-auth")}>เข้าสู่ Member Room <Icon name="arrow" size={17}/></button></div>
+        <div className="home-feature-image"><img src={section("merchant").image||"/demo/villas/villa-3.jpg"} alt="ภาพประกอบพูลวิลล่าสำหรับเจ้าของที่พัก" loading="lazy"/><div className="home-feature-image-note"><Icon name="shield" size={26}/><div><small>{t("home.ownerNoteKicker")}</small><strong>{t("home.ownerNote")}</strong></div></div></div>
+        <div className="home-feature-copy"><span className="kicker">{t("home.ownerKicker")}</span><h2 className="cms-prose">{section("merchant").title}</h2><p>{section("merchant").description}</p><div className="home-merchant-tools"><span><Icon name="shield" size={17}/>{t("home.ownerTool1")}</span><span><Icon name="qr" size={17}/>{t("home.ownerTool2")}</span><span><Icon name="chart" size={17}/>{t("home.ownerTool3")}</span></div><a className="primary-button" href={presentation.cta.merchant}>{t("home.ownerButton")} <Icon name="arrow" size={17}/></a></div>
       </div>
     </section>
 
@@ -227,6 +229,7 @@ function Home({ go, onSearch }: { go: (p: Page, item?: string) => void; onSearch
 }
 
 function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Page, item?: string) => void; initialQuery?: string; initialProvince?: string }) {
+  const t=useCopy();
   const [query, setQuery] = useState(initialQuery);
   const [province, setProvince] = useState(initialProvince);
   const [status, setStatus] = useState("");
@@ -242,16 +245,16 @@ function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Pa
     .filter(v => !guests || (guests === "unknown" ? v.guests === "ไม่ระบุ" : guests === "small" ? Number.parseInt(v.guests) <= 8 : guests === "medium" ? Number.parseInt(v.guests) >= 9 && Number.parseInt(v.guests) <= 14 : Number.parseInt(v.guests) >= 15))
     .sort((a, b) => sort === "A–Z" ? a.name.localeCompare(b.name) : Date.parse(b.createdAt)-Date.parse(a.createdAt));
   return <main className="page-bg">
-    <div className="page-hero container"><span className="kicker">VILLA DIRECTORY</span><h1>ค้นหาวิลล่าที่ไว้ใจได้</h1><p>ตรวจสอบข้อมูลและสถานะของพูลวิลล่าทั่วไทย ก่อนตัดสินใจโอนเงิน</p></div>
+    <div className="page-hero container"><span className="kicker">{t("directory.kicker")}</span><h1>{t("directory.title")}</h1><p>{t("directory.description")}</p></div>
     <div className="container filter-panel">
-      <label className="wide"><span>ค้นหาชื่อวิลล่า</span><div><Icon name="search" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="ค้นหาชื่อที่พัก ภาษาไทย / English" /></div></label>
+      <label className="wide"><span>{t("directory.search")}</span><div><Icon name="search" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder={t("directory.placeholder")} /></div></label>
       <label><span>จังหวัด</span><div><Icon name="pin" /><select value={province} onChange={event => setProvince(event.target.value)}><option value="">ทุกจังหวัด</option>{provinces.map(item => <option key={item}>{item}</option>)}</select></div></label>
       <label><span>จำนวนผู้พัก</span><div><Icon name="users" /><select aria-label="จำนวนผู้พัก" value={guests} onChange={e => setGuests(e.target.value)}><option value="">ไม่จำกัด</option><option value="small">1–8 คน</option><option value="medium">9–14 คน</option><option value="large">15 คนขึ้นไป</option><option value="unknown">ยังไม่ระบุ</option></select></div></label>
       <label><span>สถานะ</span><div><Icon name="shield" /><select value={status} onChange={event => setStatus(event.target.value)}><option value="">ทุกสถานะ</option><option>ตรวจสอบข้อมูลแล้ว</option><option>รอตรวจสอบ</option></select></div></label>
       <button className="primary-button" onClick={() => window.scrollTo({ top: 300, behavior: "smooth" })}><Icon name="search" size={18} />ค้นหา</button>
     </div>
     <section className="container directory-results">
-      <div className="results-head"><div><h2>Villa ที่ผ่านการตรวจสอบ</h2><p>แสดง {filtered.length} รายการ</p>{directoryError&&<p role="alert">{directoryError}</p>}</div><select aria-label="เรียงลำดับ" value={sort} onChange={event => setSort(event.target.value)}><option value="ล่าสุด">อัปเดตล่าสุด</option><option>A–Z</option></select></div>
+      <div className="results-head"><div><h2>{t("directory.results")}</h2><p>แสดง {filtered.length} รายการ</p>{directoryError&&<p role="alert">{directoryError}</p>}</div><select aria-label="เรียงลำดับ" value={sort} onChange={event => setSort(event.target.value)}><option value="ล่าสุด">อัปเดตล่าสุด</option><option>A–Z</option></select></div>
       {filtered.length ? <div className="villa-grid directory-grid">{filtered.map(v => <div key={v.qr}><VillaCard villa={v} onClick={() => go("verify", v.qr)} /></div>)}</div> : <div className="empty-results"><strong>ไม่พบ Villa ที่ตรงกับการค้นหา</strong><p>ลองเปลี่ยนคำค้นหาหรือจังหวัด</p><button className="outline-button" onClick={() => { setQuery(""); setProvince(""); setStatus(""); setGuests(""); }}>ล้างตัวกรอง</button></div>}
     </section>
   </main>;
@@ -347,7 +350,8 @@ function Detail({ go, villa }: { go: (p: Page, item?: string) => void; villa: ty
   </main>;
 }
 
-function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVerified: (reference: string) => void }) {
+function ScanQr({ go, onVerified,preview=false }: { go: (p: Page, item?: string) => void; onVerified: (reference: string) => void;preview?:boolean }) {
+  const t=useCopy();
   const [scanState, setScanState] = useState<"idle" | "requesting" | "scanning" | "loading" | "success" | "permission-error" | "not-found" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [scannedReference, setScannedReference] = useState("");
@@ -453,15 +457,15 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
     }
   }, [onVerified, scanState, scannedReference]);
 
-  useEffect(() => { void startCamera(); return () => stopCamera(); }, []);
+  useEffect(() => { if(!preview)void startCamera(); return () => stopCamera(); }, []);
 
   return <main className="scan-page">
-    <div className="verify-top"><div className="container"><HomeLogoLink className="logo-button" onNavigate={()=>{stopCamera();go("home")}}><Logo light /></HomeLogoLink><button onClick={() => { stopCamera(); go("home"); }}><Icon name="close" />ปิดหน้าสแกน</button></div></div>
+    <div className="verify-top"><div className="container"><HomeLogoLink className="logo-button" onNavigate={()=>{stopCamera();go("home")}}><Logo light /></HomeLogoLink><button onClick={() => { stopCamera(); go("home"); }}><Icon name="close" />{t("scan.close")}</button></div></div>
     <div className="scan-bg">
       <div className="scan-intro">
-        <span className="kicker light-kicker">SCAN QR CODE</span>
-        <h1>สแกน QR เพื่อตรวจสอบที่พัก</h1>
-        <p>สแกน QR ของ VillaCheck เพื่อดูข้อมูลการตรวจสอบก่อนตัดสินใจโอน</p>
+        <span className="kicker light-kicker">{t("scan.kicker")}</span>
+        <h1>{t("scan.title")}</h1>
+        <p>{t("scan.description")}</p>
       </div>
       <div className="scanner-card">
         <div className={`camera-scanner ${cameraActive ? "camera-active" : ""} ${busy ? "is-scanning" : ""} ${scanState === "success" ? "scan-success" : ""} ${errorMessage ? "scan-error" : ""}`}>
@@ -475,15 +479,15 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
         </div>
         {errorMessage && <div className="scanner-error"><Icon name="info" size={18} /><span>{errorMessage}</span><button onClick={startCamera}>ลองอีกครั้ง</button></div>}
         <div className="scanner-actions">
-          <button type="button" className="gallery-picker" disabled={scanState === "loading" || scanState === "success"} onClick={() => { const input=galleryRef.current;if(input){input.value="";if(typeof input.showPicker==="function"){try{input.showPicker();}catch{input.click();}}else input.click();} }}>
+          <button type="button" className="gallery-picker" disabled={preview || scanState === "loading" || scanState === "success"} onClick={() => { const input=galleryRef.current;if(input){input.value="";if(typeof input.showPicker==="function"){try{input.showPicker();}catch{input.click();}}else input.click();} }}>
             <span className="gallery-picker-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m3 17 5-5 4 4 3-3 6 6" /></svg></span>
-            <span className="gallery-picker-copy"><strong>เลือกรูป QR</strong><span>จากอัลบั้มหรือรูปภาพในเครื่อง</span></span>
+            <span className="gallery-picker-copy"><strong>{t("scan.galleryTitle")}</strong><span>{t("scan.galleryDescription")}</span></span>
             <Icon name="upload" size={20} />
           </button>
           <input ref={galleryRef} type="file" accept="image/*" aria-label="เลือกรูป QR จากแกลเลอรี" hidden onChange={uploadQr} />
         </div>
       </div>
-      <p className="scan-security"><Icon name="shield" size={15} />VillaCheck ไม่มีบริการรับจองหรือรับชำระเงิน</p>
+      <p className="scan-security"><Icon name="shield" size={15} />{t("scan.security")}</p>
     </div>
   </main>;
 }
@@ -524,22 +528,13 @@ function Verify({ go, reference }: { go: (p: Page, item?: string) => void; refer
   </main>;
 }
 
-function Footer({ go, account }: { go: (p: Page, item?: string) => void; account: Account | null }) {
-  const {site,pages}=useCms();
-  return <footer className="public-footer">
-    <div className="container footer-grid">
-      <div className="footer-brand">
-        <HomeLogoLink className="footer-logo" onNavigate={() => go("home")}><Logo light /></HomeLogoLink>
-        <p>{site.description}</p>
-        <div className="footer-social"><a aria-label="Facebook" href={supportHref("facebook")} target="_blank" rel="noopener noreferrer"><Icon name="facebook" size={16} /></a><button aria-label="Instagram" onClick={() => go("social-instagram")}><Icon name="instagram" size={16} /></button><a aria-label="LINE Official" href={supportHref("line")} target="_blank" rel="noopener noreferrer"><Icon name="message" size={16} /></a></div>
-      </div>
-      <div><strong>เกี่ยวกับ VillaCheck</strong><button onClick={() => go("about")}>เกี่ยวกับเรา</button><button onClick={() => go("verification-standard")}>มาตรฐานการตรวจสอบ</button><button onClick={() => go("articles")}>บทความและข่าวสาร</button><button onClick={() => go(account ? accountHome(account) : "login")}>{account ? accountLabel(account) : "เข้าสู่ระบบ"}</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
-      <div><strong>สำหรับผู้ใช้งาน</strong><button onClick={() => go("directory")}>ค้นหาที่พัก</button><button onClick={() => go("scan")}>ตรวจสอบ QR</button><button onClick={() => go("user-precheck")}>ตรวจสอบก่อนโอน</button><button onClick={() => go("villa-report")}>แจ้งปัญหา</button></div>
-      <div><strong>สำหรับเจ้าของที่พัก</strong><button onClick={() => go("owner-auth")}>Member Room</button><button onClick={() => go("owner-guide")}>สำหรับเจ้าของที่พัก</button><button onClick={() => go("owner-auth")}>ลงทะเบียนที่พัก</button><button onClick={() => go(account ? accountHome(account) : "login")}>{account ? accountLabel(account) : "เข้าสู่ระบบ"}</button>{pages.filter(p=>p.slug.startsWith("page-")).map(p=><button key={p.slug} onClick={()=>go("cms-page",p.slug)}>{p.title}</button>)}</div>
-      <div className="footer-support"><strong>ช่วยเหลือและติดต่อ</strong><button onClick={() => go("help")}>Help / Support</button><button onClick={() => go("contact")}>Contact</button><button onClick={() => openSupport("email")}><Icon name="mail" size={14} />อีเมลทีมงาน</button><button onClick={() => openSupport("phone")}><Icon name="phone" size={14} />โทรทีมงาน</button><small>{site.hours}</small></div>
-    </div>
-    <div className="container footer-bottom"><span>© {new Date().getFullYear()} VillaCheck. สงวนลิขสิทธิ์</span><div><button onClick={() => go("privacy")}>นโยบายความเป็นส่วนตัว</button><button onClick={() => go("terms")}>ข้อกำหนดและเงื่อนไข</button></div><span>Trust before transfer.</span></div>
-  </footer>;
+function Footer({go,account}:{go:(p:Page,item?:string)=>void;account:Account|null}){
+ const {site}=useCms(),presentation=usePresentation(),t=useCopy();
+ if(!presentation.footerVisible)return null;
+ return <footer className="public-footer"><div className="container footer-grid"><div className="footer-brand"><HomeLogoLink className="footer-logo" onNavigate={()=>go("home")}><Logo light/></HomeLogoLink><p>{site.description}</p><div className="footer-social">{site.facebook&&<a aria-label="Facebook" href={site.facebook} target="_blank" rel="noopener noreferrer"><Icon name="facebook" size={16}/></a>}{site.instagram&&<a aria-label="Instagram" href={site.instagram} target="_blank" rel="noopener noreferrer"><Icon name="instagram" size={16}/></a>}{site.line&&<a aria-label="LINE" href={site.line} target="_blank" rel="noopener noreferrer"><Icon name="message" size={16}/></a>}</div></div>
+ {presentation.footerColumns.filter(c=>c.visible).map(column=><div key={column.id}><strong>{column.title}</strong>{column.links.filter(link=>link.visible).map(link=><a key={link.id} href={link.href==="#page=login"&&account?`#page=${accountHome(account)}`:link.href} {...(link.href.startsWith("https:")?{target:"_blank",rel:"noopener noreferrer"}:{})}>{link.href==="#page=login"&&account&&link.label==="เข้าสู่ระบบ"?accountLabel(account):link.label}</a>)}</div>)}
+ <div className="footer-support"><strong>{t("footer.support")}</strong><button onClick={()=>go("help")}>{t("footer.help")}</button><button onClick={()=>go("contact")}>{t("footer.contact")}</button>{site.email&&<a href={`mailto:${site.email}`}><Icon name="mail" size={14}/>{t("footer.email")}</a>}{site.phone&&<a href={`tel:${site.phone.replace(/[^+0-9]/g,"")}`}><Icon name="phone" size={14}/>{t("footer.phone")}</a>}<small>{site.hours}</small></div></div>
+ <div className="container footer-bottom"><span>© {new Date().getFullYear()} {site.name}. {t("footer.copyright")}</span><div><button onClick={()=>go("privacy")}>{t("footer.privacy")}</button><button onClick={()=>go("terms")}>{t("footer.terms")}</button></div><span>{t("footer.tagline")}</span></div></footer>;
 }
 
 function AppContent() {
@@ -618,7 +613,7 @@ function AppContent() {
     page === "admin-receiving-bank" ? <AdminReceivingBank go={go}/> :
     page === "admin-approved-villas" ? <AdminApprovedVillas go={go}/> :
     page === "admin-pending-villas" ? <AdminPendingVillas go={go}/> :
-    page === "admin-cms" ? <AdminCms go={go} renderHome={<><Header page="home" go={()=>{}} account={null} preview/><Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/><FooterAd/><Footer go={()=>{}} account={null}/></>}/> :
+    page === "admin-cms" ? <AdminCms go={go} renderPreview={(target,reference)=><>{target==="directory"?<Directory go={()=>{}}/>:target==="scan"?<ScanQr go={()=>{}} onVerified={()=>{}} preview/>:target==="login"?<LoginPage go={()=>{}}/>:target==="owner-auth"?<LoginPage go={()=>{}} accountType="merchant"/>:target==="user-registration"?<UserRegistration go={()=>{}} reference=""/>:target==="owner-registration"?<OwnerRegistration go={()=>{}} packageName=""/>:target==="verify"?(reference?<MerchantVerification go={()=>{}} reference={reference} preview/>:<p>กรอก QR ของที่พัก แล้วกดแสดงที่พักตัวอย่าง</p>):target==="villa-report"?<PublicReportPage onSubmit={async()=>{}}/>:<PublicInfoPage page={target} go={()=>{}}/>}<Footer go={()=>{}} account={null}/></>} renderHome={<><Header page="home" go={()=>{}} account={null} preview/><Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/><FooterAd/><Footer go={()=>{}} account={null}/></>}/> :
     ["admin-packages","admin-leads","admin-settings","admin-subscriptions"].includes(page) ? <AdminBusiness page={page} go={go} /> :
     ["admin-users","admin-owners"].includes(page) ? <AdminAccounts role={page === "admin-users" ? "user" : "merchant"} go={go}/> :
     ["admin-owners","admin-checks","admin-reports","admin-qr","owner-analytics","owner-reports"].includes(page) || page.startsWith("user-") ? <OperationsPortal page={page} go={go} item={selectedItem} /> :

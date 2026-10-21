@@ -1,3 +1,4 @@
+import CmsMediaPicker,{type CmsMedia} from "./CmsMediaPicker";
 import { useEffect, useState } from "react"
 import { api } from "./api"
 import SocialMaterials from "./SocialMaterials"
@@ -5,6 +6,7 @@ import type { MerchantVilla } from "./merchantStore"
 import type { HomeBannerItem } from "./cms"
 type Ad = HomeBannerItem & {
   villaId: string
+  villaName?: string
   placement: string
   approved: boolean
   order: number
@@ -51,8 +53,12 @@ const blankJob: Job = {
   notes: "",
 }
 export default function Advertising({
-  merchant = false,
+  merchant = false, adsOnly=false, onDirtyChange,mediaLibrary,onMediaUploaded,
 }: {
+  mediaLibrary?:CmsMedia[]
+  onMediaUploaded?:(media:CmsMedia)=>void
+  adsOnly?:boolean
+  onDirtyChange?:(dirty:boolean)=>void
   merchant?: boolean
 }) {
   const [villas, setVillas] = useState<MerchantVilla[]>([]),
@@ -63,15 +69,22 @@ export default function Advertising({
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false)
+  const [localMedia,setLocalMedia]=useState<CmsMedia[]>([]);
+  const mediaUploaded=(item:CmsMedia)=>{if(onMediaUploaded)onMediaUploaded(item);else setLocalMedia(rows=>[item,...rows])};
+  const [query,setQuery]=useState(""),[placement,setPlacement]=useState("all"),[baseline,setBaseline]=useState(JSON.stringify(blankAd));
+  const adDirty=JSON.stringify(ad)!==baseline;
+  useEffect(()=>{onDirtyChange?.(adDirty)},[adDirty,onDirtyChange]);
+  const chooseAd=(next:Ad)=>{if(adDirty&&!window.confirm("มีแบนเนอร์ที่ยังไม่บันทึก ต้องการเปลี่ยนรายการหรือไม่?"))return;setAd(next);setBaseline(JSON.stringify(next));setMessage("")};
   const load = async () => {
     if (!merchant) {
+      if(!mediaLibrary){const library=await api<{media:Omit<CmsMedia,"url">[]}>("/admin/cms/media");setLocalMedia(library.media.map(m=>({...m,url:"/api/public/cms-media/"+m.id})));}
       setVillas((await api<{ villas: MerchantVilla[] }>("/state")).villas)
       setAds(
         (await api<{ advertisements: Ad[] }>("/admin/advertisements"))
           .advertisements,
       )
     }
-    setJobs(
+    if(!adsOnly)setJobs(
       (
         await api<{ jobs: Job[] }>(
           merchant ? "/merchant/social-jobs" : "/admin/social-jobs",
@@ -81,12 +94,13 @@ export default function Advertising({
   }
   useEffect(() => {
     void load().catch((e) => setError(e.message))
-  }, [merchant])
+  }, [merchant,adsOnly])
   const save = async (path: string, value: unknown) => {
     setBusy(true)
     setError("")
     try {
-      await api(path, value)
+      const result=await api<{advertisement?:Ad}>(path, value)
+      if(result.advertisement){const next={...blankAd,...result.advertisement};setAd(next);setBaseline(JSON.stringify(next));window.dispatchEvent(new Event("villacheck-advertisements-updated"));try{localStorage.setItem("villacheck-advertisements-updated",String(Date.now()));}catch{}}
       await load()
       setMessage("บันทึกแล้ว")
     } catch (e) {
@@ -96,8 +110,9 @@ export default function Advertising({
     }
   }
   return (
-    <><SocialMaterials admin={!merchant}/><section className="merchant-panel">
-      <h2>โฆษณาและคอนเทนต์ Social</h2>
+    <>{!adsOnly&&<SocialMaterials admin={!merchant}/>}<section className="merchant-panel">
+      <h2>{adsOnly?"จัดการโฆษณาทุกตำแหน่ง":"โฆษณาและคอนเทนต์ Social"}</h2>
+      {adsOnly&&<p>แบนเนอร์บันทึกแยกจากร่าง CMS เปิดแสดงเมื่ออนุมัติโฆษณา อยู่ในช่วงเวลา และที่พักมีสิทธิ์แพ็กเกจครบ</p>}
       <p>
         2,990: ภาพเดี่ยว 1 โพสต์ / เดือน บนทุก Social ของ VillaCheck · 4,990: ภาพเดี่ยว 1 โพสต์ + วิดีโอ 1
         ชิ้น / เดือน รวมงบโฆษณาและเผยแพร่บนทุก Social ของ VillaCheck สิทธิ์นับรวมทุกช่องทาง ไม่เพิ่มชิ้นงานตามจำนวนช่องทาง
@@ -111,10 +126,11 @@ export default function Advertising({
             หน้าแรกหมุนเวียนทุกรายการที่มีสิทธิ์ตามลำดับ
             หน้ารายละเอียดสุ่มหนึ่งรายการเมื่อเข้าหน้าและคงไว้ระหว่างอ่าน
           </p>
+          <div className="merchant-toolbar"><input aria-label="ค้นหาโฆษณา" placeholder="ค้นหาหัวข้อหรือชื่อที่พัก" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="กรองตำแหน่งโฆษณา" value={placement} onChange={e=>setPlacement(e.target.value)}><option value="all">ทุกตำแหน่ง</option><option value="home">Carousel หน้าแรก</option><option value="detail">หน้ารายละเอียดที่พัก</option><option value="footer">ก่อน Footer</option></select></div>
           <div className="button-row">
-            <button onClick={() => setAd({ ...blankAd })}>เพิ่มโฆษณา</button>
-            {ads.map((a) => (
-              <button key={a.id} onClick={() => setAd(a)}>
+            <button onClick={() => chooseAd({ ...blankAd })}>เพิ่มโฆษณา</button>
+            {ads.filter(a=>(placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).map((a) => (
+              <button key={a.id} onClick={() => chooseAd({...blankAd,...a})}>
                 {a.title} · {a.placement}
               </button>
             ))}
@@ -130,6 +146,7 @@ export default function Advertising({
               ที่พัก
               <select
                 required
+                aria-label="ที่พัก"
                 value={ad.villaId}
                 onChange={(e) => setAd({ ...ad, villaId: e.target.value })}
               >
@@ -144,6 +161,7 @@ export default function Advertising({
             <label>
               ตำแหน่ง
               <select
+                aria-label="ตำแหน่ง"
                 value={ad.placement}
                 onChange={(e) => setAd({ ...ad, placement: e.target.value })}
               >
@@ -152,11 +170,11 @@ export default function Advertising({
                 <option value="footer">โฆษณาเล็กก่อน Footer · 1 ชิ้น (2,990 ขึ้นไป)</option>
               </select>
             </label>
+            <CmsMediaPicker library={mediaLibrary??localMedia} onUploaded={mediaUploaded} label="ภาพคอมพิวเตอร์" value={ad.image} onChange={image=>setAd(current=>({...current,image}))}/>
+            <CmsMediaPicker label="ภาพมือถือ" value={ad.mobileImage} onChange={mobileImage=>setAd(current=>({...current,mobileImage}))}/>
             {([
               "title",
               "description",
-              "image",
-              "mobileImage",
               "href",
               "label",
             ] as const).map((k) => (
@@ -234,6 +252,7 @@ export default function Advertising({
           </form>
         </>
       )}
+      {!adsOnly&&<>
       <h3>สิทธิ์คอนเทนต์รายเดือน</h3>
       {!jobs.length && <p>ยังไม่มีงานคอนเทนต์</p>}
       {jobs.map((j) => (
@@ -364,32 +383,24 @@ export default function Advertising({
           </button>
         </form>
       )}
+      </>}
     </section></>
   )
 }
 export function DetailAdvertisement() {
   const [ad, setAd] = useState<HomeBannerItem | null>(null)
-  useEffect(() => {
-    let active = true
-    void api<{ advertisements: HomeBannerItem[] }>(
-      "/public/advertisements?placement=detail",
-    )
-      .then(({ advertisements }) => {
-        if (active && advertisements.length)
-          setAd(
-            advertisements[Math.floor(Math.random() * advertisements.length)],
-          )
-      })
-      .catch(() => {})
-    return () => {
-      active = false
-    }
-  }, [])
+  useEffect(()=>{
+    let active=true;
+    const load=()=>void api<{advertisements:HomeBannerItem[]}>("/public/advertisements?placement=detail").then(({advertisements})=>{if(active)setAd(previous=>advertisements.find(item=>item.id===previous?.id)??advertisements[Math.floor(Math.random()*advertisements.length)]??null)}).catch(()=>{});
+    const changed=(event:StorageEvent)=>{if(event.key==="villacheck-advertisements-updated")load()};
+    load();window.addEventListener("villacheck-advertisements-updated",load);window.addEventListener("storage",changed);
+    return()=>{active=false;window.removeEventListener("villacheck-advertisements-updated",load);window.removeEventListener("storage",changed)};
+  },[])
   if (!ad) return null
   return (
     <aside className="merchant-panel">
       <small>พื้นที่โฆษณาที่พัก · แยกจากสถานะการตรวจสอบ</small>
-      <a href={ad.href || "#page=directory"}>
+      <a href={ad.href || "#page=directory"} {...(ad.href?.startsWith("https:")?{target:"_blank",rel:"noopener noreferrer"}:{})}>
         <picture>
           {ad.mobileImage && (
             <source media="(max-width:640px)" srcSet={ad.mobileImage} />
@@ -405,7 +416,7 @@ export function DetailAdvertisement() {
             }}
           />
         </picture>
-        <strong>{ad.title}</strong>
+        <strong>{ad.title}</strong><p>{ad.description}</p><span>{ad.label||"ดูรายละเอียด"} ↗</span>
       </a>
     </aside>
   )

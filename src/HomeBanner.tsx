@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react"
 import { api } from "./api"
 import type { HomeBannerItem } from "./cms"
-import { useCms } from "./cms"
+import { useCms,usePresentation } from "./cms"
 export default function HomeBanner() {
   const { home } = useCms()
+  const presentation=usePresentation()
   const [now, setNow] = useState(Date.now())
   const [advertisements, setAdvertisements] = useState<HomeBannerItem[]>([])
   useEffect(() => {
@@ -16,11 +17,14 @@ export default function HomeBanner() {
           if (active) setAdvertisements(d.advertisements)
         })
         .catch(() => {})
+    const changed=(event:StorageEvent)=>{if(event.key==="villacheck-advertisements-updated")load()};
+    window.addEventListener("villacheck-advertisements-updated",load);window.addEventListener("storage",changed);
     load()
     const timer = setInterval(load, 30000)
     return () => {
       active = false
       clearInterval(timer)
+      window.removeEventListener("villacheck-advertisements-updated",load);window.removeEventListener("storage",changed);
     }
   }, [])
   const editorial = home.banners?.length
@@ -43,7 +47,7 @@ export default function HomeBanner() {
   const activeAdvertisements = advertisements.filter(
     b => (!b.startsAt || Date.parse(b.startsAt) <= now) && (!b.endsAt || Date.parse(b.endsAt) > now),
   )
-  const slides: (HomeBannerItem | (typeof editorial)[number])[] = activeAdvertisements.length ? activeAdvertisements : editorial
+  const slides: (HomeBannerItem | (typeof editorial)[number])[] = presentation.bannerSource === "mixed" ? [...activeAdvertisements,...editorial] : presentation.bannerSource === "editorial-first" ? (editorial.length?editorial:activeAdvertisements) : (activeAdvertisements.length?activeAdvertisements:editorial)
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const touch = useRef<number | null>(null)

@@ -1,3 +1,4 @@
+import {useCopy} from "./cms";
 import { useEffect, useState } from "react"
 import { api, currentAccount } from "./api"
 import type { Account } from "./merchantStore"
@@ -38,6 +39,7 @@ export default function Reviews({
   qr?: string
   mode?: "public" | "admin" | "merchant" | "user"
 }) {
+  const t=useCopy();
   const [rows, setRows] = useState<Review[]>([]),
     [account, setAccount] = useState<Account | null>(null),
     [content, setContent] = useState(""),
@@ -107,7 +109,7 @@ export default function Reviews({
             ? "รีวิวของฉัน"
             : mode === "merchant"
               ? "รีวิวที่พักและคำชี้แจง"
-              : "รีวิวจากผู้เข้าพัก"}
+              : t("reviews.title")}
       </h2>
       <p>
         แพ็กเกจต่ำกว่า 2,990 บาทเผยแพร่รีวิวทันที ส่วนแพ็กเกจ 2,990 บาทขึ้นไปรอ Admin ตรวจอนุมัติก่อนเผยแพร่ ใช้กติกาเดียวกันทุกคะแนน เจ้าของที่พักตอบชี้แจงได้
@@ -244,7 +246,7 @@ export default function Reviews({
             void act("/reviews", { qr, rating, content })
           }}
         >
-          <h3>เขียนรีวิว</h3>
+          <h3>{t("reviews.write")}</h3>
           <label>
             คะแนน
             <select
@@ -271,7 +273,7 @@ export default function Reviews({
             {moderationRequired === null ? "กำลังตรวจสอบเงื่อนไขการเผยแพร่รีวิว" : moderationRequired ? "รีวิวที่พักนี้จะรอ Admin ตรวจอนุมัติก่อนแสดงผล" : "รีวิวที่พักนี้จะแสดงผลทันทีหลังส่ง"} ดูสถานะและขอทบทวนผลได้ที่รีวิวของฉันในบัญชี User
           </p>
           <button className="primary-button" disabled={busy}>
-            ส่งรีวิว
+            {t("reviews.submit")}
           </button>
         </form>
       )}
@@ -280,7 +282,7 @@ export default function Reviews({
           className="outline-button"
           href={`#page=login&item=${encodeURIComponent(qr || "")}`}
         >
-          เข้าสู่ระบบเพื่อเขียนรีวิว
+          {t("reviews.login")}
         </a>
       )}
     </section>

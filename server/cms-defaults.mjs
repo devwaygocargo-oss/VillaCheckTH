@@ -1,3 +1,4 @@
+import {presentationDefaults} from "./cms-presentation.mjs";
 import {discoveryDefaults,newsSectionDefault} from "./cms-home-config.mjs";
 const pages = {
   about: {
@@ -58,6 +59,7 @@ const images = [
   "https://images.unsplash.com/photo-1756115377696-0bdbf1c21a02?auto=format&fit=crop&w=1200&q=86",
 ]
 export const cmsDefaults = {
+  presentation:presentationDefaults,
   schemaVersion: 1,
   business:{emailOtpSubject:"VillaCheck: รหัสเข้าสู่ระบบ",emailOtpBody:"รหัส OTP ของคุณคือ {{code}} ใช้ได้ {{minutes}} นาที ห้ามให้รหัสนี้กับผู้อื่น",smsOtpBody:"VillaCheck OTP: {{code}}. Expires in {{minutes}} minutes. Do not share.",emailOtpTemplateId:"",facebookLoginEnabled:false,monthlyInitialMonths:1,monthlyRenewalMonths:1,paymentEmailSubject:"VillaCheck: {{package}} แจ้งชำระแพ็กเกจ",paymentEmailIntro:"เรียน {{merchant}}\nกรุณาตรวจยอดและระยะเวลาในใบแจ้งชำระ แล้วแนบสลิปให้ Admin ตรวจสอบ"},
   site: {

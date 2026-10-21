@@ -1,6 +1,6 @@
 import HomeLogoLink from "./HomeLogoLink";
 import AdminApprovalNotice from "./AdminApprovalNotice";
-import { CmsPublicPage } from "./cms";
+import { CmsPublicPage,useCopy } from "./cms";
 import OtpLogin from "./OtpLogin";
 import {oauthErrors} from "./authMessages";
 import type {Account} from "./merchantStore";
@@ -39,6 +39,7 @@ export function PublicInfoPage({ page, go, selectedArticle }: { page: Page; go: 
 
 export function PublicReportPage({ onSubmit, reference="" }: { reference?:string; onSubmit: (report: Omit<UserReport, "reference" | "guest">) => Promise<void> }) {
   useEffect(()=>{void currentAccount().catch(()=>{});if(reference)void api<{name:string}>(`/public/qr/${encodeURIComponent(reference)}`).then(v=>setVilla(v.name)).catch(()=>{});},[reference]);
+  const t=useCopy();
   const [villa, setVilla] = useState("");
   const [type, setType] = useState("ชื่อบัญชีไม่ตรง");
   const [detail, setDetail] = useState("");
@@ -58,26 +59,27 @@ export function PublicReportPage({ onSubmit, reference="" }: { reference?:string
     finally{setBusy(false);}
   };
   return <main className="page-bg public-report-page">
-    <div className="page-hero container"><span className="kicker">PUBLIC REPORT</span><h1>แจ้งปัญหา</h1><p>ส่งข้อมูลให้ทีม VillaCheck ตรวจสอบได้ทันที โดยไม่ต้อง Login หรือ Register</p></div>
+    <div className="page-hero container"><span className="kicker">{t("report.kicker")}</span><h1>{t("report.title")}</h1><p>{t("report.description")}</p></div>
     <div className="container report-form-card">
       <div className="report-guest-note"><span>Guest Report</span><strong>ไม่บังคับเข้าสู่ระบบ</strong><p>ข้อมูลผู้แจ้งและช่องทางติดต่อกลับเป็น Optional</p></div>
       <div className="portal-form">
-        <label><span>ชื่อ Villa</span><input value={villa} onChange={event => setVilla(event.target.value)} placeholder="ชื่อที่พักที่ต้องการแจ้งปัญหา" /></label>
-        <label><span>ประเภทปัญหา</span><select value={type} onChange={event => setType(event.target.value)}><option>ชื่อบัญชีไม่ตรง</option><option>สงสัยเพจปลอม</option><option>ช่องทางติดต่อไม่ตรง</option><option>QR ผิดปกติ</option><option>อื่น ๆ</option></select></label>
-        <label><span>รายละเอียด</span><textarea value={detail} onChange={event => setDetail(event.target.value)} placeholder="อธิบายข้อมูลหรือเหตุการณ์ที่พบ" /></label>
+        <label><span>{t("report.villa")}</span><input value={villa} onChange={event => setVilla(event.target.value)} placeholder="ชื่อที่พักที่ต้องการแจ้งปัญหา" /></label>
+        <label><span>{t("report.type")}</span><select value={type} onChange={event => setType(event.target.value)}><option>ชื่อบัญชีไม่ตรง</option><option>สงสัยเพจปลอม</option><option>ช่องทางติดต่อไม่ตรง</option><option>QR ผิดปกติ</option><option>อื่น ๆ</option></select></label>
+        <label><span>{t("report.detail")}</span><textarea value={detail} onChange={event => setDetail(event.target.value)} placeholder="อธิบายข้อมูลหรือเหตุการณ์ที่พบ" /></label>
         <div className="optional-fields"><label><span>ชื่อผู้แจ้ง (Optional)</span><input value={reporter} onChange={event => setReporter(event.target.value)} placeholder="ไม่จำเป็นต้องระบุ" /></label><label><span>เบอร์โทรหรืออีเมลติดต่อกลับ (Optional)</span><input value={contact} onChange={event => setContact(event.target.value)} placeholder="ไม่จำเป็นต้องระบุ" /></label></div>
         {error && <div className="form-message error-state">{error}</div>}
-        <button className="primary-button" disabled={busy} onClick={()=>void submit()}>{busy?"กำลังบันทึก…":"ส่ง Report"}</button>
+        <button className="primary-button" disabled={busy} onClick={()=>void submit()}>{busy?"กำลังบันทึก…":t("report.submit")}</button>
       </div>
     </div>
   </main>;
 }
 
 export function PublicReportSuccess({ go, reference, linkedToUser }: { go: Go; reference: string; linkedToUser: boolean }) {
+  const t=useCopy();
   const [status,setStatus]=useState(""),[note,setNote]=useState(""),[linked,setLinked]=useState(linkedToUser),[error,setError]=useState("");
   useEffect(()=>{let active=true;const refresh=()=>{if(!reference){setError("ไม่พบเลขอ้างอิงรายงาน");return;}void api<{status:string;publicNote:string;linkedToUser:boolean}>(`/public/reports/${encodeURIComponent(reference)}`).then(r=>{if(active){setStatus(r.status);setNote(r.publicNote);setLinked(r.linkedToUser);}}).catch(e=>{if(active)setError(e.message)});};refresh();const timer=window.setInterval(refresh,10000);return()=>{active=false;clearInterval(timer)};},[reference]);
 
-  return <main className="page-bg public-report-page"><div className="page-hero container"><span className="kicker">REPORT RECEIVED</span><h1>{status?"ติดตามสถานะรายงาน":"กำลังตรวจสอบเลขอ้างอิง"}</h1><p>ทีม VillaCheck จะตรวจสอบต่อ</p></div><div className="container report-success-card"><StatusBadge status={status==="RESOLVED"?"Verified":status==="REJECTED"?"Rejected":"Pending"} /><span>Reference Number</span><strong>{reference}</strong>{error?<p role="alert">{error}</p>:<><p>สถานะ: {status||"กำลังโหลด…"}</p>{note&&<p>คำตอบจากทีมงาน: {note}</p>}<a href={`#${new URLSearchParams({page:"villa-report-success",item:reference})}`}>ลิงก์ติดตามรายงาน</a></>}<p>กรุณาเก็บหมายเลขนี้ไว้สำหรับติดตามสถานะ{linked ? " · Report นี้ถูกเพิ่มในหน้า Report ของฉันแล้ว" : " · ส่งในรูปแบบ Guest Report"}</p><div className="button-row">{linked && <button className="primary-button" onClick={() => go("user-reports")}>ไปที่ Report ของฉัน</button>}<button className="outline-button" onClick={() => go("home")}>กลับหน้าหลัก</button></div></div></main>;
+  return <main className="page-bg public-report-page"><div className="page-hero container"><span className="kicker">{t("report.receivedKicker")}</span><h1>{status?t("report.receivedTitle"):"กำลังตรวจสอบเลขอ้างอิง"}</h1><p>{t("report.receivedDescription")}</p></div><div className="container report-success-card"><StatusBadge status={status==="RESOLVED"?"Verified":status==="REJECTED"?"Rejected":"Pending"} /><span>Reference Number</span><strong>{reference}</strong>{error?<p role="alert">{error}</p>:<><p>สถานะ: {status||"กำลังโหลด…"}</p>{note&&<p>คำตอบจากทีมงาน: {note}</p>}<a href={`#${new URLSearchParams({page:"villa-report-success",item:reference})}`}>ลิงก์ติดตามรายงาน</a></>}<p>กรุณาเก็บหมายเลขนี้ไว้สำหรับติดตามสถานะ{linked ? " · Report นี้ถูกเพิ่มในหน้า Report ของฉันแล้ว" : " · ส่งในรูปแบบ Guest Report"}</p><div className="button-row">{linked && <button className="primary-button" onClick={() => go("user-reports")}>ไปที่ Report ของฉัน</button>}<button className="outline-button" onClick={() => go("home")}>กลับหน้าหลัก</button></div></div></main>;
 }
 
 const testAccounts = [
@@ -87,6 +89,7 @@ const testAccounts = [
 ];
 
 export function LoginPage({ go, onAuthenticated, reference = "", accountType="user",packageName="" }: { go: Go; reference?: string; onAuthenticated?: (role: "User" | "Merchant" | "Admin") => void;accountType?:"user"|"merchant";packageName?:string }) {
+  const t=useCopy();
   const [passwordMode,setPasswordMode]=useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -123,21 +126,21 @@ export function LoginPage({ go, onAuthenticated, reference = "", accountType="us
     <div className="login-sheet">
       <div className="login-topbar"><button aria-label="กลับหน้าหลัก" onClick={()=>go("home")}><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 5-7 7 7 7"/></svg></button><button aria-label="ช่วยเหลือการเข้าสู่ระบบ" onClick={()=>go("help")}><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4"/><path d="M12 16h.01"/></svg></button></div>
       <HomeLogoLink className="login-brand" onNavigate={()=>go("home")}><span className="login-brand-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></span><strong>Villa<span>Check</span></strong></HomeLogoLink>
-      <h1 className="login-title">{accountType==="merchant"?"เข้าสู่ระบบ Merchant":"เข้าสู่ระบบ VillaCheck"}</h1>
+      <h1 className="login-title">{accountType==="merchant"?t("auth.merchantTitle"):t("auth.userTitle")}</h1>
       {accountType==="merchant"&&<p className="login-account-note">{packageName?`แพ็กเกจที่สนใจ: ${packageName} · `:""}เลือกช่องทางเข้าสู่ระบบหรือสร้างบัญชี Merchant</p>}
       {!passwordMode&&error&&<p className="login-error" role="alert">{error}</p>}
       {!passwordMode?<OtpLogin accountType={accountType} onAuthenticated={account=>{void authenticated(account).catch(e=>setError(e.message));}}/>:<>
       <form className="login-email-form" onSubmit={event=>{event.preventDefault();void login();}}>
-        <label className="login-field"><span>อีเมล</span><input aria-label="อีเมล" required type="email" autoComplete="username" value={email} onChange={event=>setEmail(event.target.value)} placeholder="อีเมลของคุณ"/></label>
-        <label className="login-field"><span>รหัสผ่าน</span><input aria-label="รหัสผ่าน" required autoComplete="current-password" value={password} onChange={event=>setPassword(event.target.value)} type="password" placeholder="รหัสผ่าน"/></label>
+        <label className="login-field"><span>{t("auth.email")}</span><input aria-label={t("auth.email")} required type="email" autoComplete="username" value={email} onChange={event=>setEmail(event.target.value)} placeholder="อีเมลของคุณ"/></label>
+        <label className="login-field"><span>{t("auth.password")}</span><input aria-label={t("auth.password")} required autoComplete="current-password" value={password} onChange={event=>setPassword(event.target.value)} type="password" placeholder="รหัสผ่าน"/></label>
         {error&&<p className="login-error" role="alert">{error}</p>}
-        <button className="login-submit" disabled={loading}>{loading?"กำลังเข้าสู่ระบบ…":"เข้าสู่ระบบ"}</button>
+        <button className="login-submit" disabled={loading}>{loading?"กำลังเข้าสู่ระบบ…":t("auth.submit")}</button>
       </form>
       <button type="button" className="login-mode-back" onClick={()=>setPasswordMode(false)}>กลับไปเข้าสู่ระบบด้วย OTP</button></>}
       <div className="login-divider"><span>หรือ</span></div>
       <SocialLogin reference={reference} variant="stacked" accountType={accountType}/>
-      {!passwordMode&&<button className="login-password-choice" onClick={()=>{setPasswordMode(true);setError("")}}>ดำเนินการต่อด้วยอีเมลและรหัสผ่าน</button>}
-      <div className="login-bottom">{accountType==="merchant"?<><button className="login-create" onClick={()=>go("owner-registration")}>สมัคร Merchant ใหม่</button><button className="login-merchant" onClick={()=>go("login")}>เข้าสู่ระบบ User</button></>:<><button className="login-create" onClick={()=>go("user-registration",reference)}>สร้างบัญชี User</button><button className="login-merchant" onClick={()=>go("owner-auth")}>เข้าสู่ระบบ Merchant</button><button className="login-merchant" onClick={()=>go("owner-registration")}>สมัครบัญชี Merchant</button></>}<p>เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ<button onClick={()=>go("terms")}>เงื่อนไขการใช้บริการ</button>และได้อ่าน<button onClick={()=>go("privacy")}>นโยบายความเป็นส่วนตัว</button>ของ VillaCheck แล้ว</p></div>
+      {!passwordMode&&<button className="login-password-choice" onClick={()=>{setPasswordMode(true);setError("")}}>{t("auth.passwordChoice")}</button>}
+      <div className="login-bottom">{accountType==="merchant"?<><button className="login-create" onClick={()=>go("owner-registration")}>สมัคร Merchant ใหม่</button><button className="login-merchant" onClick={()=>go("login")}>{t("auth.userLogin")}</button></>:<><button className="login-create" onClick={()=>go("user-registration",reference)}>{t("auth.createUser")}</button><button className="login-merchant" onClick={()=>go("owner-auth")}>{t("auth.merchantLogin")}</button><button className="login-merchant" onClick={()=>go("owner-registration")}>{t("auth.createMerchant")}</button></>}<p>เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ<button onClick={()=>go("terms")}>เงื่อนไขการใช้บริการ</button>และได้อ่าน<button onClick={()=>go("privacy")}>นโยบายความเป็นส่วนตัว</button>ของ VillaCheck แล้ว</p></div>
       {localAccounts && <div className="test-accounts">
         <strong>บัญชีทดสอบบนเซิร์ฟเวอร์ Local</strong>
         {testAccounts.filter(account=>account.role!=="Admin").map(account => <button key={account.role === "Merchant" ? "Merchant" : account.role} onClick={() => { setEmail(account.email); setPassword(account.password); setError(""); }}>
@@ -153,6 +156,7 @@ export function OwnerPackageAuth({ go }: { go: Go; packageName: string; onOwnerL
 }
 
 export function OwnerRegistration({ go }: { go: Go; packageName: string }) {
+  const t=useCopy();
   const [name, setName] = useState("");
   const [nameEn, setNameEn] = useState("");
   const [email, setEmail] = useState("");
@@ -166,7 +170,7 @@ export function OwnerRegistration({ go }: { go: Go; packageName: string }) {
     catch (error) { setError(error instanceof Error ? error.message : "สมัครไม่สำเร็จ"); }
     finally { setBusy(false); }
   };
-  return <FlowPage onHome={()=>go("home")} kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle="กรอกชื่อ Merchant / บริษัททั้งภาษาไทยและภาษาอังกฤษ แล้วเพิ่มชื่อที่พักทั้งสองภาษาในขั้นตอนถัดไป เพื่อให้ลูกค้าค้นหาเจอได้ง่าย" onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัทภาษาไทย</span><input required maxLength={200} placeholder="เช่น บริษัท วิลล่าริมทะเล" value={name} onChange={e => setName(e.target.value)} /></label><label><span>ชื่อ Merchant / บริษัทภาษาอังกฤษ</span><input required maxLength={200} placeholder="เช่น Seaside Villa Co., Ltd." value={nameEn} onChange={e => setNameEn(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
+  return <FlowPage onHome={()=>go("home")} kicker="MERCHANT REGISTRATION" title={t("registration.merchantTitle")} subtitle={t("registration.merchantDescription")} onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>{t("registration.businessTh")}</span><input required maxLength={200} placeholder="เช่น บริษัท วิลล่าริมทะเล" value={name} onChange={e => setName(e.target.value)} /></label><label><span>{t("registration.businessEn")}</span><input required maxLength={200} placeholder="เช่น Seaside Villa Co., Ltd." value={nameEn} onChange={e => setNameEn(e.target.value)} /></label><label><span>{t("registration.email")}</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>{t("registration.password")}</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : t("registration.submitMerchant")}</button></form></FlowPage>;
 }
 
 export function OwnerOnboardingVilla({ go, onVillaAdded }: { go: Go; onVillaAdded: (name: string) => void }) {
