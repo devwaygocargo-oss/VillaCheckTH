@@ -218,7 +218,7 @@ function FlowPage({ kicker, title, subtitle, onBack, onHome, children }: { kicke
 
 const ownerNav: [string, Page][] = [
   ["Dashboard", "owner-dashboard"], ["Villas", "owner-villas"], ["Add Villa", "owner-add-villa"],
-  ["QR และการต่ออายุ", "owner-villa-detail"], ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["แพ็กเกจเจ้าของที่พัก", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
+  ["Analytics", "owner-analytics"], ["Reports", "owner-reports"], ["แพ็กเกจเจ้าของที่พัก", "owner-package"], ["Documents", "owner-pending"], ["Payment", "owner-package"], ["Profile", "owner-profile"],
 ];
 const adminNav: [string, Page][] = [
   ["CMS เว็บไซต์", "admin-cms"], ["Dashboard", "admin-dashboard"], ["Villa รออนุมัติ", "admin-pending-villas"], ["Villa ที่อนุมัติแล้ว", "admin-approved-villas"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
