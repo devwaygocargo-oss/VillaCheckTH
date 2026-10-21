@@ -1,3 +1,4 @@
+import { basicVerificationNotice } from "./package-content.mjs"
 import { loadTrustContext, selectByIds } from "./villa-read-context.mjs"
 import { readContextPlan } from "./catalog.mjs"
 import { shortcutMediaUrls } from "./cms-home-config.mjs"
@@ -676,6 +677,7 @@ export function createApp(db, config, transport) {
         return json({
           name: v.name,
           nameEn: v.name_en,
+          basicVerificationNotice: v.package_id === "basic" ? basicVerificationNotice : null,
           trialUnlimited: v.payments === 0,
           photoUrl: v.photo_url,
       photoUploadedAt: v.photo_uploaded_at, photoTakenAt: v.photo_taken_at, photoReviewedAt: v.photo_reviewed_at,

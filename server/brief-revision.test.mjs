@@ -1,3 +1,4 @@
+import { basicVerificationNotice } from "./package-content.mjs"
 import { qrReference } from "../src/qrReference.ts"
 import test from "node:test"
 import assert from "node:assert/strict"
@@ -206,6 +207,7 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
       const r = await request("/public/qr/" + first.qr)
       assert.equal(r.status, 200)
       assert.equal(r.value.nameEn, "Test Villa")
+      assert.equal(r.value.basicVerificationNotice, basicVerificationNotice)
       assert.equal(r.value.verificationLevel, "BASIC_CHECKED")
       assert.equal(r.value.photoUploadedAt, null)
       const all = (await request("/public/villas")).value.villas
@@ -271,6 +273,7 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
       first = r.villas.find((v) => v.id === first.id)
       second = r.villas.find((v) => v.id === second.id)
       assert.equal(first.packageId, "premium")
+      assert.equal((await request("/public/qr/" + first.qr)).value.basicVerificationNotice, null)
       assert.equal(first.trialUnlimited, false)
       assert.equal(first.verificationLevel, "BASIC_CHECKED")
       assert.equal(second.trialUnlimited, true)

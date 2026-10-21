@@ -678,6 +678,7 @@ export function MerchantVerification({
     name: string
     nameEn?: string
     trialUnlimited?: boolean
+    basicVerificationNotice?: string | null
     photoUploadedAt?: string | null
     photoTakenAt?: string | null
     photoReviewedAt?: string | null
@@ -704,7 +705,7 @@ export function MerchantVerification({
     setLoading(true)
     setVilla(null)
     setError("")
-    void api<{ nameEn?: string; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
+    void api<{ nameEn?: string; basicVerificationNotice?: string | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
       `${adminView?"/admin/qr-verification":"/public/qr"}/${encodeURIComponent(reference)}`,
     )
       .then((value) => {
@@ -764,6 +765,7 @@ export function MerchantVerification({
                 ? "QR ใช้งานได้ · Admin อนุมัติแล้ว"
                 : ({EXPIRED:"QR หมดอายุ",SUSPENDED:"QR ถูกระงับ",INACTIVE:"QR ปิดใช้งาน",PENDING:"QR อยู่ระหว่างรออนุมัติ"} as Record<string,string>)[villa.qrStatus] || "QR ไม่พร้อมใช้งาน"}
             </span>
+            {villa.basicVerificationNotice && <p className="verification-reminder">{villa.basicVerificationNotice}</p>}
             {villa.photoUrl && <img src={villa.photoUrl} alt={villa.name} style={{maxWidth:"100%",maxHeight:360}}/>}
             <p>{villa.nameEn}</p><p>อัปเดตรูปภาพล่าสุดเมื่อ {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"}</p>{villa.photoUrl && <p>วันที่อัปโหลด: {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"} · วันที่ถ่าย: {villa.photoTakenAt ? date(villa.photoTakenAt) : "ไม่ระบุ"}{villa.photoReviewedAt && <> · วันที่ทีมตรวจสื่อ: {date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
             {villa.premiumBanner && <p className="merchant-status">✦ Premium Verified · เอกสารผ่านและ Subscription ใช้งานได้</p>}

@@ -1,3 +1,4 @@
+import { basicVerificationNotice } from "../server/package-content.mjs"
 import { useState } from "react"
 import { usePackages } from "./packagePlans"
 import type { Store } from "./merchantStore"
@@ -79,6 +80,7 @@ export default function VillaPackagePanel({
             <button type="button" aria-pressed={selected===p.id} onClick={()=>setSelected(p.id)}>
               <strong>{p.name}</strong><span>฿{(p.amount/100).toLocaleString("th-TH")} / เดือน / ที่พัก</span><small>รวมภาษี · ทุกแพ็กเกจเขียนรีวิวได้</small>
             </button>
+            {p.id === "basic" && <p>{basicVerificationNotice}</p>}
             <ul className="package-feature-list" aria-label={`สิทธิ์ของ ${p.name}`}>
               {featureRows.map(feature=>{
                 const available=included.has(feature);

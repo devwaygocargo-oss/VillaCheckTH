@@ -1,4 +1,4 @@
-import {packageContent,footerAdFeature,premiumGuaranteeFeature} from './package-content.mjs'
+import {packageContent,footerAdFeature,premiumGuaranteeFeature,basicVerificationNotice} from './package-content.mjs'
 import { packages } from "./database.mjs"
 export const levels = [
   "REGISTERED",
@@ -53,6 +53,12 @@ export async function seedCatalog(db) {
       await db.prepare("UPDATE package_catalog SET features=?,description=? WHERE id='premium'").run(JSON.stringify([...new Set(features)]),row.description.replace('การตรวจบ้านตรงปก','การันตีบ้านตรงปก'));
     }
     await db.prepare("INSERT INTO system_settings(key,value) VALUES ('premium_guarantee_v1','true') ON CONFLICT(key) DO NOTHING").run();
+  }
+
+  if(!(await db.prepare("SELECT value FROM system_settings WHERE key='basic_verification_scope_v1'").get())) {
+    const row=await db.prepare("SELECT description FROM package_catalog WHERE id='basic'").get();
+    if(row && !row.description.includes(basicVerificationNotice))await db.prepare("UPDATE package_catalog SET description=? WHERE id='basic'").run(row.description+' · '+basicVerificationNotice);
+    await db.prepare("INSERT INTO system_settings(key,value) VALUES ('basic_verification_scope_v1','true') ON CONFLICT(key) DO NOTHING").run();
   }
 
 }
