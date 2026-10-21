@@ -1,3 +1,4 @@
+import {expandedNews} from "./news-content.mjs";
 import {presentationDefaults} from "./cms-presentation.mjs";
 import {discoveryDefaults,newsSectionDefault} from "./cms-home-config.mjs";
 const pages = {
@@ -149,7 +150,7 @@ export const cmsDefaults = {
     title,
     description: "คำแนะนำจาก VillaCheck สำหรับการตรวจสอบข้อมูลที่พัก",
     body,
-    image: "",
+    ...expandedNews(i),
     visible: true,
   })),
   faqs: [],

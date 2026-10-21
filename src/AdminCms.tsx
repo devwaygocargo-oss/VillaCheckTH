@@ -960,6 +960,7 @@ export default function AdminCms({
                         }
                       />
                     ))}
+                    <BlockEditor blocks={a.blocks||[]} media={media} onChange={blocks=>change({...content,articles:content.articles.map(x=>x.id===a.id?{...x,blocks}:x)})}/>
                     <ImageField
                       value={a.image}
                       media={media}

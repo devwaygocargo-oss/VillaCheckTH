@@ -238,6 +238,7 @@ function normalizeCms(data) {
         description: string(a.description),
         body: string(a.body, 30000),
         image: cmsUrl(a.image, true),
+        blocks: blocks(a.blocks || []),
         visible: a.visible,
       }
     }),
@@ -309,7 +310,7 @@ function mediaReferences(content) {
     ...(content.home.banners || []).flatMap(b=>[b.image,b.mobileImage]),
     ...content.home.blocks.map((x) => x.image),
     ...content.pages.flatMap((p) => p.blocks.map((x) => x.image)),
-    ...content.articles.map((x) => x.image),
+    ...content.articles.flatMap(x=>[x.image,...(x.blocks||[]).map(b=>b.image)]),
   ].filter((x) => x.startsWith("/api/public/cms-media/"))
 }
 export async function cmsPaymentInstructions(db, fallback = "") {

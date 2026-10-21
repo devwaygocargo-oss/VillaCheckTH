@@ -34,6 +34,7 @@ export type CmsPage = {
   blocks: CmsBlock[]
 }
 export type CmsArticle = {
+  blocks?: CmsBlock[]
   id: string
   title: string
   description: string
@@ -307,7 +308,7 @@ export function CmsPublicPage({
           <h1>{article?.title || "ไม่พบบทความ"}</h1>
           <p>{article?.description}</p>
         </div>
-        <article className="container info-body">
+        <article className="container info-body news-detail-body">
           {article?.image && (
             <img
               className="cms-article-image"
@@ -315,7 +316,8 @@ export function CmsPublicPage({
               alt={article.title}
             />
           )}
-          <p className="cms-prose">{article?.body}</p>
+          <p className="cms-prose news-introduction">{article?.body}</p>
+          <CmsBlocks blocks={article?.blocks||[]}/>
           <button className="outline-button" onClick={() => go("articles")}>
             กลับไปบทความทั้งหมด
           </button>
