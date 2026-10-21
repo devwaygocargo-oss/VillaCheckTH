@@ -325,7 +325,7 @@ export function CmsPublicPage({
       </main>
     )
   return (
-    <main className="page-bg public-info-page">
+    <main className={`page-bg public-info-page${page==="verification-standard"?" status-guide-page":""}`}>
       <div className="page-hero container">
         <span className="kicker">{info?.kicker}</span>
         <h1>{info?.title || "ไม่พบหน้าเว็บ"}</h1>

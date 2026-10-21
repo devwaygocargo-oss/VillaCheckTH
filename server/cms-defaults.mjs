@@ -1,3 +1,4 @@
+import {statusGuideBlocks} from "./status-guide.mjs";
 import {expandedNews} from "./news-content.mjs";
 import {presentationDefaults} from "./cms-presentation.mjs";
 import {discoveryDefaults,newsSectionDefault} from "./cms-home-config.mjs";
@@ -144,7 +145,7 @@ export const cmsDefaults = {
       { id: "custom", visible: true, title: "", description: "" },
     ],
   },
-  pages: Object.entries(pages).map(([slug, p]) => ({ slug, ...p, blocks: [] })),
+  pages: Object.entries(pages).map(([slug, p]) => ({ slug, ...p, blocks: slug==="verification-standard"?statusGuideBlocks:[] })),
   articles: Object.entries(articles).map(([title, body], i) => ({
     id: "guide-" + (i + 1),
     title,

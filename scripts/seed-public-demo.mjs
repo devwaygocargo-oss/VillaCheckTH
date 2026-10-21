@@ -1,3 +1,4 @@
+import {enrichStatusGuide} from "../server/status-guide.mjs";
 import {enrichPublishedNews} from "../server/news-content.mjs";
 import 'dotenv/config';
 import {randomBytes} from 'node:crypto';
@@ -10,6 +11,7 @@ if(process.env.VERCEL!=='1'||process.env.SEED_PUBLIC_DEMO_DATA==='false')process
 const db=new PrismaDatabaseService();
 try{
  const result=await seedDemo(db,{password:process.env.DEMO_PASSWORD || randomBytes(24).toString('base64url')});
+ console.log('Status guide expanded:',await enrichStatusGuide(db));
  console.log('News content expanded:',await enrichPublishedNews(db));
  console.log('Display wording updated:',await removeSampleWord(db));
  console.log('Free Basic dummy fixtures:',result.freeVillas);
