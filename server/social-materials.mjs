@@ -89,6 +89,7 @@ export async function socialMaterialsApi(db, user, req, path, url, body) {
       const kind = data.mime.startsWith("image/") ? "image" : "video"
       const max = kind === "image" ? socialMaterialLimits.imageBytes : socialMaterialLimits.videoBytes
       if (!Number.isInteger(data.size) || data.size < 12 || data.size > max) fail(413, kind === "image" ? "ภาพไม่เกิน 2 MB ต่อไฟล์" : "วิดีโอไม่เกิน 50 MB ต่อไฟล์")
+      if(kind==="video"&&villa.package_id!=="premium")fail(403,"แพ็กเกจ 2,990 ส่งสื่อ Social ได้เฉพาะรูปภาพ วิดีโอสำหรับแพ็กเกจ 4,990 เท่านั้น")
       const used = (current?.assets || []).filter(a => a.kind === kind).length + active.filter(u => u.villaId === villa.id && u.month === month && u.kind === kind).length
       if (used >= (kind === "image" ? socialMaterialLimits.images : socialMaterialLimits.videos)) fail(409, "ไฟล์ต้นฉบับเต็มแล้ว ลบไฟล์ที่ไม่ใช้ก่อนเพิ่ม")
       const upload = { id: randomUUID(), ownerId: user.id, villaId: villa.id, month, name, mime: data.mime, kind, size: data.size, received: 0, hashes: [], expiresAt: Date.now() + 2 * 3600000 }
@@ -98,6 +99,7 @@ export async function socialMaterialsApi(db, user, req, path, url, body) {
     if (["part", "finish"].includes(data.action)) {
       const upload = await read(db, uploadKey(user.id, data.uploadId))
       if (!upload || upload.villaId !== villa.id || upload.month !== month || upload.expiresAt <= Date.now()) fail(404, "การอัปโหลดหมดอายุ กรุณาเลือกไฟล์ใหม่")
+      if(upload.kind==="video"&&villa.package_id!=="premium")fail(403,"วิดีโอ Social สำหรับแพ็กเกจ 4,990 เท่านั้น")
       if (data.action === "part") {
         if (!Number.isInteger(data.index) || data.index < 0 || data.index > upload.hashes.length || typeof data.base64 !== "string" || !/^[A-Za-z0-9+/]+={0,2}$/.test(data.base64) || data.base64.length > Math.ceil(socialMaterialLimits.chunkBytes / 3) * 4) fail(400, "ส่วนของไฟล์ไม่ถูกต้อง")
         const bytes = Buffer.from(data.base64, "base64"), hash = createHash("sha256").update(bytes).digest("hex")
@@ -141,6 +143,7 @@ export async function socialMaterialsApi(db, user, req, path, url, body) {
     }
     if (data.action === "submit") {
       if (!current?.assets.length) fail(400, "แนบไฟล์อย่างน้อย 1 ไฟล์ก่อนส่งให้ทีม")
+      if(villa.package_id!=="premium"&&current.assets.some(a=>a.kind==="video"))fail(403,"แพ็กเกจ 2,990 ส่งสื่อ Social ได้เฉพาะรูปภาพ")
       if (typeof data.confirmed !== "boolean" || !data.confirmed) fail(400, "ยืนยันสิทธิ์การใช้สื่อเพื่อโปรโมทก่อนส่ง")
       const submission = touch({ ...current, status: "submitted", notes: clean(data.notes || "", 2000), submittedAt: new Date().toISOString(), confirmedBy: user.id })
       await save(db, key(villa.id, month), submission)

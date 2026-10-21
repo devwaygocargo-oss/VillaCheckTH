@@ -24,8 +24,8 @@ test('Social materials: paid Pro and Premium accept private source photos/videos
  for(const villa of [pro,premium]){
   const user=await db.prepare('SELECT * FROM users WHERE id=?').get(villa.owner_id);
   let {submission}=await upload(db,user,villa.id,png);
-  ({submission}=await upload(db,user,villa.id,video,'video/mp4','source.mp4'));
-  assert.equal(submission.status,'draft');assert.equal(submission.assets.length,2);
+  if(villa.package_id==='premium')({submission}=await upload(db,user,villa.id,video,'video/mp4','source.mp4'));else await assert.rejects(upload(db,user,villa.id,video,'video/mp4','source.mp4'),e=>e.status===403);
+  assert.equal(submission.status,'draft');assert.equal(submission.assets.length,villa.package_id==='premium'?2:1);
   await assert.rejects(call(db,user,{action:'submit',villaId:villa.id,revision:submission.revision,notes:'brief',confirmed:false}),e=>e.status===400);
   ({submission}=await call(db,user,{action:'submit',villaId:villa.id,revision:submission.revision,notes:'ภาพวิวสระ\nใช้โปรโมทสำหรับครอบครัว',confirmed:true}));
   assert.equal(submission.status,'submitted');assert.match(submission.notes,/ครอบครัว/);
@@ -36,7 +36,7 @@ test('Social materials: paid Pro and Premium accept private source photos/videos
   ({submission}=await upload(db,user,villa.id,png));
   ({submission}=await call(db,user,{action:'submit',villaId:villa.id,revision:submission.revision,notes:'เพิ่มภาพแล้ว',confirmed:true}));
   ({submission}=await call(db,admin,{action:'accepted',villaId:villa.id,revision:submission.revision,adminNote:'รับไฟล์เพื่อเตรียมคอนเทนต์แล้ว'}));
-  assert.equal(submission.status,'accepted');assert.equal(submission.assets.length,3);
+  assert.equal(submission.status,'accepted');assert.equal(submission.assets.length,villa.package_id==='premium'?3:2);
   assert.ok((await get(db,admin)).submissions.find(s=>s.villaId===villa.id).assets.every(a=>a.url.startsWith('/api/social-material-files/')));
  }
  assert.equal((await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'social_job:%'").all()).length,0);
@@ -69,7 +69,7 @@ test('Social materials enforce ownership, paid rights, source sizes, signatures,
 });
 
 test('Chunk retries are idempotent, downloads retain exact bytes across boundaries, and expired staging is removed',async t=>{
- const {db,pro,owner}=await fixture(t),{uploadId,chunkBytes}=await call(db,owner,{action:'start',villaId:pro.id,size:video.length,mime:'video/mp4',name:'คลิปต้นฉบับ.mp4'});
+ const {db,premium:pro}=await fixture(t),owner=await db.prepare('SELECT * FROM users WHERE id=?').get(pro.owner_id),{uploadId,chunkBytes}=await call(db,owner,{action:'start',villaId:pro.id,size:video.length,mime:'video/mp4',name:'คลิปต้นฉบับ.mp4'});
  const part={action:'part',villaId:pro.id,uploadId,index:0,base64:video.subarray(0,chunkBytes).toString('base64')};
  await call(db,owner,part);await call(db,owner,part);
  await assert.rejects(call(db,owner,{...part,base64:Buffer.alloc(chunkBytes).toString('base64')}),e=>e.status===409);
@@ -85,7 +85,7 @@ test('Chunk retries are idempotent, downloads retain exact bytes across boundari
 });
 
 test('HTTP social upload and ranged files require sessions/CSRF and preserve private bytes',async t=>{
- const {db,pro,owner}=await fixture(t),config={appUrl:origin,allowedOrigins:[origin],fakeHash:hashPassword('fake-password'),serverless:true};const server=createApp(db,config);await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));const base='http://127.0.0.1:'+server.address().port;
+ const {db,premium:pro}=await fixture(t),owner=await db.prepare('SELECT * FROM users WHERE id=?').get(pro.owner_id),config={appUrl:origin,allowedOrigins:[origin],fakeHash:hashPassword('fake-password'),serverless:true};const server=createApp(db,config);await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));const base='http://127.0.0.1:'+server.address().port;
  assert.equal((await fetch(base+'/api/merchant/social-materials')).status,401);
  const login=await fetch(base+'/api/auth/login',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:owner.email,password:'MaterialsDummyPassword123'})});assert.equal(login.status,200);const cookie=login.headers.get('set-cookie').split(';')[0],{csrf}=await login.json();
  const post=async(data,token=csrf)=>fetch(base+'/api/merchant/social-materials',{method:'POST',headers:{Cookie:cookie,Origin:origin,'Content-Type':'application/json','X-CSRF-Token':token},body:JSON.stringify({month,villaId:pro.id,...data})});

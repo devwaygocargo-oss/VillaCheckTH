@@ -1,3 +1,4 @@
+import FacebookMediaBrief from "./FacebookMediaBrief";
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 
@@ -64,8 +65,10 @@ export default function SocialMaterials({admin=false,villaId=""}:{admin?:boolean
     <strong>{asset.name}</strong><small>{asset.kind==="image"?"รูปภาพ":"วิดีโอต้นฉบับ"} · {size(asset.size)}</small>
     <div className="button-row"><button type="button" disabled={Boolean(downloading)} onClick={()=>void download(asset)}>{downloading===asset.id?"กำลังดาวน์โหลด…":"ดาวน์โหลดไฟล์"}</button>{!admin&&editable&&<button type="button" disabled={busy} onClick={()=>void execute(async()=>{await api(path,{action:"delete",villaId:selected,month,assetId:asset.id,revision:submission?.revision||0});await load();setMessage("ลบไฟล์แล้ว");})}>ลบไฟล์</button>}</div>
   </article>)}</div>;
+  if(!admin)return <FacebookMediaBrief villas={data?.villas||[]} month={month} onMonth={setMonth} loading={loading} error={error}/>;
   return <section className="merchant-panel social-materials" aria-label={admin?"ไฟล์โปรโมทที่ Merchant ส่ง":"ส่งไฟล์ให้ทีม Social"}>
     <div className="social-material-heading"><div><span className="kicker">SOCIAL MEDIA / CREATIVE BRIEF</span><h2>{admin?"ไฟล์โปรโมทจากเจ้าของที่พัก":"ส่งภาพและวิดีโอให้ทีมโปรโมท"}</h2></div><button type="button" disabled={busy||loading} onClick={()=>void execute(async()=>{const next=await load();setNotes(next.submissions.find(s=>s.villaId===selected)?.notes||"");setMessage("โหลดข้อมูลล่าสุดแล้ว");})}>โหลดไฟล์ล่าสุด</button></div>
+    <p>ช่องทางรับสื่อหลัก: Facebook เดือนละครั้ง · 2,990 รับเฉพาะภาพ / 4,990 รับภาพและวิดีโอ · เมื่อรับสื่อแล้วบันทึกงานตามที่พักและเดือนในระบบ ไฟล์เดิมที่ส่งผ่านเว็บยังตรวจย้อนหลังได้</p>
     <p>สำหรับแพ็กเกจ 2,990 และ 4,990 · ส่งสื่อต้นฉบับพร้อมบรีฟแยกตามที่พักและเดือน ทีมงานจะนำไปจัดทำคอนเทนต์บน Social ของ VillaCheck</p>
     <p className="social-material-hint">2,990: ภาพเดี่ยว 1 โพสต์/เดือน · 4,990: ภาพเดี่ยว 1 โพสต์ + วิดีโอ 1 ชิ้น/เดือน รวมงบโฆษณา จำนวนไฟล์ต้นฉบับที่ส่งไม่เพิ่มจำนวนชิ้นงานตามสิทธิ์</p>
     <div className="social-material-filters"><label>เดือนสำหรับงานโปรโมท<input type="month" value={month} disabled={busy} onChange={e=>{if(e.target.value)setMonth(e.target.value);}}/></label>{!villaId&&<label>ที่พัก<select disabled={busy} value={selected} onChange={e=>setSelected(e.target.value)}><option value="">{admin?"ทุกที่พัก":"เลือกที่พัก"}</option>{data?.villas.map(v=><option key={v.id} value={v.id}>{v.name}{!v.canUpload?" · ยังไม่มีสิทธิ์ส่งไฟล์":""}</option>)}</select></label>}</div>
