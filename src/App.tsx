@@ -243,7 +243,7 @@ function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Pa
   return <main className="page-bg">
     <div className="page-hero container"><span className="kicker">VILLA DIRECTORY</span><h1>ค้นหาวิลล่าที่ไว้ใจได้</h1><p>ตรวจสอบข้อมูลและสถานะของพูลวิลล่าทั่วไทย ก่อนตัดสินใจโอนเงิน</p></div>
     <div className="container filter-panel">
-      <label className="wide"><span>ค้นหาชื่อวิลล่า</span><div><Icon name="search" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="เช่น Sea Sky Pool Villa" /></div></label>
+      <label className="wide"><span>ค้นหาชื่อวิลล่า</span><div><Icon name="search" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="ค้นหาชื่อที่พัก ภาษาไทย / English" /></div></label>
       <label><span>จังหวัด</span><div><Icon name="pin" /><select value={province} onChange={event => setProvince(event.target.value)}><option value="">ทุกจังหวัด</option>{provinces.map(item => <option key={item}>{item}</option>)}</select></div></label>
       <label><span>จำนวนผู้พัก</span><div><Icon name="users" /><select aria-label="จำนวนผู้พัก" value={guests} onChange={e => setGuests(e.target.value)}><option value="">ไม่จำกัด</option><option value="small">1–8 คน</option><option value="medium">9–14 คน</option><option value="large">15 คนขึ้นไป</option><option value="unknown">ยังไม่ระบุ</option></select></div></label>
       <label><span>สถานะ</span><div><Icon name="shield" /><select value={status} onChange={event => setStatus(event.target.value)}><option value="">ทุกสถานะ</option><option>ตรวจสอบข้อมูลแล้ว</option><option>รอตรวจสอบ</option></select></div></label>

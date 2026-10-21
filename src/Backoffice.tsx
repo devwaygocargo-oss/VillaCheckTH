@@ -362,6 +362,7 @@ export default function Backoffice({
       {false ? <section className="merchant-panel"><h2>สิทธิ์ Villa เต็มแล้ว</h2><p>ไม่สามารถเพิ่ม Villa ได้ กรุณาดูตัวเลือกอัปเกรดที่หน้า Package</p></section> : adding ? (
         <form className="portal-form merchant-panel" onSubmit={submit}>
           <h2>ข้อมูลที่พักและ Merchant</h2>
+          <p>กรอกชื่อที่พักทั้งภาษาไทยและภาษาอังกฤษ เพื่อให้ลูกค้าค้นหาได้จากทั้งสองชื่อ ใช้ชื่อเดียวกับป้ายที่พักและช่องทางทางการ</p>
           <div className="merchant-form-grid">
             {([
               ["name", "ชื่อที่พักภาษาไทย"],
@@ -380,6 +381,7 @@ export default function Backoffice({
                 <input
                   required={key !== "photoUrl"}
                   type={key === "email" ? "email" : "text"}
+                  placeholder={key === "name" ? "เช่น บ้านริมทะเล พัทยา" : key === "nameEn" ? "เช่น Seaside Pattaya Villa" : undefined}
                   value={form[key]}
                   onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                 />
