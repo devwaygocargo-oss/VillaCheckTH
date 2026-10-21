@@ -255,7 +255,7 @@ function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Pa
     </div>
     <section className="container directory-results">
       <div className="results-head"><div><h2>{t("directory.results")}</h2><p>แสดง {filtered.length} รายการ</p>{directoryError&&<p role="alert">{directoryError}</p>}</div><select aria-label="เรียงลำดับ" value={sort} onChange={event => setSort(event.target.value)}><option value="ล่าสุด">อัปเดตล่าสุด</option><option>A–Z</option></select></div>
-      {filtered.length ? <div className="villa-grid directory-grid">{filtered.map(v => <div key={v.qr}><VillaCard villa={v} onClick={() => go("verify", v.qr)} /></div>)}</div> : <div className="empty-results"><strong>ไม่พบ Villa ที่ตรงกับการค้นหา</strong><p>ลองเปลี่ยนคำค้นหาหรือจังหวัด</p><button className="outline-button" onClick={() => { setQuery(""); setProvince(""); setStatus(""); setGuests(""); }}>ล้างตัวกรอง</button></div>}
+      {filtered.length ? <div className="villa-grid directory-grid">{filtered.map(v => <div key={v.qr}><VillaCard villa={v} onClick={() => go("detail", v.qr)} /></div>)}</div> : <div className="empty-results"><strong>ไม่พบ Villa ที่ตรงกับการค้นหา</strong><p>ลองเปลี่ยนคำค้นหาหรือจังหวัด</p><button className="outline-button" onClick={() => { setQuery(""); setProvince(""); setStatus(""); setGuests(""); }}>ล้างตัวกรอง</button></div>}
     </section>
   </main>;
 }

@@ -760,13 +760,14 @@ export function MerchantVerification({
     <main className="page-bg">
       <div className="container"><HomeLogoLink className="logo-button" onNavigate={()=>go("home")}>VillaCheck</HomeLogoLink></div>
       <div className="container merchant-verification merchant-panel">
-        <span className="kicker">{isAdmin?"VILLACHECK / ADMIN QR VERIFICATION":"VILLACHECK / QR VERIFICATION"}</span>
+        <span className="kicker">{isAdmin?"VILLACHECK / ADMIN QR VERIFICATION":"VILLACHECK / PROPERTY DETAILS"}</span>
         <h1>
-          {loading ? "กำลังตรวจสอบ QR…" : villa?.name || "ตรวจสอบ QR ไม่สำเร็จ"}
+          {loading ? (isAdmin?"กำลังตรวจสอบ QR…":"กำลังโหลดรายละเอียดที่พัก…") : villa?.name || (isAdmin?"ตรวจสอบ QR ไม่สำเร็จ":"ไม่พบรายละเอียดที่พัก")}
         </h1>
         {error && <p role="alert">{error}</p>}
         {villa && (
           <>
+            {!isAdmin&&<div className="property-detail-intro"><p>{villa.nameEn}</p><p>{villa.province} · {villa.merchantName}</p>{villa.photoUrl&&<img className="property-detail-cover" src={villa.photoUrl} alt={villa.name}/>}<h2>ข้อมูลและสถานะของที่พัก</h2></div>}
             <span className="merchant-status">
               {villa.valid
                 ? "QR ใช้งานได้ · Admin อนุมัติแล้ว"
@@ -775,7 +776,7 @@ export function MerchantVerification({
             {villa.ownerVerificationRequired && !villa.ownerVerification && <p className="verification-reminder">ยังไม่ผ่านการยืนยันเจ้าของบ้านด้วยใบหน้าและทะเบียนบ้าน</p>}
             {villa.ownerVerification && <p className="merchant-status">ยืนยันเจ้าของบ้านแล้ว · ตรวจใบหน้าและทะเบียนบ้านโดย Admin · {date(villa.ownerVerification.reviewedAt)}</p>}
             {villa.basicVerificationNotice && <p className="verification-reminder">{villa.basicVerificationNotice}</p>}
-            {villa.photoUrl && <img src={villa.photoUrl} alt={villa.name} style={{maxWidth:"100%",maxHeight:360}}/>}
+            {isAdmin&&villa.photoUrl && <img src={villa.photoUrl} alt={villa.name} style={{maxWidth:"100%",maxHeight:360}}/>}
             <p>{villa.nameEn}</p><p>อัปเดตรูปภาพล่าสุดเมื่อ {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"}</p>{villa.photoUrl && <p>วันที่อัปโหลด: {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"} · วันที่ถ่าย: {villa.photoTakenAt ? date(villa.photoTakenAt) : "ไม่ระบุ"}{villa.photoReviewedAt && <> · วันที่ทีมตรวจสื่อ: {date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
             {villa.premiumBanner && <p className="merchant-status">✦ Premium Verified · เอกสารผ่านและ Subscription ใช้งานได้</p>}
             <a href={`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:`${villa.name} ${villa.province}`})}`} target="_blank" rel="noopener noreferrer">{t("profile.map")}</a>
