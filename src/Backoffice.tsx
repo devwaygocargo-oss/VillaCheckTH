@@ -627,7 +627,7 @@ export default function Backoffice({
                         ถึง {mail.to} · {date(mail.created)} ·{" "}
                         {mail.status === "sent"
                           ? "ส่งแล้ว"
-                          : mail.status === "demo" ? "DEMO · เก็บอีเมลตัวอย่าง ไม่ส่งจริง"
+                          : mail.status === "demo" ? "DEMO · เก็บอีเมล ไม่ส่งจริง"
                           : mail.status === "waiting_config"
                             ? "รอตั้งค่า SMTP"
                             : mail.status === "failed"
@@ -880,7 +880,7 @@ function PaymentPanel({
             : "รอชำระเงินและแนบสลิป"}
       </p>
       {invoice.reason && <p>เหตุผลจาก Admin: {invoice.reason}</p>}
-      {demo && invoice.status === "pending" && !admin && <div className="merchant-panel"><strong>DEMO · ไม่มีการโอนเงินจริง</strong><p>สร้างสลิปตัวอย่างและส่งเข้าคิวให้ Admin ตรวจ Manual</p><button disabled={busy} onClick={async()=>{try{const slip=await api<{reference:string;document:Document}>(`/payments/${invoice.id}/demo-slip`,{});await perform(`/invoices/${invoice.id}/proof`,slip,"ส่งสลิป dummy ให้ Admin ตรวจแล้ว");}catch(e){setError(e instanceof Error?e.message:"สร้างสลิปไม่สำเร็จ")}}}>สร้างและแนบสลิป dummy</button>{error&&<p role="alert">{error}</p>}</div>}
+      {demo && invoice.status === "pending" && !admin && <div className="merchant-panel"><strong>DEMO · ไม่มีการโอนเงินจริง</strong><p>สร้างสลิปและส่งเข้าคิวให้ Admin ตรวจ Manual</p><button disabled={busy} onClick={async()=>{try{const slip=await api<{reference:string;document:Document}>(`/payments/${invoice.id}/demo-slip`,{});await perform(`/invoices/${invoice.id}/proof`,slip,"ส่งสลิป dummy ให้ Admin ตรวจแล้ว");}catch(e){setError(e instanceof Error?e.message:"สร้างสลิปไม่สำเร็จ")}}}>สร้างและแนบสลิป dummy</button>{error&&<p role="alert">{error}</p>}</div>}
       {invoice.status === "pending" && !admin && (
         <div className="portal-form">
 

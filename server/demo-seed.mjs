@@ -22,9 +22,9 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    if(existing&&existing.role!==role)throw Error('Dummy account role does not match its scenario')
    return existing||await createUser(db,email,pw,name,role)
   }
-  const merchant=await add('demo-merchant@villacheck.example','Merchant ตัวอย่าง','merchant')
-  const regional=await add('demo-regional@villacheck.example','Merchant จุดหมายตัวอย่าง','merchant')
-  const customer=await add('demo-user@villacheck.example','User ตัวอย่าง','user')
+  const merchant=await add('demo-merchant@villacheck.example','Merchant ','merchant')
+  const regional=await add('demo-regional@villacheck.example','Merchant จุดหมาย','merchant')
+  const customer=await add('demo-user@villacheck.example','User ','user')
   if(adminEmail && adminPassword)await add(adminEmail,'Admin สำหรับทดสอบ','admin',adminPassword)
   const now=new Date().toISOString(),expires=addMonths(new Date(),3)
   await db.prepare("INSERT INTO subscriptions(owner_id,package_id,expires,payments,created,lifecycle) VALUES (?,'premium',?,1,?,'ACTIVE') ON CONFLICT(owner_id) DO NOTHING").run(merchant.id,expires,now)
@@ -36,7 +36,7 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const id=uuid(name),doc=uuid(`${name}-document`),expired=name.startsWith('Expired')
    await db.prepare("INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING").run(doc,owner.id,'dummy-ownership.pdf','application/pdf',dummyPdf())
    await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level,payments) VALUES (?,?,?,?,?,?,'premium',?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING")
-    .run(id,owner.id,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,status,status==='approved'?`VC-DEMO-${id}`:null,expired?'2000-01-01T00:00:00.000Z':status==='approved'?(ownerExpiry.get(owner.id)||expires):null,now,'0800000000','ธนาคารตัวอย่าง — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000',status==='approved'?'VERIFIED':'REGISTERED',status==='approved'?1:0)
+    .run(id,owner.id,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,status,status==='approved'?`VC-DEMO-${id}`:null,expired?'2000-01-01T00:00:00.000Z':status==='approved'?(ownerExpiry.get(owner.id)||expires):null,now,'0800000000','ธนาคาร — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000',status==='approved'?'VERIFIED':'REGISTERED',status==='approved'?1:0)
    await db.prepare('UPDATE villas SET guest_capacity=? WHERE id=? AND guest_capacity IS NULL AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)').run(index % 2 ? 8 : 12,id,'villa_review:'+id)
    await db.prepare("UPDATE villas SET photo_url=? WHERE id=? AND (photo_url='' OR photo_url=?) AND NOT EXISTS (SELECT 1 FROM system_settings WHERE key=?)").run(`/demo/villas/villa-${imageIndex??(index>=6?index-2:index%3+1)}.jpg`,id,`/demo/villas/villa-${index%3+1}.jpg`,'villa_review:'+id)
   }
@@ -56,20 +56,20 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    const id=uuid((order<3?villa.name:name)+'-home-ad');
    const headline=headlineText||'พักผ่อนกับพูลวิลล่าส่วนตัว ที่'+villa.province;
    const copy=descriptionText||villa.province+' · สระว่ายน้ำส่วนตัว พร้อมพื้นที่พักผ่อนสำหรับทริปกับคนที่คุณรัก';
-   const ad={id,villaId:villa.id,villaName:villa.name,placement:'home',image:villa.photo_url,mobileImage:villa.photo_url,title:headline,description:copy+' — '+villa.name+' · ข้อมูลโฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
+   const ad={id,villaId:villa.id,villaName:villa.name,placement:'home',image:villa.photo_url,mobileImage:villa.photo_url,title:headline,description:copy+' — '+villa.name+' · ข้อมูลโฆษณา ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พัก',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+id,JSON.stringify(ad));
   }
   // Dedicated, explicitly simulated Pro purchase; never alter an existing customer's plan.
   const footerName='Hua Hin Footer Ad Demo Villa';
-  const footerOwner=await add('demo-footer@villacheck.example','Merchant โฆษณา Footer ตัวอย่าง','merchant');
+  const footerOwner=await add('demo-footer@villacheck.example','Merchant โฆษณา Footer ','merchant');
   const footerId=uuid(footerName),footerDoc=uuid(footerName+'-document');
   await db.prepare("INSERT INTO subscriptions(owner_id,package_id,expires,payments,created,lifecycle) VALUES (?,'pro',?,1,?,'ACTIVE') ON CONFLICT(owner_id) DO NOTHING").run(footerOwner.id,expires,now);
   await db.prepare("INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING").run(footerDoc,footerOwner.id,'dummy-ownership.pdf','application/pdf',dummyPdf({'Villa ID':footerId,'Villa name':footerName,'Merchant email':footerOwner.email,'Purpose':'DUMMY Pro footer advertising - no real property rights'}));
-  await db.prepare("INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level,payments,photo_url,guest_capacity) VALUES (?,?,?,?,'ประจวบคีรีขันธ์',?,?,'pro',?,'approved',?,?,?,?,?,?,?,'VERIFIED',1,'/demo/villas/villa-2.jpg',8) ON CONFLICT(id) DO NOTHING").run(footerId,footerOwner.id,footerName,footerName,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',footerOwner.email,footerDoc,'VC-DEMO-'+footerId,expires,now,'0800000000','ธนาคารตัวอย่าง — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000');
+  await db.prepare("INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level,payments,photo_url,guest_capacity) VALUES (?,?,?,?,'ประจวบคีรีขันธ์',?,?,'pro',?,'approved',?,?,?,?,?,?,?,'VERIFIED',1,'/demo/villas/villa-2.jpg',8) ON CONFLICT(id) DO NOTHING").run(footerId,footerOwner.id,footerName,footerName,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',footerOwner.email,footerDoc,'VC-DEMO-'+footerId,expires,now,'0800000000','ธนาคาร — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000');
   const footerVilla=await db.prepare("SELECT * FROM villas WHERE id=? AND package_id='pro' AND payments>0 AND status='approved' AND expires>?").get(footerId,now);
   if(footerVilla){
    const id=uuid(footerVilla.id+'-footer-ad');
-   const ad={id,villaId:footerVilla.id,villaName:footerVilla.name,placement:'footer',image:footerVilla.photo_url,mobileImage:footerVilla.photo_url,title:'วันพักผ่อนของคุณ เริ่มที่'+footerVilla.province,description:footerVilla.name+' · โฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(footerVilla.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:footerVilla.expires,visible:true,approved:true,order:0,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
+   const ad={id,villaId:footerVilla.id,villaName:footerVilla.name,placement:'footer',image:footerVilla.photo_url,mobileImage:footerVilla.photo_url,title:'วันพักผ่อนของคุณ เริ่มที่'+footerVilla.province,description:footerVilla.name+' · โฆษณา ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(footerVilla.qr),label:'ดูที่พัก',startsAt:now,endsAt:footerVilla.expires,visible:true,approved:true,order:0,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};
    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+id,JSON.stringify(ad));
   }
   const extraFooterSamples=[
@@ -78,13 +78,13 @@ export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
    ['Phang Nga Footer Ad Demo Villa','พังงา',7,'ให้วันพักผ่อน มีภาพจำใหม่ที่พังงา','เติมไอเดียเที่ยวธรรมชาติ แล้วเลือกที่พักที่เข้ากับวันหยุดของคุณ'],
   ];
   for(const [index,[name,province,image,title,copy]] of extraFooterSamples.entries()){
-   const owner=await add(`demo-footer-${index+1}@villacheck.example`,'Merchant โฆษณาย่อยตัวอย่าง '+(index+1),'merchant');
+   const owner=await add(`demo-footer-${index+1}@villacheck.example`,'Merchant โฆษณาย่อย '+(index+1),'merchant');
    await db.prepare("INSERT INTO subscriptions(owner_id,package_id,expires,payments,created,lifecycle) VALUES (?,'pro',?,1,?,'ACTIVE') ON CONFLICT(owner_id) DO NOTHING").run(owner.id,expires,now);
    const id=uuid(name),doc=uuid(name+'-document');
    await db.prepare('INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING').run(doc,owner.id,'dummy-ownership.pdf','application/pdf',dummyPdf({'Villa ID':id,'Villa name':name,'Merchant email':owner.email,'Purpose':'DUMMY Pro footer advertising - no real property rights'}));
-   await db.prepare("INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level,payments,photo_url,guest_capacity) VALUES (?,?,?,?,?,?,?,'pro',?,'approved',?,?,?,?,?,?,?,'VERIFIED',1,?,8) ON CONFLICT(id) DO NOTHING").run(id,owner.id,name,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,'VC-DEMO-'+id,expires,now,'0800000000','ธนาคารตัวอย่าง — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000',`/demo/villas/villa-${image}.jpg`);
+   await db.prepare("INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number,verification_level,payments,photo_url,guest_capacity) VALUES (?,?,?,?,?,?,?,'pro',?,'approved',?,?,?,?,?,?,?,'VERIFIED',1,?,8) ON CONFLICT(id) DO NOTHING").run(id,owner.id,name,name,province,'ธุรกิจสาธิต — ไม่ใช่ที่พักจริง',owner.email,doc,'VC-DEMO-'+id,expires,now,'0800000000','ธนาคาร — ห้ามโอนเงินจริง','บัญชีสาธิต','0000000000',`/demo/villas/villa-${image}.jpg`);
    const villa=await db.prepare("SELECT * FROM villas WHERE id=? AND package_id='pro' AND payments>0 AND status='approved' AND expires>?").get(id,now);
-   if(villa){const adId=uuid(id+'-footer-ad'),ad={id:adId,villaId:id,villaName:villa.name,placement:'footer',image:villa.photo_url,mobileImage:villa.photo_url,title,description:copy+' · โฆษณาตัวอย่าง ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พักตัวอย่าง',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order:index+1,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+adId,JSON.stringify(ad));}
+   if(villa){const adId=uuid(id+'-footer-ad'),ad={id:adId,villaId:id,villaName:villa.name,placement:'footer',image:villa.photo_url,mobileImage:villa.photo_url,title,description:copy+' · โฆษณา ไม่เปิดรับจองจริง',href:'#page=verify&item='+encodeURIComponent(villa.qr),label:'ดูที่พัก',startsAt:now,endsAt:villa.expires,visible:true,approved:true,order:index+1,updatedAt:now,approvedBy:null,approvedAt:now,demo:true};await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING').run('advertisement:'+adId,JSON.stringify(ad));}
   }
   // Explicit simulated highest-level Admin results for two labelled demo records only.
   for(const name of ['Sea Sky Demo Villa','Khao Yai Forest Demo Villa'])await db.prepare("UPDATE villas SET verification_level='PREMIUM_VERIFIED' WHERE id=? AND status='approved' AND merchant='ธุรกิจสาธิต — ไม่ใช่ที่พักจริง' AND reviewed_by IS NULL").run(uuid(name))

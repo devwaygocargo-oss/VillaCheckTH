@@ -18,6 +18,6 @@ export default function VillaMap({ name }: { name: string }) {
   return <section className="detail-section villa-location-section">
     <div className="villa-map-heading"><div><h2>ตำแหน่งที่ตั้ง</h2><p>{name} · {location.area}</p></div><span>ตำแหน่งจำลอง</span></div>
     <iframe key={name} className="villa-google-map" title={`Google Maps ตำแหน่งจำลองของ ${name}`} src={embed} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
-    <div className="villa-map-actions"><small>พิกัดตัวอย่างสำหรับแสดงผล ยังไม่ใช่ตำแหน่งจริงของที่พัก</small><div className="button-row"><a className="outline-button" href={mapsUrl} target="_blank" rel="noopener noreferrer">เปิด Google Maps ↗</a><a className="primary-button" href={directions} target="_blank" rel="noopener noreferrer">ดูเส้นทาง ↗</a></div></div>
+    <div className="villa-map-actions"><small>พิกัดสำหรับแสดงผล ยังไม่ใช่ตำแหน่งจริงของที่พัก</small><div className="button-row"><a className="outline-button" href={mapsUrl} target="_blank" rel="noopener noreferrer">เปิด Google Maps ↗</a><a className="primary-button" href={directions} target="_blank" rel="noopener noreferrer">ดูเส้นทาง ↗</a></div></div>
   </section>;
 }

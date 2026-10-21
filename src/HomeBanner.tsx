@@ -115,7 +115,7 @@ export default function HomeBanner() {
           <div className="container vc-banner-copy">
             {slide.sponsored && (
               <span className="vc-ad-label">
-                {"demo" in slide && slide.demo ? "โฆษณาตัวอย่าง · แพ็กเกจ 4,990 บาท/เดือน" : "พื้นที่โฆษณา · ไม่ใช่สถานะการตรวจสอบ"}
+                {"demo" in slide && slide.demo ? "โฆษณา · แพ็กเกจ 4,990 บาท/เดือน" : "พื้นที่โฆษณา · ไม่ใช่สถานะการตรวจสอบ"}
               </span>
             )}
             <span className="kicker">{slide.sponsored ? "FEATURED VILLA / PREMIUM MEMBER" : home.eyebrow}</span>

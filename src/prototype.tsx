@@ -335,7 +335,7 @@ export function AdminPages({ page, go, villaStatus, setVillaStatus }: { page: Pa
 function StateGallery() {
   const [state, setState] = useState("Loading");
   const states = ["Loading","Empty","Success","Error","Pending","Verified","Rejected","Suspended","Expired"];
-  return <div className="state-gallery"><strong>Interaction States</strong><div>{states.map(item => <button key={item} className={state === item ? "active" : ""} onClick={() => setState(item)}>{item}</button>)}</div><p>{state === "Loading" ? "กำลังโหลดข้อมูล..." : state === "Empty" ? "ยังไม่มีข้อมูลในรายการนี้" : `ตัวอย่างสถานะ ${state}`}</p></div>;
+  return <div className="state-gallery"><strong>Interaction States</strong><div>{states.map(item => <button key={item} className={state === item ? "active" : ""} onClick={() => setState(item)}>{item}</button>)}</div><p>{state === "Loading" ? "กำลังโหลดข้อมูล..." : state === "Empty" ? "ยังไม่มีข้อมูลในรายการนี้" : `สถานะ ${state}`}</p></div>;
 }
 
 export function UserPages({ page, go, reports, selectedReference }: { page: Page; go: Go; reports: UserReport[]; selectedReference?: string }) {
