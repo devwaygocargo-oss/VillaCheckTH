@@ -474,9 +474,12 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
         </div>
         {errorMessage && <div className="scanner-error"><Icon name="info" size={18} /><span>{errorMessage}</span><button onClick={startCamera}>ลองอีกครั้ง</button></div>}
         <div className="scanner-actions">
-          {!cameraActive && <button className="primary-button" onClick={startCamera} disabled={busy}><Icon name="camera" size={18} />ลองเปิดกล้องอีกครั้ง</button>}
-          <button type="button" className="outline-button upload-button" disabled={scanState === "loading" || scanState === "success"} onClick={() => { stopCamera();setErrorMessage("");setScanState("idle");const input=galleryRef.current;if(input){input.value="";if(typeof input.showPicker==="function"){try{input.showPicker();}catch{input.click();}}else input.click();} }}><Icon name="upload" size={18} />เลือกรูป QR จากแกลเลอรี</button>
-          <input ref={galleryRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif,image/heic,image/heif" aria-label="เลือกรูป QR จากแกลเลอรี" hidden onChange={uploadQr} />
+          <button type="button" className="gallery-picker" disabled={scanState === "loading" || scanState === "success"} onClick={() => { const input=galleryRef.current;if(input){input.value="";if(typeof input.showPicker==="function"){try{input.showPicker();}catch{input.click();}}else input.click();} }}>
+            <span className="gallery-picker-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m3 17 5-5 4 4 3-3 6 6" /></svg></span>
+            <span className="gallery-picker-copy"><strong>เลือกรูป QR</strong><span>จากอัลบั้มหรือรูปภาพในเครื่อง</span></span>
+            <Icon name="upload" size={20} />
+          </button>
+          <input ref={galleryRef} type="file" accept="image/*" aria-label="เลือกรูป QR จากแกลเลอรี" hidden onChange={uploadQr} />
         </div>
       </div>
       <p className="scan-security"><Icon name="shield" size={15} />VillaCheck ไม่มีบริการรับจองหรือรับชำระเงิน</p>
