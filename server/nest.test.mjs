@@ -15,7 +15,7 @@ test("NestJS HTTP API uses Prisma, preserves guards, cookies, payment and Villa 
  const login=await request("/api/auth/admin-login",{email:"admin@nest.test",password:"AdminPassword123"});const admin={cookie:login.cookie,csrf:login.value.csrf};
  assert.equal((await request("/api/admin/packages",undefined,admin)).status,200);
  assert.equal((await request("/api/subscription",{packageId:"starter"},merchant)).status,409);
- assert.equal((await request("/api/packages",undefined,merchant)).value.packages.length,4);
+ const catalog=(await request("/api/packages",undefined,merchant)).value.packages;assert.equal(catalog.length,4);for(const [lower,higher] of [["basic","starter"],["starter","pro"],["pro","premium"]])for(const feature of catalog.find(p=>p.id===lower).features)assert(catalog.find(p=>p.id===higher).features.includes(feature));
  const document={name:"ownership.pdf",type:"application/pdf",data:`data:application/pdf;base64,${Buffer.from("%PDF-test").toString("base64")}`};
  const created=await request("/api/villas",{name:"Nest Villa",nameEn:"Nest Villa English",province:"ชลบุรี",merchant:"Merchant",email:"merchant@nest.test",document},merchant);assert.equal(created.status,201);const id=created.value.createdId;
  assert.equal((await request(`/api/villas/${id}/review`,{status:"approved"},admin)).status,200);
