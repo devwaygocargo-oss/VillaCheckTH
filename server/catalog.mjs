@@ -1,4 +1,4 @@
-import {packageContent,footerAdFeature} from './package-content.mjs'
+import {packageContent,footerAdFeature,premiumGuaranteeFeature} from './package-content.mjs'
 import { packages } from "./database.mjs"
 export const levels = [
   "REGISTERED",
@@ -43,6 +43,16 @@ export async function seedCatalog(db) {
       if(row){const features=JSON.parse(row.features);if(!features.includes(footerAdFeature))await db.prepare("UPDATE package_catalog SET features=? WHERE id=?").run(JSON.stringify([...features,footerAdFeature]),id);}
     }
     await db.prepare("INSERT INTO system_settings(key,value) VALUES ('package_footer_ad_v1','true') ON CONFLICT(key) DO NOTHING").run();
+  }
+
+  if(!(await db.prepare("SELECT value FROM system_settings WHERE key='premium_guarantee_v1'").get())) {
+    const row=await db.prepare("SELECT features,description FROM package_catalog WHERE id='premium'").get();
+    if(row){
+      const features=JSON.parse(row.features).map(feature=>feature==='รับการตรวจบ้านตรงปกตามเกณฑ์ที่ทีมอนุมัติ'?premiumGuaranteeFeature:feature);
+      if(!features.includes(premiumGuaranteeFeature))features.push(premiumGuaranteeFeature);
+      await db.prepare("UPDATE package_catalog SET features=?,description=? WHERE id='premium'").run(JSON.stringify([...new Set(features)]),row.description.replace('การตรวจบ้านตรงปก','การันตีบ้านตรงปก'));
+    }
+    await db.prepare("INSERT INTO system_settings(key,value) VALUES ('premium_guarantee_v1','true') ON CONFLICT(key) DO NOTHING").run();
   }
 
 }
