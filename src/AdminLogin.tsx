@@ -1,3 +1,4 @@
+import HomeLogoLink from "./HomeLogoLink";
 import { useState } from "react";
 import { authenticate, logout } from "./api";
 import type { Page } from "./prototype";
@@ -8,7 +9,7 @@ export default function AdminLogin({go}:{go:(page:Page)=>void}) {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   return <main className="login-screen"><div className="login-sheet">
-    <button type="button" className="login-brand" style={{border:0,background:"transparent",padding:0}} onClick={()=>go("home")}><strong>VillaCheck CMS</strong></button>
+    <HomeLogoLink className="login-brand" onNavigate={()=>go("home")}><strong>VillaCheck CMS</strong></HomeLogoLink>
     <h1 className="login-title">เข้าสู่ระบบ Admin</h1>
     <p className="login-account-note">สำหรับผู้ดูแลระบบ VillaCheck</p>
     <form className="login-email-form" onSubmit={async event=>{

@@ -1,4 +1,5 @@
 import SocialLogin from "./SocialLogin";
+import HomeLogoLink from "./HomeLogoLink";
 import { useEffect, useState } from "react";
 import { api, authenticate, currentAccount } from "./api";
 import { PortalShell, type Page } from "./prototype";
@@ -17,7 +18,7 @@ export function UserRegistration({ go, reference }: { go: (page: Page, item?: st
     catch (error) { setError(error instanceof Error ? error.message : "สมัครไม่สำเร็จ"); }
     finally { setBusy(false); }
   };
-  return <main className="auth-page"><div className="auth-card"><button className="text-button" onClick={() => go("login", reference)}>← เข้าสู่ระบบ</button><span className="kicker">VILLACHECK / USER ACCOUNT</span><h1>สมัครสมาชิก User</h1><p>ดูเบอร์โทรและบัญชีรับเงินของที่พักหลังเข้าสู่ระบบ</p><SocialLogin reference={reference} /><form className="form-stack" onSubmit={submit}><label><span>ชื่อ–นามสกุล</span><input required autoComplete="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></label><label><span>อีเมล</span><input required type="email" autoComplete="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} autoComplete="new-password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} /></label>{error && <p role="alert">{error}</p>}<button className="primary-button" type="submit" disabled={busy}>{busy ? "กำลังสมัคร…" : "สมัครสมาชิก"}</button></form></div></main>;
+  return <main className="auth-page"><div className="auth-card"><HomeLogoLink className="flow-brand" onNavigate={()=>go("home")}>Villa<span>Check</span></HomeLogoLink><button className="text-button" onClick={() => go("login", reference)}>← เข้าสู่ระบบ</button><span className="kicker">VILLACHECK / USER ACCOUNT</span><h1>สมัครสมาชิก User</h1><p>ดูเบอร์โทรและบัญชีรับเงินของที่พักหลังเข้าสู่ระบบ</p><SocialLogin reference={reference} /><form className="form-stack" onSubmit={submit}><label><span>ชื่อ–นามสกุล</span><input required autoComplete="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></label><label><span>อีเมล</span><input required type="email" autoComplete="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} autoComplete="new-password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} /></label>{error && <p role="alert">{error}</p>}<button className="primary-button" type="submit" disabled={busy}>{busy ? "กำลังสมัคร…" : "สมัครสมาชิก"}</button></form></div></main>;
 }
 
 type Member = { id: string; name: string; email: string; created: string; lastLogin: string | null; providers: string[] };

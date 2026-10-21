@@ -1,3 +1,4 @@
+import HomeLogoLink from "./HomeLogoLink";
 import PropertyMedia from "./PropertyMedia";
 import SocialMaterials from "./SocialMaterials";
 import Advertising, {DetailAdvertisement} from "./Advertising";
@@ -747,7 +748,7 @@ export function MerchantVerification({
   };
   return (
     <main className="page-bg">
-      <div className="container"><button className="logo-button" onClick={()=>go("home")}>VillaCheck</button></div>
+      <div className="container"><HomeLogoLink className="logo-button" onNavigate={()=>go("home")}>VillaCheck</HomeLogoLink></div>
       <div className="container merchant-verification merchant-panel">
         <span className="kicker">{isAdmin?"VILLACHECK / ADMIN QR VERIFICATION":"VILLACHECK / QR VERIFICATION"}</span>
         <h1>

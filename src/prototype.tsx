@@ -1,3 +1,4 @@
+import HomeLogoLink from "./HomeLogoLink";
 import AdminApprovalNotice from "./AdminApprovalNotice";
 import { CmsPublicPage } from "./cms";
 import OtpLogin from "./OtpLogin";
@@ -121,7 +122,7 @@ export function LoginPage({ go, onAuthenticated, reference = "", accountType="us
   return <main className="login-screen">
     <div className="login-sheet">
       <div className="login-topbar"><button aria-label="กลับหน้าหลัก" onClick={()=>go("home")}><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 5-7 7 7 7"/></svg></button><button aria-label="ช่วยเหลือการเข้าสู่ระบบ" onClick={()=>go("help")}><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4"/><path d="M12 16h.01"/></svg></button></div>
-      <button type="button" className="login-brand" aria-label="VillaCheck กลับหน้าแรก" style={{border:0,background:"transparent",padding:0}} onClick={()=>go("home")}><span className="login-brand-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></span><strong>Villa<span>Check</span></strong></button>
+      <HomeLogoLink className="login-brand" onNavigate={()=>go("home")}><span className="login-brand-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.7"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></span><strong>Villa<span>Check</span></strong></HomeLogoLink>
       <h1 className="login-title">{accountType==="merchant"?"เข้าสู่ระบบ Merchant":"เข้าสู่ระบบ VillaCheck"}</h1>
       {accountType==="merchant"&&<p className="login-account-note">{packageName?`แพ็กเกจที่สนใจ: ${packageName} · `:""}เลือกช่องทางเข้าสู่ระบบหรือสร้างบัญชี Merchant</p>}
       {!passwordMode&&error&&<p className="login-error" role="alert">{error}</p>}
@@ -165,13 +166,13 @@ export function OwnerRegistration({ go }: { go: Go; packageName: string }) {
     catch (error) { setError(error instanceof Error ? error.message : "สมัครไม่สำเร็จ"); }
     finally { setBusy(false); }
   };
-  return <FlowPage kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle="สร้างบัญชีเพื่อจัดการที่พักและเลือกแพ็กเกจหลังเข้าสู่ระบบ" onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัทภาษาไทย</span><input required value={name} onChange={e => setName(e.target.value)} /></label><label><span>ชื่อ Merchant / บริษัทภาษาอังกฤษ</span><input required value={nameEn} onChange={e => setNameEn(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
+  return <FlowPage onHome={()=>go("home")} kicker="MERCHANT REGISTRATION" title="สมัครบัญชี Merchant" subtitle="สร้างบัญชีเพื่อจัดการที่พักและเลือกแพ็กเกจหลังเข้าสู่ระบบ" onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>ชื่อ Merchant / บริษัทภาษาไทย</span><input required value={name} onChange={e => setName(e.target.value)} /></label><label><span>ชื่อ Merchant / บริษัทภาษาอังกฤษ</span><input required value={nameEn} onChange={e => setNameEn(e.target.value)} /></label><label><span>อีเมล</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : "สร้างบัญชีและเพิ่ม Villa"}</button></form></FlowPage>;
 }
 
 export function OwnerOnboardingVilla({ go, onVillaAdded }: { go: Go; onVillaAdded: (name: string) => void }) {
   const [name, setName] = useState("");
   const [province, setProvince] = useState("ชลบุรี");
-  return <FlowPage kicker="ADD VILLA" title="เพิ่ม Villa แรกของคุณ" subtitle="ข้อมูลนี้จะถูกส่งพร้อมคำขอแพ็กเกจ" onBack={() => go("owner-information")}>
+  return <FlowPage onHome={()=>go("home")} kicker="ADD VILLA" title="เพิ่ม Villa แรกของคุณ" subtitle="ข้อมูลนี้จะถูกส่งพร้อมคำขอแพ็กเกจ" onBack={() => go("owner-information")}>
     <div className="form-stack"><label><span>ชื่อ Villa</span><input value={name} onChange={event => setName(event.target.value)} placeholder="ชื่อที่พัก" /></label><label><span>จังหวัด</span><select value={province} onChange={event => setProvince(event.target.value)}>{["ชลบุรี","ประจวบคีรีขันธ์","นครราชสีมา","ภูเก็ต","เชียงใหม่","กระบี่","สุราษฎร์ธานี"].map(item => <option key={item}>{item}</option>)}</select></label><button className="primary-button full" disabled={!name} onClick={() => { onVillaAdded(name); go("package-confirmation"); }}>บันทึก Villa และดำเนินการต่อ</button></div>
   </FlowPage>;
 }
@@ -179,8 +180,8 @@ export function OwnerOnboardingVilla({ go, onVillaAdded }: { go: Go; onVillaAdde
 export function PackageConfirmation({ go, packageName, villaName, onConfirm }: { go: Go; packageName: string; villaName: string; onConfirm: () => void }) {
   const {plans} = usePackages();
   const selectedPackage = plans.find(p=>p.id === packageName || p.name === packageName);
-  if(!selectedPackage)return <FlowPage kicker="PACKAGE" title="กำลังโหลดแพ็กเกจ" subtitle="" onBack={()=>go("pricing")}><p>กรุณาเลือกแพ็กเกจที่เปิดใช้งาน</p></FlowPage>;
-  return <FlowPage kicker="PACKAGE CONFIRMATION" title="ยืนยันแพ็กเกจ" subtitle="ตรวจสอบรายละเอียดก่อนส่งคำขอ · ยังไม่มี Payment System" onBack={() => go("pricing")}>
+  if(!selectedPackage)return <FlowPage onHome={()=>go("home")} kicker="PACKAGE" title="กำลังโหลดแพ็กเกจ" subtitle="" onBack={()=>go("pricing")}><p>กรุณาเลือกแพ็กเกจที่เปิดใช้งาน</p></FlowPage>;
+  return <FlowPage onHome={()=>go("home")} kicker="PACKAGE CONFIRMATION" title="ยืนยันแพ็กเกจ" subtitle="ตรวจสอบรายละเอียดก่อนส่งคำขอ · ยังไม่มี Payment System" onBack={() => go("pricing")}>
     <div className="confirmation-box package-confirmation">
       <div><span>Package ที่เลือก</span><strong>{packageName}</strong><b>{selectedPackage.amount / 100} THB</b></div>
       <div><span>Villa ที่เลือก</span><strong>{villaName || "ยังไม่ได้เลือก Villa"}</strong><button className="text-button" onClick={() => go("owner-select-villa")}>{villaName ? "เปลี่ยน Villa" : "Select Villa"} →</button></div>
@@ -192,20 +193,20 @@ export function PackageConfirmation({ go, packageName, villaName, onConfirm }: {
 }
 
 export function OwnerSelectVilla({ go, onSelect }: { go: Go; onSelect: (villa: string) => void }) {
-  return <FlowPage kicker="SELECT VILLA" title="เลือก Villa สำหรับแพ็กเกจ" subtitle="เลือกที่พักที่ต้องการใช้แพ็กเกจนี้" onBack={() => go("package-confirmation")}>
+  return <FlowPage onHome={()=>go("home")} kicker="SELECT VILLA" title="เลือก Villa สำหรับแพ็กเกจ" subtitle="เลือกที่พักที่ต้องการใช้แพ็กเกจนี้" onBack={() => go("package-confirmation")}>
     <div className="villa-choice"><button onClick={() => { onSelect("Sea Sky Pool Villa"); go("package-confirmation"); }}><span>Sea Sky Pool Villa</span><small>ชลบุรี · VillaCheck VERIFIED</small></button><button onClick={() => { onSelect("Hua Hin Blue House"); go("package-confirmation"); }}><span>Hua Hin Blue House</span><small>ประจวบคีรีขันธ์ · Pending</small></button></div>
   </FlowPage>;
 }
 
 export function PackageRequestPending({ go, packageName }: { go: Go; packageName: string }) {
-  return <FlowPage kicker="REQUEST SUBMITTED" title="ส่งคำขอแพ็กเกจเรียบร้อยแล้ว" subtitle="ทีมงาน VillaCheck จะตรวจสอบข้อมูลก่อนเปิดใช้งาน" onBack={() => go("package-confirmation")}>
+  return <FlowPage onHome={()=>go("home")} kicker="REQUEST SUBMITTED" title="ส่งคำขอแพ็กเกจเรียบร้อยแล้ว" subtitle="ทีมงาน VillaCheck จะตรวจสอบข้อมูลก่อนเปิดใช้งาน" onBack={() => go("package-confirmation")}>
     <div className="state-panel"><StatusBadge status="Pending" /><h2>รอดำเนินการ / Pending</h2><p>{packageName} · ไม่มีการชำระเงินในขั้นตอนนี้</p></div>
     <button className="primary-button full" onClick={() => go("owner-dashboard")}>ไป Merchant Dashboard</button>
   </FlowPage>;
 }
 
-function FlowPage({ kicker, title, subtitle, onBack, children }: { kicker: string; title: string; subtitle: string; onBack: () => void; children: React.ReactNode }) {
-  return <main className="page-bg flow-page"><div className="flow-card">
+function FlowPage({ kicker, title, subtitle, onBack, onHome, children }: { kicker: string; title: string; subtitle: string; onBack: () => void; onHome: () => void; children: React.ReactNode }) {
+  return <main className="page-bg flow-page"><div className="flow-card"><HomeLogoLink className="flow-brand" onNavigate={onHome}>Villa<span>Check</span></HomeLogoLink>
     <button className="text-button" onClick={onBack}>← ย้อนกลับ</button>
     <span className="kicker">{kicker}</span><h1>{title}</h1><p>{subtitle}</p>{children}
   </div></main>;
@@ -242,7 +243,7 @@ export function PortalShell({ role, page, go, children }: { role: "Merchant" | "
   return <main className={`portal-page${role === "User" ? " portal-user" : ""}`}>
     <aside className={`portal-side ${menuOpen ? "portal-menu-open" : ""}`}>
       <div className="portal-mobile-bar">
-        <button className="portal-brand" onClick={() => navigate("home")}>Villa<span>Check</span></button>
+        <HomeLogoLink className="portal-brand" onNavigate={() => navigate("home")}>Villa<span>Check</span></HomeLogoLink>
         <button className="portal-menu-toggle" aria-expanded={menuOpen} aria-controls="portal-menu" onClick={() => setMenuOpen(value => !value)}>{menuOpen ? "ปิดเมนู ✕" : "เมนู ☰"}</button>
       </div>
       <small>{role === "Merchant" ? "MEMBER ROOM" : role.toUpperCase()} PORTAL</small>

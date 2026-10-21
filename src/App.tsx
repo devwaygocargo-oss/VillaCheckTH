@@ -1,3 +1,4 @@
+import HomeLogoLink from "./HomeLogoLink";
 import HomeVillaShowcase from "./HomeVillaShowcase";
 import FooterAd from "./FooterAd";
 import HomeNews from "./HomeNews";
@@ -155,7 +156,7 @@ function Header({ page, go, account, preview=false }: { page: Page; go: (page: P
 
   return <header className="header">
     <div className="container nav">
-      <button className="logo-button" onClick={() => navigate("home")}><Logo /></button>
+      <HomeLogoLink className="logo-button" onNavigate={() => navigate("home")}><Logo /></HomeLogoLink>
       <nav id="public-menu" className={mobileMenuOpen ? "mobile-open" : ""}>
         {publicNavigation(navigation).filter(n=>n.visible && !(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href))).map(n=><button key={n.id} className={n.href===`#page=${page}`?"active":""} onClick={()=>{if(preview)return;setMobileMenuOpen(false);if(n.href==="#how"){showHowItWorks();}else if(n.href.startsWith("https:")){window.open(n.href,"_blank","noopener,noreferrer");}else{if(account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href)) go(accountHome(account)); else window.location.hash=n.href;}}}>{account && ["#page=login","#page=owner-auth","#page=admin-login"].includes(n.href) ? accountLabel(account) : n.label}</button>)}
       </nav>
@@ -454,7 +455,7 @@ function ScanQr({ go, onVerified }: { go: (p: Page, item?: string) => void; onVe
   useEffect(() => { void startCamera(); return () => stopCamera(); }, []);
 
   return <main className="scan-page">
-    <div className="verify-top"><div className="container"><button className="logo-button" aria-label="กลับหน้าแรก" onClick={()=>{stopCamera();go("home")}}><Logo light /></button><button onClick={() => { stopCamera(); go("home"); }}><Icon name="close" />ปิดหน้าสแกน</button></div></div>
+    <div className="verify-top"><div className="container"><HomeLogoLink className="logo-button" onNavigate={()=>{stopCamera();go("home")}}><Logo light /></HomeLogoLink><button onClick={() => { stopCamera(); go("home"); }}><Icon name="close" />ปิดหน้าสแกน</button></div></div>
     <div className="scan-bg">
       <div className="scan-intro">
         <span className="kicker light-kicker">SCAN QR CODE</span>
@@ -524,7 +525,7 @@ function Footer({ go, account }: { go: (p: Page, item?: string) => void; account
   return <footer className="public-footer">
     <div className="container footer-grid">
       <div className="footer-brand">
-        <button className="footer-logo" onClick={() => go("home")}><Logo light /></button>
+        <HomeLogoLink className="footer-logo" onNavigate={() => go("home")}><Logo light /></HomeLogoLink>
         <p>{site.description}</p>
         <div className="footer-social"><a aria-label="Facebook" href={supportHref("facebook")} target="_blank" rel="noopener noreferrer"><Icon name="facebook" size={16} /></a><button aria-label="Instagram" onClick={() => go("social-instagram")}><Icon name="instagram" size={16} /></button><a aria-label="LINE Official" href={supportHref("line")} target="_blank" rel="noopener noreferrer"><Icon name="message" size={16} /></a></div>
       </div>
