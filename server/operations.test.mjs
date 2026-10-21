@@ -1,3 +1,4 @@
+import {legacyVilla} from "./test-legacy-villa.mjs";
 import {readFileSync} from 'node:fs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
@@ -72,10 +73,10 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
   const plan=await getPlan(db,'starter');assert.equal((await request('/admin/packages/starter',{...plan,billingCycle:'QUARTERLY'},a)).status,200);assert.equal((await request('/packages',undefined,m)).value.packages.find(p=>p.id==='starter').billingCycle,'QUARTERLY')
   const p=(await request('/state',undefined,payer)).value.villas[0];await request(`/villas/${p.id}/renew`,{},payer);const invoice=(await request('/state',undefined,payer)).value.villas[0].invoices.find(i=>i.status!=='paid');assert.equal(invoice.months,3)
  })
- await t.test('adding a second free property never changes a paid property; account upgrade routes are blocked',async()=>{
+ await t.test('new second property is blocked; legacy free property remains independent',async()=>{
   const input={name:'บ้านทดสอบ',nameEn:'Upgrade Dummy Villa',province:'ชลบุรี',merchant:'Dummy Upgrade',email:'other-merchant@test.com',document:{name:'ownership.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from('%PDF-1.4 dummy').toString('base64')}};
   const first=await request('/villas',input,outsider);assert.equal(first.status,201);const id=first.value.createdId;
-  assert.equal((await request('/villas',{...input,name:'Second free property'},outsider)).status,201);
+  assert.equal((await request('/villas',{...input,name:'Second free property'},outsider)).status,409);await legacyVilla(db,id,'Legacy free property');
   assert.equal((await request(`/villas/${id}/review`,{status:'approved'},a)).status,200);
   assert.equal((await request('/merchant/villa-package',{villaId:id,packageId:'pro'},outsider)).status,200);
   let state=(await request('/state',undefined,outsider)).value,invoice=state.villas.find(v=>v.id===id).invoices[0],qr=state.villas.find(v=>v.id===id).qr;

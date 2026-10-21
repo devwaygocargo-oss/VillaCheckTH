@@ -127,11 +127,11 @@ export default function Backoffice({
             )
           return
         }
-        if(!admin && ["owner-add-villa","owner-onboarding-villa"].includes(page)) {
+        const next = await api<Store>("/state")
+        if(!admin && !next.villas.length && ["owner-add-villa","owner-onboarding-villa"].includes(page)) {
           const profile=await api<{businessName:string;businessNameEn:string}>("/merchant/profile")
           if(!profile.businessName || !profile.businessNameEn) { if(!cancelled)go("owner-information");return; }
         }
-        const next = await api<Store>("/state")
         const attempt=new URLSearchParams(window.location.search).get("paymentAttempt")
         if(attempt && !admin) {
           try { await api(`/payments/attempt?id=${encodeURIComponent(attempt)}`) }
@@ -214,8 +214,10 @@ export default function Backoffice({
     setSelected(v.id);
     setForm(current=>({...current,name:v.name,nameEn:v.nameEn || "",photoTakenAt:v.photoTakenAt || "",province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId}));
   },[initialItem,store,page]);
+  useEffect(()=>{if(!admin&&store?.villas.length&&["owner-add-villa","owner-onboarding-villa"].includes(page)){const existing=store.villas.find(v=>v.id===initialItem)||store.villas[0];go("owner-villa-edit",existing.id);}},[page,store,admin,initialItem]);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
+    if(store?.villas.length){go("owner-villa-edit",store.villas[0].id);return;}
     if (!upload) {
       setMessage("กรุณาแนบเอกสารแสดงกรรมสิทธิ์ Villa ก่อนส่งตรวจสอบ")
       return

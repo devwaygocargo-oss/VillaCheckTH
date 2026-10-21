@@ -1059,6 +1059,7 @@ export function createApp(db, config, transport) {
           const capacity = guestCapacity(data.guestCapacity)
           const file = document(data.document)
           const id = await transaction(db, async () => {
+            if(await db.prepare("SELECT id FROM villas WHERE owner_id=? LIMIT 1").get(user.id))fail(409,"บัญชีนี้มี Villa แล้ว กรุณาแก้ไขข้อมูล Villa เดิม ไม่สามารถเพิ่ม Villa ใหม่ได้")
             await db.prepare("INSERT INTO subscriptions(owner_id,package_id,created) VALUES (?,?,?) ON CONFLICT(owner_id) DO NOTHING").run(user.id,"basic",new Date().toISOString())
 
             const docId = await insertDocument(db, user.id, file)

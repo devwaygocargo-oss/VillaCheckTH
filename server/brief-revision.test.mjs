@@ -1,3 +1,4 @@
+import {legacyVilla} from "./test-legacy-villa.mjs";
 import { basicVerificationNotice } from "./package-content.mjs"
 import { qrReference } from "../src/qrReference.ts"
 import test from "node:test"
@@ -160,19 +161,15 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
     },
   )
   await t.test(
-    "new villas require bilingual names and multiple villas can start free without selecting a paid account package",
+    "new villas require bilingual names; legacy multiple properties remain supported",
     async () => {
       assert.equal(
         (await request("/villas", { ...villaData, nameEn: "" }, owner)).status,
         400,
       )
-      for (const name of ["บ้านทดสอบ", "บ้านหลังที่สอง"]) {
-        const r = await request("/villas", { ...villaData, name }, owner)
-        assert.equal(r.status, 201, JSON.stringify(r.value))
-        if (!first)
-          first = r.value.villas.find((v) => v.id === r.value.createdId)
-        else second = r.value.villas.find((v) => v.id === r.value.createdId)
-      }
+      const created=await request("/villas",{...villaData,name:"บ้านทดสอบ"},owner);assert.equal(created.status,201);first=created.value.villas.find(v=>v.id===created.value.createdId);
+      assert.equal((await request("/villas",{...villaData,name:"บ้านหลังที่สอง"},owner)).status,409);
+      const legacyId=await legacyVilla(db,first.id,"บ้านหลังที่สอง");second=(await request("/state",undefined,owner)).value.villas.find(v=>v.id===legacyId);
       assert.equal(first.trialUnlimited, true)
       assert.equal(second.trialUnlimited, true)
       assert.equal(

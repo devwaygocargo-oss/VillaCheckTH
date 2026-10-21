@@ -1,3 +1,4 @@
+import {legacyVilla} from "./test-legacy-villa.mjs";
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { mkdtempSync, rmSync } from "node:fs"
@@ -370,15 +371,15 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
     },
   )
   await t.test(
-    "second villa gets its own free QR independently of the first paid villa",
+    "legacy second villa retains independent QR; new creation is blocked",
     async () => {
       const created = await request(
         "/api/villas",
         { ...input, name: "Villa B" },
         owner,
       )
-      assert.equal(created.status, 201)
-      const id = created.value.createdId
+      assert.equal(created.status, 409)
+      const id = await legacyVilla(db,villaId,"Villa B")
       await request(
         `/api/villas/${id}/review`,
         { status: "changes", reason: "Need new document" },
@@ -412,7 +413,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       assert.equal(
         (await request("/api/villas", { ...input, name: "Villa C" }, owner))
           .status,
-        201,
+        409,
       )
       await request(`/api/villas/${villaId}/renew`, {}, owner)
       const invoice = (

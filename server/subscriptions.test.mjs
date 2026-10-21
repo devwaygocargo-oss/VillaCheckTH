@@ -1,9 +1,10 @@
+import {legacyVilla} from "./test-legacy-villa.mjs";
 import {openTestDatabase} from './test-database.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createApp} from './app.mjs';
 import {createUser,hashPassword,packages,addMonths} from './database.mjs';
-test('four monthly packages: each property starts free, purchases and renewals remain independent',async t=>{
+test('four monthly packages: first property and legacy additional property retain independent purchases',async t=>{
  const db=await openTestDatabase(),password='Merchant-password-123';
  await createUser(db,'admin@example.com',password,'Admin','admin');
  const server=createApp(db,{appUrl:'http://localhost:3001',allowedOrigins:[],paymentInstructions:'Bank',fakeHash:hashPassword('fake-password-placeholder')});
@@ -21,7 +22,8 @@ test('four monthly packages: each property starts free, purchases and renewals r
   assert.equal((await request('/subscription',{packageId:planId},owner)).status,409);
   const ids=[];
   for(let i=0;i<2;i++){
-   const r=await request('/villas',{name:`บ้าน ${i}`,nameEn:`Villa ${i}`,province:'ชลบุรี',merchant:plan.name,email:`${planId}@example.com`,document,packageId:planId},owner);
+   let r=await request('/villas',{name:`บ้าน ${i}`,nameEn:`Villa ${i}`,province:'ชลบุรี',merchant:plan.name,email:`${planId}@example.com`,document,packageId:planId},owner);
+   if(i===1){assert.equal(r.status,409);r={status:201,value:{createdId:await legacyVilla(db,ids[0],'Legacy Villa 2')}};}
    assert.equal(r.status,201);ids.push(r.value.createdId);
    assert.equal((await request(`/villas/${r.value.createdId}/review`,{status:'approved',verificationLevel:'BASIC_CHECKED'},admin)).status,200);
   }
