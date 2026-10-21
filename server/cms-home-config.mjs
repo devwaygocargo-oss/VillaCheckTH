@@ -15,7 +15,7 @@ export const publicDestinations = [
 export const discoveryDefaults = {
   visible:true,searchVisible:true,heading:"ค้นหาและตรวจสอบที่พักกับ VillaCheck",
   placeholder:"ค้นหาชื่อที่พัก ไทย / English",buttonLabel:"ค้นหา",
-  showProvinceHint:true,provinceHint:"หรือเลือกจังหวัดด้านล่างได้เลย",showFreeHint:true,freeHint:"ไม่ต้องสมัครสมาชิกเพื่อดูข้อมูล",
+  showProvinceHint:true,provinceHint:"หรือเลือกจังหวัดด้านล่างได้เลย",showFreeHint:false,freeHint:"",
   background:"#102a33",iconColor:"#7ce1da",accentColor:"#f7d98b",
   shortcuts:[
     {id:"find",icon:"find",label:"ค้นหาที่พัก",href:"#page=directory",description:"ค้นหาที่พักด้วยชื่อไทย อังกฤษ หรือจังหวัด",visible:true,image:""},
@@ -48,7 +48,9 @@ export const newsSectionDefault={id:"news",visible:true,title:"ข่าวส�
 export function homeConfig(home) {
   const sections=[...home.sections];
   if(!sections.some(s=>s.id==="news"))sections.splice(Math.max(0,sections.findIndex(s=>s.id==="showcase")+1),0,{...newsSectionDefault});
-  return {...home,sections,buttonLabel:home.buttonLabel??"ค้นหาที่พัก",buttonHref:home.buttonHref??"#page=directory",discovery:{...discoveryDefaults,...home.discovery,shortcuts:home.discovery?.shortcuts??discoveryDefaults.shortcuts}};
+  const discovery={...discoveryDefaults,...home.discovery,shortcuts:home.discovery?.shortcuts??discoveryDefaults.shortcuts};
+  if(discovery.freeHint==="ไม่ต้องสมัครสมาชิกเพื่อดูข้อมูล"){discovery.freeHint="";discovery.showFreeHint=false;}
+  return {...home,sections,buttonLabel:home.buttonLabel??"ค้นหาที่พัก",buttonHref:home.buttonHref??"#page=directory",discovery};
 }
 export function shortcutMediaUrls(content,publicOnly=false) {
   const discovery=content.home.discovery;
