@@ -1197,3 +1197,5 @@ footer { background: var(--ocean); color: white; padding: 72px 0 24px; }
 @media (max-width: 600px) { .cms-presentation-editor .button-row input { min-width: 0; width: 100%; } .cms-ad-workspace .merchant-toolbar { flex-wrap: wrap; } }
 .footer-grid > div { min-width: 0; overflow-wrap: anywhere; }
 @media (max-width: 540px) { .footer-grid > div:not(.footer-brand) > a { min-height: 44px; margin-top: 0; } }
+
+.admin-entitlement-row{padding:20px 0;border-bottom:1px solid var(--border,#29454b);overflow-wrap:anywhere}.admin-package-comparison{max-width:100%;overflow-x:auto;margin:20px 0}.admin-package-comparison table{width:100%;border-collapse:collapse}.admin-package-comparison th,.admin-package-comparison td{padding:12px;border:1px solid #29454b;text-align:center;min-width:130px}.admin-package-comparison th:first-child{text-align:left;min-width:240px}.admin-package-comparison caption{text-align:left;padding:12px 0}

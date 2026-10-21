@@ -349,6 +349,7 @@ export default function Backoffice({
               </div>
             ))}
           </div>
+          {admin&&<section className="merchant-panel"><h2>งานดูแลหน้าบ้าน</h2><p>ตรวจข้อมูลและสิทธิ์ให้ครบก่อนแสดงต่อผู้ค้นหาที่พัก</p><div className="button-row">{([["admin-cms","เนื้อหาเว็บไซต์ / ข่าวสาร"],["admin-pending-villas","ตรวจที่พัก"],["admin-owner-verification","ยืนยันเจ้าของบ้าน"],["admin-reviews","กลั่นกรองรีวิว"],["admin-advertising","โฆษณา / ไฟล์ Social"],["admin-subscriptions","สิทธิ์รายที่พัก"],["admin-users","บัญชี User"],["admin-owners","บัญชี Merchant"]] as [Page,string][]).map(([target,label])=><button key={target} onClick={()=>go(target)}>{label}</button>)}</div></section>}
           <div className="merchant-steps">
             {[
               "01 สมัคร Merchant และเพิ่มที่พักฟรี",

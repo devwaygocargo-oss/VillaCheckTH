@@ -18,17 +18,17 @@ export default function AdminApprovedVillas({go}:{go:(page:Page,item?:string)=>v
     return()=>{active=false;clearInterval(timer);};
   },[]);
   const search=query.trim().toLocaleLowerCase();
-  const visible=villas.filter(v=>[v.name,v.province,v.merchant,v.email,v.qr].some(value=>value.toLocaleLowerCase().includes(search)));
+  const visible=villas.filter(v=>[v.name,v.nameEn,v.province,v.merchant,v.email,v.qr].some(value=>value.toLocaleLowerCase().includes(search)));
   return <PortalShell role="Admin" page="admin-approved-villas" go={go}>
-    <div className="portal-head"><div><h1>Villa ที่อนุมัติแล้ว</h1><p>รายการที่ผ่านการตรวจจาก Admin ข้อมูล DUMMY / DEMO ใช้สำหรับสาธิตเท่านั้น</p></div><button className="outline-button" onClick={()=>go("admin-pending-villas")}>ดู Villa รออนุมัติ</button></div>
+    <div className="portal-head"><div><h1>Villa ที่อนุมัติแล้ว</h1><p>รายการที่ผ่านการตรวจจาก Admin ข้อมูลและสถานะจากระบบเดียวกับหน้าลูกค้า</p></div><button className="outline-button" onClick={()=>go("admin-pending-villas")}>ดู Villa รออนุมัติ</button></div>
     <section className="merchant-panel portal-form"><label>ค้นหา Villa ที่อนุมัติแล้ว<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="ชื่อ Villa จังหวัด Merchant หรือ QR"/></label><p role="status">{loading?"กำลังโหลดรายการ…":`อนุมัติแล้ว ${villas.length} รายการ · แสดง ${visible.length} รายการ`}</p></section>
     {error&&<p role="alert" className="form-message">{error}</p>}
     {!loading&&!visible.length&&<section className="merchant-panel">{search?"ไม่พบ Villa ที่ตรงกับการค้นหา":"ยังไม่มี Villa ที่อนุมัติแล้ว"}</section>}
     {visible.map(villa=><article key={villa.id} className="merchant-panel approved-villa" aria-label={`อนุมัติแล้ว ${villa.name}`}>
       <h2>{villa.name}</h2><p className="merchant-status">อนุมัติแล้ว{ /dummy|demo|sample/i.test(`${villa.name} ${villa.merchant} ${villa.document.name}`) && " · DUMMY / ข้อมูลสาธิต ไม่ใช่ที่พักจริง"}</p>
       <p>{villa.province} · {villa.merchant} · {villa.package}</p>
-      <p>สถานะ QR: {villa.qrStatus} · ระดับตรวจสอบ: {villa.verificationLevel} · วันหมดอายุ: {villa.expires?new Date(villa.expires).toLocaleDateString("th-TH",{timeZone:"Asia/Bangkok"}):"ยังไม่เปิดสิทธิ์"}</p>
-      <p>การอนุมัติข้อมูล Villa และสถานะพร้อมใช้งานของ QR ขึ้นกับการชำระแพ็กเกจและวันหมดอายุ</p>
+      <p>สถานะ QR: {villa.qrStatus} · ระดับตรวจสอบ: {villa.verificationLevel} · วันหมดอายุ: {villa.trialUnlimited?"ไม่มีกำหนด · Basic Verify ฟรี":villa.expires?new Date(villa.expires).toLocaleDateString("th-TH",{timeZone:"Asia/Bangkok"}):"ยังไม่เปิดสิทธิ์"}</p>
+      <p>Basic Verify ใช้ฟรีจนกว่าจะซื้อแพ็กเกจ ส่วนสิทธิ์ที่ซื้อเปิดหลังตรวจสลิปและขึ้นกับวันหมดอายุ การผ่านตรวจเจ้าของบ้านแยกจากการซื้อแพ็กเกจ</p>
       {villa.photoUrl&&<img className="pending-villa-photo" src={villa.photoUrl} alt={`รูป ${villa.name}`}/>}
       <details open><summary>ข้อมูล Villa สำหรับ Admin</summary><dl className="pending-villa-fields">{[
         ["Merchant",villa.merchant],["อีเมล",villa.email],["เบอร์โทร",villa.phone],["ธนาคาร",villa.bankName],["ชื่อบัญชี",villa.accountName],["เลขบัญชี",villa.accountNumber],["จำนวนผู้เข้าพักสูงสุด",villa.guestCapacity==null?"ไม่ได้ระบุ":`${villa.guestCapacity} คน`],["QR Reference",villa.qr||"ยังไม่มี QR"],

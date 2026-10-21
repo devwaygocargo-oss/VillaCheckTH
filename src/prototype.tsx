@@ -26,7 +26,7 @@ export type Page =
   | "user-dashboard" | "user-checks" | "user-check-detail" | "user-reports"
   | "user-report-detail" | "user-precheck" | "user-check-success" | "villa-report" | "villa-report-success"
   | "admin-dashboard" | "admin-owners" | "admin-villas"
-  | "admin-leads" | "admin-settings" | "admin-payments" | "admin-subscriptions" | "admin-checks" | "admin-reports" | "admin-qr" | "admin-packages";
+  | "admin-advertising" | "admin-reviews" | "admin-owner-verification" | "admin-leads" | "admin-settings" | "admin-payments" | "admin-subscriptions" | "admin-checks" | "admin-reports" | "admin-qr" | "admin-packages";
 
 type Go = (page: Page, item?: string) => void;
 type Status = "Pending" | "Verified" | "Rejected" | "Suspended" | "Expired";
@@ -222,7 +222,7 @@ const ownerNav: [string, Page][] = [
 ];
 const adminNav: [string, Page][] = [
   ["CMS เว็บไซต์", "admin-cms"], ["Dashboard", "admin-dashboard"], ["Villa รออนุมัติ", "admin-pending-villas"], ["Villa ที่อนุมัติแล้ว", "admin-approved-villas"], ["Users", "admin-users"], ["Merchants", "admin-owners"], ["Villas", "admin-villas"],
-  ["Checks", "admin-checks"], ["Reports", "admin-reports"], ["QR", "admin-qr"], ["Packages", "admin-packages"], ["Payments", "admin-payments"], ["บัญชีรับเงิน", "admin-receiving-bank"], ["Subscriptions", "admin-subscriptions"], ["Leads", "admin-leads"], ["Settings", "admin-settings"],
+  ["ประวัติตรวจสอบ", "admin-checks"], ["รายงานปัญหา", "admin-reports"], ["ทะเบียน QR", "admin-qr"], ["แพ็กเกจ / โปรโมชั่น", "admin-packages"], ["โฆษณา / งาน Social", "admin-advertising"], ["รีวิวลูกค้า", "admin-reviews"], ["ยืนยันเจ้าของบ้าน", "admin-owner-verification"], ["ตรวจการชำระเงิน", "admin-payments"], ["บัญชีรับเงิน", "admin-receiving-bank"], ["สิทธิ์รายที่พัก", "admin-subscriptions"], ["Leads", "admin-leads"], ["Settings", "admin-settings"],
 ];
 const userNav: [string, Page][] = [
   ["Dashboard", "user-dashboard"], ["Checks", "user-checks"], ["Report ของฉัน", "user-reports"],
