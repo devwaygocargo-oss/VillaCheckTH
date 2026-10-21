@@ -30,7 +30,7 @@ function status(v: MerchantVilla) {
   return v.trialUnlimited ? "QR ใช้งานได้ · Basic Verify ฟรีไม่มีกำหนด" : new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
 }
 const approvalStatus = (value: MerchantVilla["status"]) => ({pending:"รออนุมัติ",approved:"อนุมัติแล้ว",changes:"ต้องแก้ไข",rejected:"ไม่อนุมัติ"})[value];
-export function VillaQr({ villa, admin = false }: { villa: MerchantVilla; admin?: boolean }) {
+export function VillaQr({ villa, admin = false }: { villa: Pick<MerchantVilla,"name"|"qr"|"qrStatus"|"verificationLevel"|"trialUnlimited"|"expires">; admin?: boolean }) {
   const url = `${window.location.origin}/#page=verify&item=${encodeURIComponent(villa.qr)}`
   const qrRef = useRef<HTMLDivElement>(null)
   const [downloadUrl, setDownloadUrl] = useState("")

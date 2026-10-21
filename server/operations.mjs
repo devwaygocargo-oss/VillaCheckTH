@@ -100,12 +100,27 @@ export async function operations(db,user,req,path,url,readBody){
   return {merchants:await db.prepare("SELECT u.id,u.name,u.email,u.business_name,u.phone,u.address,u.created,s.package_id,s.expires,s.lifecycle,(SELECT count(*) FROM villas v WHERE v.owner_id=u.id) AS villa_count FROM users u LEFT JOIN subscriptions s ON s.owner_id=u.id WHERE u.role='merchant' ORDER BY u.created DESC").all()}
  }
  if(path==='/api/admin/qr'&&req.method==='GET'){
-  const villas=await db.prepare('SELECT * FROM villas ORDER BY created DESC').all();return {qrs:await Promise.all(villas.map(async v=>({id:v.id,name:v.name,merchant:v.merchant,qr:v.qr,expires:v.expires,...await trustDto(db,v)})))}
+  const villas=await db.prepare('SELECT * FROM villas ORDER BY created DESC').all();return {qrs:await Promise.all(villas.map(async v=>({id:v.id,name:v.name,nameEn:v.name_en,merchant:v.merchant,qr:v.qr,expires:v.expires,trialUnlimited:v.payments===0,controlMode:(await db.prepare("SELECT value FROM system_settings WHERE key=?").get("villa_qr:"+v.id))?.value||"DEFAULT",...await trustDto(db,v)})))}
  }
  const qr=path.match(/^\/api\/admin\/qr\/([a-f0-9-]+)$/)
  if(qr&&['POST','PATCH'].includes(req.method)){
-  const data=await readBody(req);if(!['SUSPENDED','INACTIVE','DEFAULT'].includes(data.status))error(400,'สถานะ QR ไม่ถูกต้อง')
-  const v=await db.prepare('SELECT id FROM villas WHERE id=?').get(qr[1]);if(!v)error(404,'ไม่พบ Villa')
+  const data=await readBody(req);
+  if(data.action==='regenerate'){
+   if(typeof data.reason!=='string'||!data.reason.trim()||data.reason.length>2000||!Object.hasOwn(data,'expectedQr'))error(400,'ระบุเหตุผลและ QR เดิมก่อนสร้างใหม่');
+   let next;
+   await db.transaction(async()=>{
+    const v=await db.prepare('SELECT * FROM villas WHERE id=?').get(qr[1]);if(!v)error(404,'ไม่พบ Villa');
+    if((v.qr||'')!==(data.expectedQr||''))error(409,'QR มีการเปลี่ยนแปลงแล้ว กรุณาโหลดรายการใหม่');
+    if(v.status!=='approved')error(409,'ต้องอนุมัติข้อมูลที่พักก่อนสร้าง QR');
+    next='VC-'+randomUUID();
+    const updated=await db.prepare('UPDATE villas SET qr=? WHERE id=? AND (qr=? OR (qr IS NULL AND ? IS NULL))').run(next,v.id,v.qr,v.qr);
+    if(updated.changes!==1)error(409,'QR มีการเปลี่ยนแปลงแล้ว กรุณาโหลดรายการใหม่');
+    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('qr_rotation:'+randomUUID(),JSON.stringify({villaId:v.id,oldQr:v.qr,newQr:next,reason:data.reason.trim(),actor:user.id,created:new Date().toISOString()}));
+    await audit(db,user,'qr.regenerate',v.id);
+   });return {ok:true,qr:next};
+  }
+  if(!['SUSPENDED','INACTIVE','DEFAULT'].includes(data.status))error(400,'สถานะ QR ไม่ถูกต้อง');
+  const v=await db.prepare('SELECT id FROM villas WHERE id=?').get(qr[1]);if(!v)error(404,'ไม่พบ Villa');
   await db.transaction(async()=>{await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('villa_qr:'+v.id,data.status);await audit(db,user,'qr.'+data.status,v.id)})
   return {ok:true}
  }
