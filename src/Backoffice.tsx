@@ -1,3 +1,4 @@
+import PropertyDetails,{type Details} from "./PropertyDetails";
 import {useCopy} from "./cms";
 import OwnerVerification from "./OwnerVerification";
 import HomeLogoLink from "./HomeLogoLink";
@@ -682,6 +683,7 @@ export function MerchantVerification({
   const [villa, setVilla] = useState<{
     name: string
     nameEn?: string
+    propertyDetails?: Details|null
     trialUnlimited?: boolean
     basicVerificationNotice?: string | null
     ownerVerificationRequired?: boolean
@@ -712,7 +714,7 @@ export function MerchantVerification({
     setLoading(true)
     setVilla(null)
     setError("")
-    void api<{ nameEn?: string; basicVerificationNotice?: string | null; ownerVerificationRequired?: boolean; ownerVerification?: {status:string;reviewedAt:string;method:string} | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
+    void api<{ propertyDetails?:Details|null; nameEn?: string; basicVerificationNotice?: string | null; ownerVerificationRequired?: boolean; ownerVerification?: {status:string;reviewedAt:string;method:string} | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
       `${adminView?"/admin/qr-verification":"/public/qr"}/${encodeURIComponent(reference)}`,
     )
       .then((value) => {
@@ -767,7 +769,7 @@ export function MerchantVerification({
         {error && <p role="alert">{error}</p>}
         {villa && (
           <>
-            {!isAdmin&&<div className="property-detail-intro"><p>{villa.nameEn}</p><p>{villa.province} · {villa.merchantName}</p>{villa.photoUrl&&<img className="property-detail-cover" src={villa.photoUrl} alt={villa.name}/>}<h2>ข้อมูลและสถานะของที่พัก</h2></div>}
+            {!isAdmin&&<div className="property-detail-intro"><p>{villa.nameEn}</p><p>{villa.province} · {villa.merchantName}</p>{villa.photoUrl&&<img className="property-detail-cover" src={villa.photoUrl} alt={villa.name}/>}{villa.propertyDetails&&<PropertyDetails details={villa.propertyDetails}/>}<h2>ข้อมูลและสถานะของที่พัก</h2></div>}
             <span className="merchant-status">
               {villa.valid
                 ? "QR ใช้งานได้ · Admin อนุมัติแล้ว"
@@ -786,8 +788,8 @@ export function MerchantVerification({
               <div className="verification-contact-head"><h2>{t("profile.contacts")}</h2><span>{isAdmin?"ข้อมูลเต็มสำหรับ Admin":villa.locked ? "สำหรับสมาชิก User" : "เข้าสู่ระบบ User แล้ว"}</span></div>
               <dl>
                 <div><dt>{t("profile.phone")}</dt><dd>{villa.locked ? "•••-•••-••••" : villa.phone || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>{t("profile.bank")}</dt><dd>{villa.locked ? "ข้อมูลถูกซ่อน" : villa.bankName || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>{t("profile.bankName")}</dt><dd>{villa.locked ? "ข้อมูลถูกซ่อน" : villa.accountName || "ยังไม่ได้ระบุ"}</dd></div>
+                <div><dt>{t("profile.bank")}</dt><dd>{villa.bankName || "ยังไม่ได้ระบุ"}</dd></div>
+                <div><dt>{t("profile.bankName")}</dt><dd>{villa.accountName || "ยังไม่ได้ระบุ"}</dd></div>
                 <div><dt>{t("profile.bankNumber")}</dt><dd>{villa.locked ? "•••-•-•••••-•" : villa.accountNumber || "ยังไม่ได้ระบุ"}</dd></div>
               </dl>
               {villa.locked && !isAdmin ? <div className="verification-login"><p>เข้าสู่ระบบด้วยบัญชี User เพื่อดูเบอร์โทรและเลขบัญชีเต็ม โดยกลับมาตรวจ QR นี้ได้ทันที</p><div className="button-row"><button className="primary-button" onClick={() => go("login", reference)}>เข้าสู่ระบบเพื่อดูข้อมูล</button><button className="outline-button" onClick={() => go("user-registration", reference)}>สมัครสมาชิก User</button></div></div> : <p className="verification-reminder">{isAdmin?"ข้อมูลทะเบียนสำหรับผู้ดูแลระบบ":t("profile.contactReminder")}</p>}

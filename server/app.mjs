@@ -1,3 +1,4 @@
+import {dummyPropertyDetails} from "./property-details.mjs";
 import {presentationMedia} from "./cms-presentation.mjs"
 import {accountManagement} from "./account-management.mjs"
 import { ownerVerificationApi, publicOwnerVerification } from "./owner-verification.mjs"
@@ -687,6 +688,10 @@ export function createApp(db, config, transport) {
         return json({
           name: v.name,
           nameEn: v.name_en,
+          propertyDetails: dummyPropertyDetails(v),
+          guestCapacity:v.guest_capacity,
+          bankName:v.bank_name,
+          accountName:v.account_name,
           ownerVerification: await publicOwnerVerification(db,v),
           ownerVerificationRequired: ["starter","pro","premium"].includes(v.package_id),
           basicVerificationNotice: v.package_id === "basic" ? basicVerificationNotice : null,
@@ -714,8 +719,6 @@ export function createApp(db, config, transport) {
           ...(unlocked
             ? {
                 phone: v.phone,
-                bankName: v.bank_name,
-                accountName: v.account_name,
                 accountNumber: v.account_number,
               }
             : {}),
