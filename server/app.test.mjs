@@ -71,7 +71,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
     }
   }
   const login = async (email, password) => {
-    const response = await request("/api/auth/login", { email, password })
+    const response = await request(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/api/auth/admin-login" : "/api/auth/login"), { email, password })
     assert.equal(response.status, 200)
     assert.match(response.cookie, /HttpOnly/)
     assert.match(response.cookie, /SameSite=Lax/)

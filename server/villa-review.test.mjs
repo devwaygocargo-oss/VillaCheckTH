@@ -11,7 +11,7 @@ test('Villa approval requests retain actual changes, documents, permissions and 
  await new Promise(r=>app.listen(0,'127.0.0.1',r));t.after(async()=>{await new Promise(r=>app.close(r));await db.close()})
  const base=`http://127.0.0.1:${app.address().port}/api`
  const request=async(path,data,session)=>{const r=await fetch(base+path,{method:data===undefined?'GET':'POST',headers:{Origin:origin,'Content-Type':'application/json',...(session?{Cookie:session.cookie,'X-CSRF-Token':session.csrf}:{})},body:data===undefined?undefined:JSON.stringify(data)});return {status:r.status,value:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]}}
- const login=async email=>{const r=await request('/auth/login',{email,password:'DummyPassword1234'});assert.equal(r.status,200);return {cookie:r.cookie,csrf:r.value.csrf}}
+ const login=async email=>{const r=await request(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/auth/admin-login" : "/auth/login"),{email,password:'DummyPassword1234'});assert.equal(r.status,200);return {cookie:r.cookie,csrf:r.value.csrf}}
  const admin=await login('review-admin@example.test'),merchant=await login('demo-merchant@villacheck.example')
  const villa=await db.prepare("SELECT * FROM villas WHERE name='Sea Sky Demo Villa'").get()
  const edit={name:villa.name,nameEn:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photoUrl:villa.photo_url,guestCapacity:20}
@@ -33,8 +33,8 @@ test('Villa approval requests retain actual changes, documents, permissions and 
  await t.test('current approval succeeds, preserves QR and rejects duplicate review',async()=>{
   const v=await state(),input={status:'approved',verificationLevel:'VERIFIED',expectedReviewId:v.reviewRequest.id};assert.equal((await request('/villas/'+villa.id+'/review',input,merchant)).status,403);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,200);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,409);assert.equal((await state()).qr,villa.qr)
  })
- await t.test('Admin QR view is unlocked while guest data stays masked',async()=>{
-  const full=(await request('/public/qr/'+villa.qr,undefined,admin)).value;assert.equal(full.locked,false);assert.equal(full.accountNumber,villa.account_number);assert.equal(full.phone,villa.phone)
+ await t.test('Admin session stays separate from the public QR profile',async()=>{
+  const full=(await request('/public/qr/'+villa.qr,undefined,admin)).value;assert.equal(full.locked,true);assert.equal(full.accountNumber,undefined);assert.equal(full.phone,undefined)
   const guest=(await request('/public/qr/'+villa.qr)).value;assert.equal(guest.locked,true);assert.equal(guest.accountNumber,undefined)
  })
  await t.test('dedicated Admin verification requires Admin and returns full pending Villa details',async()=>{

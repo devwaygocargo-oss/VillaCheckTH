@@ -26,7 +26,7 @@ test('Admin receiving bank uses stable decodable PromptPay QR, scoped email outb
  const server=createApp(db,config,{sendMail:async mail=>{if(smtpFailure)throw Object.assign(Error('secret-provider-detail'),{code:'EAUTH'});if(mail.messageId.startsWith("<bank-"))sent.push(mail)}})
  await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(async()=>{await server.runMail();await new Promise(r=>server.close(r));await db.close()})
  const req=async(path,data,session,csrf=true)=>{const r=await fetch(`http://127.0.0.1:${server.address().port}/api${path}`,{method:data===undefined?'GET':'POST',headers:{Origin:config.appUrl,'Content-Type':'application/json',...(session?{Cookie:session.cookie,...csrf?{'X-CSRF-Token':session.csrf}:{}}:{})},body:data===undefined?undefined:JSON.stringify(data)});return {status:r.status,value:r.headers.get('content-type')?.includes('json')?await r.json():Buffer.from(await r.arrayBuffer()),cookie:r.headers.get('set-cookie')?.split(';')[0]}}
- const login=async email=>{const r=await req('/auth/login',{email,password});assert.equal(r.status,200);return {cookie:r.cookie,csrf:r.value.csrf}}
+ const login=async email=>{const r=await req(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/auth/admin-login" : "/auth/login"),{email,password});assert.equal(r.status,200);return {cookie:r.cookie,csrf:r.value.csrf}}
  const a=await login(admin.email),m=await login(merchant.email),u=await login('bank-user@example.test')
  const fields={bankName:'DUMMY BANK - NO REAL MONEY',accountName:'DUMMY ACCOUNT',accountNumber:'0000000000',promptpayType:'phone',promptpayId:'0812345678',instructions:'DUMMY ONLY',confirmedBinding:true}
  let saved,first,invoice
@@ -120,6 +120,6 @@ test('Admin receiving bank uses stable decodable PromptPay QR, scoped email outb
 test('Receiving-bank email explicitly requires SMTP outside Demo mode',async t=>{
  const db=await openTestDatabase(),password='MissingSmtpDummy123';await createUser(db,'missing-smtp-admin@example.test',password,'Admin','admin')
  const server=createApp(db,{appUrl:'http://localhost:8443',allowedOrigins:['http://localhost:8443'],fakeHash:hashPassword('fake'),serverless:true,demoMode:false});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(async()=>{await new Promise(r=>server.close(r));await db.close()})
- const base=`http://127.0.0.1:${server.address().port}/api`;const login=await fetch(base+'/auth/login',{method:'POST',headers:{Origin:'http://localhost:8443','Content-Type':'application/json'},body:JSON.stringify({email:'missing-smtp-admin@example.test',password})});const value=await login.json()
+ const base=`http://127.0.0.1:${server.address().port}/api`;const login=await fetch(base+'/auth/admin-login',{method:'POST',headers:{Origin:'http://localhost:8443','Content-Type':'application/json'},body:JSON.stringify({email:'missing-smtp-admin@example.test',password})});const value=await login.json()
  const r=await fetch(base+'/admin/receiving-bank/email',{method:'POST',headers:{Origin:'http://localhost:8443','Content-Type':'application/json',Cookie:login.headers.get('set-cookie').split(';')[0],'X-CSRF-Token':value.csrf},body:'{}'});assert.equal(r.status,409);assert.match((await r.json()).error,/SMTP/)
 })

@@ -1,4 +1,5 @@
 import type { Account } from "./merchantStore"
+const adminPortal = () => typeof window !== "undefined" && /^\/admin(?:\/|$)/.test(window.location.pathname)
 let csrf = ""
 export class ApiError extends Error {
   constructor(
@@ -14,10 +15,7 @@ async function request<T>(path: string, data?: unknown): Promise<T> {
     response = await fetch(`/api${path}`, {
       method: data === undefined ? "GET" : "POST",
       credentials: "same-origin",
-      headers:
-        data === undefined
-          ? {}
-          : { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+      headers: { ...(adminPortal() ? {"X-VillaCheck-Portal":"admin"} : {}), ...(data === undefined ? {} : { "Content-Type": "application/json", "X-CSRF-Token": csrf }) },
       body: data === undefined ? undefined : JSON.stringify(data),
     })
   } catch {
@@ -42,7 +40,7 @@ export function api<T>(path:string,data?:unknown):Promise<T>{
   publicReads.set(path,pending);return pending;
 }
 export async function currentAccount() {
-  const session = await api<{ user: Account; csrf: string }>("/auth/me")
+  const session = await api<{ user: Account; csrf: string }>(adminPortal() ? "/auth/admin-me" : "/auth/me")
   csrf = session.csrf
   return session.user
 }
@@ -60,8 +58,12 @@ export async function authenticate(
   csrf = session.csrf
   return session.user
 }
+export async function authenticateAdmin(email:string,password:string) {
+  const session=await api<{user:Account;csrf:string}>("/auth/admin-login",{email,password});
+  csrf=session.csrf;return session.user;
+}
 export async function logout() {
   await currentAccount()
-  await api("/auth/logout", {})
+  await api(adminPortal() ? "/auth/admin-logout" : "/auth/logout", {})
   csrf = ""
 }

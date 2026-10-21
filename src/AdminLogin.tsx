@@ -1,6 +1,6 @@
 import HomeLogoLink from "./HomeLogoLink";
 import { useState } from "react";
-import { authenticate, logout } from "./api";
+import { authenticateAdmin, logout } from "./api";
 import type { Page } from "./prototype";
 
 export default function AdminLogin({go}:{go:(page:Page)=>void}) {
@@ -15,7 +15,7 @@ export default function AdminLogin({go}:{go:(page:Page)=>void}) {
     <form className="login-email-form" onSubmit={async event=>{
       event.preventDefault();if(busy)return;setBusy(true);setError("");
       try {
-        const account=await authenticate(email,password);
+        const account=await authenticateAdmin(email,password);
         if(account.role!=="admin"){await logout();setError("บัญชีนี้ไม่มีสิทธิ์ Admin");return;}
         go("admin-cms");
       }catch(e){setError(e instanceof Error?e.message:"เข้าสู่ระบบไม่สำเร็จ");}

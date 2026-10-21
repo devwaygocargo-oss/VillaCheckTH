@@ -59,7 +59,7 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
     }
   }
   const login = async (email) => {
-    const r = await request("/api/auth/login", {
+    const r = await request(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/api/auth/admin-login" : "/api/auth/login"), {
       email,
       password: "CmsPassword123",
     })

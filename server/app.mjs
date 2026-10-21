@@ -1,3 +1,4 @@
+import {accountManagement} from "./account-management.mjs"
 import { ownerVerificationApi, publicOwnerVerification } from "./owner-verification.mjs"
 import { basicVerificationNotice } from "./package-content.mjs"
 import { loadTrustContext, selectByIds } from "./villa-read-context.mjs"
@@ -185,14 +186,16 @@ export function createApp(db, config, transport) {
     attempts.set(key, entry)
     if (entry.count > limit) fail(429, "คำขอถี่เกินไป กรุณารอ 15 นาที")
   }
-  const cookie = (token, age = 28800) =>
-    `vc_session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${age}${
+  const cookie = (token, age = 28800, admin = false) =>
+    `${admin ? "vc_admin_session" : "vc_session"}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${age}${
       config.secureCookies ? "; Secure" : ""
     }`
   async function issueSession(req, user) {
-    const old = req.headers.cookie?.match(
-      /(?:^|;\s*)vc_session=([a-f0-9]{64})(?:;|$)/,
-    )?.[1]
+    const admin=user.role === "admin";
+    if(admin && new URL(req.url,"http://localhost").pathname !== "/api/auth/admin-login")fail(403,"บัญชี Admin ต้องเข้าสู่ระบบที่ /admin/login เท่านั้น");
+    const access=await db.prepare("SELECT value FROM system_settings WHERE key=?").get("account_status:"+user.id);
+    if(access && JSON.parse(access.value).status === "suspended")fail(403,"บัญชีถูกระงับการเข้าสู่ระบบ กรุณาติดต่อผู้ดูแล");
+    const old = req.headers.cookie?.match(new RegExp("(?:^|;\\s*)"+(admin?"vc_admin_session":"vc_session")+"=([a-f0-9]{64})(?:;|$)"))?.[1]
     if (old)
       await db.prepare("DELETE FROM sessions WHERE token_hash=?").run(hash(old))
     await db.prepare("DELETE FROM sessions WHERE expires<=?").run(Date.now())
@@ -204,21 +207,23 @@ export function createApp(db, config, transport) {
     await db
       .prepare("UPDATE users SET last_login=? WHERE id=?")
       .run(new Date().toISOString(), user.id)
-    return { csrf, cookie: cookie(token) }
+    return { csrf, cookie: cookie(token,28800,admin) }
   }
   const loginOtp=createLoginOtp(db,config,transport,config.smsFetch||fetch)
   async function session(req) {
-    const token = req.headers.cookie?.match(
-      /(?:^|;\s*)vc_session=([a-f0-9]{64})(?:;|$)/,
-    )?.[1]
-    if (!token) fail(401, "กรุณาเข้าสู่ระบบ")
-    const row = await db
-      .prepare(
-        "SELECT s.*,u.id,u.email,u.name,u.role FROM sessions s JOIN users u ON u.id=s.user_id WHERE token_hash=? AND expires>?",
-      )
-      .get(hash(token), Date.now())
-    if (!row) fail(401, "Session หมดอายุ กรุณาเข้าสู่ระบบใหม่")
-    return row
+    const path=new URL(req.url,"http://localhost").pathname;
+    const adminAsset=/^\/api\/public\/(cms-media|property-media-file)\//.test(path);
+    const publicOnly=(!adminAsset && path.startsWith("/api/public/")) || ["/api/auth/me","/api/auth/logout"].includes(path);
+    const adminContext=adminAsset || path.startsWith("/api/admin/") || path.startsWith("/api/auth/admin-") || (!publicOnly && req.headers["x-villacheck-portal"] === "admin");
+    const names=publicOnly?["vc_session"]:adminContext?["vc_admin_session","vc_session"]:["vc_session","vc_admin_session"];
+    let token,name;
+    for(const candidate of names){const value=req.headers.cookie?.match(new RegExp("(?:^|;\\s*)"+candidate+"=([a-f0-9]{64})(?:;|$)"))?.[1];if(value){token=value;name=candidate;break}}
+    if(!token)fail(401,"กรุณาเข้าสู่ระบบ");
+    const row=await db.prepare("SELECT s.*,u.id,u.email,u.name,u.role,a.value AS account_access FROM sessions s JOIN users u ON u.id=s.user_id LEFT JOIN system_settings a ON a.key='account_status:'||u.id WHERE token_hash=? AND expires>?").get(hash(token),Date.now());
+    if(!row || (row.role === "admin" && name !== "vc_admin_session") || (name === "vc_admin_session" && row.role !== "admin"))fail(401,"Session หมดอายุ กรุณาเข้าสู่ระบบใหม่");
+    if(row.account_access && JSON.parse(row.account_access).status === "suspended")fail(403,"บัญชีถูกระงับการเข้าสู่ระบบ กรุณาติดต่อผู้ดูแล");
+    if(path.startsWith("/api/auth/admin-") && row.role !== "admin")fail(403,"เฉพาะ Admin");
+    return row;
   }
   function checkOrigin(req) {
     const origin = req.headers.origin
@@ -549,12 +554,14 @@ export function createApp(db, config, transport) {
         req.method === "POST" &&
         [
           "/api/auth/login",
+          "/api/auth/admin-login",
           "/api/auth/register",
           "/api/auth/register-user",
         ].includes(path)
       ) {
         checkOrigin(req)
         await rateLimit(req)
+        if(path === "/api/auth/admin-login" && process.env.VERCEL === "1" && new URL(config.appUrl).hostname === "design-villacheck.vercel.app" && req.headers.host?.split(":")[0] !== "design-villacheck.vercel.app")fail(403,"เข้าสู่ระบบ Admin ที่ https://design-villacheck.vercel.app/admin/login เท่านั้น");
         const data = await body(req)
         let user
         if (path.endsWith("register") || path.endsWith("register-user")) {
@@ -593,6 +600,7 @@ export function createApp(db, config, transport) {
           )
             fail(401, "อีเมลหรือรหัสผ่านไม่ถูกต้อง")
         }
+        if(path === "/api/auth/admin-login" && user.role !== "admin")fail(403,"เฉพาะบัญชี Admin เท่านั้น");
         const { csrf, cookie: sessionCookie } = await issueSession(req, user)
         res.setHeader("Set-Cookie", sessionCookie)
         return json({
@@ -605,7 +613,7 @@ export function createApp(db, config, transport) {
           csrf,
         })
       }
-      if (req.method === "GET" && path === "/api/auth/me") {
+      if (req.method === "GET" && ["/api/auth/me","/api/auth/admin-me"].includes(path)) {
         const user = await session(req)
         return json({
           user: {
@@ -617,7 +625,7 @@ export function createApp(db, config, transport) {
           csrf: user.csrf,
         })
       }
-      if (req.method === "POST" && path === "/api/auth/logout") {
+      if (req.method === "POST" && ["/api/auth/logout","/api/auth/admin-logout"].includes(path)) {
         const user = await auth(req)
         const managed = await adminBusiness(
           db,
@@ -632,7 +640,7 @@ export function createApp(db, config, transport) {
         await db
           .prepare("DELETE FROM sessions WHERE token_hash=?")
           .run(user.token_hash)
-        res.setHeader("Set-Cookie", cookie("", 0))
+        res.setHeader("Set-Cookie", cookie("", 0,user.role === "admin"))
         return json({ ok: true })
       }
       if (req.method === "GET" && path === "/api/public/villas") {
@@ -796,6 +804,8 @@ export function createApp(db, config, transport) {
           res.writeHead(file.partial?206:200,{"Content-Type":file.mime,"Content-Length":file.bytes.length,"Accept-Ranges":"bytes",...(file.partial?{"Content-Range":`bytes ${file.start}-${file.end}/${file.size}`} : {}),"Content-Disposition":`inline; filename="social-material"; filename*=UTF-8''${encodeURIComponent(file.name)}`,"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"})
           return res.end(file.bytes)
         }
+        const accounts=await accountManagement(db,user,req,path,url,body)
+        if(accounts!==undefined)return json(accounts)
         const ownerVerification=await ownerVerificationApi(db,user,req,path,url,body)
         if(ownerVerification!==undefined)return json(ownerVerification)
         const materials=await socialMaterialsApi(db,user,req,path,url,body)

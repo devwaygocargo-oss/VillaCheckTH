@@ -12,7 +12,7 @@ test("NestJS HTTP API uses Prisma, preserves guards, cookies, payment and Villa 
  assert.equal((await request("/api/packages")).status,401);
  const registration=await request("/api/auth/register",{name:"Merchant",businessNameEn:"Merchant English",email:"merchant@nest.test",password:"MerchantPassword123"});assert.equal(registration.status,200);const merchant={cookie:registration.cookie,csrf:registration.value.csrf};
  assert.equal((await request("/api/admin/packages",undefined,merchant)).status,403);
- const login=await request("/api/auth/login",{email:"admin@nest.test",password:"AdminPassword123"});const admin={cookie:login.cookie,csrf:login.value.csrf};
+ const login=await request("/api/auth/admin-login",{email:"admin@nest.test",password:"AdminPassword123"});const admin={cookie:login.cookie,csrf:login.value.csrf};
  assert.equal((await request("/api/admin/packages",undefined,admin)).status,200);
  assert.equal((await request("/api/subscription",{packageId:"starter"},merchant)).status,409);
  assert.equal((await request("/api/packages",undefined,merchant)).value.packages.length,4);

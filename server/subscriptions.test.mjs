@@ -13,7 +13,7 @@ test('four monthly packages: each property starts free, purchases and renewals r
   const r=await fetch(`http://127.0.0.1:${server.address().port}/api${path}`,{method:data===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(auth?{Cookie:auth.cookie,'X-CSRF-Token':auth.csrf}:{})},body:data===undefined?undefined:JSON.stringify(data)});
   const value=await r.json();return {status:r.status,value,cookie:r.headers.get('set-cookie')?.split(';')[0],csrf:value.csrf};
  };
- const admin=await request('/auth/login',{email:'admin@example.com',password});
+ const admin=await request("/auth/admin-login",{email:'admin@example.com',password});
  const document={name:'proof.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from('%PDF-1.4\nfixture').toString('base64')};
  for(const [planId,plan] of Object.entries(packages))await t.test(plan.name,async()=>{
   await createUser(db,`${planId}@example.com`,password,plan.name);

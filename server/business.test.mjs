@@ -54,7 +54,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
     }
   }
   const login = async (email, password) => {
-    const r = await request("/api/auth/login", { email, password })
+    const r = await request(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/api/auth/admin-login" : "/api/auth/login"), { email, password })
     return { cookie: r.cookie, csrf: r.value.csrf }
   }
   const a = await login(admin.email, "AdminPassword123"),

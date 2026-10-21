@@ -80,7 +80,7 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
     }
   }
   const login = async (email) => {
-    const r = await request("/auth/login", { email, password })
+    const r = await request(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/auth/admin-login" : "/auth/login"), { email, password })
     assert.equal(r.status, 200, JSON.stringify(r.value))
     return { cookie: r.cookie, csrf: r.value.csrf }
   }

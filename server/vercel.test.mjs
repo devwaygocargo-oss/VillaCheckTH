@@ -92,7 +92,7 @@ test(
       await fetch(two.base + "auth/me", { headers: { cookie } })
     ).json()
     assert.equal(me.user.id, member.user.id)
-    const adminLogin = await post(two.base, "auth/login", {
+    const adminLogin = await post(two.base, "auth/admin-login", {
       email: env.ADMIN_EMAIL,
       password: env.ADMIN_PASSWORD,
     })
@@ -117,7 +117,7 @@ test(
       (
         await post(
           one.base,
-          "auth/login",
+          "auth/admin-login",
           { email: env.ADMIN_EMAIL, password: env.ADMIN_PASSWORD },
           "203.0.113.31",
         )

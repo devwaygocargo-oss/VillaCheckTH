@@ -24,7 +24,7 @@ test("capacity edits validate, persist, retain QR, and appear publicly only afte
     const r = await fetch(base + path, {method:data === undefined ? "GET":"POST", headers:{"Content-Type":"application/json", ...(session ? {Cookie:session.cookie,"X-CSRF-Token":session.csrf}: {})}, body:data === undefined ? undefined:JSON.stringify(data)})
     return {status:r.status, value:await r.json(), cookie:r.headers.get("set-cookie")?.split(";")[0]}
   }
-  const login = async email => {const r=await request("/auth/login",{email,password:"AuditDummyPassword123"}); return {...r.value,cookie:r.cookie}}
+  const login = async email => {const r=await request(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/auth/admin-login" : "/auth/login"),{email,password:"AuditDummyPassword123"}); return {...r.value,cookie:r.cookie}}
   const merchant = await login("demo-merchant@villacheck.example")
   const admin = await login("capacity-admin@example.com")
   const villa = (await request("/state",undefined,merchant)).value.villas.find(v=>v.name==="Sea Sky Demo Villa")

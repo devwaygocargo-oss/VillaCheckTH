@@ -11,7 +11,7 @@ test('User Merchant and Admin share the same demo Villa QR checks reports and re
  await new Promise(r=>app.listen(0,'127.0.0.1',r));t.after(async()=>{await new Promise(r=>app.close(r));await db.close()})
  const base=`http://127.0.0.1:${app.address().port}/api`
  const req=async(path,data,session)=>{const r=await fetch(base+path,{method:data===undefined?'GET':'POST',headers:{Origin:origin,'Content-Type':'application/json',...(session?{Cookie:session.cookie,'X-CSRF-Token':session.csrf}:{})},body:data===undefined?undefined:JSON.stringify(data)});return{status:r.status,value:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]}}
- const login=async email=>{const r=await req('/auth/login',{email,password:'DummyRelations1234'});assert.equal(r.status,200);return{cookie:r.cookie,csrf:r.value.csrf}}
+ const login=async email=>{const r=await req(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/auth/admin-login" : "/auth/login"),{email,password:'DummyRelations1234'});assert.equal(r.status,200);return{cookie:r.cookie,csrf:r.value.csrf}}
  const admin=await login('relations-admin@example.test'),merchant=await login('demo-merchant@villacheck.example'),regional=await login('demo-regional@villacheck.example'),user=await login('demo-user@villacheck.example')
  const m=(await req('/state',undefined,merchant)).value,a=(await req('/state',undefined,admin)).value,villa=m.villas.find(v=>v.name==='Sea Sky Demo Villa')
  await t.test('all roles refer to one Villa identity and QR while ownership remains scoped',async()=>{

@@ -92,7 +92,7 @@ test("user registration and QR contacts are enforced by the API", async (t) => {
     (await request("/api/admin/users", undefined, member.cookie)).status,
     403,
   )
-  const admin = await request("/api/auth/login", {
+  const admin = await request("/api/auth/admin-login", {
     email: "admin@example.com",
     password: "Admin-password-123",
   })

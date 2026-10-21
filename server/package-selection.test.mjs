@@ -10,7 +10,7 @@ test('Per-property package selection preserves free access and changes paid righ
  const config={appUrl:'http://localhost:8443',allowedOrigins:['http://localhost:8443'],fakeHash:hashPassword('fake'),serverless:true,demoMode:true,paymentInstructions:'DUMMY BANK - NO REAL TRANSFER'}
  const server=createApp(db,config);await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(async()=>{await server.runMail();await new Promise(r=>server.close(r));await db.close()})
  const req=async(path,data,session)=>{const r=await fetch(`http://127.0.0.1:${server.address().port}/api${path}`,{method:data===undefined?'GET':'POST',headers:{Origin:config.appUrl,'Content-Type':'application/json',...(session?{Cookie:session.cookie,'X-CSRF-Token':session.csrf}:{})},body:data===undefined?undefined:JSON.stringify(data)});return{status:r.status,value:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]}}
- const login=async email=>{const r=await req('/auth/login',{email,password});assert.equal(r.status,200);return{cookie:r.cookie,csrf:r.value.csrf}}
+ const login=async email=>{const r=await req(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/auth/admin-login" : "/auth/login"),{email,password});assert.equal(r.status,200);return{cookie:r.cookie,csrf:r.value.csrf}}
  const fresh=await login('chooser-new@example.test'),expired=await login('demo-expired@villacheck.example'),main=await login('demo-merchant@villacheck.example'),admin=await login('chooser-admin@example.test')
  await t.test('new merchants can add a free villa without choosing an account package',async()=>{
   assert.equal((await req('/subscription',{packageId:'starter'},fresh)).status,409)
