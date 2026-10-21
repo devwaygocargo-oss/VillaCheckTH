@@ -10,6 +10,8 @@ type Review = {
   status?: string
   reason?: string
   createdAt: string
+  moderationRequired?: boolean
+  packageName?: string
   reviewedAt?: string
   reviewedByName?: string
   reply?: {
@@ -46,6 +48,8 @@ export default function Reviews({
     [reasons, setReasons] = useState<Record<string, string>>({}),
     [reasonCode, setReasonCode] = useState("spam"),
     [reason, setReason] = useState("")
+  const [moderationRequired, setModerationRequired] = useState<boolean | null>(null)
+  const [statusFilter, setStatusFilter] = useState("all")
   const path =
     mode === "public"
       ? `/public/reviews?qr=${encodeURIComponent(qr || "")}`
@@ -58,8 +62,10 @@ export default function Reviews({
     const data = await api<{
       reviews: Review[]
       reasons?: Record<string, string>
+      moderationRequired?: boolean
     }>(path)
     setRows(data.reviews)
+    setModerationRequired(data.moderationRequired ?? null)
     if (data.reasons) setReasons(data.reasons)
   }
   useEffect(() => {
@@ -81,9 +87,9 @@ export default function Reviews({
     setError("")
     setMessage("")
     try {
-      await api(path, data)
+      const result = await api<{review?: Review}>(path, data)
       await load()
-      setMessage("บันทึกแล้ว")
+      setMessage(path === "/reviews" ? result.review?.status === "published" ? "เผยแพร่รีวิวแล้ว" : "ส่งรีวิวแล้ว รอ Admin ตรวจอนุมัติก่อนเผยแพร่" : "บันทึกแล้ว")
       setContent("")
     } catch (e) {
       setError(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ")
@@ -91,6 +97,7 @@ export default function Reviews({
       setBusy(false)
     }
   }
+  const visibleRows = rows.filter(r=>mode !== "admin" || statusFilter === "all" || r.status === statusFilter)
   return (
     <section className="merchant-panel">
       <h2>
@@ -103,13 +110,14 @@ export default function Reviews({
               : "รีวิวจากผู้เข้าพัก"}
       </h2>
       <p>
-        ทุกแพ็กเกจมีรีวิว ใช้กติกาเดียวกันทุกคะแนน ความเห็นเชิงลบที่ไม่ผิดกติกาเผยแพร่ได้
-        เจ้าของที่พักตอบชี้แจงได้
+        แพ็กเกจต่ำกว่า 2,990 บาทเผยแพร่รีวิวทันที ส่วนแพ็กเกจ 2,990 บาทขึ้นไปรอ Admin ตรวจอนุมัติก่อนเผยแพร่ ใช้กติกาเดียวกันทุกคะแนน เจ้าของที่พักตอบชี้แจงได้
       </p>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
       {mode === "admin" && (
         <div className="portal-form">
+          <button type="button" disabled={busy} onClick={()=>void load().catch(e=>setError(e.message))}>โหลดรีวิวล่าสุด</button>
+          <label>สถานะรีวิว<select aria-label="สถานะรีวิว" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">ทั้งหมด</option>{Object.entries(statuses).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
           <label>
             เหตุผลตามกติกา
             <select
@@ -132,8 +140,8 @@ export default function Reviews({
           </label>
         </div>
       )}
-      {!rows.length && <p>ยังไม่มีรีวิว</p>}
-      {rows.map((r) => (
+      {!visibleRows.length && <p>{rows.length ? "ไม่มีรีวิวในสถานะที่เลือก" : "ยังไม่มีรีวิว"}</p>}
+      {visibleRows.map((r) => (
         <article
           key={r.id}
           style={{ padding: "20px 0", borderBottom: "1px solid #dbe5df" }}
@@ -143,6 +151,7 @@ export default function Reviews({
             {"☆".repeat(5 - r.rating)} · {r.author}
           </strong>
           {r.villaName && <p>{r.villaName}</p>}
+          {mode === "admin" && r.moderationRequired !== undefined && <p>{r.packageName} · {r.moderationRequired ? "รออนุมัติก่อนเผยแพร่" : "เผยแพร่อัตโนมัติเมื่อส่ง"} (แพ็กเกจขณะส่งรีวิว)</p>}
           <p style={{ whiteSpace: "pre-wrap" }}>{r.content}</p>
           <small>
             {new Date(r.createdAt).toLocaleString("th-TH", {
@@ -259,8 +268,7 @@ export default function Reviews({
             />
           </label>
           <p>
-            รีวิวจะรอตรวจสอบตามกติกาก่อนเผยแพร่ ดูสถานะและขอทบทวนผลได้ที่รีวิวของฉันในบัญชี
-            User
+            {moderationRequired === null ? "กำลังตรวจสอบเงื่อนไขการเผยแพร่รีวิว" : moderationRequired ? "รีวิวที่พักนี้จะรอ Admin ตรวจอนุมัติก่อนแสดงผล" : "รีวิวที่พักนี้จะแสดงผลทันทีหลังส่ง"} ดูสถานะและขอทบทวนผลได้ที่รีวิวของฉันในบัญชี User
           </p>
           <button className="primary-button" disabled={busy}>
             ส่งรีวิว

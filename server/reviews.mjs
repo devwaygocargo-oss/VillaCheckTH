@@ -13,6 +13,9 @@ const clean = (value, max = 4000) => {
     fail(400, "กรุณาระบุข้อความให้ถูกต้อง")
   return value.trim()
 }
+const publicationPolicy = "แพ็กเกจต่ำกว่า 2,990 บาทเผยแพร่รีวิวทันที ส่วนแพ็กเกจ 2,990 บาทขึ้นไปรอ Admin ตรวจอนุมัติก่อนเผยแพร่ ใช้กติกาเดียวกันทุกคะแนน"
+const reviewVilla = (db, qr) => db.prepare("SELECT v.id,v.name,v.package_id,p.name AS package_name,p.amount FROM villas v JOIN package_catalog p ON p.id=v.package_id WHERE v.qr=? AND v.status='approved'").get(qr)
+const requiresModeration = (villa) => villa.amount >= 299000
 const key = (id) => "customer_review:" + id
 const read = async (db) =>
   (
@@ -41,9 +44,7 @@ export async function reviewsApi(db, user, req, path, url, body) {
   )
     return undefined
   if (path === "/api/public/reviews" && req.method === "GET") {
-    const villa = await db
-      .prepare("SELECT id FROM villas WHERE qr=? AND status='approved'")
-      .get(url.searchParams.get("qr") || "")
+    const villa = await reviewVilla(db, url.searchParams.get("qr") || "")
     if (!villa) fail(404, "ไม่พบที่พัก")
     return {
       reviews: (await read(db))
@@ -54,10 +55,11 @@ export async function reviewsApi(db, user, req, path, url, body) {
           content: r.content,
           author: r.author,
           createdAt: r.createdAt,
-          publishedAt: r.reviewedAt,
+          publishedAt: r.publishedAt || r.reviewedAt,
           reply: r.reply || null,
         })),
-      policy: "รีวิวทุกคะแนนใช้เกณฑ์เนื้อหาเดียวกัน ความเห็นเชิงลบที่ไม่ผิดกติกาเผยแพร่ได้",
+      policy: publicationPolicy,
+      moderationRequired: requiresModeration(villa),
     }
   }
   if (!user) fail(401, "กรุณาเข้าสู่ระบบ")
@@ -91,9 +93,7 @@ export async function reviewsApi(db, user, req, path, url, body) {
         rating = data.rating
       if (!Number.isInteger(rating) || rating < 1 || rating > 5)
         fail(400, "คะแนนต้องเป็น 1–5")
-      const villa = await db
-        .prepare("SELECT id,name FROM villas WHERE qr=? AND status='approved'")
-        .get(data.qr)
+      const villa = await reviewVilla(db, data.qr)
       if (!villa) fail(404, "ไม่พบที่พัก")
       if (
         (await read(db)).some(
@@ -101,6 +101,8 @@ export async function reviewsApi(db, user, req, path, url, body) {
         )
       )
         fail(409, "คุณส่งรีวิวที่พักนี้แล้ว ดูสถานะหรือขอทบทวนผลในรีวิวของฉัน")
+      const moderationRequired = requiresModeration(villa)
+      const now = new Date().toISOString()
       const r = {
         id: randomUUID(),
         villaId: villa.id,
@@ -109,8 +111,12 @@ export async function reviewsApi(db, user, req, path, url, body) {
         author: user.name,
         content,
         rating,
-        status: "pending",
-        createdAt: new Date().toISOString(),
+        status: moderationRequired ? "pending" : "published",
+        moderationRequired,
+        packageId: villa.package_id,
+        packageName: villa.package_name,
+        publishedAt: moderationRequired ? null : now,
+        createdAt: now,
         history: [],
       }
       await save(db, r)
@@ -143,6 +149,7 @@ export async function reviewsApi(db, user, req, path, url, body) {
             ? "ผ่านกติกาเนื้อหา"
             : clean(data.reason, 2000)
         r.status = data.status
+        r.publishedAt = data.status === "published" ? now : null
         r.reason = reason
         r.reasonCode = data.reasonCode || ""
         r.reviewedBy = user.id
