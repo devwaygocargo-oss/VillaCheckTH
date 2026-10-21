@@ -216,7 +216,7 @@ function BlockEditor({
     </section>
   )
 }
-type Media = { id: string; name: string; mime: string; url: string }
+type Media = { id: string; name: string; mime: string; url: string; source?:string }
 type Tab = "presentation" | "advertising" | "data" | "business" | "navigation" | "home" | "pages" | "articles" | "faqs" | "site" | "media" | "history"
 const tabs: [Tab, string][] = [
   ["home", "หน้าแรก"],
@@ -262,11 +262,10 @@ export default function AdminCms({
     const user = await currentAccount()
     if (user.role !== "admin") throw Error("เฉพาะ Admin")
     accept(await api<CmsState>("/admin/cms"))
-    const r = await api<{ media: Omit<Media, "url">[] }>("/admin/cms/media")
-    setMedia(
-      r.media.map((m) => ({ ...m, url: `/api/public/cms-media/${m.id}` })),
-    )
+    await refreshMedia()
   }
+  const refreshMedia=async()=>{const r=await api<{media:Media[]}>("/admin/cms/media");setMedia(r.media.map(m=>({...m,url:m.url||`/api/public/cms-media/${m.id}`})))}
+
   useEffect(() => {
     void load().catch((e) => setError(e.message))
   }, [])
@@ -429,7 +428,7 @@ export default function AdminCms({
                 aria-current={tab === key ? "page" : undefined}
                 className={tab === key ? "active" : ""}
                 onClick={() => {
-                  setTab(key)
+                  setTab(key);if(key==="media"||key==="advertising")void refreshMedia().catch(e=>setError(e.message))
                   if(key==="advertising")setVisitedAds(true)
                   setPreview(false)
                 }}
@@ -1189,7 +1188,7 @@ export default function AdminCms({
                       <img src={m.url} alt={m.name.replace("cms-image:", "")} />
                       <p>{m.name.replace("cms-image:", "")}</p>
                       <input aria-label="URL รูปภาพ" readOnly value={m.url} />
-                      <button
+                      {m.source==="banner"?<p>รูปจากแบนเนอร์ · เลือกใช้ซ้ำได้จากคลังรูป</p>:<button
                         disabled={busy || dirty}
                         onClick={() => {
                           if (
@@ -1209,7 +1208,7 @@ export default function AdminCms({
                         }}
                       >
                         ลบรูปที่ไม่ได้ใช้
-                      </button>
+                      </button>}
                     </article>
                   ))}
                 </div>

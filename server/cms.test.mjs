@@ -144,7 +144,7 @@ test("CMS drafts, release history, media privacy, permissions and optimistic con
       assert.equal((await request(media.url, undefined, admin)).status, 200)
       assert.equal(
         (await request("/api/admin/cms/media", undefined, admin)).value.media
-          .length,
+          .filter(item=>item.source==="upload").length,
         1,
       )
     },

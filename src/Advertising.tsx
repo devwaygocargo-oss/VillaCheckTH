@@ -77,7 +77,7 @@ export default function Advertising({
   const chooseAd=(next:Ad)=>{if(adDirty&&!window.confirm("มีแบนเนอร์ที่ยังไม่บันทึก ต้องการเปลี่ยนรายการหรือไม่?"))return;setAd(next);setBaseline(JSON.stringify(next));setMessage("")};
   const load = async () => {
     if (!merchant) {
-      if(!mediaLibrary){const library=await api<{media:Omit<CmsMedia,"url">[]}>("/admin/cms/media");setLocalMedia(library.media.map(m=>({...m,url:"/api/public/cms-media/"+m.id})));}
+      if(!mediaLibrary){const library=await api<{media:CmsMedia[]}>("/admin/cms/media");setLocalMedia(library.media.map(m=>({...m,url:m.url||"/api/public/cms-media/"+m.id})));}
       setVillas((await api<{ villas: MerchantVilla[] }>("/state")).villas)
       setAds(
         (await api<{ advertisements: Ad[] }>("/admin/advertisements"))
