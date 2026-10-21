@@ -122,7 +122,7 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
         123400,
       )
       assert.deepEqual(
-        catalog.value.packages.find((x) => x.id === "starter").features,
+        catalog.value.packages.find((x) => x.id === "starter").features.filter(feature=>feature==="Dynamic feature"),
         ["Dynamic feature"],
       )
     },

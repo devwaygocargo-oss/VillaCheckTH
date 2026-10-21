@@ -77,12 +77,19 @@ export async function seedCatalog(db) {
 export async function getPlan(db, id) {
   if (typeof id !== "string" || !id)
     throw Object.assign(Error("แพ็กเกจไม่ถูกต้อง"), { status: 400 })
-  const row = await db
-    .prepare("SELECT * FROM package_catalog WHERE id=?")
-    .get(id)
-  if (!row) throw Object.assign(Error("ไม่พบแพ็กเกจ"), { status: 400 })
-  return planDto(row)
+  const rows=await db.prepare("SELECT * FROM package_catalog ORDER BY sort_order,id").all();
+  const plan=effectivePlans(rows).find(row=>row.id===id);
+  if(!plan)throw Object.assign(Error("ไม่พบแพ็กเกจ"),{status:400});
+  return plan;
 }
+const tierOrder=["basic","starter","pro","premium"];
+export function effectivePlans(rows){
+ const plans=rows.map(planDto),byId=new Map(plans.map(plan=>[plan.id,plan]));
+ let inherited=[];
+ for(const id of tierOrder){const plan=byId.get(id);const required=packageContent[id]?.features||[];inherited=[...new Set([...inherited,...required,...(plan?.features||[])].map(value=>value.trim()).filter(Boolean))];if(plan)plan.features=[...inherited];}
+ return plans;
+}
+
 function planDto(row) {
   return {
     ...row,
@@ -96,15 +103,10 @@ function planDto(row) {
   }
 }
 export async function listPlans(db, all = false) {
-  const rows = await db
-    .prepare(
-      `SELECT * FROM package_catalog ${
-        all ? "" : "WHERE active=1"
-      } ORDER BY sort_order,id`,
-    )
-    .all()
-  return rows.map(planDto)
+  const rows=await db.prepare("SELECT * FROM package_catalog ORDER BY sort_order,id").all();
+  return effectivePlans(rows).filter(plan=>all||plan.isActive);
 }
+
 export async function getVerificationMode() {
   return "MANUAL"
 }
