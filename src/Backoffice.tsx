@@ -117,7 +117,7 @@ export default function Backoffice({
       if (fetching || busyRef.current) return
       fetching = true
       try {
-        const user = await currentAccount()
+        const [user,next] = await Promise.all([currentAccount(),api<Store>("/state")])
         if (user.role !== (admin ? "admin" : "merchant")) {
           if (!cancelled)
             go(
@@ -130,7 +130,6 @@ export default function Backoffice({
           return
         }
         if (!cancelled) setDisplayName(user.name.trim() || user.email.split("@")[0] || "เจ้าของที่พัก")
-        const next = await api<Store>("/state")
         if(!admin && !next.villas.length && ["owner-add-villa","owner-onboarding-villa"].includes(page)) {
           const profile=await api<{businessName:string;businessNameEn:string}>("/merchant/profile")
           if(!profile.businessName || !profile.businessNameEn) { if(!cancelled)go("owner-information");return; }
@@ -253,7 +252,7 @@ export default function Backoffice({
   if (loading || !store)
     return (
       <PortalShell role={admin ? "Admin" : "Merchant"} page={page} go={go}>
-        <h1>{loading ? "กำลังเชื่อมต่อ Backend…" : "เชื่อมต่อ Backend ไม่สำเร็จ"}</h1>
+        <h1>{loading ? "กำลังโหลดข้อมูล" : "โหลดข้อมูลไม่สำเร็จ"}</h1>
         <p role="alert">{message}</p>
         <button
           className="outline-button"

@@ -16,7 +16,7 @@ import {smtpDiagnostic} from "./smtp-diagnostics.mjs"
 import {acceptanceApi} from "./acceptance.mjs"
 import {promotionsApi,selectCoupon} from "./promotions.mjs"
 import { changeApprovals } from "./change-approvals.mjs"
-import { receivingBank } from "./payment-account.mjs"
+import { receivingBank,bankInstructions } from "./payment-account.mjs"
 import { adminReceivingBank } from "./bank-receiving.mjs"
 import {villaReview,recordVillaReview} from './villa-review.mjs'
 import {dummyPdf} from './demo-seed.mjs'
@@ -347,33 +347,33 @@ export function createApp(db, config, transport) {
     }
   }
   async function state(user) {
-    const villas =
+    const [villas,mails,isDemo,subscription,paymentVerificationMode] = await Promise.all([
       user.role === "admin"
-        ? await db.prepare("SELECT * FROM villas ORDER BY created DESC").all()
-        : await db
+        ? db.prepare("SELECT * FROM villas ORDER BY created DESC").all()
+        : db
             .prepare(
               "SELECT * FROM villas WHERE owner_id=? ORDER BY created DESC",
             )
-            .all(user.id)
-    const [context,invoiceRows]=await Promise.all([
+            .all(user.id),
+      user.role === "admin"
+        ? db.prepare("SELECT * FROM mails ORDER BY created DESC").all()
+        : db.prepare("SELECT m.* FROM mails m JOIN villas v ON v.id=m.villa_id WHERE v.owner_id=? ORDER BY m.created DESC").all(user.id),
+      demoMode(db,config),
+      subscriptionDto(db,user.id),
+      getVerificationMode(db,config.paymentVerificationMode||"MANUAL"),
+    ])
+    const [context,invoiceRows,bank,cms]=await Promise.all([
       loadTrustContext(db,villas,{reviews:true}),
       selectByIds(db,"SELECT * FROM invoices WHERE villa_id",villas.map(v=>v.id)," ORDER BY created DESC"),
+      isDemo?null:receivingBank(db),
+      isDemo?null:publishedCms(db),
     ]);
     const documents=await selectByIds(db,"SELECT id,name,mime FROM documents WHERE id",[...villas.map(v=>v.document_id),...invoiceRows.map(i=>i.proof_id)]);
     context.documents=new Map(documents.map(row=>[row.id,row]));
     context.villas=new Map(villas.map(v=>[v.id,v]));
     context.invoices=new Map();
     for(const invoice of invoiceRows){const rows=context.invoices.get(invoice.villa_id)||[];rows.push(invoice);context.invoices.set(invoice.villa_id,rows);}
-    const isDemo=await demoMode(db,config);
-    const instructions=isDemo ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : await cmsPaymentInstructions(db,config.paymentInstructions);
-    const mails =
-      user.role === "admin"
-        ? await db.prepare("SELECT * FROM mails ORDER BY created DESC").all()
-        : await db
-            .prepare(
-              "SELECT m.* FROM mails m JOIN villas v ON v.id=m.villa_id WHERE v.owner_id=? ORDER BY m.created DESC",
-            )
-            .all(user.id)
+    const instructions=isDemo ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : bank?bankInstructions(bank):cms.content.site.paymentInstructions||config.paymentInstructions;
     return {
       villas: await Promise.all(villas.map(v=>villaDto(v,context))),
       mails: mails.map((m) => ({
@@ -392,17 +392,14 @@ export function createApp(db, config, transport) {
         email: user.email,
         role: user.role,
       },
-      subscription: await subscriptionDto(db, user.id),
+      subscription,
       packageModel: "PER_VILLA",
       demoMode:isDemo,
-      paymentBankQrImage: isDemo ? "" : ((await receivingBank(db))?.qrImage || (await publishedCms(db)).content.site.paymentQrImage || ""),
+      paymentBankQrImage: isDemo ? "" : (bank?.qrImage || cms.content.site.paymentQrImage || ""),
       paymentInstructions:
         instructions ||
         "ยังไม่ได้ตั้งค่าบัญชีรับชำระ กรุณาติดต่อทีมงานก่อนโอนเงิน",
-      paymentVerificationMode: await getVerificationMode(
-        db,
-        config.paymentVerificationMode || "MANUAL",
-      ),
+      paymentVerificationMode,
       paymentConfigured: isDemo || Boolean(instructions),
       smtpConfigured: Boolean(transport),
     }
