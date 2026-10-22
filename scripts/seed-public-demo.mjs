@@ -1,3 +1,4 @@
+import {seedDemoVillaReports} from "../server/demo-villa-reports.mjs";
 import {seedDemoOwnerVerification} from "../server/demo-owner-verification.mjs";
 import {seedDemoReviews} from "../server/demo-reviews.mjs";
 import {seedDemoUserActivity} from "../server/demo-user-activity.mjs";
@@ -20,6 +21,7 @@ try{
  console.log('News content expanded:',await enrichPublishedNews(db));
  console.log('Display wording updated:',await removeSampleWord(db));
  console.log('Demo User activity:',await seedDemoUserActivity(db));
+ console.log('Demo Villa reports:',await seedDemoVillaReports(db));
  console.log('Demo reviews:',await seedDemoReviews(db));
  console.log('Demo owner verification:',await seedDemoOwnerVerification(db));
  const socialPlan=await db.prepare("SELECT features FROM package_catalog WHERE id='pro'").get();
