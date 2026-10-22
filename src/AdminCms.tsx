@@ -221,7 +221,7 @@ type Tab = "presentation" | "advertising" | "data" | "business" | "navigation" |
 const tabs: [Tab, string][] = [
   ["home", "หน้าแรก"],
   ["presentation", "เนื้อหาทั่วเว็บไซต์"],
-  ["advertising", "โฆษณาทุกตำแหน่ง"],
+  ["advertising", "แบนเนอร์ / โฆษณา"],
   ["data", "ข้อมูลที่พัก / แพ็กเกจ / บัญชี"],
   ["navigation", "เมนูเว็บไซต์"],
   ["pages", "หน้าเว็บ"],
@@ -352,8 +352,7 @@ export default function AdminCms({
     }
   }
   const [homePanel,setHomePanel]=useState("hero");
-  const editingHomeSlides=tab==="home"&&["hero","slides"].includes(homePanel);
-  useEffect(()=>{if(editingHomeSlides)setVisitedAds(true)},[editingHomeSlides]);
+
   const p = content?.pages.find((p) => p.slug === selected),
     a = content?.articles.find((a) => a.id === articleId)
   return (
@@ -405,7 +404,7 @@ export default function AdminCms({
             </span>
             <div className="button-row">
               <button
-                disabled={busy || !dirty || tab==="advertising"}
+                disabled={busy || !dirty}
                 onClick={() => void mutate("save")}
               >
                 บันทึกร่าง
@@ -417,7 +416,6 @@ export default function AdminCms({
                 className="primary-button"
                 disabled={
                   busy ||
-                  tab==="advertising" ||
                   dirty ||
                   !state.draft.revision ||
                   state.draft.revision === state.published.revision
@@ -447,6 +445,7 @@ export default function AdminCms({
               </button>
             ))}
           </nav>
+          {tab==="advertising"&&<nav className="button-row" aria-label="ประเภทแบนเนอร์"><button type="button" onClick={()=>document.getElementById("cms-property-ads")?.scrollIntoView({behavior:"smooth",block:"start"})}>โฆษณาที่พัก / สิทธิ์แพ็กเกจ</button><button type="button" onClick={()=>document.getElementById("cms-website-banners")?.scrollIntoView({behavior:"smooth",block:"start"})}>แบนเนอร์เว็บไซต์ / ลิงก์และกำหนดเวลา</button></nav>}
           <div className={`cms-workspace${preview?" has-preview":""}`}>
           {preview && (
             <section id="cms-draft-preview" ref={previewPanel} tabIndex={-1} className="cms-preview" aria-label="เนื้อหาก่อนเผยแพร่">
@@ -482,13 +481,13 @@ export default function AdminCms({
               )}
             </CmsPreviewFrame></section>
           )}
-          {visitedAds&&<div className="cms-ad-workspace" hidden={tab!=="advertising"&&!editingHomeSlides}>{editingHomeSlides&&<><h2>แก้ข้อความสไลด์โฆษณาหน้าแรกทุกรายการ</h2><p>เลือกสไลด์จากรายการเพื่อแก้หัวข้อ คำอธิบาย ข้อความปุ่ม และลิงก์ แล้วกดบันทึกแบนเนอร์ของสไลด์นั้น</p></>}<Advertising adsOnly homeOnly={editingHomeSlides} onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
+          {visitedAds&&<div id="cms-property-ads" className="cms-ad-workspace" hidden={tab!=="advertising"}><Advertising adsOnly onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
           <fieldset
             disabled={busy}
             className={`merchant-panel portal-form cms-editor cms-editor-${tab}`}
           >
             {tab === "presentation" && <CmsPresentationEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
-            {tab === "advertising" && <p>แก้แบนเนอร์โฆษณาในส่วนด้านล่าง ทั้ง Carousel หน้าแรก หน้าที่พัก และก่อน Footer หากแก้สไลด์ CMS ให้ไป หน้าแรก → ภาพสไลด์</p>}
+            {tab === "advertising" && <BannerEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
             {tab === "data" && <section><h2>ข้อมูลที่แสดงบนหน้าเว็บ</h2><p>ข้อมูลจริงของที่พัก แพ็กเกจ และบัญชี จัดการผ่านเมนูที่เกี่ยวข้อง โดยใช้ฐานข้อมูลเดียวกับหน้าเว็บ</p><div className="button-row">{([["admin-villas","ข้อมูลที่พัก / รูป / สถานะ"],["admin-packages","ราคาและสิทธิ์แพ็กเกจ"],["admin-users","บัญชี User"],["admin-owners","บัญชี Merchant"],["admin-reviews","รีวิวลูกค้า"],["admin-owner-verification","ยืนยันเจ้าของบ้าน"],["admin-advertising","โฆษณา / ไฟล์ Social"],["admin-receiving-bank","บัญชีรับเงิน"]] as [Page,string][]).map(([target,label])=><button type="button" key={target} onClick={()=>{if(!(dirty||adsDirty)||window.confirm("มีการแก้ไขที่ยังไม่บันทึก ต้องการออกจาก CMS หรือไม่?"))go(target)}}>{label}</button>)}</div></section>}
             {tab === "home" && (
               <>
@@ -524,8 +523,7 @@ export default function AdminCms({
                   }
                 />
                 <Field label="ข้อความปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonLabel??"ค้นหาที่พัก"} onChange={buttonLabel=>change({...content,home:{...content.home,buttonLabel}})}/><Field label="ลิงก์ปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonHref??"#page=directory"} onChange={buttonHref=>change({...content,home:{...content.home,buttonHref}})}/><p>ข้อความหัวข้อและปุ่มชุดนี้ใช้กับภาพสำรอง ส่วนสไลด์แต่ละภาพแก้ได้ในแท็บภาพสไลด์</p>
-                <h2>แก้ข้อความแยกแต่ละสไลด์ CMS</h2>
-                <BannerEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>
+                <button type="button" onClick={()=>{setTab("advertising");setVisitedAds(true)}}>จัดการแบนเนอร์และโฆษณาทุกสไลด์</button>
                 </>}
                 {homePanel==="sections"&&<>
                 <h2>ลำดับ Section หน้าแรก</h2><p>ส่วนข่าวสารใช้รายการที่เปิดแสดงจากแท็บข่าวสาร / บทความ เรียงตามลำดับใน CMS</p>
@@ -632,7 +630,7 @@ export default function AdminCms({
                 ))}
                 </>}
                 {homePanel==="slides"&&<>
-                <BannerEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/><h2>ภาพสไลด์เดิม (ใช้เมื่อยังไม่มีรายการแบนเนอร์)</h2>
+                <button type="button" onClick={()=>{setTab("advertising");setVisitedAds(true)}}>จัดการแบนเนอร์และโฆษณาทุกสไลด์</button><h2>ภาพสไลด์สำรอง (ใช้เมื่อยังไม่มีรายการแบนเนอร์)</h2>
                 {content.home.images.map((url, i) => (
                   <div className="cms-block-editor" key={i}>
                     <ImageField

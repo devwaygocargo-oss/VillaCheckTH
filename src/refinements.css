@@ -280,6 +280,20 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .cms-preview-heading h2 { margin:0 0 8px; }
 .cms-preview-heading p { margin:0 0 8px; }
 .cms-preview-button { font-weight:700; }
+.cms-editor > .cms-banner-manager { grid-column:1 / -1; min-width:0; }
+#cms-property-ads,#cms-website-banners { scroll-margin-top:100px; }
+.cms-banner-manager > label { max-width:260px; display:grid; gap:8px; }
+.cms-banner-detail > .cms-checkbox { display:flex; align-items:center; gap:10px; }
+.cms-banner-detail > .cms-checkbox input { width:18px; height:18px; flex-shrink:0; }
+.cms-banner-table-scroll { max-width:100%; overflow-x:auto; margin:20px 0; border:1px solid #dbe5ec; border-radius:12px; }
+.cms-banner-table { width:100%; min-width:900px; border-collapse:collapse; text-align:left; }
+.cms-banner-table th,.cms-banner-table td { padding:14px; border-bottom:1px solid #e1e8ef; vertical-align:middle; overflow-wrap:anywhere; max-width:260px; }
+.cms-banner-table th { background:#edf3f7; white-space:nowrap; }
+.cms-banner-table .is-selected { background:#effaf8; }
+.cms-banner-table td:first-child img { display:block; width:136px; height:76px; object-fit:cover; border-radius:8px; margin-top:6px; }
+.cms-banner-detail { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.cms-banner-detail > legend,.cms-banner-detail > p,.cms-banner-detail > .button-row { grid-column:1 / -1; }
+@media(max-width:700px) { .cms-banner-detail { grid-template-columns:minmax(0,1fr); } }
 .portal-content :is(p,dd,strong,label),.cms-editor legend{overflow-wrap:anywhere}
 .admin-package-comparison:focus-visible,.pending-change-table:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
 .admin-package-comparison,.pending-change-table{overscroll-behavior-inline:contain;scrollbar-width:thin}
