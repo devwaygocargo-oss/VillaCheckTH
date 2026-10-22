@@ -362,7 +362,7 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
     },
   )
   await t.test(
-    "advertising needs paid entitlement, approval and active schedule; premium carries detail rights",
+    "advertising needs paid entitlement, approval and active schedule; detail advertisements are disabled",
     async () => {
       const now = Date.now(),
         data = {
@@ -421,12 +421,12 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
             admin,
           )
         ).status,
-        200,
+        400,
       )
       assert.equal(
         (await request("/public/advertisements?placement=detail")).value
           .advertisements.length,
-        1,
+        0,
       )
     },
   )

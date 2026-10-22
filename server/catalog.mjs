@@ -92,7 +92,7 @@ const tierOrder=["basic","starter","pro","premium"];
 export function effectivePlans(rows){
  const plans=rows.map(planDto).map(plan=>plan.id==="pro"?{...plan,features:normalizeSocialFeatures(plan.features),description:normalizeSocialFeatures([plan.description]).length?plan.description:packageContent.pro.description}:plan),byId=new Map(plans.map(plan=>[plan.id,plan]));
  let inherited=[];
- for(const id of tierOrder){const plan=byId.get(id);const required=packageContent[id]?.features||[];inherited=[...new Set([...inherited,...required,...(plan?.features||[])].map(value=>value.trim()).filter(Boolean))];if(plan)plan.features=[...inherited];}
+ for(const id of tierOrder){const plan=byId.get(id);const required=packageContent[id]?.features||[];inherited=[...new Set([...inherited,...required,...(plan?.features||[]).filter(f=>!(/แบนเนอร์|โฆษณา/.test(f)&&/รายละเอียด/.test(f)))].map(value=>value.trim()).filter(Boolean))];if(plan)plan.features=[...inherited];}
  return plans;
 }
 

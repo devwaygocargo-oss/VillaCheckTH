@@ -1,3 +1,4 @@
+import AdminVillaPage from "./AdminVillaPage";
 import AdminAccounts from "./AdminAccounts";
 import {useCopy,usePresentation} from "./cms";
 import HomeLogoLink from "./HomeLogoLink";
@@ -611,6 +612,7 @@ function AppContent() {
     page === "villa-report-success" ? <PublicReportSuccess go={go} reference={selectedItem||reportReference} linkedToUser={userLoggedIn} /> :
     page === "user-registration" ? <UserRegistration go={go} reference={selectedItem} /> :
     page === "admin-receiving-bank" ? <AdminReceivingBank go={go}/> :
+    page==="admin-villa-page" ? <AdminVillaPage key={selectedItem} id={selectedItem} go={go}/> :
     ["admin-approved-villas","admin-subscriptions"].includes(page) ? <AdminApprovedVillas go={go}/> :
     ["admin-pending-villas","admin-owner-verification"].includes(page) ? <AdminPendingVillas go={go}/> :
     page === "admin-cms" ? <AdminCms go={go} renderPreview={(target,reference)=><><Header page={target} go={()=>{}} account={null} preview/>{target==="directory"?<Directory go={()=>{}}/>:target==="scan"?<ScanQr go={()=>{}} onVerified={()=>{}} preview/>:target==="login"?<LoginPage go={()=>{}}/>:target==="owner-auth"?<LoginPage go={()=>{}} accountType="merchant"/>:target==="user-registration"?<UserRegistration go={()=>{}} reference=""/>:target==="owner-registration"?<OwnerRegistration go={()=>{}} packageName=""/>:target==="verify"?(reference?<MerchantVerification go={()=>{}} reference={reference} preview/>:<p>กรอก QR ของที่พัก แล้วกดแสดงที่พัก</p>):target==="villa-report"?<PublicReportPage onSubmit={async()=>{}}/>:<PublicInfoPage page={target} go={()=>{}}/>}<Footer go={()=>{}} account={null}/></>} renderHome={<><Header page="home" go={()=>{}} account={null} preview/><Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/><FooterAd/><Footer go={()=>{}} account={null}/></>}/> :

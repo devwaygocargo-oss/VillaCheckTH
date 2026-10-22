@@ -58,6 +58,7 @@ export async function advertisingApi(db, user, req, path, url, body) {
     const placement =
         ["home","footer"].includes(url.searchParams.get("placement")) ? url.searchParams.get("placement") : "detail",
       now = Date.now()
+    if(placement==="detail")return {advertisements:[]}
     const candidates=(await list(db,"advertisement")).filter(ad=>ad.placement===placement&&ad.approved&&ad.visible&&Date.parse(ad.startsAt)<=now&&Date.parse(ad.endsAt)>now);
     const villas=await selectByIds(db,"SELECT * FROM villas WHERE id",candidates.map(ad=>ad.villaId));
     const context=await loadTrustContext(db,villas,{qr:false});
@@ -200,7 +201,7 @@ export async function advertisingApi(db, user, req, path, url, body) {
       return { job }
     }
     if (
-      !["home", "detail", "footer"].includes(data.placement) ||
+      !["home", "footer"].includes(data.placement) ||
       typeof data.visible !== "boolean" ||
       typeof data.approved !== "boolean" ||
       !Number.isInteger(data.order) ||

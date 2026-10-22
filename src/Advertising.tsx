@@ -30,7 +30,7 @@ type Job = {
 const blankAd: Ad = {
   id: "",
   villaId: "",
-  placement: "detail",
+  placement: "footer",
   approved: false,
   order: 0,
   image: "",
@@ -91,7 +91,7 @@ export default function Advertising({
       const [state,data,library]=await Promise.all([api<{villas:MerchantVilla[]}>("/state"),api<{advertisements:Ad[]}>("/admin/advertisements"),mediaLibrary?null:api<{media:CmsMedia[]}>("/admin/cms/media")])
       if(library)setLocalMedia(library.media.map(m=>({...m,url:m.url||"/api/public/cms-media/"+m.id})))
       setVillas(state.villas)
-      const rows=data.advertisements
+      const rows=data.advertisements.filter(row=>row.placement!=="detail")
       setAds(rows);onLoaded?.(rows)
     }
     if(!adsOnly)setJobs(
@@ -137,7 +137,7 @@ export default function Advertising({
             หน้าแรกหมุนเวียนทุกรายการที่มีสิทธิ์ตามลำดับ
             หน้ารายละเอียดสุ่มหนึ่งรายการเมื่อเข้าหน้าและคงไว้ระหว่างอ่าน
           </p>
-          {!hideList&&<div className="merchant-toolbar"><input aria-label="ค้นหาโฆษณา" placeholder="ค้นหาหัวข้อหรือชื่อที่พัก" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="กรองตำแหน่งโฆษณา" value={homeOnly?"home":placement} disabled={homeOnly} onChange={e=>setPlacement(e.target.value)}><option value="all">ทุกตำแหน่ง</option><option value="home">Carousel หน้าแรก</option><option value="detail">หน้ารายละเอียดที่พัก</option><option value="footer">ก่อน Footer</option></select></div>}
+          {!hideList&&<div className="merchant-toolbar"><input aria-label="ค้นหาโฆษณา" placeholder="ค้นหาหัวข้อหรือชื่อที่พัก" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="กรองตำแหน่งโฆษณา" value={homeOnly?"home":placement} disabled={homeOnly} onChange={e=>setPlacement(e.target.value)}><option value="all">ทุกตำแหน่ง</option><option value="home">Carousel หน้าแรก</option><option value="footer">ก่อน Footer</option></select></div>}
           <div className={`ad-management-layout${hideList?" ad-management-single":""}`}>
           {!hideList&&<aside className="ad-campaign-list" aria-label="รายการแบนเนอร์">
             <div className="ad-list-heading"><strong>รายการโฆษณา</strong><span>{ads.filter(a=>(homeOnly?a.placement==="home":placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).length} รายการ</span></div>
@@ -177,7 +177,7 @@ export default function Advertising({
                 value={ad.placement}
                 onChange={(e) => setAd({ ...ad, placement: e.target.value })}
               >
-                <option value="detail">หน้ารายละเอียดที่พัก (2,990 ขึ้นไป)</option>
+
                 <option value="home">หน้าแรก (4,990)</option>
                 <option value="footer">โฆษณาเล็กก่อน Footer · 1 ชิ้น (2,990 ขึ้นไป)</option>
               </select>
@@ -396,39 +396,5 @@ export default function Advertising({
       )}
       </>}
     </section></>
-  )
-}
-export function DetailAdvertisement() {
-  const [ad, setAd] = useState<HomeBannerItem | null>(null)
-  useEffect(()=>{
-    let active=true;
-    const load=()=>void api<{advertisements:HomeBannerItem[]}>("/public/advertisements?placement=detail").then(({advertisements})=>{if(active)setAd(previous=>advertisements.find(item=>item.id===previous?.id)??advertisements[Math.floor(Math.random()*advertisements.length)]??null)}).catch(()=>{});
-    const changed=(event:StorageEvent)=>{if(event.key==="villacheck-advertisements-updated")load()};
-    load();window.addEventListener("villacheck-advertisements-updated",load);window.addEventListener("storage",changed);
-    return()=>{active=false;window.removeEventListener("villacheck-advertisements-updated",load);window.removeEventListener("storage",changed)};
-  },[])
-  if (!ad) return null
-  return (
-    <aside className="merchant-panel">
-      <small>พื้นที่โฆษณาที่พัก · แยกจากสถานะการตรวจสอบ</small>
-      <a href={ad.href || "#page=directory"} {...(ad.href?.startsWith("https:")?{target:"_blank",rel:"noopener noreferrer"}:{})}>
-        <picture>
-          {ad.mobileImage && (
-            <source media="(max-width:640px)" srcSet={ad.mobileImage} />
-          )}
-          <img
-            src={ad.image}
-            alt={ad.title}
-            style={{
-              width: "100%",
-              maxHeight: 300,
-              objectFit: "cover",
-              borderRadius: 12,
-            }}
-          />
-        </picture>
-        <strong>{ad.title}</strong><p>{ad.description}</p><span>{ad.label||"ดูรายละเอียด"} ↗</span>
-      </a>
-    </aside>
   )
 }

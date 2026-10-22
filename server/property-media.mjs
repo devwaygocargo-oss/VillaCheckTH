@@ -67,7 +67,7 @@ export async function propertyMediaApi(db, user, req, path, url, body) {
       .get(data.villaId)
     if (!villa || (user.role === "merchant" && villa.owner_id !== user.id))
       fail(404, "ไม่พบที่พัก")
-    if (path.includes("/admin/")) {
+    if (path.includes("/admin/") && !data.file) {
       const key = "property_media:" + villa.id + ":" + data.mediaId
       if (data.mediaId === "cover")
         await db

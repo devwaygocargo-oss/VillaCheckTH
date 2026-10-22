@@ -4,7 +4,7 @@ import OwnerVerification from "./OwnerVerification";
 import HomeLogoLink from "./HomeLogoLink";
 import PropertyMedia from "./PropertyMedia";
 import SocialMaterials from "./SocialMaterials";
-import Advertising, {DetailAdvertisement} from "./Advertising";
+import Advertising from "./Advertising";
 import Reviews from "./Reviews";
 import PaymentQr from "./PaymentQr";
 import VillaPackagePanel from "./VillaPackagePanel";
@@ -809,7 +809,7 @@ export function MerchantVerification({
             </section>
           </>
         )}
-        {villa && !isAdmin && <><PropertyMedia key={`media-${reference}`} qr={reference}/><DetailAdvertisement key={reference}/><Reviews qr={reference}/></>}
+        {villa && !isAdmin && <><PropertyMedia key={`media-${reference}`} qr={reference}/><Reviews qr={reference}/></>}
         <p>QR Reference: {reference}</p>
         <button className="outline-button" disabled={returning} onClick={()=>void backToAccount()}>
           {returning?"กำลังกลับหน้าบัญชี…":isAdmin?"กลับหน้าหลัก Admin":villa?.viewerRole==="merchant"?"กลับหน้าหลัก Merchant":villa?.viewerRole==="user"?"กลับหน้าหลัก User":"กลับหน้าหลัก"}

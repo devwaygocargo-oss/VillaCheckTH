@@ -8,8 +8,8 @@ export type BannerSelection={kind:"ad"|"cms"|"intro";id:string}
 export default function CmsBannerInventory({content,ads,selection,onSelect,onCreate,onReload}:{content:CmsContent;ads:Ad[];selection:BannerSelection|null;onSelect:(item:BannerSelection)=>void;onCreate:(kind:"ad"|"cms")=>void;onReload:()=>void}){
  const [query,setQuery]=useState(""),[placement,setPlacement]=useState("all")
  const presentation=presentationConfig(content.presentation,content.pages)
- const rows=[{...introBanner(content.home),title:content.home.eyebrow,villaName:"",approved:true,kind:"intro" as const,category:"intro"},...ads.map(ad=>({...ad,kind:"ad" as const,category:ad.placement})),...cmsHomeBanners(content).map(b=>({...b,villaName:"",approved:true,kind:"cms" as const,category:"cms"}))]
- const positions:Record<string,string>={intro:"Intro / TRUST INTELLIGENCE",home:"Carousel หน้าแรก",detail:"หน้ารายละเอียดที่พัก",footer:"ก่อน Footer",cms:"สไลด์ CMS / ภาพสำรองหน้าแรก"}
+ const rows=[{...introBanner(content.home),title:content.home.eyebrow,villaName:"",approved:true,kind:"intro" as const,category:"intro"},...ads.filter(ad=>ad.placement!=="detail").map(ad=>({...ad,kind:"ad" as const,category:ad.placement})),...cmsHomeBanners(content).map(b=>({...b,villaName:"",approved:true,kind:"cms" as const,category:"cms"}))]
+ const positions:Record<string,string>={intro:"Intro / TRUST INTELLIGENCE",home:"Carousel หน้าแรก",footer:"ก่อน Footer",cms:"สไลด์ CMS / ภาพสำรองหน้าแรก"}
  const shown=rows.filter(row=>(placement==="all"||row.category===placement)&&`${row.title} ${row.villaName} ${row.href}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
  const groups=[{id:"main",title:"แบนเนอร์หลัก / โฆษณาตำแหน่งอื่น",rows:shown.filter(row=>row.category!=="footer")},{id:"footer",title:"โฆษณารองก่อน Footer",rows:shown.filter(row=>row.category==="footer")}].filter(group=>placement==="all"||(placement==="footer"?group.id==="footer":group.id==="main"))
  const date=(value:string)=>value?new Date(value).toLocaleString("th-TH",{timeZone:"Asia/Bangkok",dateStyle:"short",timeStyle:"short"}):"ไม่กำหนด"

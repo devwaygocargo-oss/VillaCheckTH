@@ -12,7 +12,7 @@ function PendingVilla({villa,busy,onReview,plan,packageError,go}:{villa:Merchant
   const request=villa.reviewRequest;
   const dummy=/dummy|demo|sample/i.test(villa.document.name);
   return <article className="merchant-panel pending-villa" aria-label={`รออนุมัติ ${villa.name}`}>
-    <h2>{villa.name}</h2><p className="merchant-status">รออนุมัติ</p>
+    <h2>{villa.name}</h2><button type="button" className="outline-button" onClick={()=>go("admin-villa-page",villa.id)}>จัดการหน้ารายละเอียด</button><p className="merchant-status">รออนุมัติ</p>
     {villa.packageId==="basic"&&<p className="form-message">Basic Verify ตรวจข้อมูลเบื้องต้น ไม่ต้องยืนยันเจ้าของบ้าน ไม่ต้องส่งภาพใบหน้าหรือทะเบียนบ้านสำหรับขั้นตอนยืนยันเจ้าของบ้าน</p>}
     <VillaEntitlements villa={villa} plan={plan} error={packageError} go={go}/>
     <p><strong>สาเหตุที่รออนุมัติ: </strong>{request?.summary||"รอตรวจเอกสารกรรมสิทธิ์และข้อมูล Villa"}</p>

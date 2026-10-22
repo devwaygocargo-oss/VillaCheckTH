@@ -1,4 +1,4 @@
-import {dummyPropertyDetails} from "./property-details.mjs";
+import {villaPage,villaPagesApi} from "./villa-pages.mjs";
 import {presentationMedia} from "./cms-presentation.mjs"
 import {accountManagement} from "./account-management.mjs"
 import { ownerVerificationApi, publicOwnerVerification } from "./owner-verification.mjs"
@@ -685,7 +685,7 @@ export function createApp(db, config, transport) {
         return json({
           name: v.name,
           nameEn: v.name_en,
-          propertyDetails: dummyPropertyDetails(v),
+          propertyDetails: await villaPage(db,v),
           guestCapacity:v.guest_capacity,
           bankName:v.bank_name,
           accountName:v.account_name,
@@ -813,6 +813,8 @@ export function createApp(db, config, transport) {
         if(materials!==undefined)return json(materials)
         const propertyMedia=await propertyMediaApi(db,user,req,path,url,body)
         if(propertyMedia!==undefined)return json(propertyMedia)
+        const villaPages=await villaPagesApi(db,user,req,path,url,body)
+        if(villaPages!==undefined)return json(villaPages)
         const advertising=await advertisingApi(db,user,req,path,url,body)
         if(advertising!==undefined)return json(advertising)
         const reviews=await reviewsApi(db,user,req,path,url,body)

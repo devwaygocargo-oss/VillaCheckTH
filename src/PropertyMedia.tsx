@@ -65,7 +65,7 @@ export default function PropertyMedia({
         r.onerror = reject
         r.readAsDataURL(file)
       })
-      await api("/merchant/property-media", {
+      await api(`/${mode}/property-media`, {
         villaId,
         takenAt,
         file: { name: file.name, type: file.type, data },
@@ -84,7 +84,7 @@ export default function PropertyMedia({
       <p>อัปเดตรูปภาพ/วิดีโอล่าสุดเมื่อ {date(latest)}</p>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
-      {mode === "merchant" && (
+      {mode !== "public" && (
         <div className="portal-form">
           <label>
             วันที่ถ่ายภาพหรือวิดีโอ (ไม่ทราบเว้นว่าง)
