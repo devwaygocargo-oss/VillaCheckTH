@@ -522,7 +522,7 @@ export default function AdminCms({
                     })
                   }
                 />
-                <Field label="ข้อความปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonLabel??"ค้นหาที่พัก"} onChange={buttonLabel=>change({...content,home:{...content.home,buttonLabel}})}/><Field label="ลิงก์ปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonHref??"#page=directory"} onChange={buttonHref=>change({...content,home:{...content.home,buttonHref}})}/><p>ข้อความหัวข้อและปุ่มชุดนี้ใช้กับภาพสำรอง ส่วนสไลด์แต่ละภาพแก้ได้ในแท็บภาพสไลด์</p>
+                <Field label="ข้อความปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonLabel??"ค้นหาที่พัก"} onChange={buttonLabel=>change({...content,home:{...content.home,buttonLabel}})}/><Field label="ลิงก์ปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonHref??"#page=directory"} onChange={buttonHref=>change({...content,home:{...content.home,buttonHref}})}/><p>ข้อความหัวข้อและปุ่มชุดนี้ใช้กับภาพสำรอง ส่วนสไลด์แต่ละภาพแก้ได้ในแท็บ แบนเนอร์ / โฆษณา</p>
                 <button type="button" onClick={()=>{setTab("advertising");setVisitedAds(true)}}>จัดการแบนเนอร์และโฆษณาทุกสไลด์</button>
                 </>}
                 {homePanel==="sections"&&<>
