@@ -260,7 +260,7 @@ export default function AdminCms({
   const bannerAdEditor=useRef<AdvertisingEditorHandle>(null)
   const receiveBannerAds=useCallback((rows:Ad[])=>{setBannerAds(rows);setBannerAdsLoaded(true)},[])
   const selectBanner=(item:BannerSelection)=>{if(item.kind==="ad"&&!bannerAdEditor.current?.select(item.id))return;setBannerSelection(item)}
-  useEffect(()=>{if(!bannerSelection)return;const frame=window.requestAnimationFrame(()=>document.getElementById(bannerSelection.kind==="ad"?"cms-property-ads":bannerSelection.kind==="intro"?"cms-intro-banner":"cms-website-banners")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>window.cancelAnimationFrame(frame)},[bannerSelection])
+  useEffect(()=>{if(!bannerSelection)return;const frame=window.requestAnimationFrame(()=>document.getElementById(bannerSelection.kind==="ad"?"cms-property-ads":"cms-website-banners")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>window.cancelAnimationFrame(frame)},[bannerSelection])
   const [previewWindow,setPreviewWindow] = useState<Window|null>(null)
   const previewTarget = useRef<Window|null>(null)
   const closePreview = useCallback(()=>{
@@ -499,49 +499,19 @@ export default function AdminCms({
           {visitedAds&&<div id="cms-property-ads" className="cms-ad-workspace" hidden={tab!=="advertising"||bannerSelection?.kind!=="ad"}><Advertising adsOnly hideList editorRef={bannerAdEditor} onLoaded={receiveBannerAds} onLoadError={message=>{setError(message);setBannerAdsLoaded(true)}} onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
           <fieldset
             disabled={busy}
-            style={tab==="advertising"&&bannerSelection?.kind!=="cms"&&bannerSelection?.kind!=="intro"?{display:"none"}:undefined}
+            style={tab==="advertising"&&bannerSelection?.kind!=="cms"?{display:"none"}:undefined}
             className={`merchant-panel portal-form cms-editor cms-editor-${tab}`}
           >
             {tab === "presentation" && <CmsPresentationEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
-            {tab === "advertising"&&bannerSelection?.kind==="intro"&&<CmsIntroBannerEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/> }
             {tab === "advertising"&&bannerSelection?.kind==="cms" && <BannerEditor hideInventory selectionId={bannerSelection?.kind==="cms"?bannerSelection.id:undefined} onSelectionChange={id=>setBannerSelection({kind:"cms",id})} content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
             {tab === "data" && <section><h2>ข้อมูลที่แสดงบนหน้าเว็บ</h2><p>ข้อมูลจริงของที่พัก แพ็กเกจ และบัญชี จัดการผ่านเมนูที่เกี่ยวข้อง โดยใช้ฐานข้อมูลเดียวกับหน้าเว็บ</p><div className="button-row">{([["admin-villas","ข้อมูลที่พัก / รูป / สถานะ"],["admin-packages","ราคาและสิทธิ์แพ็กเกจ"],["admin-users","บัญชี User"],["admin-owners","บัญชี Merchant"],["admin-reviews","รีวิวลูกค้า"],["admin-pending-villas","ตรวจ Villa / ยืนยันเจ้าของบ้าน"],["admin-approved-villas","ส่งสื่อทาง Social Media"],["admin-receiving-bank","บัญชีรับเงิน"]] as [Page,string][]).map(([target,label])=><button type="button" key={target} onClick={()=>{if(!(dirty||adsDirty)||window.confirm("มีการแก้ไขที่ยังไม่บันทึก ต้องการออกจาก CMS หรือไม่?"))go(target)}}>{label}</button>)}</div></section>}
             {tab === "home" && (
               <>
                 <nav className="cms-home-panels" aria-label="ส่วนแก้ไขหน้าแรก">
-                  {[["hero","ข้อความหน้าแรก"],["discovery","ช่องค้นหา / เมนูลัด"],["sections","ลำดับ Section"],["slides","ภาพสไลด์"],["blocks","Section เพิ่มเติม"]].map(([key,label])=><button key={key} type="button" aria-pressed={homePanel===key} className={homePanel===key?"active":""} onClick={()=>setHomePanel(key)}>{label}</button>)}
+                  {[["hero","แบนเนอร์แรก"],["discovery","ช่องค้นหา / เมนูลัด"],["sections","ลำดับ Section"],["slides","ภาพสไลด์"],["blocks","Section เพิ่มเติม"]].map(([key,label])=><button key={key} type="button" aria-pressed={homePanel===key} className={homePanel===key?"active":""} onClick={()=>setHomePanel(key)}>{label}</button>)}
                 </nav>
                 {homePanel==="discovery"&&<HomeDiscoveryEditor content={content} onChange={change} media={media}/>}
-                {homePanel==="hero"&&<>
-                <Field
-                  label="ข้อความเหนือหัวข้อ"
-                  value={content.home.eyebrow}
-                  onChange={(eyebrow) =>
-                    change({ ...content, home: { ...content.home, eyebrow } })
-                  }
-                />
-                <Field
-                  label="หัวข้อแบนเนอร์หลัก (ขึ้นบรรทัดใหม่ได้)"
-                  multiline
-                  value={content.home.title}
-                  onChange={(title) =>
-                    change({ ...content, home: { ...content.home, title } })
-                  }
-                />
-                <Field
-                  label="คำอธิบายแบนเนอร์หลัก"
-                  multiline
-                  value={content.home.description}
-                  onChange={(description) =>
-                    change({
-                      ...content,
-                      home: { ...content.home, description },
-                    })
-                  }
-                />
-                <Field label="ข้อความปุ่มแบนเนอร์หลัก" value={content.home.buttonLabel??"ค้นหาที่พัก"} onChange={buttonLabel=>change({...content,home:{...content.home,buttonLabel}})}/><Field label="ลิงก์ปุ่มแบนเนอร์หลัก" value={content.home.buttonHref??"#page=directory"} onChange={buttonHref=>change({...content,home:{...content.home,buttonHref}})}/><p>ข้อความชุดนี้ใช้กับแบนเนอร์หลักลำดับแรก แก้ภาพและเปิด/ปิดได้ในแท็บ แบนเนอร์ / โฆษณา</p>
-                <button type="button" onClick={()=>{setTab("advertising");setVisitedAds(true)}}>จัดการแบนเนอร์และโฆษณาทุกสไลด์</button>
-                </>}
+                {homePanel==="hero"&&<CmsIntroBannerEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
                 {homePanel==="sections"&&<>
                 <h2>ลำดับ Section หน้าแรก</h2><p>ส่วนข่าวสารใช้รายการที่เปิดแสดงจากแท็บข่าวสาร / บทความ เรียงตามลำดับใน CMS</p>
                 {content.home.sections.filter(s=>!["promotion","pricing"].includes(s.id)).map((s, i, visibleSections) => (
