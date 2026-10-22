@@ -79,6 +79,8 @@ export type CmsContent = {
     accent: string
   }
   home: {
+    introVisible?: boolean
+    introImage?: string
     discovery?: HomeDiscovery
     buttonLabel?: string
     buttonHref?: string

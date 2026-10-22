@@ -1,3 +1,4 @@
+import {carouselBanners} from "../server/banner-display.mjs";
 import { useEffect, useRef, useState } from "react"
 import { api } from "./api"
 import type { HomeBannerItem } from "./cms"
@@ -27,27 +28,7 @@ export default function HomeBanner() {
       window.removeEventListener("villacheck-advertisements-updated",load);window.removeEventListener("storage",changed);
     }
   }, [])
-  const editorial = home.banners?.length
-    ? home.banners.filter(
-        (b) =>
-          b.visible &&
-          (!b.startsAt || Date.parse(b.startsAt) <= now) &&
-          (!b.endsAt || Date.parse(b.endsAt) > now),
-      )
-    : home.images.map((image, i) => ({
-        id: String(i),
-        image,
-        mobileImage: "",
-        title: home.title,
-        description: home.description,
-        href: home.buttonHref ?? "#page=directory",
-        label: home.buttonLabel ?? "ค้นหาที่พัก",
-        sponsored: false,
-      }))
-  const activeAdvertisements = advertisements.filter(
-    b => (!b.startsAt || Date.parse(b.startsAt) <= now) && (!b.endsAt || Date.parse(b.endsAt) > now),
-  )
-  const slides: (HomeBannerItem | (typeof editorial)[number])[] = presentation.bannerSource === "mixed" ? [...activeAdvertisements,...editorial] : presentation.bannerSource === "editorial-first" ? (editorial.length?editorial:activeAdvertisements) : (activeAdvertisements.length?activeAdvertisements:editorial)
+  const slides: HomeBannerItem[] = carouselBanners(home,presentation,advertisements,now)
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const touch = useRef<number | null>(null)
@@ -98,6 +79,7 @@ export default function HomeBanner() {
       {slides.map((slide, i) => (
         <article
           key={slide.id}
+          data-banner-id={slide.id}
           className={`vc-banner-slide ${i === current ? "active" : ""}`}
           aria-hidden={i !== current}
         >

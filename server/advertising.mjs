@@ -98,10 +98,12 @@ export async function advertisingApi(db, user, req, path, url, body) {
     }
   }
   if (user.role !== "admin") fail(403, "เฉพาะ Admin")
-  if (req.method === "GET")
-    return social
-      ? { jobs: await list(db, "social_job") }
-      : { advertisements: await list(db, "advertisement") }
+  if (req.method === "GET") {
+    if(social)return {jobs:await list(db,"social_job")}
+    const ads=await list(db,"advertisement"),villas=await selectByIds(db,"SELECT * FROM villas WHERE id",ads.map(a=>a.villaId)),context=await loadTrustContext(db,villas,{qr:false})
+    context.villas=new Map(villas.map(v=>[v.id,v]))
+    return {advertisements:await Promise.all(ads.map(async ad=>({...ad,eligible:await advertisingEntitlement(db,ad.villaId,ad.placement,context)})))}
+  }
   if (req.method !== "POST") fail(405, "ไม่รองรับคำสั่งนี้")
   return db.transaction(async () => {
     let data = await body(req)

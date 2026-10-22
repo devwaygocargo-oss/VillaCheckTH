@@ -5,6 +5,7 @@ import SocialMaterials from "./SocialMaterials"
 import type { MerchantVilla } from "./merchantStore"
 import type { HomeBannerItem } from "./cms"
 export type Ad = HomeBannerItem & {
+  eligible?:boolean
   villaId: string
   villaName?: string
   placement: string

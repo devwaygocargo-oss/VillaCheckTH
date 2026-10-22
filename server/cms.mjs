@@ -1,4 +1,5 @@
 import {initializeCmsChanges,recordCmsChange,cmsChangeById,cmsChanges,archivedCmsMediaUsed} from "./cms-change-history.mjs"
+import {introBannerImage} from "./banner-display.mjs"
 import {diverseDemoImages} from "./demo-image-catalog.mjs";
 const diverseImageUrls=new Set(diverseDemoImages.map(i=>i.url));
 import {presentationConfig,copyDefaults,presentationMedia} from "./cms-presentation.mjs"
@@ -194,6 +195,8 @@ function normalizeCms(data) {
   )
   if (sections.length !== 10) fail(400, "Section หน้าแรกไม่ครบ ใช้การซ่อนแทนการลบ")
   const home = {
+    introVisible:data.home.introVisible??true,
+    introImage:cmsUrl(data.home.introImage||introBannerImage,true),
     discovery: discoveryConfig(data.home,data.pages),
     buttonLabel:string(data.home.buttonLabel??"ค้นหาที่พัก",100),
     buttonHref:cmsUrl(data.home.buttonHref??"#page=directory"),
@@ -215,6 +218,7 @@ function normalizeCms(data) {
     sections,
   }
   if (!Number.isInteger(home.slideIntervalMs) || home.slideIntervalMs < 2000 || home.slideIntervalMs > 60000) fail(400,"ช่วงเวลาเลื่อนต้องอยู่ระหว่าง 2–60 วินาที")
+  if(typeof home.introVisible!=="boolean")fail(400,"สถานะแบนเนอร์หลักไม่ถูกต้อง")
   if (!home.title.trim() || !home.images.length || home.images.some((x) => !x))
     fail(400, "หน้าแรกต้องมีหัวข้อและรูปอย่างน้อยหนึ่งรูป")
   const pages = unique(
@@ -304,6 +308,7 @@ export async function publishedCms(db) {
 }
 function mediaReferences(content) {
   return [
+    content.home.introImage||"",
     content.site.logo,
     content.site.paymentQrImage || "",
     ...content.home.images,
@@ -338,7 +343,7 @@ export async function adminCms(db, user, req, path, readBody) {
     const add=(url,name)=>{if(typeof url!=="string"||!(url.startsWith("https://")||/^\/demo\/villas\/villa-[1-9]\.jpg$/.test(url)||diverseImageUrls.has(url))||seen.has(url))return;seen.add(url);media.push({id:`banner-${media.length}`,name,mime:"image/remote",url,source:"banner"});};
     for(const image of diverseDemoImages)add(image.url,image.title);
     const releases=[await read(db,"cms_published",empty),await read(db,"cms_draft",empty),...await read(db,"cms_history",[])];
-    for(const release of releases){const home=release.content?.home;if(!home)continue;for(const [i,image] of (home.images||[]).entries())add(image,`Carousel ${i+1}`);for(const banner of home.banners||[]){add(banner.image,banner.title||"Banner");add(banner.mobileImage,(banner.title||"Banner")+" · มือถือ");}}
+    for(const release of releases){const home=release.content?.home;if(!home)continue;add(home.introImage,"Intro banner");for(const [i,image] of (home.images||[]).entries())add(image,`Carousel ${i+1}`);for(const banner of home.banners||[]){add(banner.image,banner.title||"Banner");add(banner.mobileImage,(banner.title||"Banner")+" · มือถือ");}}
     const ads=await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'advertisement:%'").all();
     for(const row of ads){const ad=JSON.parse(row.value);add(ad.image,`${ad.title||"โฆษณา"} · ${ad.placement}`);add(ad.mobileImage,`${ad.title||"โฆษณา"} · มือถือ`);}
     return {media};

@@ -1,7 +1,8 @@
+import {editorialBanners} from "../server/banner-display.mjs";
 import CmsMediaPicker,{type CmsMedia} from "./CmsMediaPicker";
 import { useState } from "react"
 import type { CmsContent, HomeBannerItem } from "./cms"
-export const cmsHomeBanners=(content:CmsContent):HomeBannerItem[]=>content.home.banners?.length?content.home.banners:content.home.images.map((image,i)=>({id:`legacy-slide-${i}`,image,mobileImage:"",title:content.home.title,description:content.home.description,href:content.home.buttonHref||"#page=directory",label:content.home.buttonLabel||"ค้นหาที่พัก",visible:true,sponsored:false,startsAt:"",endsAt:""}))
+export const cmsHomeBanners=(content:CmsContent):HomeBannerItem[]=>editorialBanners(content.home)
 export default function BannerEditor({
   content,
   onChange,media,onUploaded,selectionId,onSelectionChange,hideInventory=false,
