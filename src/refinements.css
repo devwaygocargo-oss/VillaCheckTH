@@ -246,9 +246,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .cms-editor-section > .cms-block-editor { margin:0; }
 .cms-workspace .cms-preview { margin:0; border-radius:16px; background:#fff; }
 @media(min-width:1400px) {
- .cms-workspace.has-preview { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
- .cms-workspace.has-preview .cms-editor { grid-column:1; grid-row:1; }
- .cms-workspace.has-preview .cms-preview { grid-column:2; grid-row:1; position:sticky; top:100px; max-height:calc(100vh - 120px); overflow:auto; }
+ .cms-workspace.has-preview { grid-template-columns:minmax(0,1fr); }
 }
 @media(max-width:600px) {
  .cms-workspace .cms-editor { padding:14px; gap:14px; }
@@ -276,6 +274,12 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 }
 /* Shared responsive rules for customer pages, portals and CMS. */
 .portal-content,.cms-workspace,.cms-editor,.cms-preview,.merchant-form-grid>*{min-width:0}
+.cms-preview { scroll-margin-top:100px; }
+.cms-preview-heading { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:20px; }
+.cms-preview-heading > div { flex:1 1 260px; min-width:0; }
+.cms-preview-heading h2 { margin:0 0 8px; }
+.cms-preview-heading p { margin:0 0 8px; }
+.cms-preview-button { font-weight:700; }
 .portal-content :is(p,dd,strong,label),.cms-editor legend{overflow-wrap:anywhere}
 .admin-package-comparison:focus-visible,.pending-change-table:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
 .admin-package-comparison,.pending-change-table{overscroll-behavior-inline:contain;scrollbar-width:thin}

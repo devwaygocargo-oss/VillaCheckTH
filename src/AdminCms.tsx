@@ -5,7 +5,7 @@ import HomeDiscoveryEditor from "./HomeDiscoveryEditor";
 import { publicDestinations } from "../server/cms-home-config.mjs";
 import BannerEditor from "./BannerEditor";
 import AdminChangeApprovals from "./AdminChangeApprovals";
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { api, currentAccount } from "./api"
 import { PortalShell, type Page } from "./prototype"
 import {
@@ -253,6 +253,14 @@ export default function AdminCms({
     [preview, setPreview] = useState(false)
   const [previewPage,setPreviewPage]=useState<Page>("home"),[previewReference,setPreviewReference]=useState(""),[previewReferenceInput,setPreviewReferenceInput]=useState("");
   const [adsDirty,setAdsDirty]=useState(false),[visitedAds,setVisitedAds]=useState(false);
+  const previewPanel = useRef<HTMLElement>(null)
+  const previewButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (preview) {
+      previewPanel.current?.focus({ preventScroll: true })
+      previewPanel.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }, [preview])
   const accept = (r: CmsState) => {
     setState(r)
     setContent(r.draft.content)
@@ -402,8 +410,8 @@ export default function AdminCms({
               >
                 บันทึกร่าง
               </button>
-              <button disabled={busy} onClick={() => setPreview((v) => !v)}>
-                {preview ? "ปิด Preview" : "Preview"}
+              <button ref={previewButton} className="outline-button cms-preview-button" disabled={busy} aria-expanded={preview} aria-controls="cms-draft-preview" onClick={() => setPreview((v) => !v)}>
+                {preview ? "ปิด Preview" : "Preview ก่อนเผยแพร่"}
               </button>
               <button
                 className="primary-button"
@@ -441,8 +449,8 @@ export default function AdminCms({
           </nav>
           <div className={`cms-workspace${preview?" has-preview":""}`}>
           {preview && (
-            <section className="cms-preview" aria-label="เนื้อหาก่อนเผยแพร่">
-              <p>Preview ก่อนเผยแพร่ · ใช้ตัวแสดงเดียวกับเว็บไซต์จริง</p>
+            <section id="cms-draft-preview" ref={previewPanel} tabIndex={-1} className="cms-preview" aria-label="เนื้อหาก่อนเผยแพร่">
+              <div className="cms-preview-heading"><div><h2>Preview ก่อนเผยแพร่</h2><p>แสดงข้อมูลร่างล่าสุด รวมการแก้ไขที่ยังไม่ได้บันทึก · เว็บไซต์จริงยังไม่เปลี่ยน</p>{adsDirty&&<p role="status">มีโฆษณาที่ยังไม่บันทึก กรุณาบันทึกแบนเนอร์แต่ละรายการก่อนดู Preview โฆษณาล่าสุด</p>}</div><button type="button" className="outline-button" onClick={()=>{setPreview(false);previewButton.current?.focus()}}>กลับไปแก้ไข</button></div>
               {tab==="presentation"&&<><label>หน้าสำหรับ Preview<select aria-label="หน้าสำหรับ Preview" value={previewPage} onChange={e=>setPreviewPage(e.target.value as Page)}>{([["home","หน้าแรก"],["directory","ค้นหาที่พัก"],["scan","สแกน QR"],["login","เข้าสู่ระบบ User"],["owner-auth","เข้าสู่ระบบ Merchant"],["user-registration","สมัคร User"],["owner-registration","สมัคร Merchant"],["verify","หน้าที่พัก / QR"],["villa-report","แจ้งปัญหา"],["contact","ติดต่อเรา"]] as [Page,string][]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>{previewPage==="verify"&&<div><label>QR ที่พักสำหรับ Preview<input value={previewReferenceInput} onChange={e=>setPreviewReferenceInput(e.target.value)} placeholder="VC-…"/></label><button type="button" onClick={()=>setPreviewReference(previewReferenceInput)}>แสดงที่พัก</button></div>}</>}
               <CmsPreviewFrame>{tab==="presentation"&&previewPage!=="home"&&renderPreview?<CmsScope content={content}><div onSubmitCapture={e=>{e.preventDefault();e.stopPropagation()}} onClickCapture={e=>{if((e.target as HTMLElement).closest("button")){e.preventDefault();e.stopPropagation()}}}>{renderPreview(previewPage,previewReference)}</div></CmsScope> : ["home","navigation","site","presentation","advertising"].includes(tab) ? (
                 <CmsScope content={content}>{renderHome}</CmsScope>
