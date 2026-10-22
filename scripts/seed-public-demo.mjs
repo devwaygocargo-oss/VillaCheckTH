@@ -20,6 +20,8 @@ try{
  console.log('Display wording updated:',await removeSampleWord(db));
  console.log('Demo User activity:',await seedDemoUserActivity(db));
  console.log('Demo reviews:',await seedDemoReviews(db));
+ const socialPlan=await db.prepare("SELECT features FROM package_catalog WHERE id='pro'").get();
+ console.log('Social Verify promotion:',{singlePost:JSON.parse(socialPlan.features).some(f=>f.includes('Single Post')),videoPost:JSON.parse(socialPlan.features).some(f=>/วิดีโอ 1|วีดีโอ 1|video 1/i.test(f))});
  console.log('Free Basic dummy fixtures:',result.freeVillas);
  console.log('Public labelled sample data ready:',result.villas,'Villas. No demo Admin or payment emails created.');
  const home=await advertisingApi(db,null,{method:'GET'},'/api/public/advertisements',new URL('http://localhost?placement=home'),()=>{});

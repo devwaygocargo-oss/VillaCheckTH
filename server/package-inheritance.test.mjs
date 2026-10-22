@@ -15,3 +15,12 @@ test('all four package tiers inherit lower features even with legacy catalog wor
  await db.prepare("UPDATE package_catalog SET active=0 WHERE id='starter'").run();const publicPlans=await listPlans(db);assert(!publicPlans.some(p=>p.id==='starter'));assert(publicPlans.find(p=>p.id==='premium').features.includes('ตรวจสอบออนไลน์'));
  }finally{await db.close()}
 });
+
+test('Social Verify normalizes legacy video promotion to a single image post; Premium retains video',async()=>{
+ const db=await openTestDatabase();try{
+ await seedCatalog(db);await db.prepare("DELETE FROM system_settings WHERE key='social_single_post_v1'").run();
+ await db.prepare("UPDATE package_catalog SET features=?,description=? WHERE id='pro'").run(JSON.stringify(['วิดีโอ 1 ชิ้นต่อเดือนบนทุก Social ของ VillaCheck','video 1 post','อัปโหลดวิดีโอ','ภาพเดี่ยว 1 โพสต์ต่อเดือนบนทุก Social ของ VillaCheck']),'วิดีโอ 1 ชิ้นต่อเดือน');
+ const validate=async()=>{const pro=await getPlan(db,'pro'),premium=await getPlan(db,'premium');assert(pro.description.includes('Single Post'));assert(pro.features.includes('ภาพเดี่ยว (Single Post) 1 โพสต์ต่อเดือนบนทุก Social ของ VillaCheck'));assert(pro.features.includes('อัปโหลดวิดีโอ'));assert(!pro.features.some(f=>/วิดีโอ 1|video 1/.test(f)));assert(premium.features.includes('วิดีโอ 1 ชิ้นต่อเดือนบนทุก Social ของ VillaCheck'));};
+ await validate();await seedCatalog(db);await validate();const stored=await db.prepare("SELECT features FROM package_catalog WHERE id='pro'").get();assert(!stored.features.includes('video 1'));assert(!stored.features.includes('วิดีโอ 1 ชิ้น'));
+ }finally{await db.close()}
+});

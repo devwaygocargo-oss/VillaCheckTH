@@ -1,4 +1,4 @@
-import {packageContent,footerAdFeature,premiumGuaranteeFeature,basicVerificationNotice,onlineVerificationFeatures} from './package-content.mjs'
+import {normalizeSocialFeatures,packageContent,footerAdFeature,premiumGuaranteeFeature,basicVerificationNotice,onlineVerificationFeatures} from './package-content.mjs'
 import { packages } from "./database.mjs"
 export const levels = [
   "REGISTERED",
@@ -73,6 +73,12 @@ export async function seedCatalog(db) {
     await db.prepare("INSERT INTO system_settings(key,value) VALUES ('online_owner_verification_v1','true') ON CONFLICT(key) DO NOTHING").run();
   }
 
+  if(!(await db.prepare("SELECT value FROM system_settings WHERE key='social_single_post_v1'").get())){
+    const row=await db.prepare("SELECT features FROM package_catalog WHERE id='pro'").get();
+    if(row)await db.prepare("UPDATE package_catalog SET features=?,description=? WHERE id='pro'").run(JSON.stringify(normalizeSocialFeatures(JSON.parse(row.features))),packageContent.pro.description);
+    await db.prepare("INSERT INTO system_settings(key,value) VALUES ('social_single_post_v1','true') ON CONFLICT(key) DO NOTHING").run();
+  }
+
 }
 export async function getPlan(db, id) {
   if (typeof id !== "string" || !id)
@@ -84,7 +90,7 @@ export async function getPlan(db, id) {
 }
 const tierOrder=["basic","starter","pro","premium"];
 export function effectivePlans(rows){
- const plans=rows.map(planDto),byId=new Map(plans.map(plan=>[plan.id,plan]));
+ const plans=rows.map(planDto).map(plan=>plan.id==="pro"?{...plan,features:normalizeSocialFeatures(plan.features),description:normalizeSocialFeatures([plan.description]).length?plan.description:packageContent.pro.description}:plan),byId=new Map(plans.map(plan=>[plan.id,plan]));
  let inherited=[];
  for(const id of tierOrder){const plan=byId.get(id);const required=packageContent[id]?.features||[];inherited=[...new Set([...inherited,...required,...(plan?.features||[])].map(value=>value.trim()).filter(Boolean))];if(plan)plan.features=[...inherited];}
  return plans;
