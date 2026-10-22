@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "./api";
 import { PortalShell, type Page } from "./prototype";
 import type { MerchantVilla, Store } from "./merchantStore";
+import { useCms } from "./cms";
 
 export default function AdminApprovedVillas({go}:{go:(page:Page,item?:string)=>void}) {
+  const {site}=useCms();
   const [villas,setVillas]=useState<MerchantVilla[]>([]);
   const [loading,setLoading]=useState(true),[error,setError]=useState(""),[query,setQuery]=useState("");
   useEffect(()=>{
@@ -29,6 +31,7 @@ export default function AdminApprovedVillas({go}:{go:(page:Page,item?:string)=>v
       <p>{villa.province} · {villa.merchant} · {villa.package}</p>
       <p>สถานะ QR: {villa.qrStatus} · ระดับตรวจสอบ: {villa.verificationLevel} · วันหมดอายุ: {villa.trialUnlimited?"ไม่มีกำหนด · Basic Verify ฟรี":villa.expires?new Date(villa.expires).toLocaleDateString("th-TH",{timeZone:"Asia/Bangkok"}):"ยังไม่เปิดสิทธิ์"}</p>
       <p>Basic Verify ใช้ฟรีจนกว่าจะซื้อแพ็กเกจ ส่วนสิทธิ์ที่ซื้อเปิดหลังตรวจสลิปและขึ้นกับวันหมดอายุ การผ่านตรวจเจ้าของบ้านแยกจากการซื้อแพ็กเกจ</p>
+      {["pro","premium"].includes(villa.packageId)&&<section className="approved-villa-social" aria-label={`ส่งสื่อโปรโมท ${villa.name}`}><h3>ส่งสื่อโปรโมททาง Social Media</h3><p>ให้เจ้าของที่พักส่ง{villa.packageId==="premium"?"รูปภาพและวิดีโอ":"รูปภาพ"}ผ่านข้อความ Facebook ของ VillaCheck เดือนละ 1 ครั้ง พร้อมชื่อที่พักและเดือนที่ต้องการโปรโมท</p><p>{villa.packageId==="premium"?"แพ็กเกจ 4,990: ภาพเดี่ยว 1 โพสต์ + วิดีโอ 1 ชิ้นต่อเดือน":"แพ็กเกจ 2,990: ภาพเดี่ยว 1 โพสต์ต่อเดือน"} · โปรโมทบนทุก Social Media ของ VillaCheck รวมงบโฆษณาตามสิทธิ์แพ็กเกจ</p>{site.facebook?<a className="outline-button" href={site.facebook} target="_blank" rel="noopener noreferrer">ส่งสื่อทาง Facebook ↗</a>:<p>ติดต่อทีม VillaCheck เพื่อขอช่องทางส่งสื่อทาง Facebook</p>}</section>}
       {villa.photoUrl&&<img className="pending-villa-photo" src={villa.photoUrl} alt={`รูป ${villa.name}`}/>}
       <details open><summary>ข้อมูล Villa สำหรับ Admin</summary><dl className="pending-villa-fields">{[
         ["Merchant",villa.merchant],["อีเมล",villa.email],["เบอร์โทร",villa.phone],["ธนาคาร",villa.bankName],["ชื่อบัญชี",villa.accountName],["เลขบัญชี",villa.accountNumber],["จำนวนผู้เข้าพักสูงสุด",villa.guestCapacity==null?"ไม่ได้ระบุ":`${villa.guestCapacity} คน`],["QR Reference",villa.qr||"ยังไม่มี QR"],
