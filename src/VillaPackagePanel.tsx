@@ -17,7 +17,7 @@ export default function VillaPackagePanel({
     message: string,
   ) => Promise<Store | null>
   onAdd: () => void
-  onPayment: () => void
+  onPayment: (invoiceId: string) => void
 }) {
   const { plans, error } = usePackages()
   const [villaId, setVillaId] = useState(store.villas[0]?.id || "")
@@ -136,12 +136,12 @@ export default function VillaPackagePanel({
                 { villaId, packageId: selectedPlanId, couponCode },
                 "สร้างใบแจ้งชำระต่อที่พักแล้ว กรุณาตรวจยอดและแนบสลิปด้านล่าง",
               )
-              if (result) onPayment()
+              if (result) { const invoice = result.villas.find(v=>v.id===villaId)?.invoices.find(i=>i.status!=="paid"); if(invoice) onPayment(invoice.id) }
             }}
           >
             {busy ? "กำลังสร้างใบแจ้งชำระ…" : "ซื้อ / ต่ออายุแพ็กเกจสำหรับที่พักนี้"}
           </button>
-          {pendingInvoice && <div role="status"><p>{pendingInvoice.status === "submitted" ? "ส่งสลิปแล้ว อยู่ระหว่างรอ Admin ตรวจสอบ วันหมดอายุจะปรับหลังยืนยันชำระ" : "มีใบแจ้งชำระค้าง กรุณาชำระและแนบสลิปในรายการเดิมก่อนสร้างรายการใหม่"}</p><button type="button" className="outline-button" onClick={onPayment}>ดูใบแจ้งชำระ / แนบสลิป</button></div>}
+          {pendingInvoice && <div role="status"><p>{pendingInvoice.status === "submitted" ? "ส่งสลิปแล้ว อยู่ระหว่างรอ Admin ตรวจสอบ วันหมดอายุจะปรับหลังยืนยันชำระ" : "มีใบแจ้งชำระค้าง กรุณาชำระและแนบสลิปในรายการเดิมก่อนสร้างรายการใหม่"}</p><button type="button" className="outline-button" onClick={()=>onPayment(pendingInvoice.id)}>ดูใบแจ้งชำระ / แนบสลิป</button></div>}
           {villa.status !== "approved" && <p>รอทีมอนุมัติที่พักก่อนเลือกซื้อแพ็กเกจ</p>}
         </>
       )}

@@ -282,6 +282,14 @@ export default function Backoffice({
     setUpload(null)
     go(edit ? "owner-villa-edit" : "owner-villa-detail",v.id)
   }
+  const paymentVilla = page === "owner-package" && initialItem ? store.villas.find(v=>v.invoices.some(i=>i.id===initialItem)) : undefined
+  const paymentInvoice = paymentVilla?.invoices.find(i=>i.id===initialItem)
+  if (paymentInvoice && paymentVilla) return <PortalShell role="Merchant" page={page} go={go}>
+    <button type="button" className="text-button" onClick={()=>go("owner-package")}>← กลับไปเลือกแพ็กเกจ</button>
+    <h1>ชำระเงินแพ็กเกจ</h1><p>{paymentVilla.name} · {paymentInvoice.packageName} · รวมภาษี</p>
+    {message&&<p role="status">{message}</p>}
+    <PaymentPanel key={paymentInvoice.id} invoice={paymentInvoice} admin={false} instructions={paymentInvoice.paymentInstructions ?? store.paymentInstructions} configured={store.paymentConfigured} demo={store.demoMode} busy={busy} perform={perform}/>
+  </PortalShell>
   return (
     <PortalShell role={admin ? "Admin" : "Merchant"} page={page} go={go}>
       {page === "owner-dashboard" && displayName && <p className="user-greeting">สวัสดีคุณ {displayName}</p>}
@@ -320,7 +328,7 @@ export default function Backoffice({
         · Basic Verify ใช้ฟรีไม่มีกำหนดจนกว่าจะเลือกซื้อแพ็กเกจ
       </div>
 
-      {!admin && (billing || dashboard || (adding && !store.subscription)) && <VillaPackagePanel store={store} busy={busy} perform={perform} onAdd={()=>go("owner-add-villa")} onPayment={()=>{go("owner-package");requestAnimationFrame(()=>document.getElementById("package-payments")?.scrollIntoView({behavior:"smooth"}));}}/>}
+      {!admin && (billing || dashboard || (adding && !store.subscription)) && <VillaPackagePanel store={store} busy={busy} perform={perform} onAdd={()=>go("owner-add-villa")} onPayment={invoiceId=>go("owner-package",invoiceId)}/>}
       {billing && <section className="merchant-panel" id="package-payments"><h2>{admin ? "ตรวจสอบการชำระเงิน" : "การชำระแพ็กเกจต่อที่พัก"}</h2><p>แต่ละใบแจ้งชำระระบุที่พักและแพ็กเกจของตัวเอง ราคาต่อเดือนรวมภาษี</p>{!store.villas.some(v => v.invoices.length > 0) && <p>ยังไม่มีใบแจ้งชำระ</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.demoMode ? store.paymentInstructions : (invoice.paymentInstructions ?? store.paymentInstructions)} configured={store.paymentConfigured}
                       demo={store.demoMode} busy={busy} perform={perform} />)}</section>}
       {message && (
@@ -876,7 +884,7 @@ function PaymentPanel({
       <small>{invoice.id} · {invoice.packageName} · สร้าง {date(invoice.created)}</small>
       <p>Payment: {invoice.paymentStatus} · QR: {invoice.paymentQr?.status||"ไม่มี QR"} · หมดอายุ {date(invoice.paymentQr?.expiresAt||"")}</p>
       {invoice.proof&&<p>อัปเดตหลักฐาน {new Date(invoice.updatedAt).toLocaleString("th-TH")}</p>}
-          <p className="payment-instructions">{instructions}</p>
+          <h3>บัญชีธนาคารรับชำระที่ Admin ตั้งไว้</h3><p className="payment-instructions">{instructions}</p>
           <a href={`data:text/plain;charset=utf-8,${encodeURIComponent(`VillaCheck · ${invoice.id}\n${invoice.packageName} · THB ${invoice.amount}\n${instructions}`)}`} download={`payment-${invoice.id}.txt`}>ดาวน์โหลดรายละเอียดบัญชีและยอดชำระ</a>
           {!demo && invoice.bankQrImage && <section className="bank-payment-details"><h3>QR โอนเงินเข้าบัญชีรับชำระ</h3><img src={invoice.bankQrImage} alt="QR บัญชีรับชำระของ VillaCheck" style={{width:240,maxWidth:"100%",objectFit:"contain"}}/><p>ตรวจชื่อผู้รับและยอดตามใบแจ้งชำระก่อนยืนยันโอน จากนั้นแนบสลิปเพื่อให้ Admin ตรวจ</p><a href={invoice.bankQrImage} target="_blank" rel="noopener noreferrer" download>เปิด / ดาวน์โหลด QR รับชำระ</a></section>}
       {!admin && invoice.status === "pending" && <PaymentQr paymentId={invoice.id} initial={invoice.paymentQr} />}
