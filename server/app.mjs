@@ -775,11 +775,7 @@ export function createApp(db, config, transport) {
         const approvalResult=await changeApprovals(db,user,req,path,body,async(kind,payload,validateOnly)=>{
           const request={method:"POST"}
           if(kind==="bank")return adminReceivingBank(db,user,request,"/api/admin/receiving-bank",async()=>payload,config,transport,validateOnly)
-          const draft=await db.prepare("SELECT value FROM system_settings WHERE key='cms_draft'").get()
-          const value=draft?JSON.parse(draft.value):null
-          if(!value||!value.revision||payload.revision!==value.revision)fail(409,"ร่าง CMS เปลี่ยนแล้ว กรุณาโหลดล่าสุดและเสนอใหม่")
-          if(validateOnly)return
-          return adminCms(db,user,request,"/api/admin/cms/publish",async()=>payload)
+          fail(410,"ยกเลิกคำขออนุมัติ CMS แล้ว ให้ใช้การเผยแพร่โดยตรง")
         })
         if(approvalResult!==undefined)return json(approvalResult)
         if(config.requireDualApproval&&req.method==="POST"&&path==="/api/admin/receiving-bank")fail(403,"ต้องเสนอคำขอและให้ Admin อีกบัญชีอนุมัติ")

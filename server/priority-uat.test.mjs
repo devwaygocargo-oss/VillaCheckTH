@@ -27,7 +27,7 @@ test('Priority UAT: independent approvals, coupon invoice, automatic bank QR, ma
   assert.equal((await req('/admin/receiving-bank',undefined,editor)).value.bank.accountType,'current')
   assert.equal((await req('/admin/change-approvals',{kind:'bank',payload:fields},editor)).status,409)
  })
- await t.test('CMS drafts stay private until Admin publishes directly; legacy proposals still reject stale drafts',async()=>{
+ await t.test('CMS publishes directly; removed CMS approval requests cannot execute',async()=>{
   let state=(await req('/admin/cms',undefined,editor)).value;state.draft.content.site.name='UAT Published Name'
   state=(await req('/admin/cms/save',{revision:state.draft.revision,content:state.draft.content},editor)).value
   assert.notEqual((await req('/public/cms')).value.content.site.name,'UAT Published Name')
@@ -35,12 +35,13 @@ test('Priority UAT: independent approvals, coupon invoice, automatic bank QR, ma
   assert.equal((await req('/public/cms')).value.content.site.name,'UAT Published Name')
   assert.equal((await req('/admin/cms/publish',{revision:state.draft.revision-1},editor)).status,409)
   assert.equal((await req('/admin/cms/publish',{revision:state.draft.revision},m)).status,403)
-  let p=await req('/admin/change-approvals',{kind:'cms',payload:{revision:state.draft.revision}},editor);assert.equal(p.status,200)
-  assert.equal((await req(`/admin/change-approvals/${p.value.request.id}/approve`,{},editor)).status,403)
-  assert.equal((await req(`/admin/change-approvals/${p.value.request.id}/approve`,{},approver)).status,200)
-  p=await req('/admin/change-approvals',{kind:'cms',payload:{revision:state.draft.revision}},editor)
-  await req('/admin/cms/save',{revision:state.draft.revision,content:state.draft.content},editor)
-  assert.equal((await req(`/admin/change-approvals/${p.value.request.id}/approve`,{},approver)).status,409)
+  assert.equal((await req('/admin/change-approvals',{kind:'cms',payload:{revision:state.draft.revision}},editor)).status,410)
+  const legacyId='00000000-0000-4000-8000-000000000001'
+  await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('change_approval:'+legacyId,JSON.stringify({id:legacyId,kind:'cms',payload:{revision:state.draft.revision},proposerId:a.id,status:'pending',created:new Date().toISOString()}))
+  assert.equal((await req('/admin/change-approvals',undefined,approver)).value.requests.some(r=>r.kind==='cms'),false)
+  assert.equal((await req('/admin/change-approvals/'+legacyId+'/approve',{},approver)).status,410)
+  assert.equal((await req('/admin/change-approvals/'+legacyId+'/reject',{reason:'obsolete'},approver)).status,410)
+  assert.equal((await req('/public/cms')).value.revision,state.draft.revision)
  })
  let villa,invoice
  const promotion={code:'UAT100',type:'fixed',value:10000,maxUses:1,packageIds:['starter'],startsAt:new Date(Date.now()-60000).toISOString(),endsAt:new Date(Date.now()+3600000).toISOString(),active:true,revision:0}
@@ -93,8 +94,8 @@ test('Priority UAT: independent approvals, coupon invoice, automatic bank QR, ma
   await db.prepare("INSERT INTO system_settings(key,value) VALUES ('approval:reviewer_email',?)").run(JSON.stringify(b.email))
   const queue=await req('/admin/change-approvals',undefined,editor);assert.equal(queue.value.canReview,false);assert.equal(queue.value.canPropose,true)
   const reviewerQueue=await req('/admin/change-approvals',undefined,approver);assert.equal(reviewerQueue.value.canReview,true);assert.equal(reviewerQueue.value.canPropose,false)
-  const state=(await req('/admin/cms',undefined,editor)).value
-  const payload={kind:'cms',payload:{revision:state.draft.revision}}
+  const bank=(await req('/admin/receiving-bank',undefined,editor)).value.bank
+  const payload={kind:'bank',payload:{...bank,confirmedBinding:true}}
   assert.equal((await req('/admin/change-approvals',payload,approver)).status,403)
   const proposed=await req('/admin/change-approvals',payload,editor);assert.equal(proposed.status,200)
   assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},editor)).status,403)

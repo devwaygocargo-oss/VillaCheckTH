@@ -13,7 +13,7 @@ test('expanded CMS validates legacy content, structured sections, links and boun
  for(const mutate of [p=>p.copy.unknown='Not allowed',p=>p.copy['scan.title']='<bad>\x00',p=>p.services[0].href='javascript:alert(1)',p=>p.footerColumns[0].links[0].href='data:text/html,bad',p=>p.showcaseLimit=100,p=>p.footerAdLimit=0,p=>p.bannerSource='invalid',p=>p.provinces=['ภูเก็ต','ภูเก็ต'],p=>p.services[0].icon='bad',p=>p.cta.qr='javascript:alert(1)']){const bad=structuredClone(changed);mutate(bad.presentation);assert.throws(()=>validateCms(bad),e=>e.status===400)}
 })
 
-test('new CMS sections stay draft until separate Admin approval; service media remains protected',async t=>{
+test('new CMS sections stay draft until direct publication; service media remains protected',async t=>{
  const db=await openTestDatabase(),password='CmsPresentationDummy123';await createUser(db,'presentation-admin@example.test',password,'Editor','admin');await createUser(db,'presentation-reviewer@example.test',password,'Reviewer','admin');await createUser(db,'presentation-owner@example.test',password,'Owner','merchant')
  const origin='http://localhost:8443',server=createApp(db,{appUrl:origin,allowedOrigins:[origin],serverless:true});await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port+'/api'
  const req=async(path,data,session)=>{const r=await fetch(base+path,{method:data===undefined?'GET':'POST',headers:{Origin:origin,...(data?{'Content-Type':'application/json'}:{}),...(session?{Cookie:session.cookie,'X-CSRF-Token':session.csrf}:{})},body:data?JSON.stringify(data):undefined});const value=r.headers.get('content-type')?.includes('application/json')?await r.json():null;return{status:r.status,value,cookie:r.headers.get('set-cookie')?.split(';')[0]}}
@@ -25,9 +25,8 @@ test('new CMS sections stay draft until separate Admin approval; service media r
  assert.equal((await req('/admin/cms/save',{revision:0,content},merchant)).status,403)
  const saved=await req('/admin/cms/save',{revision:0,content},editor);assert.equal(saved.status,200)
  assert.notEqual((await req('/public/cms')).value.content.presentation.copy['directory.title'],'Custom directory heading');assert.equal((await req(image.url.replace('/api',''))).status,404)
- const proposal=await req('/admin/change-approvals',{kind:'cms',payload:{revision:saved.value.draft.revision}},editor);assert.equal(proposal.status,200)
- assert.equal((await req('/admin/change-approvals/'+proposal.value.request.id+'/approve',{},editor)).status,403)
- assert.equal((await req('/admin/change-approvals/'+proposal.value.request.id+'/approve',{},reviewer)).status,200)
+ assert.equal((await req('/admin/cms/publish',{revision:saved.value.draft.revision},merchant)).status,403)
+ assert.equal((await req('/admin/cms/publish',{revision:saved.value.draft.revision},editor)).status,200)
  const live=(await req('/public/cms')).value.content;assert.equal(live.presentation.copy['directory.title'],'Custom directory heading');assert.equal(live.presentation.services[0].image,image.url);assert.equal(live.presentation.footerColumns[0].links[0].label,'Custom footer link');assert.equal(live.presentation.bannerSource,'editorial-first');assert.equal(live.presentation.footerAdLimit,2);assert.equal((await req(image.url.replace('/api',''))).status,200)
  const hidden=structuredClone(saved.value.draft.content);hidden.presentation.services[0].visible=false;assert.equal((await req('/admin/cms/save',{revision:1,content:hidden},editor)).status,200);assert.equal((await req('/admin/cms/media/delete',{id:image.id},editor)).status,409)
  }finally{await new Promise(r=>server.close(r));await db.close()}

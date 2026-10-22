@@ -8,12 +8,13 @@ export async function changeApprovals(db,user,req,path,readBody,execute){
  const reviewerEmail=policyRow?String(JSON.parse(policyRow.value)).trim().toLowerCase():''
  const isReviewer=Boolean(reviewerEmail)&&user.email?.toLowerCase()===reviewerEmail
  const canReview=!reviewerEmail||isReviewer,canPropose=!isReviewer
- const read=async()=>{const rows=await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'change_approval:%'").all();return rows.map(r=>JSON.parse(r.value)).sort((a,b)=>b.created.localeCompare(a.created)).slice(0,100)}
+ const read=async()=>{const rows=await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'change_approval:%'").all();return rows.map(r=>JSON.parse(r.value)).filter(r=>r.kind==="bank").sort((a,b)=>b.created.localeCompare(a.created)).slice(0,100)}
  if(req.method==='GET'&&path==='/api/admin/change-approvals')return {requests:await read(),currentAdminId:user.id,canReview,canPropose,reviewerEmail}
  const data=await readBody(req)
  if(req.method==='POST'&&path==='/api/admin/change-approvals'){
+  if(data.kind==='cms')fail(410,'ยกเลิกคำขออนุมัติ CMS แล้ว ให้ใช้การเผยแพร่โดยตรง')
   if(!canPropose)fail(403,'บัญชีผู้อนุมัติไม่สามารถเสนอแก้ไข ต้องใช้บัญชีผู้เสนอแยกต่างหาก')
-  if(!['bank','cms'].includes(data.kind)||!data.payload||typeof data.payload!=='object')fail(400,'ประเภทคำขอไม่ถูกต้อง')
+  if(data.kind!=='bank'||!data.payload||typeof data.payload!=='object')fail(400,'ประเภทคำขอไม่ถูกต้อง')
   if(JSON.stringify(data.payload).length>500000)fail(400,'ข้อมูลคำขอใหญ่เกินไป')
   // Validate and snapshot the current revision before allowing a proposal into the queue.
   await execute(data.kind,data.payload,true)
@@ -25,7 +26,7 @@ export async function changeApprovals(db,user,req,path,readBody,execute){
  if(req.method==='POST'&&match)return db.transaction(async()=>{
   if(!canReview)fail(403,'เฉพาะบัญชี Admin ผู้อนุมัติที่กำหนดเท่านั้น')
   const row=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('change_approval:'+match[1]);if(!row)fail(404,'ไม่พบคำขอ')
-  const value=JSON.parse(row.value);if(value.status!=='pending')fail(409,'คำขอนี้พิจารณาแล้ว')
+  const value=JSON.parse(row.value);if(value.kind!=='bank')fail(410,'ยกเลิกคำขออนุมัติ CMS แล้ว ให้ใช้การเผยแพร่โดยตรง');if(value.status!=='pending')fail(409,'คำขอนี้พิจารณาแล้ว')
   if(value.proposerId===user.id)fail(403,'ผู้เสนอไม่สามารถอนุมัติหรือปฏิเสธคำขอของตนเอง ต้องใช้ Admin อีกบัญชี')
   const reason=typeof data.reason==='string'?data.reason.trim():'';if(match[2]==='reject'&&!reason)fail(400,'กรุณาระบุเหตุผลที่ไม่อนุมัติ');if(reason.length>2000)fail(400,'เหตุผลยาวเกินไป')
   if(match[2]==='approve')await execute(value.kind,value.payload,false)
