@@ -53,11 +53,12 @@ const blankJob: Job = {
   notes: "",
 }
 export default function Advertising({
-  merchant = false, adsOnly=false, onDirtyChange,mediaLibrary,onMediaUploaded,
+  merchant = false, adsOnly=false, homeOnly=false, onDirtyChange,mediaLibrary,onMediaUploaded,
 }: {
   mediaLibrary?:CmsMedia[]
   onMediaUploaded?:(media:CmsMedia)=>void
   adsOnly?:boolean
+  homeOnly?:boolean
   onDirtyChange?:(dirty:boolean)=>void
   merchant?: boolean
 }) {
@@ -75,6 +76,7 @@ export default function Advertising({
   const adDirty=JSON.stringify(ad)!==baseline;
   useEffect(()=>{onDirtyChange?.(adDirty)},[adDirty,onDirtyChange]);
   const chooseAd=(next:Ad)=>{if(adDirty&&!window.confirm("มีแบนเนอร์ที่ยังไม่บันทึก ต้องการเปลี่ยนรายการหรือไม่?"))return;setAd(next);setBaseline(JSON.stringify(next));setMessage("")};
+  useEffect(()=>{if(homeOnly&&!adDirty&&(!ad.id||ad.placement!=="home")){const first=ads.filter(a=>a.placement==="home").sort((a,b)=>a.order-b.order)[0];if(first)chooseAd({...blankAd,...first});}},[homeOnly,ads]);
   const load = async () => {
     if (!merchant) {
       if(!mediaLibrary){const library=await api<{media:CmsMedia[]}>("/admin/cms/media");setLocalMedia(library.media.map(m=>({...m,url:m.url||"/api/public/cms-media/"+m.id})));}
@@ -127,13 +129,13 @@ export default function Advertising({
             หน้าแรกหมุนเวียนทุกรายการที่มีสิทธิ์ตามลำดับ
             หน้ารายละเอียดสุ่มหนึ่งรายการเมื่อเข้าหน้าและคงไว้ระหว่างอ่าน
           </p>
-          <div className="merchant-toolbar"><input aria-label="ค้นหาโฆษณา" placeholder="ค้นหาหัวข้อหรือชื่อที่พัก" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="กรองตำแหน่งโฆษณา" value={placement} onChange={e=>setPlacement(e.target.value)}><option value="all">ทุกตำแหน่ง</option><option value="home">Carousel หน้าแรก</option><option value="detail">หน้ารายละเอียดที่พัก</option><option value="footer">ก่อน Footer</option></select></div>
+          <div className="merchant-toolbar"><input aria-label="ค้นหาโฆษณา" placeholder="ค้นหาหัวข้อหรือชื่อที่พัก" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="กรองตำแหน่งโฆษณา" value={homeOnly?"home":placement} disabled={homeOnly} onChange={e=>setPlacement(e.target.value)}><option value="all">ทุกตำแหน่ง</option><option value="home">Carousel หน้าแรก</option><option value="detail">หน้ารายละเอียดที่พัก</option><option value="footer">ก่อน Footer</option></select></div>
           <div className="ad-management-layout">
           <aside className="ad-campaign-list" aria-label="รายการแบนเนอร์">
-            <div className="ad-list-heading"><strong>รายการโฆษณา</strong><span>{ads.filter(a=>(placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).length} รายการ</span></div>
+            <div className="ad-list-heading"><strong>รายการโฆษณา</strong><span>{ads.filter(a=>(homeOnly?a.placement==="home":placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).length} รายการ</span></div>
             <button type="button" className="ad-create-button" onClick={()=>chooseAd({...blankAd})}>+ เพิ่มโฆษณาใหม่</button>
-            {ads.filter(a=>(placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).map(a=><button type="button" className={`ad-campaign-card${ad.id===a.id?" is-selected":""}`} aria-pressed={ad.id===a.id} aria-label={`${a.title} · ${a.placement}`} key={a.id} onClick={()=>chooseAd({...blankAd,...a})}>{a.image&&<img src={a.image} alt="" loading="lazy"/>}<span className="ad-campaign-copy"><strong>{a.title}</strong><small>{a.villaName||"ไม่ระบุที่พัก"}</small><span className="ad-campaign-meta"><span>{{home:"Carousel หน้าแรก",detail:"หน้ารายละเอียด",footer:"ก่อน Footer"}[a.placement]||a.placement}</span><span>{!a.visible?"ปิดแสดงผล":!a.approved?"รออนุมัติ":"อนุมัติแล้ว"}</span></span></span></button>)}
-            {!ads.some(a=>(placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase()))&&<p>ไม่พบโฆษณาตามเงื่อนไข</p>}
+            {ads.filter(a=>(homeOnly?a.placement==="home":placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).map(a=><button type="button" className={`ad-campaign-card${ad.id===a.id?" is-selected":""}`} aria-pressed={ad.id===a.id} aria-label={`${a.title} · ${a.placement}`} key={a.id} onClick={()=>chooseAd({...blankAd,...a})}>{a.image&&<img src={a.image} alt="" loading="lazy"/>}<span className="ad-campaign-copy"><strong>{a.title}</strong><small>{a.villaName||"ไม่ระบุที่พัก"}</small><span className="ad-campaign-meta"><span>{{home:"Carousel หน้าแรก",detail:"หน้ารายละเอียด",footer:"ก่อน Footer"}[a.placement]||a.placement}</span><span>{!a.visible?"ปิดแสดงผล":!a.approved?"รออนุมัติ":"อนุมัติแล้ว"}</span></span></span></button>)}
+            {!ads.some(a=>(homeOnly?a.placement==="home":placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase()))&&<p>ไม่พบโฆษณาตามเงื่อนไข</p>}
           </aside>
           <form
             className="portal-form ad-editor-form"
@@ -193,10 +195,10 @@ export default function Advertising({
                     label: "ข้อความปุ่ม",
                   }[k]
                 }
-                <input
+                {k==="title"||k==="description"?<textarea rows={3} value={ad[k]} onChange={e=>setAd({...ad,[k]:e.target.value})}/>:<input
                   value={ad[k]}
                   onChange={(e) => setAd({ ...ad, [k]: e.target.value })}
-                />
+                />}
               </label>
             ))}
             </div></fieldset><fieldset className="ad-form-section"><legend>4. กำหนดเวลาและการแสดงผล</legend><div className="ad-form-grid">

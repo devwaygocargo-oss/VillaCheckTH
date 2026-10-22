@@ -6,8 +6,8 @@ import { cmsUrl } from "./cms.mjs"
 const fail = (status, message) => {
   throw Object.assign(Error(message), { status })
 }
-const text = (v, max = 300) => {
-  if (typeof v !== "string" || v.length > max || /[\x00-\x1f]/.test(v))
+const text = (v, max = 300, multiline = false) => {
+  if (typeof v !== "string" || v.length > max || (multiline ? /[\x00-\x09\x0b\x0c\x0e-\x1f]/ : /[\x00-\x1f]/).test(v))
     fail(400, "ข้อมูลไม่ถูกต้อง")
   return v.trim()
 }
@@ -214,7 +214,7 @@ export async function advertisingApi(db, user, req, path, url, body) {
       fail(400, "ช่วงเวลาโฆษณาไม่ถูกต้อง")
     const image = cmsUrl(data.image, true),
       mobileImage = cmsUrl(data.mobileImage || "", true),
-      title = text(data.title),
+      title = text(data.title, 300, true),
       href = cmsUrl(data.href || "")
     if (!image || !title) fail(400, "ระบุรูปและหัวข้อ")
     const previousAdRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get("advertisement:"+id)
@@ -228,7 +228,7 @@ export async function advertisingApi(db, user, req, path, url, body) {
       image,
       mobileImage,
       title,
-      description: text(data.description || "", 2000),
+      description: text(data.description || "", 2000, true),
       href,
       label: text(data.label || "ดูที่พัก", 100),
       startsAt,

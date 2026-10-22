@@ -344,6 +344,8 @@ export default function AdminCms({
     }
   }
   const [homePanel,setHomePanel]=useState("hero");
+  const editingHomeSlides=tab==="home"&&["hero","slides"].includes(homePanel);
+  useEffect(()=>{if(editingHomeSlides)setVisitedAds(true)},[editingHomeSlides]);
   const p = content?.pages.find((p) => p.slug === selected),
     a = content?.articles.find((a) => a.id === articleId)
   return (
@@ -472,6 +474,7 @@ export default function AdminCms({
               )}
             </CmsPreviewFrame></section>
           )}
+          {visitedAds&&<div className="cms-ad-workspace" hidden={tab!=="advertising"&&!editingHomeSlides}>{editingHomeSlides&&<><h2>แก้ข้อความสไลด์โฆษณาหน้าแรกทุกรายการ</h2><p>เลือกสไลด์จากรายการเพื่อแก้หัวข้อ คำอธิบาย ข้อความปุ่ม และลิงก์ แล้วกดบันทึกแบนเนอร์ของสไลด์นั้น</p></>}<Advertising adsOnly homeOnly={editingHomeSlides} onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
           <fieldset
             disabled={busy}
             className={`merchant-panel portal-form cms-editor cms-editor-${tab}`}
@@ -494,7 +497,7 @@ export default function AdminCms({
                   }
                 />
                 <Field
-                  label="หัวข้อหน้าแรก (ขึ้นบรรทัดใหม่ได้)"
+                  label="หัวข้อสำรองเมื่อไม่มีสไลด์ (ขึ้นบรรทัดใหม่ได้)"
                   multiline
                   value={content.home.title}
                   onChange={(title) =>
@@ -502,7 +505,7 @@ export default function AdminCms({
                   }
                 />
                 <Field
-                  label="คำอธิบายหน้าแรก"
+                  label="คำอธิบายสำรองเมื่อไม่มีสไลด์"
                   multiline
                   value={content.home.description}
                   onChange={(description) =>
@@ -513,6 +516,8 @@ export default function AdminCms({
                   }
                 />
                 <Field label="ข้อความปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonLabel??"ค้นหาที่พัก"} onChange={buttonLabel=>change({...content,home:{...content.home,buttonLabel}})}/><Field label="ลิงก์ปุ่มสำรองเมื่อไม่มีสไลด์" value={content.home.buttonHref??"#page=directory"} onChange={buttonHref=>change({...content,home:{...content.home,buttonHref}})}/><p>ข้อความหัวข้อและปุ่มชุดนี้ใช้กับภาพสำรอง ส่วนสไลด์แต่ละภาพแก้ได้ในแท็บภาพสไลด์</p>
+                <h2>แก้ข้อความแยกแต่ละสไลด์ CMS</h2>
+                <BannerEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>
                 </>}
                 {homePanel==="sections"&&<>
                 <h2>ลำดับ Section หน้าแรก</h2><p>ส่วนข่าวสารใช้รายการที่เปิดแสดงจากแท็บข่าวสาร / บทความ เรียงตามลำดับใน CMS</p>
@@ -1245,7 +1250,7 @@ export default function AdminCms({
               </>
             )}
           </fieldset>
-          {visitedAds&&<div className="cms-ad-workspace" hidden={tab!=="advertising"}><Advertising adsOnly onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
+
           {adsDirty&&<p role="status">มีแบนเนอร์โฆษณาที่ยังไม่บันทึก</p>}
           </div>
         </>

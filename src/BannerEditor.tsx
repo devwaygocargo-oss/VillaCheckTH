@@ -9,7 +9,7 @@ export default function BannerEditor({
   content: CmsContent
   onChange: (content: CmsContent) => void
 }) {
-  const banners = content.home.banners || []
+  const banners: HomeBannerItem[] = content.home.banners?.length ? content.home.banners : content.home.images.map((image,i)=>({id:`legacy-slide-${i}`,image,mobileImage:"",title:content.home.title,description:content.home.description,href:content.home.buttonHref||"#page=directory",label:content.home.buttonLabel||"ค้นหาที่พัก",visible:true,sponsored:false,startsAt:"",endsAt:""}))
   const save = (items: HomeBannerItem[]) =>
     onChange({ ...content, home: { ...content.home, banners: items } })
   const update = (index: number, patch: Partial<HomeBannerItem>) =>
@@ -52,10 +52,10 @@ export default function BannerEditor({
           ] as const).map(([key, label]) => (
             <label key={key}>
               {label}
-              <input
+              {key==="title"||key==="description"?<textarea rows={3} value={b[key]} onChange={e=>update(i,{[key]:e.target.value})}/>:<input
                 value={b[key]}
                 onChange={(e) => update(i, { [key]: e.target.value })}
-              />
+              />}
             </label>
           ))}
           {(["startsAt", "endsAt"] as const).map((key) => (

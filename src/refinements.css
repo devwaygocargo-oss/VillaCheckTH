@@ -337,3 +337,4 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
   .portal-side .portal-mobile-bar, .portal-side > small, .portal-side > .portal-logout { flex-shrink: 0; }
   .portal-side > .portal-logout { margin-top: 12px; }
 }
+.vc-banner-copy h2, .vc-banner-copy p { white-space: pre-line; }
