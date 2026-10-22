@@ -1,3 +1,4 @@
+import {seedDemoReviews} from "../server/demo-reviews.mjs";
 import {seedDemoUserActivity} from "../server/demo-user-activity.mjs";
 import {replaceLegacyStockImages} from "../server/licensed-demo-images.mjs";
 import {enrichStatusGuide} from "../server/status-guide.mjs";
@@ -18,6 +19,7 @@ try{
  console.log('News content expanded:',await enrichPublishedNews(db));
  console.log('Display wording updated:',await removeSampleWord(db));
  console.log('Demo User activity:',await seedDemoUserActivity(db));
+ console.log('Demo reviews:',await seedDemoReviews(db));
  console.log('Free Basic dummy fixtures:',result.freeVillas);
  console.log('Public labelled sample data ready:',result.villas,'Villas. No demo Admin or payment emails created.');
  const home=await advertisingApi(db,null,{method:'GET'},'/api/public/advertisements',new URL('http://localhost?placement=home'),()=>{});

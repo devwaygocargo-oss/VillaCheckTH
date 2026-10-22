@@ -1,0 +1,14 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {openTestDatabase} from './test-database.mjs';import {seedDemo} from './demo-seed.mjs';import {createUser} from './database.mjs';import {seedDemoReviews} from './demo-reviews.mjs';import {reviewsApi} from './reviews.mjs';
+test('demo reviews follow package publication policy and preserve Admin decisions',async t=>{
+ const db=await openTestDatabase();t.after(()=>db.close());await seedDemo(db,{password:'ReviewsFixture1234'});await createUser(db,'demo-user2@villacheck.example','ReviewsFixture1234','Demo user 2','user');await createUser(db,'real@example.com','ReviewsFixture1234','Real user','user');
+ const properties=await db.prepare("SELECT id FROM villas WHERE status='approved' ORDER BY id LIMIT 4").all();for(const [i,plan] of ['basic','starter','pro','premium'].entries())await db.prepare('UPDATE villas SET package_id=? WHERE id=?').run(plan,properties[i].id);
+ assert.deepEqual(await seedDemoReviews(db),{accounts:2,published:4,pending:4});
+ const rows=(await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'customer_review:%'").all()).map(r=>JSON.parse(r.value));assert.equal(rows.length,8);
+ for(const r of rows){assert.match(r.id,/^[a-f0-9-]{36}$/);assert(r.content.includes('ไม่ใช่ประสบการณ์เข้าพักจริง'));const villa=await db.prepare('SELECT qr,name FROM villas WHERE id=?').get(r.villaId);assert.equal(r.villaName,villa.name);const result=await reviewsApi(db,null,{method:'GET'},'/api/public/reviews',new URL('http://localhost?qr='+villa.qr),()=>{});assert.equal(result.reviews.some(item=>item.id===r.id),!r.moderationRequired);assert.equal(r.status,r.moderationRequired?'pending':'published');}
+ const admin={id:'fixture-admin',name:'Admin',role:'admin'},pending=rows.find(r=>r.status==='pending');
+ await createUser(db,'admin@reviews.test','ReviewsFixture1234','Admin','admin');admin.id=(await db.prepare('SELECT id FROM users WHERE email=?').get('admin@reviews.test')).id;
+ await reviewsApi(db,admin,{method:'POST'},'/api/admin/reviews/'+pending.id+'/moderate',new URL('http://localhost'),async()=>({status:'published'}));
+ assert.deepEqual(await seedDemoReviews(db),{accounts:2,published:0,pending:0});const saved=JSON.parse((await db.prepare('SELECT value FROM system_settings WHERE key=?').get('customer_review:'+pending.id)).value);assert.equal(saved.status,'published');assert.equal(saved.reviewedBy,admin.id);assert.equal(saved.history.length,1);assert(!rows.some(r=>r.author==='Real user'));
+ const villa=await db.prepare('SELECT qr FROM villas WHERE id=?').get(pending.villaId);assert((await reviewsApi(db,null,{method:'GET'},'/api/public/reviews',new URL('http://localhost?qr='+villa.qr),()=>{})).reviews.some(r=>r.id===pending.id));
+});
