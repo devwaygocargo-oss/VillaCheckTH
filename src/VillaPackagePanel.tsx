@@ -126,11 +126,10 @@ export default function VillaPackagePanel({
             className="primary-button"
             disabled={
               busy ||
-              !plan ||
-              villa.status !== "approved" ||
-              villa.invoices.some((i) => i.status !== "paid")
+              (!pendingInvoice && (!plan || villa.status !== "approved"))
             }
             onClick={async () => {
+              if (pendingInvoice) { onPayment(pendingInvoice.id); return }
               const result = await perform(
                 "/merchant/villa-package",
                 { villaId, packageId: selectedPlanId, couponCode },
@@ -139,7 +138,7 @@ export default function VillaPackagePanel({
               if (result) { const invoice = result.villas.find(v=>v.id===villaId)?.invoices.find(i=>i.status!=="paid"); if(invoice) onPayment(invoice.id) }
             }}
           >
-            {busy ? "กำลังสร้างใบแจ้งชำระ…" : "ซื้อ / ต่ออายุแพ็กเกจสำหรับที่พักนี้"}
+            {busy ? "กำลังสร้างใบแจ้งชำระ…" : pendingInvoice ? "เปิดหน้าชำระเงินของรายการค้าง" : "ซื้อ / ต่ออายุแพ็กเกจสำหรับที่พักนี้"}
           </button>
           {pendingInvoice && <div role="status"><p>{pendingInvoice.status === "submitted" ? "ส่งสลิปแล้ว อยู่ระหว่างรอ Admin ตรวจสอบ วันหมดอายุจะปรับหลังยืนยันชำระ" : "มีใบแจ้งชำระค้าง กรุณาชำระและแนบสลิปในรายการเดิมก่อนสร้างรายการใหม่"}</p><button type="button" className="outline-button" onClick={()=>onPayment(pendingInvoice.id)}>ดูใบแจ้งชำระ / แนบสลิป</button></div>}
           {villa.status !== "approved" && <p>รอทีมอนุมัติที่พักก่อนเลือกซื้อแพ็กเกจ</p>}
