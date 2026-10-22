@@ -19,3 +19,17 @@ test('demo users receive related Villa activity without changing real accounts o
  const again=await seedDemoUserActivity(db);assert.equal(again.checks,0);assert.equal(again.reports,0);assert.equal((await db.prepare('SELECT public_note FROM support_reports WHERE id=?').get(reports[0].id)).public_note,'Actual admin response');assert.equal((await db.prepare('SELECT villa_name FROM user_checks WHERE id=?').get(checks[0].id)).villa_name,checks[0].villa_name);
  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM user_checks WHERE user_id=?').get(real.id)).n,0);assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM support_reports WHERE user_id=?').get(real.id)).n,0);
 });
+test('Named DEMO User 01–03 accounts receive real listing-linked fixtures regardless of email domain',async t=>{
+ const db=await openTestDatabase();t.after(()=>db.close());await seedDemo(db,{password:'ActivityFixture1234'});
+ const users=[];for(const n of ['01','02','03'])users.push(await createUser(db,'showcase'+n+'@example.test','ActivityFixture1234','DEMO User '+n,'user'));
+ const regular=await createUser(db,'customer@example.test','ActivityFixture1234','Customer','user');
+ const before=await db.prepare('SELECT password_hash FROM users WHERE id=?').get(users[0].id);
+ const result=await seedDemoUserActivity(db);assert.equal(result.namedDemoAccounts,3);
+ for(const user of users){
+  const checks=await db.prepare('SELECT * FROM user_checks WHERE user_id=?').all(user.id);assert.equal(checks.length,6);
+  for(const check of checks){const villa=await db.prepare('SELECT * FROM villas WHERE id=?').get(check.villa_id);assert.equal(villa.status,'approved');assert.equal(check.qr,villa.qr);assert.equal(check.villa_name,villa.name);}
+ }
+ assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM user_checks WHERE user_id=?').get(regular.id)).n,0);
+ assert.deepEqual(await db.prepare('SELECT password_hash FROM users WHERE id=?').get(users[0].id),before);
+ assert.equal((await seedDemoUserActivity(db)).checks,0);
+});
