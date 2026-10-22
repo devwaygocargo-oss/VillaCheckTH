@@ -1,4 +1,4 @@
-import {editorialBanners} from "../server/banner-display.mjs";
+import {editorialBanners,selectEditorialBanner} from "../server/banner-display.mjs";
 import CmsMediaPicker,{type CmsMedia} from "./CmsMediaPicker";
 import { useState } from "react"
 import type { CmsContent, HomeBannerItem } from "./cms"
@@ -23,7 +23,7 @@ export default function BannerEditor({
   const save = (items: HomeBannerItem[]) =>
     onChange({ ...content, home: { ...content.home, banners: items } })
   const update = (index: number, patch: Partial<HomeBannerItem>) =>
-    save(banners.map((b, i) => (i === index ? { ...b, ...patch } : b)))
+    patch.visible===true?onChange({...content,home:selectEditorialBanner({...content.home,banners},banners[index].id)}):save(banners.map((b, i) => (i === index ? { ...b, ...patch } : b)))
   return (
     <section id="cms-website-banners" className="cms-banner-manager">
       <h2>แบนเนอร์เว็บไซต์ / ลิงก์และกำหนดเวลา</h2>

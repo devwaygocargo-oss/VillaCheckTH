@@ -1,3 +1,4 @@
+import {editorialBanners} from "./banner-display.mjs"
 // Shared by CMS validation, the editor and public rendering. No runtime secrets.
 export const shortcutIcons = [
   {id:"find",label:"บ้านและแว่นขยาย"},{id:"scan",label:"กรอบสแกน QR"},
@@ -50,7 +51,7 @@ export function homeConfig(home) {
   if(!sections.some(s=>s.id==="news"))sections.splice(Math.max(0,sections.findIndex(s=>s.id==="showcase")+1),0,{...newsSectionDefault});
   const discovery={...discoveryDefaults,...home.discovery,shortcuts:home.discovery?.shortcuts??discoveryDefaults.shortcuts};
   if(discovery.freeHint==="ไม่ต้องสมัครสมาชิกเพื่อดูข้อมูล"){discovery.freeHint="";discovery.showFreeHint=false;}
-  return {...home,sections,buttonLabel:home.buttonLabel??"ค้นหาที่พัก",buttonHref:home.buttonHref??"#page=directory",discovery};
+  return {...home,...(home.banners?.length?{banners:editorialBanners(home)}:{}),sections,buttonLabel:home.buttonLabel??"ค้นหาที่พัก",buttonHref:home.buttonHref??"#page=directory",discovery};
 }
 export function shortcutMediaUrls(content,publicOnly=false) {
   const discovery=content.home.discovery;

@@ -1,5 +1,5 @@
 import {initializeCmsChanges,recordCmsChange,cmsChangeById,cmsChanges,archivedCmsMediaUsed} from "./cms-change-history.mjs"
-import {introBannerImage} from "./banner-display.mjs"
+import {introBannerImage,editorialBanners} from "./banner-display.mjs"
 import {diverseDemoImages} from "./demo-image-catalog.mjs";
 const diverseImageUrls=new Set(diverseDemoImages.map(i=>i.url));
 import {presentationConfig,copyDefaults,presentationMedia} from "./cms-presentation.mjs"
@@ -219,6 +219,7 @@ function normalizeCms(data) {
   }
   if (!Number.isInteger(home.slideIntervalMs) || home.slideIntervalMs < 2000 || home.slideIntervalMs > 60000) fail(400,"ช่วงเวลาเลื่อนต้องอยู่ระหว่าง 2–60 วินาที")
   if(typeof home.introVisible!=="boolean")fail(400,"สถานะแบนเนอร์หลักไม่ถูกต้อง")
+  if(home.banners.length)home.banners=editorialBanners(home)
   if (!home.title.trim() || !home.images.length || home.images.some((x) => !x))
     fail(400, "หน้าแรกต้องมีหัวข้อและรูปอย่างน้อยหนึ่งรูป")
   const pages = unique(

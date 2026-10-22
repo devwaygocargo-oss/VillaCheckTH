@@ -1,12 +1,18 @@
 export const introBannerImage="/demo/diverse/photo-37736542.jpg"
 export function introBanner(home){return {id:"villacheck-intro",image:home.introImage||introBannerImage,mobileImage:"",title:home.title,description:home.description,href:home.buttonHref||"#page=directory",label:home.buttonLabel||"ค้นหาที่พัก",visible:home.introVisible!==false,sponsored:false,startsAt:"",endsAt:""}}
-export function editorialBanners(home){return home.banners?.length?home.banners:home.images.map((image,i)=>({id:`legacy-slide-${i}`,image,mobileImage:"",title:home.title,description:home.description,href:home.buttonHref||"#page=directory",label:home.buttonLabel||"ค้นหาที่พัก",visible:true,sponsored:false,startsAt:"",endsAt:""}))}
+export function editorialBanners(home){
+ const rows=home.banners?.length?home.banners:home.images.map((image,i)=>({id:`legacy-slide-${i}`,image,mobileImage:"",title:home.title,description:home.description,href:home.buttonHref||"#page=directory",label:home.buttonLabel||"ค้นหาที่พัก",visible:i===0,sponsored:false,startsAt:"",endsAt:""}))
+ const selected=home.introVisible!==false?null:rows.find(row=>row.visible)?.id
+ return rows.map(row=>({...row,visible:row.id===selected}))
+}
+export function selectEditorialBanner(home,id){return {...home,introVisible:id==="villacheck-intro",banners:editorialBanners({...home,introVisible:false}).map(row=>({...row,visible:row.id===id}))}}
+
 const inTime=(b,now)=>b.visible!==false&&(!b.startsAt||Date.parse(b.startsAt)<=now)&&(!b.endsAt||Date.parse(b.endsAt)>now)
 export function carouselBanners(home,presentation,advertisements,now=Date.now()){
  if(home.sections?.find(s=>s.id==="hero")?.visible===false)return []
  const editorial=editorialBanners(home).filter(b=>inTime(b,now)),ads=advertisements.filter(b=>inTime(b,now)&&b.approved!==false&&b.eligible!==false)
- const rest=presentation.bannerSource==="mixed"?[...ads,...editorial]:presentation.bannerSource==="editorial-first"?(editorial.length?editorial:ads):(ads.length?ads:editorial)
- return [...(home.introVisible!==false?[introBanner(home)]:[]),...rest]
+ const primary=home.introVisible!==false?[introBanner(home)]:editorial.slice(0,1)
+ return [...primary,...(presentation.bannerSource==="editorial-first"&&primary.length?[]:ads)]
 }
 export function bannerDisplayStatus(row,home,presentation,advertisements,now=Date.now()){
  if(!row.visible)return "ปิดแสดงผล"
