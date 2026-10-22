@@ -3,8 +3,10 @@ import { api, currentAccount, ApiError } from "./api";
 import { PortalShell, type Page } from "./prototype";
 import type { MerchantVilla, Store } from "./merchantStore";
 import OwnerVerification from "./OwnerVerification";
+import VillaEntitlements from "./VillaEntitlements";
+import { usePackages,type PackagePlan } from "./packagePlans";
 
-function PendingVilla({villa,busy,onReview}:{villa:MerchantVilla;busy:boolean;onReview:(villa:MerchantVilla,status:string,reason:string,level:string)=>Promise<void>}) {
+function PendingVilla({villa,busy,onReview,plan,packageError,go}:{villa:MerchantVilla;busy:boolean;onReview:(villa:MerchantVilla,status:string,reason:string,level:string)=>Promise<void>;plan?:PackagePlan;packageError:string;go:(page:Page,item?:string)=>void}) {
   const [reason,setReason]=useState("");
   const [level,setLevel]=useState(villa.packageId==="basic"?"BASIC_CHECKED":"VERIFIED");
   const request=villa.reviewRequest;
@@ -12,6 +14,7 @@ function PendingVilla({villa,busy,onReview}:{villa:MerchantVilla;busy:boolean;on
   return <article className="merchant-panel pending-villa" aria-label={`รออนุมัติ ${villa.name}`}>
     <h2>{villa.name}</h2><p className="merchant-status">รออนุมัติ</p>
     {villa.packageId==="basic"&&<p className="form-message">Basic Verify ตรวจข้อมูลเบื้องต้น ไม่ต้องยืนยันเจ้าของบ้าน ไม่ต้องส่งภาพใบหน้าหรือทะเบียนบ้านสำหรับขั้นตอนยืนยันเจ้าของบ้าน</p>}
+    <VillaEntitlements villa={villa} plan={plan} error={packageError} go={go}/>
     <p><strong>สาเหตุที่รออนุมัติ: </strong>{request?.summary||"รอตรวจเอกสารกรรมสิทธิ์และข้อมูล Villa"}</p>
     <p>ส่งตรวจ: {request?.submittedAt?new Date(request.submittedAt).toLocaleString("th-TH",{timeZone:"Asia/Bangkok"}):"ไม่มีประวัติเวลาส่งตรวจเดิม"}{request?.submittedBy?` · ผู้ส่ง: ${request.submittedBy}`:""}</p>
     {!!request?.changes.length&&<div className="pending-change-table" role="region" aria-label="ตารางข้อมูลที่เปลี่ยน เลื่อนแนวนอนได้" tabIndex={0}><table><caption>ข้อมูลที่เปลี่ยนเพื่อให้ Admin ตรวจสอบ</caption><thead><tr><th>รายการ</th><th>ก่อนแก้ไข</th><th>ข้อมูลที่ส่งใหม่</th></tr></thead><tbody>{request.changes.map(change=><tr key={change.field}><th>{change.label}</th><td>{change.before||"ไม่ได้ระบุ"}</td><td>{change.after||"ไม่ได้ระบุ"}</td></tr>)}</tbody></table></div>}
@@ -30,9 +33,13 @@ function PendingVilla({villa,busy,onReview}:{villa:MerchantVilla;busy:boolean;on
 }
 
 export default function AdminPendingVillas({go}:{go:(page:Page,item?:string)=>void}) {
+  const {plans,error:packageError}=usePackages(true);
+  const [query,setQuery]=useState("");
   const [villas,setVillas]=useState<MerchantVilla[]>([]);
   const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
   const working=useRef(false);
+  const search=query.trim().toLocaleLowerCase();
+  const visible=villas.filter(v=>[v.name,v.nameEn,v.province,v.merchant,v.email,v.qr,v.package,v.packageId].some(value=>value.toLocaleLowerCase().includes(search)));
   useEffect(()=>{
     let active=true,fetching=false;
     const load=async()=>{if(fetching||working.current)return;fetching=true;try{
@@ -53,10 +60,11 @@ export default function AdminPendingVillas({go}:{go:(page:Page,item?:string)=>vo
   return <PortalShell role="Admin" page="admin-pending-villas" go={go}><div className="portal-head"><div><h1>Villa รออนุมัติ</h1><p>ตรวจเหตุผล ข้อมูลก่อนและหลังแก้ไข และเอกสารประกอบก่อนอนุมัติ</p></div><button className="outline-button" onClick={()=>go("admin-approved-villas")}>ดู Villa ที่อนุมัติแล้ว</button></div>
     <section className="merchant-panel"><p>Basic Verify ไม่ต้องยืนยันเจ้าของบ้าน ส่วนแพ็กเกจ 1,990 ขึ้นไปตรวจหลักฐานเจ้าของบ้านในหน้านี้ เมื่อ Villa ผ่านอนุมัติและมีแพ็กเกจที่ใช้งานอยู่</p><div className="button-row"><button type="button" onClick={()=>document.getElementById("pending-villa-review")?.scrollIntoView({behavior:"smooth"})}>รายการ Villa รออนุมัติ</button><button type="button" onClick={()=>document.getElementById("owner-verification-review")?.scrollIntoView({behavior:"smooth"})}>ตรวจยืนยันเจ้าของบ้าน · 1,990 ขึ้นไป</button></div></section>
     <section id="pending-villa-review" aria-label="รายการ Villa รออนุมัติ">
+    <label className="pending-villa-search">ค้นหา Villa / Merchant / แพ็กเกจ<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="ชื่อที่พัก จังหวัด หรือแพ็กเกจ"/></label>
     {message&&<p role="status" className="form-message">{message}</p>}
-    <p role="status">{loading?"กำลังโหลดรายการ…":`รออนุมัติ ${villas.length} รายการ`}</p>
-    {!loading&&!villas.length&&<section className="merchant-panel">ไม่มี Villa รออนุมัติ</section>}
-    {villas.map(villa=><PendingVilla key={`${villa.id}:${villa.reviewRequest?.id||"legacy"}`} villa={villa} busy={busy} onReview={review}/>)}
+    <p role="status">{loading?"กำลังโหลดรายการ…":`รออนุมัติ ${villas.length} รายการ · แสดง ${visible.length} รายการ`}</p>
+    {!loading&&!visible.length&&<section className="merchant-panel">{search?"ไม่พบ Villa ที่ตรงกับการค้นหา":"ไม่มี Villa รออนุมัติ"}</section>}
+    {visible.map(villa=><PendingVilla key={`${villa.id}:${villa.reviewRequest?.id||"legacy"}`} villa={villa} busy={busy} onReview={review} plan={plans.find(p=>p.id===villa.packageId)} packageError={packageError} go={go}/>)}
     </section>
     <div id="owner-verification-review"><OwnerVerification admin/></div>
   </PortalShell>;
