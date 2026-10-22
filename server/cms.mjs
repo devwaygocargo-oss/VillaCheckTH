@@ -1,3 +1,4 @@
+import {initializeCmsChanges,recordCmsChange,cmsChangeById,cmsChanges,archivedCmsMediaUsed} from "./cms-change-history.mjs"
 import {diverseDemoImages} from "./demo-image-catalog.mjs";
 const diverseImageUrls=new Set(diverseDemoImages.map(i=>i.url));
 import {presentationConfig,copyDefaults,presentationMedia} from "./cms-presentation.mjs"
@@ -322,6 +323,7 @@ export async function cmsPaymentInstructions(db, fallback = "") {
 export async function adminCms(db, user, req, path, readBody) {
   if (!path.startsWith("/api/admin/cms")) return undefined
   if (user.role !== "admin") fail(403, "เฉพาะ Admin")
+  if (path === "/api/admin/cms/history" && req.method === "GET") return cmsChanges(db,new URL(req.url,"http://localhost").searchParams.get("cursor")||"")
   if (path === "/api/admin/cms" && req.method === "GET") {
     const published = await publishedCms(db)
     return {
@@ -377,6 +379,8 @@ export async function adminCms(db, user, req, path, readBody) {
           "INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?)",
         )
         .run(id, user.id, name, file.type, bytes)
+      await initializeCmsChanges(db)
+      await recordCmsChange(db,{kind:"media",action:"upload",snapshot:{id,name,mime:file.type},user})
       await audit(db, user, "CMS_MEDIA_UPLOAD", id)
     })
     return { id, name, mime: file.type, url: `/api/public/cms-media/${id}` }
@@ -389,6 +393,7 @@ export async function adminCms(db, user, req, path, readBody) {
         draft = await read(db, "cms_draft", published),
         history = await read(db, "cms_history", [])
       const url = `/api/public/cms-media/${data.id}`
+      if(await archivedCmsMediaUsed(db,url))fail(409,"รูปนี้อยู่ในประวัติการเปลี่ยนแปลง จึงยังลบไม่ได้")
       const ads=await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'advertisement:%'").all()
       if(ads.some(row=>{const ad=JSON.parse(row.value);return ad.image===url||ad.mobileImage===url}))fail(409,"รูปนี้อ้างอิงในแบนเนอร์โฆษณา จึงยังลบไม่ได้")
       if (await db.prepare("SELECT key FROM system_settings WHERE key LIKE 'invoice_bank_qr:%' AND value=?").get(JSON.stringify(url)))
@@ -399,10 +404,13 @@ export async function adminCms(db, user, req, path, readBody) {
         )
       )
         fail(409, "รูปนี้อยู่ในร่าง เว็บจริง หรือประวัติเวอร์ชัน จึงยังลบไม่ได้")
+      const removedMedia=await db.prepare("SELECT id,name,mime FROM documents WHERE id=? AND name LIKE 'cms-image:%'").get(data.id)
       const result = await db
         .prepare("DELETE FROM documents WHERE id=? AND name LIKE 'cms-image:%'")
         .run(data.id)
       if (!result.changes) fail(404, "ไม่พบรูปภาพ")
+      await initializeCmsChanges(db)
+      await recordCmsChange(db,{kind:"media",action:"delete",snapshot:removedMedia,user})
       await audit(db, user, "CMS_MEDIA_DELETE", data.id)
       return { ok: true }
     })
@@ -423,6 +431,7 @@ export async function adminCms(db, user, req, path, readBody) {
       history = await read(db, "cms_history", [])
     if (data.revision !== current.revision)
       fail(409, "มีผู้แก้ไขเนื้อหาก่อนหน้า กรุณาโหลดข้อมูลล่าสุดก่อนบันทึก")
+    await initializeCmsChanges(db)
     if (path.endsWith("/publish")) {
       if (!current.revision) fail(400, "กรุณาบันทึกร่างก่อนเผยแพร่")
       // Keep the preceding version, including the original site, available for rollback.
@@ -435,6 +444,7 @@ export async function adminCms(db, user, req, path, readBody) {
         updatedBy: user.name,
       }
       await write(db, "cms_published", release)
+      await recordCmsChange(db,{kind:"cms",action:"publish",snapshot:release,user})
       if (!history.some((x) => x.revision === release.revision))
         history.unshift(release)
       await write(db, "cms_history", history.slice(0, 30))
@@ -445,8 +455,9 @@ export async function adminCms(db, user, req, path, readBody) {
         history: historyInfo(history.slice(0, 30)),
       }
     }
+    const restored = data.historyId ? await cmsChangeById(db,data.historyId) : null
     const source = path.endsWith("/restore")
-      ? history.find((x) => x.revision === data.version)?.content
+      ? data.historyId ? restored?.kind==="cms" ? restored.snapshot.content : null : history.find((x) => x.revision === data.version)?.content
       : data.content
     if (!source) fail(404, "ไม่พบเวอร์ชัน")
     const draft = {
@@ -466,6 +477,7 @@ export async function adminCms(db, user, req, path, readBody) {
         fail(400, "ไม่พบรูปที่เลือกในคลัง กรุณาเลือกรูปใหม่")
     }
     await write(db, "cms_draft", draft)
+    await recordCmsChange(db,{kind:"cms",action:path.endsWith("/restore")?"restore":"save",snapshot:draft,user})
     await audit(
       db,
       user,

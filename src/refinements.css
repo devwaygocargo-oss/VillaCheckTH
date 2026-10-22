@@ -281,6 +281,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .cms-preview-heading p { margin:0 0 8px; }
 .cms-preview-button { font-weight:700; }
 .cms-editor > .cms-banner-manager { grid-column:1 / -1; min-width:0; }
+.cms-editor > .cms-change-history { grid-column:1 / -1; min-width:0; }
 #cms-property-ads,#cms-website-banners { scroll-margin-top:100px; }
 .cms-banner-manager > label { max-width:260px; display:grid; gap:8px; }
 .cms-banner-detail > .cms-checkbox { display:flex; align-items:center; gap:10px; }

@@ -1,3 +1,4 @@
+import CmsChangeHistory from "./CmsChangeHistory";
 import Advertising from "./Advertising";
 import CmsPresentationEditor from "./CmsPresentationEditor";
 import CmsPreviewFrame from "./CmsPreviewFrame";
@@ -1226,35 +1227,7 @@ export default function AdminCms({
                 </div>
               </>
             )}
-            {tab === "history" && (
-              <>
-                <h2>เวอร์ชันที่เคยเผยแพร่ (เก็บล่าสุด 30 เวอร์ชัน)</h2>
-                {state.history.map((v) => (
-                  <article className="cms-block-editor" key={v.revision}>
-                    <h3>เวอร์ชัน {v.revision}</h3>
-                    <p>
-                      {v.updatedAt
-                        ? new Date(v.updatedAt).toLocaleString("th-TH")
-                        : "เนื้อหาเริ่มต้น"}{" "}
-                      · {v.updatedBy || "ระบบ"}
-                    </p>
-                    <button
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            "คืนเวอร์ชันนี้เป็นร่าง? การแก้ไขที่ยังไม่บันทึกจะถูกแทนที่ เว็บจริงยังไม่เปลี่ยนจนกดเผยแพร่",
-                          )
-                        )
-                          void mutate("restore", v.revision)
-                      }}
-                    >
-                      คืนเป็นร่าง
-                    </button>
-                  </article>
-                ))}
-                {!state.history.length && <p>ยังไม่มีการเผยแพร่จาก CMS</p>}
-              </>
-            )}
+            {tab === "history" && <CmsChangeHistory revision={state.draft.revision} onRestored={result=>{if(result)accept(result);setVisitedAds(false);setAdsDirty(false)}}/>}
           </fieldset>
 
           {adsDirty&&<p role="status">มีแบนเนอร์โฆษณาที่ยังไม่บันทึก</p>}

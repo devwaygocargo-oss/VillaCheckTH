@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import { audit } from "./database.mjs"
 import { getPlan } from "./catalog.mjs"
 import { cmsUrl } from "./cms.mjs"
+import { initializeCmsChanges,recordCmsChange,cmsChangeById } from "./cms-change-history.mjs"
 const fail = (status, message) => {
   throw Object.assign(Error(message), { status })
 }
@@ -103,8 +104,14 @@ export async function advertisingApi(db, user, req, path, url, body) {
       : { advertisements: await list(db, "advertisement") }
   if (req.method !== "POST") fail(405, "ไม่รองรับคำสั่งนี้")
   return db.transaction(async () => {
-    const data = await body(req),
-      id = data.id || randomUUID()
+    let data = await body(req)
+    const restoring = !social && data.historyId
+    if(restoring){
+      const entry=await cmsChangeById(db,data.historyId)
+      if(entry?.kind!=="advertisement")fail(404,"ไม่พบประวัติโฆษณา")
+      data={...entry.snapshot,visible:false,approved:false}
+    }
+    const id = data.id || randomUUID()
     if (!/^[a-f0-9-]{36}$/.test(id)) fail(400, "รหัสไม่ถูกต้อง")
     const villa = await db
       .prepare("SELECT id,name FROM villas WHERE id=?")
@@ -246,6 +253,16 @@ export async function advertisingApi(db, user, req, path, url, body) {
         if(overlap)fail(409,"แต่ละที่พักแสดงโฆษณาก่อน Footer ได้ 1 ชิ้นในช่วงเวลาเดียวกัน");
       }
       await save(db,"advertisement",ad);
+      await initializeCmsChanges(db)
+      if(previousAd){
+        const existing=await db.prepare("SELECT key FROM system_settings WHERE key=?").get("cms_ad_history_initialized:"+id)
+        if(!existing){
+          await recordCmsChange(db,{kind:"advertisement",action:"before_edit",snapshot:previousAd,user:{name:"ระบบ / ก่อนเริ่มเก็บประวัติ"},previous:true})
+          await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING").run("cms_ad_history_initialized:"+id,"true")
+        }
+      }
+      else await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO NOTHING").run("cms_ad_history_initialized:"+id,"true")
+      await recordCmsChange(db,{kind:"advertisement",action:restoring?"restore":previousAd?"save":"create",snapshot:ad,user})
       await audit(db,user,"advertisement.save",id);
     })
     return { advertisement: ad }
