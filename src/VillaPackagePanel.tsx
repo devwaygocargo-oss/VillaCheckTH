@@ -7,6 +7,7 @@ export default function VillaPackagePanel({
   busy,
   perform,
   onAdd,
+  onPayment,
 }: {
   store: Store
   busy: boolean
@@ -16,13 +17,19 @@ export default function VillaPackagePanel({
     message: string,
   ) => Promise<Store | null>
   onAdd: () => void
+  onPayment: () => void
 }) {
   const { plans, error } = usePackages()
   const [villaId, setVillaId] = useState(store.villas[0]?.id || "")
   const [selected, setSelected] = useState("")
   const [couponCode, setCouponCode] = useState("")
   const villa = store.villas.find((v) => v.id === villaId)
-  const plan = plans.find((p) => p.id === selected)
+  const selectedPlanId = selected || (villa?.trialUnlimited ? "basic" : villa?.packageId) || "basic"
+  const plan = plans.find((p) => p.id === selectedPlanId)
+  const pendingInvoice = villa?.invoices.find(i => i.status !== "paid")
+  const expiresAt = villa?.expires ? Date.parse(villa.expires) : NaN
+  const daysLeft = Math.ceil((expiresAt - Date.now()) / 86400000)
+  const expiryDate = Number.isFinite(expiresAt) ? new Date(expiresAt).toLocaleString("th-TH", {timeZone:"Asia/Bangkok",day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"}) : ""
   const featureRows=[...new Set(plans.flatMap(p=>p.features.map(feature=>feature.trim()).filter(Boolean)))];
   return (
     <section className="merchant-panel subscription-panel">
@@ -40,7 +47,7 @@ export default function VillaPackagePanel({
       ) : (
         <label>
           เลือกที่พัก
-          <select value={villaId} onChange={(e) => setVillaId(e.target.value)}>
+          <select value={villaId} onChange={(e) => {setVillaId(e.target.value);setSelected("");setCouponCode("")}}>
             {store.villas.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name} / {v.nameEn}
@@ -68,7 +75,10 @@ export default function VillaPackagePanel({
             ·{" "}
             {villa.trialUnlimited
               ? "สิ้นสุดทดลองใช้ฟรี: ไม่มีกำหนด จนกว่าจะซื้อเอง"
-              : `สิ้นสุดแพ็กเกจ: ${new Date(villa.expires).toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok" })}`}
+              : `สิ้นสุดแพ็กเกจ: ${expiryDate || "ยังไม่มีวันสิ้นสุดที่ยืนยัน"}`}
+          </p>
+          <p className={`package-expiry-notice${!villa.trialUnlimited && daysLeft <= 7 ? " package-expiry-urgent" : ""}`} role="status">
+            {villa.trialUnlimited ? "Basic Verify ฟรีไม่มีกำหนด ไม่มีวันครบกำหนดชำระจนกว่าจะเลือกซื้อแพ็กเกจ" : expiryDate ? `${expiresAt <= Date.now() ? "แพ็กเกจหมดอายุแล้ว" : daysLeft <= 7 ? "แพ็กเกจใกล้หมดอายุ" : "กำหนดสิ้นสุดแพ็กเกจ"}: ${expiryDate}${expiresAt > Date.now() ? ` · เหลือ ${daysLeft} วัน` : " · กรุณาต่ออายุเพื่อใช้สิทธิ์แพ็กเกจต่อ"}` : "วันหมดอายุจะแสดงหลัง Admin ยืนยันการชำระเงิน"}
           </p>
         </div>
       )}
@@ -76,8 +86,8 @@ export default function VillaPackagePanel({
       <div className="subscription-options">
         {plans.map((p) => {
           const included=new Set(p.features.map(feature=>feature.trim()));
-          return <article key={p.id} data-plan-id={p.id} className={`subscription-plan${selected===p.id?" active":""}`}>
-            <button type="button" aria-pressed={selected===p.id} onClick={()=>setSelected(p.id)}>
+          return <article key={p.id} data-plan-id={p.id} className={`subscription-plan${selectedPlanId===p.id?" active":""}`}>
+            <button type="button" aria-pressed={selectedPlanId===p.id} onClick={()=>setSelected(p.id)}>
               <strong>{p.name}</strong><span>฿{(p.amount/100).toLocaleString("th-TH")} / เดือน / ที่พัก</span><small>รวมภาษี · ทุกแพ็กเกจเขียนรีวิวได้</small>
             </button>
             {p.id === "basic" && <p>{basicVerificationNotice}</p>}
@@ -109,8 +119,8 @@ export default function VillaPackagePanel({
           </label>
           <p>
             ใช้ฟรีได้ครบสิทธิ์ Basic Verify โดยไม่ต้องชำระหรือเปิดการต่ออายุอัตโนมัติ
-            แพ็กเกจที่ซื้อเปิดใช้หลัง Admin ยืนยันสลิป การต่ออายุแพ็กเกจเดิมเพิ่ม 1
-            เดือนจากวันสิ้นสุดเดิม ส่วนการเปลี่ยนระดับเริ่ม 1 เดือนจากวันยืนยันชำระ
+            แพ็กเกจที่ซื้อเปิดใช้หลัง Admin ยืนยันสลิป หากต่อแพ็กเกจเดิมก่อนหมดอายุจะเพิ่ม
+            1 เดือนจากวันสิ้นสุดเดิม หากหมดอายุแล้วหรือเปลี่ยนระดับ จะเริ่ม 1 เดือนจากวันยืนยันชำระ
           </p>
           <button
             className="primary-button"
@@ -120,16 +130,18 @@ export default function VillaPackagePanel({
               villa.status !== "approved" ||
               villa.invoices.some((i) => i.status !== "paid")
             }
-            onClick={() =>
-              void perform(
+            onClick={async () => {
+              const result = await perform(
                 "/merchant/villa-package",
-                { villaId, packageId: selected, couponCode },
+                { villaId, packageId: selectedPlanId, couponCode },
                 "สร้างใบแจ้งชำระต่อที่พักแล้ว กรุณาตรวจยอดและแนบสลิปด้านล่าง",
               )
-            }
+              if (result) onPayment()
+            }}
           >
-            ซื้อ / ต่ออายุแพ็กเกจสำหรับที่พักนี้
+            {busy ? "กำลังสร้างใบแจ้งชำระ…" : "ซื้อ / ต่ออายุแพ็กเกจสำหรับที่พักนี้"}
           </button>
+          {pendingInvoice && <div role="status"><p>{pendingInvoice.status === "submitted" ? "ส่งสลิปแล้ว อยู่ระหว่างรอ Admin ตรวจสอบ วันหมดอายุจะปรับหลังยืนยันชำระ" : "มีใบแจ้งชำระค้าง กรุณาชำระและแนบสลิปในรายการเดิมก่อนสร้างรายการใหม่"}</p><button type="button" className="outline-button" onClick={onPayment}>ดูใบแจ้งชำระ / แนบสลิป</button></div>}
           {villa.status !== "approved" && <p>รอทีมอนุมัติที่พักก่อนเลือกซื้อแพ็กเกจ</p>}
         </>
       )}

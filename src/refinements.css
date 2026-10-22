@@ -318,3 +318,5 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.package-expiry-notice { padding: 14px 16px; border-radius: 12px; background: #eaf6f3; color: #15534c; overflow-wrap: anywhere; }
+.package-expiry-urgent { background: #fff1df; color: #794510; border: 1px solid #e8c68e; }

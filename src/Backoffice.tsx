@@ -320,8 +320,8 @@ export default function Backoffice({
         · Basic Verify ใช้ฟรีไม่มีกำหนดจนกว่าจะเลือกซื้อแพ็กเกจ
       </div>
 
-      {!admin && (billing || dashboard || (adding && !store.subscription)) && <VillaPackagePanel store={store} busy={busy} perform={perform} onAdd={()=>go("owner-add-villa")}/>}
-      {billing && <section className="merchant-panel"><h2>{admin ? "ตรวจสอบการชำระเงิน" : "การชำระแพ็กเกจต่อที่พัก"}</h2><p>แต่ละใบแจ้งชำระระบุที่พักและแพ็กเกจของตัวเอง ราคาต่อเดือนรวมภาษี</p>{!store.villas.some(v => v.invoices.length > 0) && <p>ยังไม่มีใบแจ้งชำระ</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.demoMode ? store.paymentInstructions : (invoice.paymentInstructions ?? store.paymentInstructions)} configured={store.paymentConfigured}
+      {!admin && (billing || dashboard || (adding && !store.subscription)) && <VillaPackagePanel store={store} busy={busy} perform={perform} onAdd={()=>go("owner-add-villa")} onPayment={()=>{go("owner-package");requestAnimationFrame(()=>document.getElementById("package-payments")?.scrollIntoView({behavior:"smooth"}));}}/>}
+      {billing && <section className="merchant-panel" id="package-payments"><h2>{admin ? "ตรวจสอบการชำระเงิน" : "การชำระแพ็กเกจต่อที่พัก"}</h2><p>แต่ละใบแจ้งชำระระบุที่พักและแพ็กเกจของตัวเอง ราคาต่อเดือนรวมภาษี</p>{!store.villas.some(v => v.invoices.length > 0) && <p>ยังไม่มีใบแจ้งชำระ</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.demoMode ? store.paymentInstructions : (invoice.paymentInstructions ?? store.paymentInstructions)} configured={store.paymentConfigured}
                       demo={store.demoMode} busy={busy} perform={perform} />)}</section>}
       {message && (
         <div className="form-message" role="status">
