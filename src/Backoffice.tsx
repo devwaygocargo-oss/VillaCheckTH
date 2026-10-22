@@ -1,3 +1,4 @@
+import {lastAdminPage} from "./navigation";
 import PropertyDetails,{type Details} from "./PropertyDetails";
 import {useCopy} from "./cms";
 import OwnerVerification from "./OwnerVerification";
@@ -765,7 +766,8 @@ export function MerchantVerification({
     setReturning(true);
     try{
       const account=await currentAccount();
-      go(account.role==="admin"?"admin-dashboard":account.role==="merchant"?"owner-dashboard":"user-dashboard");
+      if(account.role==="admin"){const previous=lastAdminPage();go(previous.page,previous.item)}
+      else go(account.role==="merchant"?"owner-dashboard":"user-dashboard");
     }catch(error){
       if(error instanceof ApiError&&error.status===401)go("home");
       else setError(error instanceof Error?error.message:"กลับหน้าบัญชีไม่สำเร็จ กรุณาลองใหม่");
@@ -812,7 +814,7 @@ export function MerchantVerification({
         {villa && !isAdmin && <><PropertyMedia key={`media-${reference}`} qr={reference}/><Reviews qr={reference}/></>}
         <p>QR Reference: {reference}</p>
         <button className="outline-button" disabled={returning} onClick={()=>void backToAccount()}>
-          {returning?"กำลังกลับหน้าบัญชี…":isAdmin?"กลับหน้าหลัก Admin":villa?.viewerRole==="merchant"?"กลับหน้าหลัก Merchant":villa?.viewerRole==="user"?"กลับหน้าหลัก User":"กลับหน้าหลัก"}
+          {returning?"กำลังกลับหน้าบัญชี…":isAdmin?"กลับหน้าก่อนหน้า Admin":villa?.viewerRole==="merchant"?"กลับหน้าหลัก Merchant":villa?.viewerRole==="user"?"กลับหน้าหลัก User":"กลับหน้าหลัก"}
         </button>
       </div>
     </main>
