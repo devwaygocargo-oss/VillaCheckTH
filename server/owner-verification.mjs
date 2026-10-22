@@ -17,8 +17,10 @@ export async function ownerVerificationApi(db,user,req,path,url,body){
  if(!['/api/merchant/owner-verification','/api/admin/owner-verification'].includes(path))return undefined
  const admin=path.startsWith('/api/admin/');if(!user||user.role!==(admin?'admin':'merchant'))fail(403,'ไม่มีสิทธิ์เข้าถึงหลักฐานยืนยันเจ้าของบ้าน')
  if(req.method==='GET'){
-  const villas=await db.prepare(villaSelect+(admin?'':' WHERE v.owner_id=?')).all(...(admin?[]:[user.id]))
-  const rows=(await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'owner_verification:%'").all()).map(r=>JSON.parse(r.value))
+  const requested=url.searchParams.get('villaId')
+  const clauses=[...(!admin?['v.owner_id=?']:[]),...(requested?['v.id=?']:[])]
+  const villas=await db.prepare(villaSelect+(clauses.length?' WHERE '+clauses.join(' AND '):'')).all(...(!admin?[user.id]:[]),...(requested?[requested]:[]))
+  const rows=requested?(await Promise.all(villas.map(v=>read(db,v.id)))).filter(Boolean):(await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'owner_verification:%'").all()).map(r=>JSON.parse(r.value))
   const ids=new Set(villas.filter(v=>v.package_id!=="basic").map(v=>v.id))
   return {villas:villas.map(v=>({id:v.id,name:v.name,packageId:v.package_id,eligible:eligible(v)})),submissions:rows.filter(r=>ids.has(r.villaId)).map(r=>({...r,villaName:villas.find(v=>v.id===r.villaId).name}))}
  }
