@@ -782,7 +782,7 @@ export function createApp(db, config, transport) {
           return adminCms(db,user,request,"/api/admin/cms/publish",async()=>payload)
         })
         if(approvalResult!==undefined)return json(approvalResult)
-        if(config.requireDualApproval&&req.method==="POST"&&["/api/admin/receiving-bank","/api/admin/cms/publish"].includes(path))fail(403,"ต้องเสนอคำขอและให้ Admin อีกบัญชีอนุมัติ")
+        if(config.requireDualApproval&&req.method==="POST"&&path==="/api/admin/receiving-bank")fail(403,"ต้องเสนอคำขอและให้ Admin อีกบัญชีอนุมัติ")
         const bankResult=await adminReceivingBank(db,user,req,path,body,config,transport)
         if(bankResult!==undefined){json(bankResult);if(req.method==="POST")void worker.run();return}
         const cms = await adminCms(db, user, req, path, body)

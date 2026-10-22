@@ -1,3 +1,4 @@
+import {notifyCmsPublished} from "./cms-publish-sync";
 import CmsIntroBannerEditor from "./CmsIntroBannerEditor";
 import CmsChangeHistory from "./CmsChangeHistory";
 import Advertising,{type Ad,type AdvertisingEditorHandle} from "./Advertising";
@@ -7,7 +8,6 @@ import CmsPreviewWindow from "./CmsPreviewWindow";
 import HomeDiscoveryEditor from "./HomeDiscoveryEditor";
 import { publicDestinations } from "../server/cms-home-config.mjs";
 import BannerEditor,{cmsHomeBanners} from "./BannerEditor";
-import AdminChangeApprovals from "./AdminChangeApprovals";
 import { useCallback, useEffect, useRef, useState } from "react"
 import { api, currentAccount } from "./api"
 import { PortalShell, type Page } from "./prototype"
@@ -314,10 +314,6 @@ export default function AdminCms({
     setBusy(true)
     setError("")
     try {
-      if(action==="publish"){
-        await api("/admin/change-approvals",{kind:"cms",payload:{revision:state.draft.revision}});
-        setMessage("เสนอเผยแพร่แล้ว รอ Admin อีกบัญชีตรวจ Preview และอนุมัติ");return;
-      }
       const r = await api<CmsState>(`/admin/cms/${action}`, {
         revision: state.draft.revision,
         ...(action === "save"
@@ -327,8 +323,9 @@ export default function AdminCms({
             : {}),
       })
       accept(r)
+      if(action==="publish")notifyCmsPublished()
       setMessage(
-        action === "restore"
+        action === "publish" ? "เผยแพร่สำเร็จแล้ว เว็บไซต์แสดงข้อมูลเวอร์ชันล่าสุด" : action === "restore"
             ? "คืนเวอร์ชันเป็นร่างแล้ว ตรวจ Preview และเผยแพร่เมื่อพร้อม"
             : "บันทึกร่างแล้ว เว็บจริงยังไม่เปลี่ยน",
       )
@@ -381,7 +378,6 @@ export default function AdminCms({
           go(target, item)
       }}
     >
-      <AdminChangeApprovals kind="cms"/>
       <div className="portal-head">
         <div>
           <h1>จัดการเว็บไซต์ CMS</h1>

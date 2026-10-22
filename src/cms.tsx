@@ -1,3 +1,4 @@
+import {cmsPublishStorageKey} from "./cms-publish-sync"
 import {presentationConfig,copyDefaults} from "../server/cms-presentation.mjs"
 import {
   Children,
@@ -149,26 +150,28 @@ export function CmsProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState(defaultContent)
   const revision = useRef(-1)
   useEffect(() => {
-    let active = true
-    const load = () => {
-      void api<{ revision: number; content: CmsContent }>("/public/cms")
-        .then((r) => {
-          if (active && r.revision !== revision.current) {
-            revision.current = r.revision
-            configureSupport(r.content.site)
-            setContent(r.content)
-          }
-        })
-        .catch(() => {})
+    let active=true,loading=false,reload=false
+    const load=async()=>{
+      if(loading){reload=true;return}
+      loading=true
+      try{
+        do{
+          reload=false
+          const r=await api<{revision:number;content:CmsContent}>("/public/cms")
+          if(active&&r.revision>revision.current){revision.current=r.revision;configureSupport(r.content.site);setContent(r.content)}
+        }while(active&&reload)
+      }catch{}finally{loading=false}
     }
-    load()
-    const timer = window.setInterval(load, 60000)
-    window.addEventListener("cms-published", load)
-    return () => {
-      active = false
-      clearInterval(timer)
-      window.removeEventListener("cms-published", load)
-    }
+    const refresh=()=>{void load()}
+    const stored=(event:StorageEvent)=>{if(event.key===cmsPublishStorageKey)refresh()}
+    const visible=()=>{if(document.visibilityState==="visible")refresh()}
+    refresh()
+    const timer=window.setInterval(()=>{if(document.visibilityState==="visible")refresh()},30000)
+    window.addEventListener("cms-published",refresh)
+    window.addEventListener("storage",stored)
+    window.addEventListener("focus",refresh)
+    document.addEventListener("visibilitychange",visible)
+    return()=>{active=false;clearInterval(timer);window.removeEventListener("cms-published",refresh);window.removeEventListener("storage",stored);window.removeEventListener("focus",refresh);document.removeEventListener("visibilitychange",visible)}
   }, [])
   useEffect(() => {
     const update = () => {

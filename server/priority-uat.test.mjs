@@ -27,10 +27,14 @@ test('Priority UAT: independent approvals, coupon invoice, automatic bank QR, ma
   assert.equal((await req('/admin/receiving-bank',undefined,editor)).value.bank.accountType,'current')
   assert.equal((await req('/admin/change-approvals',{kind:'bank',payload:fields},editor)).status,409)
  })
- await t.test('CMS drafts stay private until another Admin approves; modified drafts invalidate proposals',async()=>{
+ await t.test('CMS drafts stay private until Admin publishes directly; legacy proposals still reject stale drafts',async()=>{
   let state=(await req('/admin/cms',undefined,editor)).value;state.draft.content.site.name='UAT Published Name'
   state=(await req('/admin/cms/save',{revision:state.draft.revision,content:state.draft.content},editor)).value
-  assert.equal((await req('/admin/cms/publish',{revision:state.draft.revision},editor)).status,403)
+  assert.notEqual((await req('/public/cms')).value.content.site.name,'UAT Published Name')
+  assert.equal((await req('/admin/cms/publish',{revision:state.draft.revision},editor)).status,200)
+  assert.equal((await req('/public/cms')).value.content.site.name,'UAT Published Name')
+  assert.equal((await req('/admin/cms/publish',{revision:state.draft.revision-1},editor)).status,409)
+  assert.equal((await req('/admin/cms/publish',{revision:state.draft.revision},m)).status,403)
   let p=await req('/admin/change-approvals',{kind:'cms',payload:{revision:state.draft.revision}},editor);assert.equal(p.status,200)
   assert.equal((await req(`/admin/change-approvals/${p.value.request.id}/approve`,{},editor)).status,403)
   assert.equal((await req(`/admin/change-approvals/${p.value.request.id}/approve`,{},approver)).status,200)
