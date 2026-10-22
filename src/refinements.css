@@ -280,6 +280,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .cms-preview-heading h2 { margin:0 0 8px; }
 .cms-preview-heading p { margin:0 0 8px; }
 .cms-preview-button { font-weight:700; }
+.cms-browser-preview { min-width:0; }
+.cms-browser-preview > .cms-preview-heading { margin:0; padding:20px; background:#f1f7fa; border-bottom:1px solid #dbe5ec; }
+.cms-browser-preview > label { display:block; margin:16px; }
 .cms-editor > .cms-banner-manager { grid-column:1 / -1; min-width:0; }
 .cms-editor > .cms-change-history { grid-column:1 / -1; min-width:0; }
 #cms-property-ads,#cms-website-banners { scroll-margin-top:100px; }

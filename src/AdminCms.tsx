@@ -1,12 +1,12 @@
 import CmsChangeHistory from "./CmsChangeHistory";
 import Advertising from "./Advertising";
 import CmsPresentationEditor from "./CmsPresentationEditor";
-import CmsPreviewFrame from "./CmsPreviewFrame";
+import CmsPreviewWindow from "./CmsPreviewWindow";
 import HomeDiscoveryEditor from "./HomeDiscoveryEditor";
 import { publicDestinations } from "../server/cms-home-config.mjs";
 import BannerEditor from "./BannerEditor";
 import AdminChangeApprovals from "./AdminChangeApprovals";
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { api, currentAccount } from "./api"
 import { PortalShell, type Page } from "./prototype"
 import {
@@ -254,14 +254,20 @@ export default function AdminCms({
     [preview, setPreview] = useState(false)
   const [previewPage,setPreviewPage]=useState<Page>("home"),[previewReference,setPreviewReference]=useState(""),[previewReferenceInput,setPreviewReferenceInput]=useState("");
   const [adsDirty,setAdsDirty]=useState(false),[visitedAds,setVisitedAds]=useState(false);
-  const previewPanel = useRef<HTMLElement>(null)
-  const previewButton = useRef<HTMLButtonElement>(null)
-  useEffect(() => {
-    if (preview) {
-      previewPanel.current?.focus({ preventScroll: true })
-      previewPanel.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
-  }, [preview])
+  const [previewWindow,setPreviewWindow] = useState<Window|null>(null)
+  const previewTarget = useRef<Window|null>(null)
+  const closePreview = useCallback(()=>{
+    const target=previewTarget.current;previewTarget.current=null
+    setPreview(false);setPreviewWindow(null)
+    if(target&&!target.closed)target.close()
+  },[])
+  useEffect(()=>()=>{previewTarget.current?.close()},[])
+  const openPreview = () => {
+    if(previewTarget.current&&!previewTarget.current.closed){previewTarget.current.focus();return}
+    const target=window.open("about:blank","_blank")
+    if(!target){setError("เบราว์เซอร์บล็อกแท็บ Preview กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองอีกครั้ง");return}
+    previewTarget.current=target;setPreviewWindow(target);setPreview(true);setError("")
+  }
   const accept = (r: CmsState) => {
     setState(r)
     setContent(r.draft.content)
@@ -410,8 +416,8 @@ export default function AdminCms({
               >
                 บันทึกร่าง
               </button>
-              <button ref={previewButton} className="outline-button cms-preview-button" disabled={busy} aria-expanded={preview} aria-controls="cms-draft-preview" onClick={() => setPreview((v) => !v)}>
-                {preview ? "ปิด Preview" : "Preview ก่อนเผยแพร่"}
+              <button className="outline-button cms-preview-button" disabled={busy} onClick={openPreview}>
+                Preview ก่อนเผยแพร่ ↗ (แท็บใหม่)
               </button>
               <button
                 className="primary-button"
@@ -439,7 +445,6 @@ export default function AdminCms({
                 onClick={() => {
                   setTab(key);if(key==="media"||key==="advertising")void refreshMedia().catch(e=>setError(e.message))
                   if(key==="advertising")setVisitedAds(true)
-                  setPreview(false)
                 }}
               >
                 {label}
@@ -448,11 +453,11 @@ export default function AdminCms({
           </nav>
           {tab==="advertising"&&<nav className="button-row" aria-label="ประเภทแบนเนอร์"><button type="button" onClick={()=>document.getElementById("cms-property-ads")?.scrollIntoView({behavior:"smooth",block:"start"})}>โฆษณาที่พัก / สิทธิ์แพ็กเกจ</button><button type="button" onClick={()=>document.getElementById("cms-website-banners")?.scrollIntoView({behavior:"smooth",block:"start"})}>แบนเนอร์เว็บไซต์ / ลิงก์และกำหนดเวลา</button></nav>}
           <div className={`cms-workspace${preview?" has-preview":""}`}>
-          {preview && (
-            <section id="cms-draft-preview" ref={previewPanel} tabIndex={-1} className="cms-preview" aria-label="เนื้อหาก่อนเผยแพร่">
-              <div className="cms-preview-heading"><div><h2>Preview ก่อนเผยแพร่</h2><p>แสดงข้อมูลร่างล่าสุด รวมการแก้ไขที่ยังไม่ได้บันทึก · เว็บไซต์จริงยังไม่เปลี่ยน</p>{adsDirty&&<p role="status">มีโฆษณาที่ยังไม่บันทึก กรุณาบันทึกแบนเนอร์แต่ละรายการก่อนดู Preview โฆษณาล่าสุด</p>}</div><button type="button" className="outline-button" onClick={()=>{setPreview(false);previewButton.current?.focus()}}>กลับไปแก้ไข</button></div>
+          {preview && previewWindow && (<CmsPreviewWindow target={previewWindow} onClose={closePreview}>
+            <section id="cms-draft-preview" className="cms-browser-preview" aria-label="เนื้อหาก่อนเผยแพร่">
+              <div className="cms-preview-heading"><div><h2>Preview ก่อนเผยแพร่</h2><p>แสดงข้อมูลร่างล่าสุด รวมการแก้ไขที่ยังไม่ได้บันทึก · เว็บไซต์จริงยังไม่เปลี่ยน · กลับไปแก้ไขในแท็บ CMS ได้</p>{adsDirty&&<p role="status">มีโฆษณาที่ยังไม่บันทึก กรุณาบันทึกแบนเนอร์แต่ละรายการก่อนดู Preview โฆษณาล่าสุด</p>}</div><button type="button" className="outline-button" onClick={closePreview}>ปิด Preview</button></div>
               {tab==="presentation"&&<><label>หน้าสำหรับ Preview<select aria-label="หน้าสำหรับ Preview" value={previewPage} onChange={e=>setPreviewPage(e.target.value as Page)}>{([["home","หน้าแรก"],["directory","ค้นหาที่พัก"],["scan","สแกน QR"],["login","เข้าสู่ระบบ User"],["owner-auth","เข้าสู่ระบบ Merchant"],["user-registration","สมัคร User"],["owner-registration","สมัคร Merchant"],["verify","หน้าที่พัก / QR"],["villa-report","แจ้งปัญหา"],["contact","ติดต่อเรา"]] as [Page,string][]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>{previewPage==="verify"&&<div><label>QR ที่พักสำหรับ Preview<input value={previewReferenceInput} onChange={e=>setPreviewReferenceInput(e.target.value)} placeholder="VC-…"/></label><button type="button" onClick={()=>setPreviewReference(previewReferenceInput)}>แสดงที่พัก</button></div>}</>}
-              <CmsPreviewFrame>{tab==="presentation"&&previewPage!=="home"&&renderPreview?<CmsScope content={content}><div onSubmitCapture={e=>{e.preventDefault();e.stopPropagation()}} onClickCapture={e=>{if((e.target as HTMLElement).closest("button")){e.preventDefault();e.stopPropagation()}}}>{renderPreview(previewPage,previewReference)}</div></CmsScope> : ["home","navigation","site","presentation","advertising"].includes(tab) ? (
+              {tab==="presentation"&&previewPage!=="home"&&renderPreview?<CmsScope content={content}><div onSubmitCapture={e=>{e.preventDefault();e.stopPropagation()}} onClickCapture={e=>{if((e.target as HTMLElement).closest("button")){e.preventDefault();e.stopPropagation()}}}>{renderPreview(previewPage,previewReference)}</div></CmsScope> : ["home","navigation","site","presentation","advertising"].includes(tab) ? (
                 <CmsScope content={content}>{renderHome}</CmsScope>
               ) : (
                 <CmsPublicPage
@@ -480,7 +485,7 @@ export default function AdminCms({
                   }}
                 />
               )}
-            </CmsPreviewFrame></section>
+            </section></CmsPreviewWindow>
           )}
           {visitedAds&&<div id="cms-property-ads" className="cms-ad-workspace" hidden={tab!=="advertising"}><Advertising adsOnly onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
           <fieldset
