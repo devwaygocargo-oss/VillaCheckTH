@@ -83,6 +83,7 @@ export default function Backoffice({
 }) {
   const admin = page.startsWith("admin-")
   const [store, setStore] = useState<Store | null>(null)
+  const [displayName, setDisplayName] = useState("")
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
@@ -107,6 +108,7 @@ export default function Backoffice({
   }, [page])
   useEffect(() => {
     setLoading(true)
+    setDisplayName("")
     setStore(null)
     setSelected("")
     let cancelled = false
@@ -127,6 +129,7 @@ export default function Backoffice({
             )
           return
         }
+        if (!cancelled) setDisplayName(user.name.trim() || user.email.split("@")[0] || "เจ้าของที่พัก")
         const next = await api<Store>("/state")
         if(!admin && !next.villas.length && ["owner-add-villa","owner-onboarding-villa"].includes(page)) {
           const profile=await api<{businessName:string;businessNameEn:string}>("/merchant/profile")
@@ -281,6 +284,7 @@ export default function Backoffice({
   }
   return (
     <PortalShell role={admin ? "Admin" : "Merchant"} page={page} go={go}>
+      {page === "owner-dashboard" && displayName && <p className="user-greeting">สวัสดีคุณ {displayName}</p>}
       <div className="portal-head">
         <div>
           <span className="kicker">
