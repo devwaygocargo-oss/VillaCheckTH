@@ -1,3 +1,4 @@
+import {diversifyDemoImages} from "../server/diversify-demo-images.mjs";
 import {seedDemoVillaReports} from "../server/demo-villa-reports.mjs";
 import {seedDemoOwnerVerification} from "../server/demo-owner-verification.mjs";
 import {seedDemoReviews} from "../server/demo-reviews.mjs";
@@ -19,6 +20,7 @@ try{
  console.log('Licensed image replacements:',await replaceLegacyStockImages(db));
  console.log('Status guide expanded:',await enrichStatusGuide(db));
  console.log('News content expanded:',await enrichPublishedNews(db));
+ console.log('Diverse demo images:',await diversifyDemoImages(db));
  console.log('Display wording updated:',await removeSampleWord(db));
  console.log('Demo User activity:',await seedDemoUserActivity(db));
  console.log('Demo Villa reports:',await seedDemoVillaReports(db));

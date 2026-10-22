@@ -1191,7 +1191,7 @@ export default function AdminCms({
                 <div className="cms-media-grid">
                   {media.map((m) => (
                     <article key={m.id}>
-                      <img src={m.url} alt={m.name.replace("cms-image:", "")} />
+                      <img loading="lazy" decoding="async" src={m.url} alt={m.name.replace("cms-image:", "")} />
                       <p>{m.name.replace("cms-image:", "")}</p>
                       <input aria-label="URL รูปภาพ" readOnly value={m.url} />
                       {m.source==="banner"?<p>รูปจากแบนเนอร์ · เลือกใช้ซ้ำได้จากคลังรูป</p>:<button
