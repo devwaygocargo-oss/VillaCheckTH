@@ -11,7 +11,7 @@ export async function publicOwnerVerification(db,villa){
  if(!eligible(villa))return null
  const subscription=await db.prepare('SELECT lifecycle FROM subscriptions WHERE owner_id=?').get(villa.owner_id)
  const row=eligible({...villa,owner_lifecycle:subscription?.lifecycle})?await read(db,villa.id):null
- return row?.status==='accepted'?{status:'accepted',reviewedAt:row.reviewedAt,method:'Admin ตรวจใบหน้าและทะเบียนบ้าน พร้อมยืนยันเจ้าของบ้าน'}:null
+ return row?.status==='accepted'?{status:'accepted',reviewedAt:row.reviewedAt,method:row.demo?'DUMMY · สถานะยืนยันสำเร็จสำหรับสาธิต ไม่ใช่การตรวจหลักฐานจริง':'Admin ตรวจใบหน้าและทะเบียนบ้าน พร้อมยืนยันเจ้าของบ้าน'}:null
 }
 export async function ownerVerificationApi(db,user,req,path,url,body){
  if(!['/api/merchant/owner-verification','/api/admin/owner-verification'].includes(path))return undefined

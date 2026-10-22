@@ -782,7 +782,7 @@ export function MerchantVerification({
                 : ({EXPIRED:"QR หมดอายุ",SUSPENDED:"QR ถูกระงับ",INACTIVE:"QR ปิดใช้งาน",PENDING:"QR อยู่ระหว่างรออนุมัติ"} as Record<string,string>)[villa.qrStatus] || "QR ไม่พร้อมใช้งาน"}
             </span>
             {villa.ownerVerificationRequired && !villa.ownerVerification && <p className="verification-reminder">ยังไม่ผ่านการยืนยันเจ้าของบ้านด้วยใบหน้าและทะเบียนบ้าน</p>}
-            {villa.ownerVerification && <p className="merchant-status">ยืนยันเจ้าของบ้านแล้ว · ตรวจใบหน้าและทะเบียนบ้านโดย Admin · {date(villa.ownerVerification.reviewedAt)}</p>}
+            {villa.ownerVerification && <p className="merchant-status">ยืนยันเจ้าของบ้านแล้ว · {villa.ownerVerification.method} · {date(villa.ownerVerification.reviewedAt)}</p>}
             {villa.basicVerificationNotice && <p className="verification-reminder">{villa.basicVerificationNotice}</p>}
             {isAdmin&&villa.photoUrl && <img src={villa.photoUrl} alt={villa.name} style={{maxWidth:"100%",maxHeight:360}}/>}
             <p>{villa.nameEn}</p><p>อัปเดตรูปภาพล่าสุดเมื่อ {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"}</p>{villa.photoUrl && <p>วันที่อัปโหลด: {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"} · วันที่ถ่าย: {villa.photoTakenAt ? date(villa.photoTakenAt) : "ไม่ระบุ"}{villa.photoReviewedAt && <> · วันที่ทีมตรวจสื่อ: {date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
