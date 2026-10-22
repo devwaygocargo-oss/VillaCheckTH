@@ -16,3 +16,22 @@ test('paid demo tiers receive labelled successful owner verification; Basic and 
  assert.deepEqual(await seedDemoOwnerVerification(db),{starter:0,pro:0,premium:0});assert.equal(JSON.parse((await db.prepare('SELECT value FROM system_settings WHERE key=?').get('owner_verification:'+row.villaId)).value).reason,row.reason);
  await db.prepare("UPDATE villas SET expires='2000-01-01T00:00:00.000Z' WHERE id=?").run(targets[2].id);assert.equal(await publicOwnerVerification(db,await db.prepare('SELECT * FROM villas WHERE id=?').get(targets[2].id)),null);
 });
+test('Try-package Merchant accounts receive private dummy evidence by paid tier; real accounts and Basic are excluded',async t=>{
+ const db=await openTestDatabase();t.after(()=>db.close());await seedDemo(db,{password:'OwnerDummyFixture1234'});
+ const {createUser}=await import('./database.mjs');
+ const targets=await db.prepare("SELECT * FROM villas WHERE status='approved' ORDER BY id LIMIT 6").all();
+ for(const [i,tier] of ['basic','starter','pro','premium','real','pending'].entries()){
+  const email=tier==='real'?'real-owner@example.test':'try-'+tier+'@villacheck.example';
+  const owner=await createUser(db,email,'OwnerDummyFixture1234','DEMO Merchant '+tier,'merchant');
+  await db.prepare("UPDATE villas SET owner_id=?,package_id=?,payments=1,expires='2099-01-01T00:00:00.000Z' WHERE id=?").run(owner.id,['real','pending'].includes(tier)?'premium':tier,targets[i].id);
+ }
+ await db.prepare("UPDATE villas SET status='pending',payments=0 WHERE id=?").run(targets[5].id);
+ const result=await seedDemoOwnerVerification(db);for(const tier of ['starter','pro','premium'])assert(result[tier]>=1);
+ for(const [i,tier] of ['basic','starter','pro','premium','real','pending'].entries()){
+  const stored=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('owner_verification:'+targets[i].id);
+  if(['basic','real'].includes(tier)){assert.equal(stored,undefined);continue;}
+  const row=JSON.parse(stored.value);assert(row.demo);assert.equal(row.status,tier==='pending'?'pending':'accepted');if(tier==='pending'){assert.equal(row.reviewedAt,null);assert.equal(row.checks,undefined);}
+  for(const slot of ['face','house']){const file=await db.prepare('SELECT * FROM documents WHERE id=?').get(row.files[slot].id);assert.equal(file.owner_id,row.ownerId);assert(file.name.startsWith('DUMMY'));assert(file.bytes.length>0);}
+ }
+ assert.deepEqual(await seedDemoOwnerVerification(db),{starter:0,pro:0,premium:0});
+});

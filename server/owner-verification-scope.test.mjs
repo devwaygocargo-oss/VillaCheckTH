@@ -7,7 +7,8 @@ import {ownerVerificationApi} from './owner-verification.mjs'
 test('Villa-specific owner verification shows accepted proofs only for the chosen villa and retains merchant privacy',async()=>{
  const db=await openTestDatabase();try{
  await seedDemo(db,{password:'OwnerScopeFixture123',adminEmail:'scope@example.test',adminPassword:'OwnerScopeFixture123'});await seedDemoOwnerVerification(db)
- const v=await db.prepare("SELECT * FROM villas WHERE id IN (SELECT SUBSTR(key,20) FROM system_settings WHERE key LIKE 'owner_verification:%') LIMIT 1").get()
+ const accepted=(await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'owner_verification:%'").all()).map(r=>JSON.parse(r.value)).find(r=>r.status==='accepted')
+ const v=await db.prepare("SELECT * FROM villas WHERE id=?").get(accepted.villaId)
  assert(v)
  const get=(user,id)=>ownerVerificationApi(db,user,{method:'GET'},user?.role==='admin'?'/api/admin/owner-verification':'/api/merchant/owner-verification',new URL('http://localhost?villaId='+id),()=>{})
  const result=await get({role:'admin'},v.id);assert.equal(result.villas.length,1);assert.equal(result.submissions.length,1);assert.equal(result.submissions[0].villaId,v.id);assert.equal(result.submissions[0].status,'accepted');assert(result.submissions[0].files.face.url);assert(result.submissions[0].files.house.url)
