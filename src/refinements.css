@@ -280,6 +280,12 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .cms-preview-heading h2 { margin:0 0 8px; }
 .cms-preview-heading p { margin:0 0 8px; }
 .cms-preview-button { font-weight:700; }
+.cms-banner-inventory { min-width:0; }
+.cms-banner-inventory .merchant-toolbar { display:flex; gap:16px; flex-wrap:wrap; }
+.cms-banner-inventory .merchant-toolbar > label { display:grid; gap:8px; flex:1 1 240px; min-width:0; }
+.cms-banner-inventory input,.cms-banner-inventory select { width:100%; min-width:0; }
+.cms-banner-inventory td strong { display:block; margin-top:8px; }
+.ad-management-layout.ad-management-single { grid-template-columns:minmax(0,1fr); }
 .approved-villa-social { margin:20px 0; padding:20px; border:1px solid #cde4e2; border-radius:12px; background:#f0f9f7; }
 .approved-villa-social h3 { margin-top:0; }
 .approved-villa-social .outline-button { display:inline-flex; max-width:100%; box-sizing:border-box; }

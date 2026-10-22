@@ -1,16 +1,18 @@
 import CmsMediaPicker,{type CmsMedia} from "./CmsMediaPicker";
-import { useEffect, useState } from "react"
+import { useEffect, useImperativeHandle, useState,type Ref } from "react"
 import { api } from "./api"
 import SocialMaterials from "./SocialMaterials"
 import type { MerchantVilla } from "./merchantStore"
 import type { HomeBannerItem } from "./cms"
-type Ad = HomeBannerItem & {
+export type Ad = HomeBannerItem & {
   villaId: string
   villaName?: string
   placement: string
   approved: boolean
   order: number
 }
+export type AdvertisingEditorHandle={select:(id:string)=>boolean;reload:()=>Promise<void>}
+const adTextLabels={title:"หัวข้อ",description:"คำอธิบาย",href:"ลิงก์ปลายทาง",label:"ข้อความปุ่ม"}
 type Job = {
   id: string
   villaId: string
@@ -53,8 +55,12 @@ const blankJob: Job = {
   notes: "",
 }
 export default function Advertising({
-  merchant = false, adsOnly=false, homeOnly=false, onDirtyChange,mediaLibrary,onMediaUploaded,
+  merchant = false, adsOnly=false, homeOnly=false, onDirtyChange,mediaLibrary,onMediaUploaded,editorRef,onLoaded,onLoadError,hideList=false,
 }: {
+  editorRef?:Ref<AdvertisingEditorHandle>
+  onLoaded?:(ads:Ad[])=>void
+  onLoadError?:(message:string)=>void
+  hideList?:boolean
   mediaLibrary?:CmsMedia[]
   onMediaUploaded?:(media:CmsMedia)=>void
   adsOnly?:boolean
@@ -75,16 +81,17 @@ export default function Advertising({
   const [query,setQuery]=useState(""),[placement,setPlacement]=useState("all"),[baseline,setBaseline]=useState(JSON.stringify(blankAd));
   const adDirty=JSON.stringify(ad)!==baseline;
   useEffect(()=>{onDirtyChange?.(adDirty)},[adDirty,onDirtyChange]);
-  const chooseAd=(next:Ad)=>{if(adDirty&&!window.confirm("มีแบนเนอร์ที่ยังไม่บันทึก ต้องการเปลี่ยนรายการหรือไม่?"))return;setAd(next);setBaseline(JSON.stringify(next));setMessage("")};
+  const chooseAd=(next:Ad)=>{if(adDirty&&!window.confirm("มีแบนเนอร์ที่ยังไม่บันทึก ต้องการเปลี่ยนรายการหรือไม่?"))return false;setAd(next);setBaseline(JSON.stringify(next));setMessage("");return true};
+  useImperativeHandle(editorRef,()=>({select(id){if(busy)return false;if(id===ad.id)return true;const found=id?ads.find(row=>row.id===id):blankAd;return found?chooseAd({...blankAd,...found}):false},reload:()=>load()}),[ads,adDirty,busy,ad.id]);
   useEffect(()=>{if(homeOnly&&!adDirty&&(!ad.id||ad.placement!=="home")){const first=ads.filter(a=>a.placement==="home").sort((a,b)=>a.order-b.order)[0];if(first)chooseAd({...blankAd,...first});}},[homeOnly,ads]);
   const load = async () => {
+    setError("")
     if (!merchant) {
-      if(!mediaLibrary){const library=await api<{media:CmsMedia[]}>("/admin/cms/media");setLocalMedia(library.media.map(m=>({...m,url:m.url||"/api/public/cms-media/"+m.id})));}
-      setVillas((await api<{ villas: MerchantVilla[] }>("/state")).villas)
-      setAds(
-        (await api<{ advertisements: Ad[] }>("/admin/advertisements"))
-          .advertisements,
-      )
+      const [state,data,library]=await Promise.all([api<{villas:MerchantVilla[]}>("/state"),api<{advertisements:Ad[]}>("/admin/advertisements"),mediaLibrary?null:api<{media:CmsMedia[]}>("/admin/cms/media")])
+      if(library)setLocalMedia(library.media.map(m=>({...m,url:m.url||"/api/public/cms-media/"+m.id})))
+      setVillas(state.villas)
+      const rows=data.advertisements
+      setAds(rows);onLoaded?.(rows)
     }
     if(!adsOnly)setJobs(
       (
@@ -95,7 +102,7 @@ export default function Advertising({
     )
   }
   useEffect(() => {
-    void load().catch((e) => setError(e.message))
+    void load().catch((e) => {setError(e.message);onLoadError?.(e.message)})
   }, [merchant,adsOnly])
   const save = async (path: string, value: unknown) => {
     setBusy(true)
@@ -129,14 +136,14 @@ export default function Advertising({
             หน้าแรกหมุนเวียนทุกรายการที่มีสิทธิ์ตามลำดับ
             หน้ารายละเอียดสุ่มหนึ่งรายการเมื่อเข้าหน้าและคงไว้ระหว่างอ่าน
           </p>
-          <div className="merchant-toolbar"><input aria-label="ค้นหาโฆษณา" placeholder="ค้นหาหัวข้อหรือชื่อที่พัก" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="กรองตำแหน่งโฆษณา" value={homeOnly?"home":placement} disabled={homeOnly} onChange={e=>setPlacement(e.target.value)}><option value="all">ทุกตำแหน่ง</option><option value="home">Carousel หน้าแรก</option><option value="detail">หน้ารายละเอียดที่พัก</option><option value="footer">ก่อน Footer</option></select></div>
-          <div className="ad-management-layout">
-          <aside className="ad-campaign-list" aria-label="รายการแบนเนอร์">
+          {!hideList&&<div className="merchant-toolbar"><input aria-label="ค้นหาโฆษณา" placeholder="ค้นหาหัวข้อหรือชื่อที่พัก" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="กรองตำแหน่งโฆษณา" value={homeOnly?"home":placement} disabled={homeOnly} onChange={e=>setPlacement(e.target.value)}><option value="all">ทุกตำแหน่ง</option><option value="home">Carousel หน้าแรก</option><option value="detail">หน้ารายละเอียดที่พัก</option><option value="footer">ก่อน Footer</option></select></div>}
+          <div className={`ad-management-layout${hideList?" ad-management-single":""}`}>
+          {!hideList&&<aside className="ad-campaign-list" aria-label="รายการแบนเนอร์">
             <div className="ad-list-heading"><strong>รายการโฆษณา</strong><span>{ads.filter(a=>(homeOnly?a.placement==="home":placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).length} รายการ</span></div>
             <button type="button" className="ad-create-button" onClick={()=>chooseAd({...blankAd})}>+ เพิ่มโฆษณาใหม่</button>
             {ads.filter(a=>(homeOnly?a.placement==="home":placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase())).map(a=><button type="button" className={`ad-campaign-card${ad.id===a.id?" is-selected":""}`} aria-pressed={ad.id===a.id} aria-label={`${a.title} · ${a.placement}`} key={a.id} onClick={()=>chooseAd({...blankAd,...a})}>{a.image&&<img src={a.image} alt="" loading="lazy"/>}<span className="ad-campaign-copy"><strong>{a.title}</strong><small>{a.villaName||"ไม่ระบุที่พัก"}</small><span className="ad-campaign-meta"><span>{{home:"Carousel หน้าแรก",detail:"หน้ารายละเอียด",footer:"ก่อน Footer"}[a.placement]||a.placement}</span><span>{!a.visible?"ปิดแสดงผล":!a.approved?"รออนุมัติ":"อนุมัติแล้ว"}</span></span></span></button>)}
             {!ads.some(a=>(homeOnly?a.placement==="home":placement==="all"||a.placement===placement)&&`${a.title} ${a.villaName||""}`.toLowerCase().includes(query.toLowerCase()))&&<p>ไม่พบโฆษณาตามเงื่อนไข</p>}
-          </aside>
+          </aside>}
           <form
             className="portal-form ad-editor-form"
             onSubmit={(e) => {
@@ -186,16 +193,10 @@ export default function Advertising({
             ] as const).map((k) => (
               <label key={k}>
                 {
-                  {
-                    title: "หัวข้อ",
-                    description: "คำอธิบาย",
-                    image: "ภาพคอมพิวเตอร์ URL",
-                    mobileImage: "ภาพมือถือ URL",
-                    href: "ลิงก์ปลายทาง",
-                    label: "ข้อความปุ่ม",
-                  }[k]
+                  adTextLabels[k]
                 }
-                {k==="title"||k==="description"?<textarea rows={3} value={ad[k]} onChange={e=>setAd({...ad,[k]:e.target.value})}/>:<input
+                {k==="title"||k==="description"?<textarea aria-label={adTextLabels[k]} rows={3} value={ad[k]} onChange={e=>setAd({...ad,[k]:e.target.value})}/>:<input
+                  aria-label={adTextLabels[k]}
                   value={ad[k]}
                   onChange={(e) => setAd({ ...ad, [k]: e.target.value })}
                 />}

@@ -1,10 +1,11 @@
 import CmsChangeHistory from "./CmsChangeHistory";
-import Advertising from "./Advertising";
+import Advertising,{type Ad,type AdvertisingEditorHandle} from "./Advertising";
+import CmsBannerInventory,{type BannerSelection} from "./CmsBannerInventory";
 import CmsPresentationEditor from "./CmsPresentationEditor";
 import CmsPreviewWindow from "./CmsPreviewWindow";
 import HomeDiscoveryEditor from "./HomeDiscoveryEditor";
 import { publicDestinations } from "../server/cms-home-config.mjs";
-import BannerEditor from "./BannerEditor";
+import BannerEditor,{cmsHomeBanners} from "./BannerEditor";
 import AdminChangeApprovals from "./AdminChangeApprovals";
 import { useCallback, useEffect, useRef, useState } from "react"
 import { api, currentAccount } from "./api"
@@ -254,6 +255,11 @@ export default function AdminCms({
     [preview, setPreview] = useState(false)
   const [previewPage,setPreviewPage]=useState<Page>("home"),[previewReference,setPreviewReference]=useState(""),[previewReferenceInput,setPreviewReferenceInput]=useState("");
   const [adsDirty,setAdsDirty]=useState(false),[visitedAds,setVisitedAds]=useState(false);
+  const [bannerAds,setBannerAds]=useState<Ad[]>([]),[bannerSelection,setBannerSelection]=useState<BannerSelection|null>(null),[bannerAdsLoaded,setBannerAdsLoaded]=useState(false)
+  const bannerAdEditor=useRef<AdvertisingEditorHandle>(null)
+  const receiveBannerAds=useCallback((rows:Ad[])=>{setBannerAds(rows);setBannerAdsLoaded(true)},[])
+  const selectBanner=(item:BannerSelection)=>{if(item.kind==="ad"&&!bannerAdEditor.current?.select(item.id))return;setBannerSelection(item)}
+  useEffect(()=>{if(!bannerSelection)return;const frame=window.requestAnimationFrame(()=>document.getElementById(bannerSelection.kind==="ad"?"cms-property-ads":"cms-website-banners")?.scrollIntoView({behavior:"smooth",block:"start"}));return()=>window.cancelAnimationFrame(frame)},[bannerSelection])
   const [previewWindow,setPreviewWindow] = useState<Window|null>(null)
   const previewTarget = useRef<Window|null>(null)
   const closePreview = useCallback(()=>{
@@ -451,8 +457,10 @@ export default function AdminCms({
               </button>
             ))}
           </nav>
-          {tab==="advertising"&&<nav className="button-row" aria-label="ประเภทแบนเนอร์"><button type="button" onClick={()=>document.getElementById("cms-property-ads")?.scrollIntoView({behavior:"smooth",block:"start"})}>โฆษณาที่พัก / สิทธิ์แพ็กเกจ</button><button type="button" onClick={()=>document.getElementById("cms-website-banners")?.scrollIntoView({behavior:"smooth",block:"start"})}>แบนเนอร์เว็บไซต์ / ลิงก์และกำหนดเวลา</button></nav>}
+
           <div className={`cms-workspace${preview?" has-preview":""}`}>
+          {tab==="advertising"&&<>{!bannerAdsLoaded&&<p role="status">กำลังโหลดรายการแบนเนอร์ทั้งหมด…</p>}<CmsBannerInventory content={content} ads={bannerAds} selection={bannerSelection} onSelect={selectBanner} onReload={()=>{setError("");void bannerAdEditor.current?.reload().catch(e=>setError(e.message))}} onCreate={kind=>{if(kind==="ad"){selectBanner({kind:"ad",id:""});return}const id=`banner-${crypto.randomUUID()}`;change({...content,home:{...content.home,banners:[...cmsHomeBanners(content),{id,image:content.home.images[0]||"",mobileImage:"",title:"แบนเนอร์ใหม่",description:"",href:"#page=directory",label:"ดูรายละเอียด",visible:false,sponsored:false,startsAt:"",endsAt:""}]}});setBannerSelection({kind:"cms",id})}}/></>}
+
           {preview && previewWindow && (<CmsPreviewWindow target={previewWindow} onClose={closePreview}>
             <section id="cms-draft-preview" className="cms-browser-preview" aria-label="เนื้อหาก่อนเผยแพร่">
               <div className="cms-preview-heading"><div><h2>Preview ก่อนเผยแพร่</h2><p>แสดงข้อมูลร่างล่าสุด รวมการแก้ไขที่ยังไม่ได้บันทึก · เว็บไซต์จริงยังไม่เปลี่ยน · กลับไปแก้ไขในแท็บ CMS ได้</p>{adsDirty&&<p role="status">มีโฆษณาที่ยังไม่บันทึก กรุณาบันทึกแบนเนอร์แต่ละรายการก่อนดู Preview โฆษณาล่าสุด</p>}</div><button type="button" className="outline-button" onClick={closePreview}>ปิด Preview</button></div>
@@ -487,13 +495,14 @@ export default function AdminCms({
               )}
             </section></CmsPreviewWindow>
           )}
-          {visitedAds&&<div id="cms-property-ads" className="cms-ad-workspace" hidden={tab!=="advertising"}><Advertising adsOnly onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
+          {visitedAds&&<div id="cms-property-ads" className="cms-ad-workspace" hidden={tab!=="advertising"||bannerSelection?.kind!=="ad"}><Advertising adsOnly hideList editorRef={bannerAdEditor} onLoaded={receiveBannerAds} onLoadError={message=>{setError(message);setBannerAdsLoaded(true)}} onDirtyChange={setAdsDirty} mediaLibrary={media} onMediaUploaded={item=>setMedia(rows=>[item,...rows])}/></div>}
           <fieldset
             disabled={busy}
+            style={tab==="advertising"&&bannerSelection?.kind!=="cms"?{display:"none"}:undefined}
             className={`merchant-panel portal-form cms-editor cms-editor-${tab}`}
           >
             {tab === "presentation" && <CmsPresentationEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
-            {tab === "advertising" && <BannerEditor content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
+            {tab === "advertising" && <BannerEditor hideInventory selectionId={bannerSelection?.kind==="cms"?bannerSelection.id:undefined} onSelectionChange={id=>setBannerSelection({kind:"cms",id})} content={content} onChange={change} media={media} onUploaded={item=>setMedia(rows=>[item,...rows])}/>}
             {tab === "data" && <section><h2>ข้อมูลที่แสดงบนหน้าเว็บ</h2><p>ข้อมูลจริงของที่พัก แพ็กเกจ และบัญชี จัดการผ่านเมนูที่เกี่ยวข้อง โดยใช้ฐานข้อมูลเดียวกับหน้าเว็บ</p><div className="button-row">{([["admin-villas","ข้อมูลที่พัก / รูป / สถานะ"],["admin-packages","ราคาและสิทธิ์แพ็กเกจ"],["admin-users","บัญชี User"],["admin-owners","บัญชี Merchant"],["admin-reviews","รีวิวลูกค้า"],["admin-pending-villas","ตรวจ Villa / ยืนยันเจ้าของบ้าน"],["admin-approved-villas","ส่งสื่อทาง Social Media"],["admin-receiving-bank","บัญชีรับเงิน"]] as [Page,string][]).map(([target,label])=><button type="button" key={target} onClick={()=>{if(!(dirty||adsDirty)||window.confirm("มีการแก้ไขที่ยังไม่บันทึก ต้องการออกจาก CMS หรือไม่?"))go(target)}}>{label}</button>)}</div></section>}
             {tab === "home" && (
               <>
@@ -1232,7 +1241,7 @@ export default function AdminCms({
                 </div>
               </>
             )}
-            {tab === "history" && <CmsChangeHistory revision={state.draft.revision} onRestored={result=>{if(result)accept(result);setVisitedAds(false);setAdsDirty(false)}}/>}
+            {tab === "history" && <CmsChangeHistory revision={state.draft.revision} onRestored={result=>{if(result)accept(result);setVisitedAds(false);setAdsDirty(false);setBannerSelection(null);setBannerAds([]);setBannerAdsLoaded(false)}}/>}
           </fieldset>
 
           {adsDirty&&<p role="status">มีแบนเนอร์โฆษณาที่ยังไม่บันทึก</p>}

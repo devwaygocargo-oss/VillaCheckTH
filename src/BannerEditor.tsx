@@ -1,18 +1,23 @@
 import CmsMediaPicker,{type CmsMedia} from "./CmsMediaPicker";
 import { useState } from "react"
 import type { CmsContent, HomeBannerItem } from "./cms"
+export const cmsHomeBanners=(content:CmsContent):HomeBannerItem[]=>content.home.banners?.length?content.home.banners:content.home.images.map((image,i)=>({id:`legacy-slide-${i}`,image,mobileImage:"",title:content.home.title,description:content.home.description,href:content.home.buttonHref||"#page=directory",label:content.home.buttonLabel||"ค้นหาที่พัก",visible:true,sponsored:false,startsAt:"",endsAt:""}))
 export default function BannerEditor({
   content,
-  onChange,media,onUploaded,
+  onChange,media,onUploaded,selectionId,onSelectionChange,hideInventory=false,
 }: {
+  selectionId?:string
+  onSelectionChange?:(id:string)=>void
+  hideInventory?:boolean
   media:CmsMedia[]
   onUploaded:(media:CmsMedia)=>void
   content: CmsContent
   onChange: (content: CmsContent) => void
 }) {
-  const banners: HomeBannerItem[] = content.home.banners?.length ? content.home.banners : content.home.images.map((image,i)=>({id:`legacy-slide-${i}`,image,mobileImage:"",title:content.home.title,description:content.home.description,href:content.home.buttonHref||"#page=directory",label:content.home.buttonLabel||"ค้นหาที่พัก",visible:true,sponsored:false,startsAt:"",endsAt:""}))
+  const banners = cmsHomeBanners(content)
   const [selectedId,setSelectedId] = useState("")
-  const selectedIndex = Math.max(0,banners.findIndex(b=>b.id===selectedId))
+  const selectedIndex = Math.max(0,banners.findIndex(b=>b.id===(selectionId??selectedId)))
+  const select=(id:string)=>{setSelectedId(id);onSelectionChange?.(id)}
   const dateLabel = (value:string) => value ? new Date(value).toLocaleString("th-TH",{timeZone:"Asia/Bangkok",dateStyle:"short",timeStyle:"short"}) : "ไม่กำหนด"
   const save = (items: HomeBannerItem[]) =>
     onChange({ ...content, home: { ...content.home, banners: items } })
@@ -44,7 +49,7 @@ export default function BannerEditor({
         />
       </label>
       <p>บันทึกด้วยปุ่ม “บันทึกร่าง” แล้วตรวจ Preview ก่อนเสนอเผยแพร่ แบนเนอร์โฆษณาที่พักอยู่ในส่วนโฆษณาด้านบนและตรวจสิทธิ์แพ็กเกจแยกต่างหาก</p>
-      <div className="cms-banner-table-scroll" role="region" aria-label="ตารางแบนเนอร์เว็บไซต์" tabIndex={0}><table className="cms-banner-table"><thead><tr><th>ลำดับ / ภาพ</th><th>หัวข้อ</th><th>ลิงก์ปลายทาง</th><th>เริ่ม / สิ้นสุด (เวลาไทย)</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>{banners.map((b,i)=><tr key={b.id} className={i===selectedIndex?"is-selected":""}><td><span>{i+1}</span>{b.image&&<img src={b.image} alt="" loading="lazy"/>}</td><td>{b.title||"ยังไม่มีหัวข้อ"}</td><td>{b.href||"ไม่ระบุลิงก์"}</td><td>{dateLabel(b.startsAt)}<br/>{dateLabel(b.endsAt)}</td><td>{!b.visible?"ปิดใช้งาน":b.startsAt&&Date.parse(b.startsAt)>Date.now()?"รอเริ่มแสดง":b.endsAt&&Date.parse(b.endsAt)<=Date.now()?"สิ้นสุดแล้ว":"เปิดใช้งาน"}</td><td><button type="button" aria-pressed={i===selectedIndex} onClick={()=>setSelectedId(b.id)}>แก้ไขแบนเนอร์ {i+1}</button></td></tr>)}</tbody></table></div>
+      {!hideInventory&&<div className="cms-banner-table-scroll" role="region" aria-label="ตารางแบนเนอร์เว็บไซต์" tabIndex={0}><table className="cms-banner-table"><thead><tr><th>ลำดับ / ภาพ</th><th>หัวข้อ</th><th>ลิงก์ปลายทาง</th><th>เริ่ม / สิ้นสุด (เวลาไทย)</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>{banners.map((b,i)=><tr key={b.id} className={i===selectedIndex?"is-selected":""}><td><span>{i+1}</span>{b.image&&<img src={b.image} alt="" loading="lazy"/>}</td><td>{b.title||"ยังไม่มีหัวข้อ"}</td><td>{b.href||"ไม่ระบุลิงก์"}</td><td>{dateLabel(b.startsAt)}<br/>{dateLabel(b.endsAt)}</td><td>{!b.visible?"ปิดใช้งาน":b.startsAt&&Date.parse(b.startsAt)>Date.now()?"รอเริ่มแสดง":b.endsAt&&Date.parse(b.endsAt)<=Date.now()?"สิ้นสุดแล้ว":"เปิดใช้งาน"}</td><td><button type="button" aria-pressed={i===selectedIndex} onClick={()=>select(b.id)}>แก้ไขแบนเนอร์ {i+1}</button></td></tr>)}</tbody></table></div>}
       {banners.map((b, i) => i===selectedIndex && (
         <fieldset className="cms-block-editor cms-banner-detail" key={b.id}>
           <legend>แบนเนอร์ {i + 1}</legend>
@@ -147,7 +152,7 @@ export default function BannerEditor({
               endsAt: "",
             },
           ])
-          setSelectedId(id)
+          select(id)
         }}
       >
         เพิ่มแบนเนอร์
