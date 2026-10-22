@@ -612,9 +612,9 @@ function AppContent() {
     page === "user-registration" ? <UserRegistration go={go} reference={selectedItem} /> :
     page === "admin-receiving-bank" ? <AdminReceivingBank go={go}/> :
     page === "admin-approved-villas" ? <AdminApprovedVillas go={go}/> :
-    page === "admin-pending-villas" ? <AdminPendingVillas go={go}/> :
+    ["admin-pending-villas","admin-owner-verification"].includes(page) ? <AdminPendingVillas go={go}/> :
     page === "admin-cms" ? <AdminCms go={go} renderPreview={(target,reference)=><><Header page={target} go={()=>{}} account={null} preview/>{target==="directory"?<Directory go={()=>{}}/>:target==="scan"?<ScanQr go={()=>{}} onVerified={()=>{}} preview/>:target==="login"?<LoginPage go={()=>{}}/>:target==="owner-auth"?<LoginPage go={()=>{}} accountType="merchant"/>:target==="user-registration"?<UserRegistration go={()=>{}} reference=""/>:target==="owner-registration"?<OwnerRegistration go={()=>{}} packageName=""/>:target==="verify"?(reference?<MerchantVerification go={()=>{}} reference={reference} preview/>:<p>กรอก QR ของที่พัก แล้วกดแสดงที่พัก</p>):target==="villa-report"?<PublicReportPage onSubmit={async()=>{}}/>:<PublicInfoPage page={target} go={()=>{}}/>}<Footer go={()=>{}} account={null}/></>} renderHome={<><Header page="home" go={()=>{}} account={null} preview/><Home go={()=>{}} onSearch={()=>{}} onSelect={()=>{}}/><FooterAd/><Footer go={()=>{}} account={null}/></>}/> :
-    ["admin-packages","admin-leads","admin-settings","admin-subscriptions","admin-advertising","admin-reviews","admin-owner-verification"].includes(page) ? <AdminBusiness page={page} go={go} /> :
+    ["admin-packages","admin-leads","admin-settings","admin-subscriptions","admin-advertising","admin-reviews"].includes(page) ? <AdminBusiness page={page} go={go} /> :
     ["admin-users","admin-owners"].includes(page) ? <AdminAccounts role={page === "admin-users" ? "user" : "merchant"} go={go}/> :
     ["admin-owners","admin-checks","admin-reports","admin-qr","owner-analytics","owner-reports"].includes(page) || page.startsWith("user-") ? <OperationsPortal page={page} go={go} item={selectedItem} /> :
     page === "login" ? <LoginPage reference={selectedItem} go={go} onAuthenticated={role => setUserLoggedIn(role === "User")} /> :

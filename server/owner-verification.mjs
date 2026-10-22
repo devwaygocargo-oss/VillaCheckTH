@@ -19,13 +19,14 @@ export async function ownerVerificationApi(db,user,req,path,url,body){
  if(req.method==='GET'){
   const villas=await db.prepare(villaSelect+(admin?'':' WHERE v.owner_id=?')).all(...(admin?[]:[user.id]))
   const rows=(await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'owner_verification:%'").all()).map(r=>JSON.parse(r.value))
-  const ids=new Set(villas.map(v=>v.id))
-  return {villas:villas.map(v=>({id:v.id,name:v.name,eligible:eligible(v)})),submissions:rows.filter(r=>ids.has(r.villaId)).map(r=>({...r,villaName:villas.find(v=>v.id===r.villaId).name}))}
+  const ids=new Set(villas.filter(v=>v.package_id!=="basic").map(v=>v.id))
+  return {villas:villas.map(v=>({id:v.id,name:v.name,packageId:v.package_id,eligible:eligible(v)})),submissions:rows.filter(r=>ids.has(r.villaId)).map(r=>({...r,villaName:villas.find(v=>v.id===r.villaId).name}))}
  }
  if(req.method!=='POST')fail(405,'ไม่รองรับคำขอ')
  return db.transaction(async()=>{
   const data=await body(req),villa=await db.prepare(villaSelect+' WHERE v.id=?').get(data.villaId)
   if(!villa||(!admin&&villa.owner_id!==user.id))fail(404,'ไม่พบที่พัก')
+  if(admin&&villa.package_id==='basic')fail(409,'Basic Verify ไม่ต้องยืนยันเจ้าของบ้าน')
   const previous=await read(db,villa.id),revision=previous?.revision||0
   if(data.expectedRevision!==revision)fail(409,'ข้อมูลเปลี่ยนแล้ว กรุณาโหลดล่าสุดก่อนทำรายการ')
   const now=new Date().toISOString(),row=previous||{villaId:villa.id,ownerId:user.id,status:'draft',revision:0,history:[],files:{}}

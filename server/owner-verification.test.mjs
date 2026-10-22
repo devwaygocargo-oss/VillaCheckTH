@@ -64,5 +64,19 @@ test('private owner evidence requires two files, consent, current package, and m
   r=await act({action:'review',status:'rejected',reason:'หลักฐานยังไม่ตรงกัน'},admin);assert.equal(r.status,200)
   assert.equal((await request('/public/qr/'+villa.qr)).value.ownerVerification,null)
  })
+ await t.test('Basic Verify is exempt, removed from the owner-review queue, and historical evidence is retained',async()=>{
+  const before=await db.prepare("SELECT value FROM system_settings WHERE key=?").get('owner_verification:'+villa.id)
+  assert(before)
+  revision=JSON.parse(before.value).revision
+  await db.prepare("UPDATE villas SET package_id='basic' WHERE id=?").run(villa.id)
+  const queue=(await request('/admin/owner-verification',undefined,admin)).value
+  assert.equal(queue.villas.find(v=>v.id===villa.id).packageId,'basic')
+  assert.equal(queue.villas.find(v=>v.id===villa.id).eligible,false)
+  assert.equal(queue.submissions.some(s=>s.villaId===villa.id),false)
+  assert.equal((await act({action:'review',status:'changes',reason:'should not request evidence'},admin)).status,409)
+  assert.equal((await act({action:'upload',slot:'face',file:face})).status,403)
+  assert.equal((await db.prepare("SELECT value FROM system_settings WHERE key=?").get('owner_verification:'+villa.id)).value,before.value)
+  assert.equal((await request('/public/qr/'+villa.qr)).value.ownerVerification,null)
+ })
  }finally{await new Promise(r=>server.close(r));await db.close()}
 })
