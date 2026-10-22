@@ -244,7 +244,7 @@ export function PortalShell({ role, page, go, children }: { role: "Merchant" | "
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, []);
-  return <main className={`portal-page${role === "User" ? " portal-user" : ""}`}>
+  return <main className={`portal-page${role === "User" ? " portal-user" : role === "Merchant" ? " portal-merchant" : ""}`}>
     <aside className={`portal-side ${menuOpen ? "portal-menu-open" : ""}`}>
       <div className="portal-mobile-bar">
         <HomeLogoLink className="portal-brand" onNavigate={() => navigate("home")}>Villa<span>Check</span></HomeLogoLink>

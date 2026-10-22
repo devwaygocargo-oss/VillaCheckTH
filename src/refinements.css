@@ -391,3 +391,5 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .user-recent-checks h3 { margin:0 0 6px; font-size:16px; }
 .user-recent-checks button { flex-shrink:0; }
 @media(max-width:600px) { .user-recent-checks article { flex-direction:column; align-items:stretch; } }
+.portal-page.portal-merchant .portal-side nav { align-content:start; gap:6px; }
+.portal-page.portal-merchant .portal-side nav button { min-height:44px; padding:10px 12px; line-height:1.5; }
