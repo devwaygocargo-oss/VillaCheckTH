@@ -113,7 +113,7 @@ export async function operations(db,user,req,path,url,readBody){
     if((v.qr||'')!==(data.expectedQr||''))error(409,'QR มีการเปลี่ยนแปลงแล้ว กรุณาโหลดรายการใหม่');
     if(v.status!=='approved')error(409,'ต้องอนุมัติข้อมูลที่พักก่อนสร้าง QR');
     next='VC-'+randomUUID();
-    const updated=await db.prepare('UPDATE villas SET qr=? WHERE id=? AND (qr=? OR (qr IS NULL AND ? IS NULL))').run(next,v.id,v.qr,v.qr);
+    const updated=await db.prepare('UPDATE villas SET qr=? WHERE id=? AND (qr=? OR (qr IS NULL AND CAST(? AS TEXT) IS NULL))').run(next,v.id,v.qr,v.qr);
     if(updated.changes!==1)error(409,'QR มีการเปลี่ยนแปลงแล้ว กรุณาโหลดรายการใหม่');
     await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('qr_rotation:'+randomUUID(),JSON.stringify({villaId:v.id,oldQr:v.qr,newQr:next,reason:data.reason.trim(),actor:user.id,created:new Date().toISOString()}));
     await audit(db,user,'qr.regenerate',v.id);

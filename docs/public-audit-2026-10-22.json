@@ -1,0 +1,229 @@
+{
+  "date": "2026-10-22",
+  "environment": "Production public endpoints; read only",
+  "results": [
+    {
+      "name": "Public configuration",
+      "status": "pass",
+      "detail": {
+        "facebookEnabled": false,
+        "facebookStatus": "pending_approval",
+        "demoMode": true
+      }
+    },
+    {
+      "name": "Public directory loaded",
+      "status": "pass",
+      "detail": {
+        "count": 52
+      }
+    },
+    {
+      "name": "Property details available without scanning or login",
+      "status": "pass",
+      "detail": {
+        "name": "บ้านเดโม Social Verify — ข้อมูลสาธิต",
+        "locked": true,
+        "fields": [
+          "name",
+          "nameEn",
+          "propertyDetails",
+          "guestCapacity",
+          "bankName",
+          "accountName",
+          "ownerVerification",
+          "ownerVerificationRequired",
+          "basicVerificationNotice",
+          "trialUnlimited",
+          "photoUrl",
+          "photoUploadedAt",
+          "photoTakenAt",
+          "photoReviewedAt",
+          "province",
+          "status",
+          "qr",
+          "expires",
+          "valid",
+          "locked",
+          "viewerRole",
+          "maskedPhone",
+          "maskedBankAccount",
+          "documentReviewStatus",
+          "reviewedAt",
+          "reviewedByAdminId",
+          "qrStatus",
+          "verificationStatus",
+          "verificationLevel",
+          "premiumBanner",
+          "merchantName",
+          "packageName"
+        ]
+      }
+    },
+    {
+      "name": "Guest phone and account number remain locked",
+      "status": "pass",
+      "detail": {
+        "locked": true
+      }
+    },
+    {
+      "name": "Bilingual listing data Thai",
+      "status": "pass",
+      "detail": {
+        "query": "บ้านเดโม Social Verify — ข้อมูลสาธิต",
+        "count": 52
+      }
+    },
+    {
+      "name": "Bilingual listing data English",
+      "status": "pass",
+      "detail": {
+        "query": "demo social verify villa",
+        "count": 52
+      }
+    },
+    {
+      "name": "Advertisements home",
+      "status": "pass",
+      "detail": {
+        "count": 8
+      }
+    },
+    {
+      "name": "Advertisements footer",
+      "status": "pass",
+      "detail": {
+        "count": 4
+      }
+    },
+    {
+      "name": "Expanded news articles",
+      "status": "pass",
+      "detail": [
+        {
+          "id": "guide-1",
+          "blocks": 4
+        },
+        {
+          "id": "guide-2",
+          "blocks": 4
+        },
+        {
+          "id": "guide-3",
+          "blocks": 4
+        }
+      ]
+    },
+    {
+      "name": "Expanded status guide",
+      "status": "pass"
+    },
+    {
+      "name": "Removed sample wording from public copy",
+      "status": "pass"
+    },
+    {
+      "name": "Private CMS email templates absent",
+      "status": "pass"
+    },
+    {
+      "name": "Guest access denied /packages",
+      "status": "pass",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "Guest access denied /admin/cms",
+      "status": "pass",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "Guest access denied /admin/users",
+      "status": "pass",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "Guest access denied /admin/qr",
+      "status": "pass",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "Guest access denied /state",
+      "status": "pass",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-1.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-2.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-3.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-4.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-5.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-6.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-7.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-8.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    },
+    {
+      "name": "Licensed asset /demo/villas/villa-9.jpg",
+      "status": "pass",
+      "detail": {
+        "matchesLicenseManifest": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,3179 @@
+{
+  "date": "2026-10-22",
+  "environment": "Live production frontend with isolated in-memory API fixtures; no customer data mutations",
+  "routes": 70,
+  "viewports": [
+    360,
+    768,
+    1440
+  ],
+  "results": [
+    {
+      "role": "guest",
+      "page": "home",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ค้นหาและตรวจสอบที่พักกับ VillaCheck",
+      "destination": "#page=home",
+      "ms": 697,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "directory",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ค้นหาวิลล่าที่ไว้ใจได้",
+      "destination": "#page=directory",
+      "ms": 287,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "detail",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=detail&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "scan",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สแกน QR เพื่อตรวจสอบที่พัก",
+      "destination": "#page=scan",
+      "ms": 267,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "verify",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=verify&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "login",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ VillaCheck",
+      "destination": "#page=login",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-auth",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Merchant",
+      "destination": "#page=owner-auth",
+      "ms": 269,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-registration",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมัครบัญชี Merchant",
+      "destination": "#page=owner-registration",
+      "ms": 278,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "user-registration",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมัครสมาชิก User",
+      "destination": "#page=user-registration",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "about",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เกี่ยวกับ VillaCheck",
+      "destination": "#page=about",
+      "ms": 287,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "verification-standard",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "มาตรฐานการตรวจสอบ",
+      "destination": "#page=verification-standard",
+      "ms": 284,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "articles",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บทความและข่าวสาร",
+      "destination": "#page=articles",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "article-detail",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เช็ก 5 จุดก่อนโอนค่าที่พัก",
+      "destination": "#page=article-detail&item=guide-1",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-guide",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "คู่มือสำหรับเจ้าของที่พัก",
+      "destination": "#page=owner-guide",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "help",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ศูนย์ช่วยเหลือ",
+      "destination": "#page=help",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "contact",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ติดต่อเรา",
+      "destination": "#page=contact",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "privacy",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "นโยบายความเป็นส่วนตัว",
+      "destination": "#page=privacy",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "terms",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อกำหนดและเงื่อนไข",
+      "destination": "#page=terms",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "gallery",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รูปที่พักใน VillaCheck",
+      "destination": "#page=gallery",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-facebook",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน Facebook",
+      "destination": "#page=social-facebook",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-instagram",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน Instagram",
+      "destination": "#page=social-instagram",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-line",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน LINE Official",
+      "destination": "#page=social-line",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "villa-report",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แจ้งปัญหา",
+      "destination": "#page=villa-report",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "villa-report-success",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ติดตามสถานะรายงาน",
+      "destination": "#page=villa-report-success&item=RPT-2d8b66771f344f79c7a909cb70d53ad5",
+      "ms": 646,
+      "verificationEnvironment": "Updated local production build with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "cms-page",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เกี่ยวกับ VillaCheck",
+      "destination": "#page=cms-page&item=about",
+      "ms": 271,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "admin-login",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Admin",
+      "destination": "#page=admin-login",
+      "ms": 595,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "home",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ค้นหาและตรวจสอบที่พักกับ VillaCheck",
+      "destination": "#page=home",
+      "ms": 612,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "directory",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ค้นหาวิลล่าที่ไว้ใจได้",
+      "destination": "#page=directory",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "detail",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=detail&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "scan",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สแกน QR เพื่อตรวจสอบที่พัก",
+      "destination": "#page=scan",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "verify",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=verify&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "login",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ VillaCheck",
+      "destination": "#page=login",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-auth",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Merchant",
+      "destination": "#page=owner-auth",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-registration",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมัครบัญชี Merchant",
+      "destination": "#page=owner-registration",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "user-registration",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมัครสมาชิก User",
+      "destination": "#page=user-registration",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "about",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เกี่ยวกับ VillaCheck",
+      "destination": "#page=about",
+      "ms": 271,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "verification-standard",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "มาตรฐานการตรวจสอบ",
+      "destination": "#page=verification-standard",
+      "ms": 272,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "articles",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บทความและข่าวสาร",
+      "destination": "#page=articles",
+      "ms": 263,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "article-detail",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เช็ก 5 จุดก่อนโอนค่าที่พัก",
+      "destination": "#page=article-detail&item=guide-1",
+      "ms": 271,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-guide",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "คู่มือสำหรับเจ้าของที่พัก",
+      "destination": "#page=owner-guide",
+      "ms": 272,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "help",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ศูนย์ช่วยเหลือ",
+      "destination": "#page=help",
+      "ms": 269,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "contact",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ติดต่อเรา",
+      "destination": "#page=contact",
+      "ms": 273,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "privacy",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "นโยบายความเป็นส่วนตัว",
+      "destination": "#page=privacy",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "terms",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อกำหนดและเงื่อนไข",
+      "destination": "#page=terms",
+      "ms": 268,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "gallery",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รูปที่พักใน VillaCheck",
+      "destination": "#page=gallery",
+      "ms": 268,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-facebook",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน Facebook",
+      "destination": "#page=social-facebook",
+      "ms": 264,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-instagram",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน Instagram",
+      "destination": "#page=social-instagram",
+      "ms": 270,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-line",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน LINE Official",
+      "destination": "#page=social-line",
+      "ms": 273,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "villa-report",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แจ้งปัญหา",
+      "destination": "#page=villa-report",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "villa-report-success",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ติดตามสถานะรายงาน",
+      "destination": "#page=villa-report-success&item=RPT-2d8b66771f344f79c7a909cb70d53ad5",
+      "ms": 266,
+      "verificationEnvironment": "Updated local production build with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "cms-page",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เกี่ยวกับ VillaCheck",
+      "destination": "#page=cms-page&item=about",
+      "ms": 278,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "admin-login",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Admin",
+      "destination": "#page=admin-login",
+      "ms": 579,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "home",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ค้นหาและตรวจสอบที่พักกับ VillaCheck",
+      "destination": "#page=home",
+      "ms": 597,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "directory",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ค้นหาวิลล่าที่ไว้ใจได้",
+      "destination": "#page=directory",
+      "ms": 273,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "detail",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=detail&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "scan",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สแกน QR เพื่อตรวจสอบที่พัก",
+      "destination": "#page=scan",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "verify",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=verify&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "login",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ VillaCheck",
+      "destination": "#page=login",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-auth",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Merchant",
+      "destination": "#page=owner-auth",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-registration",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมัครบัญชี Merchant",
+      "destination": "#page=owner-registration",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "user-registration",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมัครสมาชิก User",
+      "destination": "#page=user-registration",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "about",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เกี่ยวกับ VillaCheck",
+      "destination": "#page=about",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "verification-standard",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "มาตรฐานการตรวจสอบ",
+      "destination": "#page=verification-standard",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "articles",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บทความและข่าวสาร",
+      "destination": "#page=articles",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "article-detail",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เช็ก 5 จุดก่อนโอนค่าที่พัก",
+      "destination": "#page=article-detail&item=guide-1",
+      "ms": 273,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "owner-guide",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "คู่มือสำหรับเจ้าของที่พัก",
+      "destination": "#page=owner-guide",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "help",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ศูนย์ช่วยเหลือ",
+      "destination": "#page=help",
+      "ms": 270,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "contact",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ติดต่อเรา",
+      "destination": "#page=contact",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "privacy",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "นโยบายความเป็นส่วนตัว",
+      "destination": "#page=privacy",
+      "ms": 270,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "terms",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อกำหนดและเงื่อนไข",
+      "destination": "#page=terms",
+      "ms": 273,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "gallery",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รูปที่พักใน VillaCheck",
+      "destination": "#page=gallery",
+      "ms": 283,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-facebook",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน Facebook",
+      "destination": "#page=social-facebook",
+      "ms": 268,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-instagram",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน Instagram",
+      "destination": "#page=social-instagram",
+      "ms": 271,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "social-line",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "VillaCheck บน LINE Official",
+      "destination": "#page=social-line",
+      "ms": 272,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "villa-report",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แจ้งปัญหา",
+      "destination": "#page=villa-report",
+      "ms": 278,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "villa-report-success",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ติดตามสถานะรายงาน",
+      "destination": "#page=villa-report-success&item=RPT-2d8b66771f344f79c7a909cb70d53ad5",
+      "ms": 273,
+      "verificationEnvironment": "Updated local production build with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "cms-page",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เกี่ยวกับ VillaCheck",
+      "destination": "#page=cms-page&item=about",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "admin-login",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Admin",
+      "destination": "#page=admin-login",
+      "ms": 599,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-dashboard",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "User Dashboard",
+      "destination": "#page=user-dashboard",
+      "ms": 642,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-checks",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ประวัติการตรวจสอบ",
+      "destination": "#page=user-checks",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-check-detail",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายละเอียดการตรวจสอบ",
+      "destination": "#page=user-check-detail&item=CHK-1259af5ebd4fb5f920cee2a50ed34196",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-reports",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Report ของฉัน",
+      "destination": "#page=user-reports",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-report-detail",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายละเอียดรายงาน",
+      "destination": "#page=user-report-detail&item=RPT-3dc41df9061ba048698f8ee681ae7da7",
+      "ms": 285,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-precheck",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตรวจข้อมูลก่อนโอน",
+      "destination": "#page=user-precheck",
+      "ms": 299,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-check-success",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บันทึกการตรวจสอบแล้ว",
+      "destination": "#page=user-check-success&item=CHK-1259af5ebd4fb5f920cee2a50ed34196",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-dashboard",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "User Dashboard",
+      "destination": "#page=user-dashboard",
+      "ms": 278,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-checks",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ประวัติการตรวจสอบ",
+      "destination": "#page=user-checks",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-check-detail",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายละเอียดการตรวจสอบ",
+      "destination": "#page=user-check-detail&item=CHK-1259af5ebd4fb5f920cee2a50ed34196",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-reports",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Report ของฉัน",
+      "destination": "#page=user-reports",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-report-detail",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายละเอียดรายงาน",
+      "destination": "#page=user-report-detail&item=RPT-3dc41df9061ba048698f8ee681ae7da7",
+      "ms": 285,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-precheck",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตรวจข้อมูลก่อนโอน",
+      "destination": "#page=user-precheck",
+      "ms": 284,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-check-success",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บันทึกการตรวจสอบแล้ว",
+      "destination": "#page=user-check-success&item=CHK-1259af5ebd4fb5f920cee2a50ed34196",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-dashboard",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "User Dashboard",
+      "destination": "#page=user-dashboard",
+      "ms": 294,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-checks",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ประวัติการตรวจสอบ",
+      "destination": "#page=user-checks",
+      "ms": 283,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-check-detail",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายละเอียดการตรวจสอบ",
+      "destination": "#page=user-check-detail&item=CHK-1259af5ebd4fb5f920cee2a50ed34196",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-reports",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Report ของฉัน",
+      "destination": "#page=user-reports",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-report-detail",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายละเอียดรายงาน",
+      "destination": "#page=user-report-detail&item=RPT-3dc41df9061ba048698f8ee681ae7da7",
+      "ms": 284,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-precheck",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตรวจข้อมูลก่อนโอน",
+      "destination": "#page=user-precheck",
+      "ms": 298,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "user",
+      "page": "user-check-success",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บันทึกการตรวจสอบแล้ว",
+      "destination": "#page=user-check-success&item=CHK-1259af5ebd4fb5f920cee2a50ed34196",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-dashboard",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Member Room",
+      "destination": "#page=owner-dashboard",
+      "ms": 683,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villas",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villas",
+      "ms": 269,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villa-detail",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-detail&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villa-edit",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-add-villa",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=d0c8da91-3233-4b4c-a300-26f5fbe57d6d",
+      "ms": 293,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-pending",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-pending",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-analytics",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สถิติการใช้งาน 30 วัน",
+      "destination": "#page=owner-analytics",
+      "ms": 288,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-reports",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายงานเกี่ยวกับ Villa ของคุณ",
+      "destination": "#page=owner-reports",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-package",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=owner-package",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-information",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อมูล Merchant",
+      "destination": "#page=owner-information",
+      "ms": 288,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-profile",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อมูล Merchant",
+      "destination": "#page=owner-profile",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-onboarding-villa",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=d0c8da91-3233-4b4c-a300-26f5fbe57d6d",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-select-villa",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-select-villa",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "package-confirmation",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=package-confirmation",
+      "ms": 287,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "package-request-pending",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=package-request-pending",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-dashboard",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Member Room",
+      "destination": "#page=owner-dashboard",
+      "ms": 284,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villas",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villas",
+      "ms": 272,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villa-detail",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-detail&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 283,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villa-edit",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-add-villa",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=d0c8da91-3233-4b4c-a300-26f5fbe57d6d",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-pending",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-pending",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-analytics",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สถิติการใช้งาน 30 วัน",
+      "destination": "#page=owner-analytics",
+      "ms": 283,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-reports",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายงานเกี่ยวกับ Villa ของคุณ",
+      "destination": "#page=owner-reports",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-package",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=owner-package",
+      "ms": 273,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-information",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อมูล Merchant",
+      "destination": "#page=owner-information",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-profile",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อมูล Merchant",
+      "destination": "#page=owner-profile",
+      "ms": 272,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-onboarding-villa",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=d0c8da91-3233-4b4c-a300-26f5fbe57d6d",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-select-villa",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-select-villa",
+      "ms": 278,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "package-confirmation",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=package-confirmation",
+      "ms": 270,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "package-request-pending",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=package-request-pending",
+      "ms": 267,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-dashboard",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Member Room",
+      "destination": "#page=owner-dashboard",
+      "ms": 287,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villas",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villas",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villa-detail",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-detail&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 285,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-villa-edit",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-add-villa",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=d0c8da91-3233-4b4c-a300-26f5fbe57d6d",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-pending",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-pending",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-analytics",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สถิติการใช้งาน 30 วัน",
+      "destination": "#page=owner-analytics",
+      "ms": 293,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-reports",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "รายงานเกี่ยวกับ Villa ของคุณ",
+      "destination": "#page=owner-reports",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-package",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=owner-package",
+      "ms": 263,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-information",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อมูล Merchant",
+      "destination": "#page=owner-information",
+      "ms": 263,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-profile",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ข้อมูล Merchant",
+      "destination": "#page=owner-profile",
+      "ms": 262,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-onboarding-villa",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-villa-edit&item=d0c8da91-3233-4b4c-a300-26f5fbe57d6d",
+      "ms": 264,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "owner-select-villa",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-select-villa",
+      "ms": 267,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "package-confirmation",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=package-confirmation",
+      "ms": 266,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "merchant",
+      "page": "package-request-pending",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=package-request-pending",
+      "ms": 260,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-cms",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการเว็บไซต์ CMS",
+      "destination": "#page=admin-cms",
+      "ms": 621,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-dashboard",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Admin Dashboard",
+      "destination": "#page=admin-dashboard",
+      "ms": 267,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-pending-villas",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa รออนุมัติ",
+      "destination": "#page=admin-pending-villas",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-approved-villas",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ที่อนุมัติแล้ว",
+      "destination": "#page=admin-approved-villas",
+      "ms": 291,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-users",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ User",
+      "destination": "#page=admin-users",
+      "ms": 270,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-owners",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ Merchant",
+      "destination": "#page=admin-owners",
+      "ms": 264,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-villas",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=admin-villas",
+      "ms": 265,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-checks",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ประวัติการตรวจสอบ",
+      "destination": "#page=admin-checks",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-reports",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการรายงานปัญหา",
+      "destination": "#page=admin-reports",
+      "ms": 268,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-qr",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ Villa Verification QR",
+      "destination": "#page=admin-qr",
+      "ms": 301,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-packages",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการแพ็กเกจ",
+      "destination": "#page=admin-packages",
+      "ms": 283,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-payments",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=admin-payments",
+      "ms": 289,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-receiving-bank",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บัญชีรับเงินจาก Merchant",
+      "destination": "#page=admin-receiving-bank",
+      "ms": 284,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-subscriptions",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สิทธิ์แพ็กเกจรายที่พัก",
+      "destination": "#page=admin-subscriptions",
+      "ms": 283,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-leads",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Lead Management",
+      "destination": "#page=admin-leads",
+      "ms": 279,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-settings",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตั้งค่าระบบ",
+      "destination": "#page=admin-settings",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-reviews",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการรีวิวลูกค้า",
+      "destination": "#page=admin-reviews",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-owner-verification",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตรวจยืนยันเจ้าของบ้าน",
+      "destination": "#page=admin-owner-verification",
+      "ms": 275,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-advertising",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "โฆษณาและงาน Social Media",
+      "destination": "#page=admin-advertising",
+      "ms": 296,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-verify",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=admin-verify&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-cms",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการเว็บไซต์ CMS",
+      "destination": "#page=admin-cms",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-dashboard",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Admin Dashboard",
+      "destination": "#page=admin-dashboard",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-pending-villas",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa รออนุมัติ",
+      "destination": "#page=admin-pending-villas",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-approved-villas",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ที่อนุมัติแล้ว",
+      "destination": "#page=admin-approved-villas",
+      "ms": 288,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-users",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ User",
+      "destination": "#page=admin-users",
+      "ms": 278,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-owners",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ Merchant",
+      "destination": "#page=admin-owners",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-villas",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=admin-villas",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-checks",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ประวัติการตรวจสอบ",
+      "destination": "#page=admin-checks",
+      "ms": 293,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-reports",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการรายงานปัญหา",
+      "destination": "#page=admin-reports",
+      "ms": 297,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-qr",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ Villa Verification QR",
+      "destination": "#page=admin-qr",
+      "ms": 410,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-packages",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการแพ็กเกจ",
+      "destination": "#page=admin-packages",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-payments",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=admin-payments",
+      "ms": 288,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-receiving-bank",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บัญชีรับเงินจาก Merchant",
+      "destination": "#page=admin-receiving-bank",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-subscriptions",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สิทธิ์แพ็กเกจรายที่พัก",
+      "destination": "#page=admin-subscriptions",
+      "ms": 291,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-leads",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Lead Management",
+      "destination": "#page=admin-leads",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-settings",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตั้งค่าระบบ",
+      "destination": "#page=admin-settings",
+      "ms": 304,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-reviews",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการรีวิวลูกค้า",
+      "destination": "#page=admin-reviews",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-owner-verification",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตรวจยืนยันเจ้าของบ้าน",
+      "destination": "#page=admin-owner-verification",
+      "ms": 277,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-advertising",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "โฆษณาและงาน Social Media",
+      "destination": "#page=admin-advertising",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-verify",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=admin-verify&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-cms",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการเว็บไซต์ CMS",
+      "destination": "#page=admin-cms",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-dashboard",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Admin Dashboard",
+      "destination": "#page=admin-dashboard",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-pending-villas",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa รออนุมัติ",
+      "destination": "#page=admin-pending-villas",
+      "ms": 289,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-approved-villas",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ที่อนุมัติแล้ว",
+      "destination": "#page=admin-approved-villas",
+      "ms": 288,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-users",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ User",
+      "destination": "#page=admin-users",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-owners",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ Merchant",
+      "destination": "#page=admin-owners",
+      "ms": 274,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-villas",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=admin-villas",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-checks",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ประวัติการตรวจสอบ",
+      "destination": "#page=admin-checks",
+      "ms": 299,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-reports",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการรายงานปัญหา",
+      "destination": "#page=admin-reports",
+      "ms": 284,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-qr",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการ Villa Verification QR",
+      "destination": "#page=admin-qr",
+      "ms": 418,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-packages",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการแพ็กเกจ",
+      "destination": "#page=admin-packages",
+      "ms": 281,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-payments",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "แพ็กเกจและการชำระเงิน",
+      "destination": "#page=admin-payments",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-receiving-bank",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "บัญชีรับเงินจาก Merchant",
+      "destination": "#page=admin-receiving-bank",
+      "ms": 283,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-subscriptions",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สิทธิ์แพ็กเกจรายที่พัก",
+      "destination": "#page=admin-subscriptions",
+      "ms": 286,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-leads",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Lead Management",
+      "destination": "#page=admin-leads",
+      "ms": 276,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-settings",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตั้งค่าระบบ",
+      "destination": "#page=admin-settings",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-reviews",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "จัดการรีวิวลูกค้า",
+      "destination": "#page=admin-reviews",
+      "ms": 282,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-owner-verification",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "ตรวจยืนยันเจ้าของบ้าน",
+      "destination": "#page=admin-owner-verification",
+      "ms": 280,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-advertising",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "โฆษณาและงาน Social Media",
+      "destination": "#page=admin-advertising",
+      "ms": 287,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "admin",
+      "page": "admin-verify",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "สมุยบลู · DUMMY",
+      "destination": "#page=admin-verify&item=VC-DEMO-000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+      "ms": 287,
+      "verificationEnvironment": "Live frontend with isolated API"
+    },
+    {
+      "role": "guest",
+      "page": "pricing",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Merchant",
+      "destination": "#page=owner-auth",
+      "ms": 622
+    },
+    {
+      "role": "guest",
+      "page": "pricing",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Merchant",
+      "destination": "#page=owner-auth",
+      "ms": 275
+    },
+    {
+      "role": "guest",
+      "page": "pricing",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "เข้าสู่ระบบ Merchant",
+      "destination": "#page=owner-auth",
+      "ms": 275
+    },
+    {
+      "role": "merchant",
+      "page": "owner-preview",
+      "width": 360,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-preview&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 696
+    },
+    {
+      "role": "merchant",
+      "page": "owner-preview",
+      "width": 768,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-preview&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 267
+    },
+    {
+      "role": "merchant",
+      "page": "owner-preview",
+      "width": 1440,
+      "status": "pass",
+      "overflow": false,
+      "alerts": [
+        ""
+      ],
+      "title": "Villa ของคุณ",
+      "destination": "#page=owner-preview&item=a3c75991-4ceb-42f8-ab4f-09657f956872",
+      "ms": 260
+    }
+  ],
+  "cmsResults": [
+    {
+      "label": "หน้าแรก",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "เนื้อหาทั่วเว็บไซต์",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "โฆษณาทุกตำแหน่ง",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ข้อมูลที่พัก / แพ็กเกจ / บัญชี",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "เมนูเว็บไซต์",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "หน้าเว็บ",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ข่าวสาร / บทความ",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "FAQ",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ตั้งค่าเว็บไซต์",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "กติกา / ข้อความอีเมล",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "คลังรูปภาพ",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ประวัติ / ย้อนเวอร์ชัน",
+      "width": 360,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "หน้าแรก",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "เนื้อหาทั่วเว็บไซต์",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "โฆษณาทุกตำแหน่ง",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ข้อมูลที่พัก / แพ็กเกจ / บัญชี",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "เมนูเว็บไซต์",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "หน้าเว็บ",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ข่าวสาร / บทความ",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "FAQ",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ตั้งค่าเว็บไซต์",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "กติกา / ข้อความอีเมล",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "คลังรูปภาพ",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ประวัติ / ย้อนเวอร์ชัน",
+      "width": 768,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "หน้าแรก",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "เนื้อหาทั่วเว็บไซต์",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "โฆษณาทุกตำแหน่ง",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ข้อมูลที่พัก / แพ็กเกจ / บัญชี",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "เมนูเว็บไซต์",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "หน้าเว็บ",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ข่าวสาร / บทความ",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "FAQ",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ตั้งค่าเว็บไซต์",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "กติกา / ข้อความอีเมล",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "คลังรูปภาพ",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    },
+    {
+      "label": "ประวัติ / ย้อนเวอร์ชัน",
+      "width": 1440,
+      "overflow": false,
+      "status": "pass"
+    }
+  ],
+  "errors": [],
+  "cameraCalls": 3,
+  "resolvedIssues": [
+    {
+      "page": "villa-report-success",
+      "width": 360,
+      "issue": "Long tracking reference overflow",
+      "resolution": "Allow references and tracking links to wrap; verified on the updated local production build"
+    }
+  ],
+  "limitations": [
+    "Chromium viewport emulation, not physical iOS/Android device testing",
+    "API mutations use isolated fixtures; no real payments, notifications, or customer records changed",
+    "Meta Facebook login remains pending_approval in production"
+  ]
+}

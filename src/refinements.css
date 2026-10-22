@@ -310,3 +310,11 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
  .cms-toolbar{position:static}
  .camera-scanner{height:clamp(210px,65dvh,300px)}
 }
+
+/* Long report references and tracking links must fit narrow screens. */
+.report-success-card > strong,
+.report-success-card > a {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
