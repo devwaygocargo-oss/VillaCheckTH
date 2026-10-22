@@ -379,3 +379,9 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
   .portal-side > .portal-logout { margin-top: 12px; }
 }
 .vc-banner-copy h2, .vc-banner-copy p { white-space: pre-line; }
+.owner-proof-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr)); gap:16px; margin:16px 0; }
+.owner-proof-card { min-width:0; padding:18px; border:1px solid #dbe5ec; border-radius:12px; background:#f8fbfd; }
+.owner-proof-card h4 { margin:0 0 12px; }
+.owner-proof-card p,.owner-proof-filename { overflow-wrap:anywhere; }
+.owner-proof-card img,.owner-proof-card video { display:block; width:100%; max-height:220px; aspect-ratio:4/3; object-fit:contain; border-radius:8px; background:#e8eef3; }
+.owner-proof-pdf { padding:36px 16px; border:1px dashed #b9cad8; border-radius:8px; text-align:center; color:#21476a; }

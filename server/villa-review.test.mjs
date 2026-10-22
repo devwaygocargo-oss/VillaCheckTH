@@ -44,6 +44,9 @@ test('Villa approval requests retain actual changes, documents, permissions and 
   const guest=(await request('/public/qr/'+villa.qr)).value;assert.equal(guest.locked,true);assert.equal(guest.accountNumber,undefined)
  })
  await t.test('dedicated Admin verification requires Admin and returns full pending Villa details',async()=>{
+  assert.equal((await fetch(base+'/admin/documents/'+villa.document_id+'?preview=1',{headers:{Cookie:admin.cookie+'; '+merchant.cookie}})).status,200)
+  assert.equal((await fetch(base+'/admin/documents/'+villa.document_id+'?preview=1',{headers:{Cookie:merchant.cookie}})).status,403)
+  assert.equal((await fetch(base+'/admin/documents/'+villa.document_id+'?preview=1')).status,401)
   const path='/admin/qr-verification/'+encodeURIComponent(villa.qr)
   assert.equal((await request(path)).status,401);assert.equal((await request(path,undefined,merchant)).status,403)
   const full=(await request(path,undefined,admin)).value;assert.equal(full.viewerRole,'admin');assert.equal(full.locked,false);assert.equal(full.phone,villa.phone);assert.equal(full.accountNumber,villa.account_number)

@@ -984,11 +984,12 @@ export function createApp(db, config, transport) {
         }
         if (req.method === "GET" && path === "/api/state")
           return json(await state(user))
-        const docMatch = path.match(/^\/api\/documents\/([a-f0-9-]+)$/)
+        const docMatch = path.match(/^\/api\/(admin\/)?documents\/([a-f0-9-]+)$/)
         if (req.method === "GET" && docMatch) {
+          if(docMatch[1]&&user.role!=="admin")fail(403,"เฉพาะ Admin")
           const file = await db
             .prepare("SELECT * FROM documents WHERE id=?")
-            .get(docMatch[1])
+            .get(docMatch[2])
           if (!file || (user.role !== "admin" && file.owner_id !== user.id))
             fail(404, "ไม่พบเอกสาร")
           res.writeHead(200, {
