@@ -320,3 +320,20 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 }
 .package-expiry-notice { padding: 14px 16px; border-radius: 12px; background: #eaf6f3; color: #15534c; overflow-wrap: anywhere; }
 .package-expiry-urgent { background: #fff1df; color: #794510; border: 1px solid #e8c68e; }
+
+/* Keep every CMS section visible; the page scrolls vertically through all controls. */
+.cms-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  overflow: visible;
+  gap: 8px;
+  padding: 4px 0 12px;
+}
+.cms-tabs button { min-width: 0; min-height: 48px; white-space: normal; }
+@media (min-width: 1101px) {
+  .portal-side { position: sticky; top: 0; align-self: start; height: 100dvh; min-height: 0; }
+  .portal-side > nav { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; padding-bottom: 8px; }
+  .portal-side > nav button { flex-shrink: 0; }
+  .portal-side .portal-mobile-bar, .portal-side > small, .portal-side > .portal-logout { flex-shrink: 0; }
+  .portal-side > .portal-logout { margin-top: 12px; }
+}
