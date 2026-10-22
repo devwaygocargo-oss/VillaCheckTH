@@ -34,6 +34,12 @@ test('Villa approval requests retain actual changes, documents, permissions and 
   const v=await state(),input={status:'approved',verificationLevel:'VERIFIED',expectedReviewId:v.reviewRequest.id};assert.equal((await request('/villas/'+villa.id+'/review',input,merchant)).status,403);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,200);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,409);assert.equal((await state()).qr,villa.qr)
  })
  await t.test('Admin session stays separate from the public QR profile',async()=>{
+  const detail=(await request('/admin/qr-verification/'+villa.qr,undefined,admin)).value;assert.equal(detail.locked,false);assert.equal(detail.villaId,villa.id);assert.equal(detail.phone,villa.phone);assert.equal(detail.accountNumber,villa.account_number);assert(detail.propertyDetails.description)
+  assert.equal((await request('/admin/qr-verification/'+villa.qr)).status,401)
+  assert.equal((await request('/admin/qr-verification/'+villa.qr,undefined,merchant)).status,403)
+  for(const [id,villaId] of [['scope-this-villa',villa.id],['scope-other-villa','different-villa']])await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('customer_review:'+id,JSON.stringify({id,villaId,status:'pending',createdAt:new Date().toISOString(),content:'Private review',rating:4,author:'Fixture'}))
+  const reviews=(await request('/admin/reviews?qr='+encodeURIComponent(villa.qr),undefined,admin)).value.reviews;assert(reviews.some(r=>r.id==='scope-this-villa'));assert(reviews.every(r=>r.villaId===villa.id));assert.equal((await request('/admin/reviews?qr=missing',undefined,admin)).value.reviews.length,0)
+  assert.equal((await request('/admin/reviews?qr='+encodeURIComponent(villa.qr),undefined,merchant)).status,403)
   const full=(await request('/public/qr/'+villa.qr,undefined,admin)).value;assert.equal(full.locked,true);assert.equal(full.accountNumber,undefined);assert.equal(full.phone,undefined)
   const guest=(await request('/public/qr/'+villa.qr)).value;assert.equal(guest.locked,true);assert.equal(guest.accountNumber,undefined)
  })

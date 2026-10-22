@@ -67,8 +67,10 @@ export async function reviewsApi(db, user, req, path, url, body) {
     return { reviews: (await read(db)).filter((r) => r.userId === user.id) }
   if (path === "/api/admin/reviews" && req.method === "GET") {
     if (user.role !== "admin") fail(403, "เฉพาะ Admin")
+    const requested=url.searchParams.get("qr")
+    const villa=requested?await db.prepare("SELECT id FROM villas WHERE qr=?").get(requested):null
     return {
-      reviews: (await read(db)).sort((a, b) =>
+      reviews: (await read(db)).filter(row=>!requested||row.villaId===villa?.id).sort((a, b) =>
         b.createdAt.localeCompare(a.createdAt),
       ),
       reasons: reviewReasons,

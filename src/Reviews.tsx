@@ -56,7 +56,7 @@ export default function Reviews({
     mode === "public"
       ? `/public/reviews?qr=${encodeURIComponent(qr || "")}`
       : mode === "admin"
-        ? "/admin/reviews"
+        ? "/admin/reviews"+(qr?"?qr="+encodeURIComponent(qr):"")
         : mode === "merchant"
           ? "/merchant/reviews"
           : "/reviews"

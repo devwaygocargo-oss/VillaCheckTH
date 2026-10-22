@@ -685,6 +685,7 @@ export function createApp(db, config, transport) {
         return json({
           name: v.name,
           nameEn: v.name_en,
+          ...(adminQrVerification?{villaId:v.id}:{}),
           propertyDetails: await villaPage(db,v),
           guestCapacity:v.guest_capacity,
           bankName:v.bank_name,
