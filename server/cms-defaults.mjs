@@ -1,3 +1,4 @@
+import {diverseEditorialDefaults} from "./demo-image-catalog.mjs";
 import {statusGuideBlocks} from "./status-guide.mjs";
 import {expandedNews} from "./news-content.mjs";
 import {presentationDefaults} from "./cms-presentation.mjs";
@@ -60,7 +61,7 @@ const images = [
   "/demo/villas/villa-3.jpg",
   "/demo/villas/villa-4.jpg",
 ]
-export const cmsDefaults = {
+const initialCmsDefaults = {
   presentation:presentationDefaults,
   schemaVersion: 1,
   business:{emailOtpSubject:"VillaCheck: รหัสเข้าสู่ระบบ",emailOtpBody:"รหัส OTP ของคุณคือ {{code}} ใช้ได้ {{minutes}} นาที ห้ามให้รหัสนี้กับผู้อื่น",smsOtpBody:"VillaCheck OTP: {{code}}. Expires in {{minutes}} minutes. Do not share.",emailOtpTemplateId:"",facebookLoginEnabled:false,monthlyInitialMonths:1,monthlyRenewalMonths:1,paymentEmailSubject:"VillaCheck: {{package}} แจ้งชำระแพ็กเกจ",paymentEmailIntro:"เรียน {{merchant}}\nกรุณาตรวจยอดและระยะเวลาในใบแจ้งชำระ แล้วแนบสลิปให้ Admin ตรวจสอบ"},
@@ -156,3 +157,8 @@ export const cmsDefaults = {
   })),
   faqs: [],
 }
+
+// Default homepage and article illustrations each use a different licensed photo.
+let editorialImageIndex=0;
+const diversifyDefaultImages=value=>typeof value==="string"&&/^\/demo\/villas\/villa-[1-9]\.jpg$/.test(value)?diverseEditorialDefaults[editorialImageIndex++%diverseEditorialDefaults.length].url:Array.isArray(value)?value.map(diversifyDefaultImages):value&&typeof value==="object"?Object.fromEntries(Object.entries(value).map(([key,item])=>[key,diversifyDefaultImages(item)])):value;
+export const cmsDefaults=diversifyDefaultImages(initialCmsDefaults);

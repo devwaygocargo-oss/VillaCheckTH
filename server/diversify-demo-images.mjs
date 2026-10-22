@@ -1,9 +1,9 @@
-import {diverseDemoImages} from './demo-image-catalog.mjs';
+import {diverseDemoImages,diverseEditorialDefaults} from './demo-image-catalog.mjs';
 export const isLegacyDemoImage=value=>typeof value==='string'&&/^(?:https:\/\/design-villacheck\.vercel\.app)?\/demo\/villas\/villa-[1-9]\.jpg(?:\?.*)?$/.test(value);
 export async function diversifyDemoImages(db){
  return db.transaction(async()=>{
   const marker='demo_image_diversity_v1';const saved=await db.prepare('SELECT value FROM system_settings WHERE key=?').get(marker);const assignments=saved?JSON.parse(saved.value):{};
-  const used=new Set(Object.values(assignments)),shortages=[];
+  const used=new Set([...Object.values(assignments),...diverseEditorialDefaults.map(image=>image.url)]),shortages=[];
   const allocate=(key,kind,previous)=>{if(assignments[key])return assignments[key];const next=diverseDemoImages.find(i=>i.category===kind&&!used.has(i.url))||diverseDemoImages.find(i=>!used.has(i.url));if(!next){shortages.push(key);return previous;}used.add(next.url);assignments[key]=next.url;return next.url;};
   const villas=await db.prepare('SELECT id,photo_url FROM villas ORDER BY id').all();
   const settings=await db.prepare("SELECT key,value FROM system_settings WHERE key IN ('cms_published','cms_draft') OR key LIKE 'advertisement:%' OR key LIKE 'property_media:%' ORDER BY key").all();

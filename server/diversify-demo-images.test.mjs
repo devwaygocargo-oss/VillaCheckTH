@@ -16,3 +16,5 @@ test('demo image diversification separates Villa and advertisement photos, prese
  const repeat=await diversifyDemoImages(db);assert.equal(repeat.propertyPhotos+repeat.advertisements+repeat.cmsReleases+repeat.media,0);assert.equal(repeat.shortages,0);
  const library=await adminCms(db,{role:'admin'},{method:'GET'},'/api/admin/cms/media',()=>{});for(const image of diverseDemoImages)assert(library.media.some(m=>m.url===image.url));
 });
+
+test('default homepage and news illustrations are distinct even before the first CMS save',()=>{const images=[];const walk=value=>{if(typeof value==='string'&&value.startsWith('/demo/diverse/'))images.push(value);else if(Array.isArray(value))value.forEach(walk);else if(value&&typeof value==='object')Object.values(value).forEach(walk);};walk(cmsDefaults);assert.equal(images.length,13);assert.equal(new Set(images).size,13);});

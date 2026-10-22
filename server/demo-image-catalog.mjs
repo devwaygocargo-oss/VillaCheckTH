@@ -471,3 +471,5 @@ export const diverseDemoImages=[
     "title": "Modern Luxury Villa with Infinity Pool"
   }
 ];
+
+export const diverseEditorialDefaults=diverseDemoImages.filter(image=>image.category==="editorial").slice(0,13);
