@@ -11,6 +11,7 @@ import AdminReadiness from "./AdminReadiness";
 import AdminLeadList,{type Lead} from "./AdminLeadList";
 export default function AdminBusiness({page,go}:{page:Page;go:(page:Page)=>void}) {
  const [packages,setPackages]=useState<PackagePlan[]>([]),[draft,setDraft]=useState<PackagePlan|null>(null),[leads,setLeads]=useState<Lead[]>([]),[demo,setDemo]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
+ const [demoVillasVisible,setDemoVillasVisible]=useState(true);
  const [loading,setLoading]=useState(true);
  const loadSequence=useRef(0);
  const [adsDirty,setAdsDirty]=useState(false),[baseline,setBaseline]=useState("");
@@ -24,7 +25,7 @@ export default function AdminBusiness({page,go}:{page:Page;go:(page:Page)=>void}
    await currentAccount();
    if(page==="admin-packages"){const value=await api<{packages:PackagePlan[]}>("/admin/packages");if(sequence===loadSequence.current)setPackages(value.packages);}
    if(page==="admin-leads"){const value=await api<{leads:Lead[]}>("/admin/leads");if(sequence===loadSequence.current)setLeads(value.leads);}
-   if(page==="admin-settings"){const value=await api<{demoMode:boolean}>("/admin/settings");if(sequence===loadSequence.current)setDemo(value.demoMode);}
+   if(page==="admin-settings"){const value=await api<{demoMode:boolean}>("/admin/settings");const visibility=await api<{visible:boolean}>("/admin/settings/demo-villas");if(sequence===loadSequence.current){setDemo(value.demoMode);setDemoVillasVisible(visibility.visible);}}
   } finally {if(sequence===loadSequence.current)setLoading(false);}
  };
  useEffect(()=>{let active=true;setError("");setMessage("");void load().catch(e=>{if(active)setError(e.message);});return()=>{active=false;loadSequence.current++;};},[page]);
@@ -41,6 +42,7 @@ export default function AdminBusiness({page,go}:{page:Page;go:(page:Page)=>void}
  {page==="admin-leads"&&loading&&<p role="status">กำลังโหลดผู้สนใจ…</p>}
  {page==="admin-leads"&&!loading&&!error&&<AdminLeadList leads={leads} setLeads={setLeads} busy={busy} save={save}/>}
  {page==="admin-settings"&&<section className="merchant-panel"><p><strong>ตรวจสลิปโดย Admin</strong> · ตรวจยอดและเลขธุรกรรมก่อนอนุมัติ หรือระบุเหตุผลเมื่อส่งกลับให้ Merchant แนบใหม่</p><label><input type="checkbox" checked={demo} onChange={e=>setDemo(e.target.checked)}/>Demo Mode · dummy slips and email outbox (no real money or emails)</label><button disabled={busy} className="primary-button" onClick={()=>void save("/admin/settings",{paymentVerificationMode:"MANUAL",demoMode:demo})}>บันทึกการตั้งค่า</button></section>}
+ {page==="admin-settings"&&<section className="merchant-panel"><h2>แสดงที่พักสาธิตจากฐานข้อมูล</h2><p>ใช้ข้อมูลในฐานที่เว็บเชื่อมอยู่ ปิดเพื่อซ่อนจากหน้าแรกและรายการค้นหา โดยไม่ลบข้อมูลหรือเปลี่ยนสิทธิ์สมาชิก รายการยังต้องผ่านอนุมัติและมี QR Active</p><label><input type="checkbox" checked={demoVillasVisible} disabled={loading||busy||!!error} onChange={e=>setDemoVillasVisible(e.target.checked)}/>แสดง Demo Villas</label><p>แยกจาก Demo Mode ของการชำระเงิน ลิงก์ QR เดิมยังตรวจได้ตามสิทธิ์</p><button disabled={loading||busy||!!error} className="primary-button" onClick={()=>void save("/admin/settings/demo-villas",{visible:demoVillasVisible})}>บันทึกการแสดง Demo Villas</button></section>}
  {page==="admin-settings"&&<><div className="button-row"><button onClick={()=>go("admin-reviews")}>จัดการรีวิวลูกค้า</button><button onClick={()=>go("admin-pending-villas")}>ตรวจยืนยันเจ้าของบ้าน</button></div><AdminReadiness/><AdminAcceptance/></>}
  {page==="admin-reviews"&&<><p>การตรวจรีวิวขึ้นกับสิทธิ์ที่ตั้งค่าไว้รายแพ็กเกจ ใช้กติกาเดียวกันทุกคะแนน</p><Reviews mode="admin"/></>}
  {page==="admin-advertising"&&<><p>2,990: ภาพเดี่ยว 1 โพสต์ และโฆษณาเล็กก่อน Footer · 4,990: ภาพเดี่ยว 1 โพสต์ + วิดีโอ และ Carousel หน้าแรก · โปรโมทบนทุก Social รวมงบโฆษณา</p><Advertising onDirtyChange={setAdsDirty}/></>}

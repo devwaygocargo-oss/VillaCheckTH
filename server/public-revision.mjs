@@ -1,3 +1,4 @@
+import {demoVillaVisibilityKey,demoVillasVisibleValue,isDemoVilla} from "./demo-villa-visibility.mjs"
 // Approved public state is independent of the mutable draft. Never return private snapshots directly.
 export async function publicRevision(db,current,context){
  if(!current)return null
@@ -20,9 +21,10 @@ export async function resolvePublicQr(db,qr){
  return publicRevision(db,current)
 }
 export async function publishedVillas(db){
- const [current,rows,blocked]=await Promise.all([db.prepare("SELECT * FROM villas WHERE qr IS NOT NULL ORDER BY created DESC,id DESC").all(),db.prepare("SELECT key,value FROM system_settings WHERE key LIKE 'villa_approved:%'").all(),db.prepare("SELECT DISTINCT villa_id FROM invoices WHERE status='paid' AND payment_status='FAILED'").all()])
- const context={snapshots:new Map(rows.map(r=>[r.key.slice('villa_approved:'.length),JSON.parse(r.value)])),holds:new Set(blocked.map(r=>r.villa_id))}
- return (await Promise.all(current.map(v=>publicRevision(db,v,context)))).filter(v=>v.status==="approved")
+ const [current,rows,blocked]=await Promise.all([db.prepare("SELECT * FROM villas WHERE qr IS NOT NULL ORDER BY created DESC,id DESC").all(),db.prepare("SELECT key,value FROM system_settings WHERE key LIKE 'villa_approved:%' OR key='public_demo_villas_visible'").all(),db.prepare("SELECT DISTINCT villa_id FROM invoices WHERE status='paid' AND payment_status='FAILED'").all()])
+ const visible=demoVillasVisibleValue(rows.find(row=>row.key===demoVillaVisibilityKey))
+ const context={snapshots:new Map(rows.filter(row=>row.key!==demoVillaVisibilityKey).map(r=>[r.key.slice('villa_approved:'.length),JSON.parse(r.value)])),holds:new Set(blocked.map(r=>r.villa_id))}
+ return (await Promise.all(current.map(v=>publicRevision(db,v,context)))).filter(v=>v.status==="approved" && (visible || !isDemoVilla(v)))
 }
 export async function rememberQr(db,villa){
  if(!villa?.qr)return

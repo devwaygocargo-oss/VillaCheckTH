@@ -1,3 +1,4 @@
+import {isDemoVilla} from "./demo-villa-visibility.mjs"
 import {resolvePublicQr,publicRevision,rememberQr,publishedVillas} from "./public-revision.mjs"
 import {savePackagePromotion} from "./package-promotions.mjs"
 import {paymentAccess,requireManualPayment,requireNewPayment} from "./payment-access.mjs"
@@ -681,6 +682,7 @@ export function createApp(db, config, transport) {
           villas: (await Promise.all(
             rows.map(async (v) => ({
               id: v.id,
+              isDemo: isDemoVilla(v),
               name: v.name,
               nameEn: v.name_en,
               province: v.province,

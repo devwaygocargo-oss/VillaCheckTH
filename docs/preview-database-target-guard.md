@@ -48,3 +48,17 @@ Production scope ของ project staging ต้องคง main/neondb ที
 - npm run build, npm run typecheck, npm run lint และ git diff --check ผ่าน
 - Test รอบแรกติด sandbox ห้ามเปิด localhost; รันซ้ำเมื่ออนุญาต local server แล้วผ่าน ไม่ใช่บั๊กแอป
 - ไม่มีการทดสอบฐานข้อมูลภายนอก, SMTP/OTP/SMS หรือ payment provider จริง ไม่มี Push/Deploy/Commit ในรอบนี้
+
+## Demo Villas visibility switch
+
+Admin → ตั้งค่าระบบ → แสดงที่พักสาธิตจากฐานข้อมูล → แสดง Demo Villas → บันทึกการแสดง Demo Villas
+
+อ่านรายการจากฐานข้อมูลของ deployment จริง และบันทึก boolean ใน system_settings key public_demo_villas_visible ผ่าน /api/admin/settings/demo-villas ไม่เพิ่ม schema/migration และไม่ seed ค่าเริ่มต้นเมื่อไม่มี setting คือแสดง เพื่อรักษาพฤติกรรมเดิม
+
+ปิดแล้วซ่อนจาก public listing ที่หน้าค้นหาและส่วนรายการที่พักหน้าแรกใช้ร่วมกัน ก่อน pagination เปิดแล้วคืนรายการที่ยังผ่าน approval/ACTIVE ตามกฎเดิม ไม่ต่ออายุ ไม่แก้สิทธิ์ ไม่ลบ Villa/Invoice/เอกสาร Admin ยังเห็นข้อมูล QR โดยตรงและโฆษณาแยกใช้กฎเดิม สวิตช์นี้ไม่ใช่การเพิกถอน QR หรือซ่อนทุก public resource ผู้เปิดหน้าเดิมค้างต้อง refresh
+
+ระบุ Demo จาก villa.email รูปแบบ demo-...@villacheck.example ร่วมกับ merchant label สาธิตเดิมของ seed ไม่เดาจากชื่อที่พัก Public ได้เพียง isDemo พร้อมข้อความข้อมูลสาธิต ไม่ส่ง email/PII หากข้อมูล Neon เปลี่ยน label/email แล้วต้องตรวจจำแนกแยก ไม่เดาแล้วแก้ข้อมูลจริง
+
+เฉพาะ Admin เปลี่ยนได้ ผ่าน auth/CSRF เดิม มี audit เมื่อค่าเปลี่ยน ไม่เพิ่ม audit ซ้ำเมื่อส่งค่าเดิม และปฏิเสธค่าที่ไม่ใช่ boolean สวิตช์แยกจาก Demo Mode การเงิน/อีเมล
+
+ผล local: 263 tests ผ่าน 255/ล้มเหลว 0/ข้าม 8 ที่ต้องใช้ PostgreSQL; Build/Typecheck/Lint และ diff checks ผ่าน ยังไม่ได้อ่านหรือเปลี่ยน setting บน Neon จริง ยังไม่มี Commit/Push/Deploy ของฟีเจอร์นี้ ผู้ดูแลต้องยืนยัน target ก่อนทดสอบ Admin QA เปิด–ปิด/refresh บน Preview โดยไม่ seed

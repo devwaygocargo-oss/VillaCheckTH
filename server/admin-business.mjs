@@ -1,3 +1,5 @@
+import {demoVillaVisibilityKey,demoVillasVisible} from "./demo-villa-visibility.mjs"
+import {audit} from "./database.mjs"
 import {demoMode} from "./demo-payment.mjs"
 import { randomUUID } from "node:crypto"
 import { listPlans, getPlan, levels, getVerificationMode } from "./catalog.mjs"
@@ -96,6 +98,18 @@ export async function adminBusiness(
         )
     })
     return await getPlan(db, id)
+  }
+  if (path === "/api/admin/settings/demo-villas") {
+    if (["POST","PATCH"].includes(req.method)) {
+      const data=await readBody(req)
+      if(typeof data.visible!=="boolean")invalid("กรุณาระบุการแสดงข้อมูลสาธิตเป็นเปิดหรือปิด")
+      await db.transaction(async()=>{
+        const previous=await demoVillasVisible(db)
+        await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(demoVillaVisibilityKey,String(data.visible))
+        if(previous!==data.visible)await audit(db,user,"demo-villas.visibility",data.visible?"visible":"hidden")
+      })
+    } else if(req.method!=="GET")throw Object.assign(Error("Method not allowed"),{status:405})
+    return {visible:await demoVillasVisible(db)}
   }
   if (path === "/api/admin/settings") {
     if (req.method === "PATCH" || req.method === "POST") {
