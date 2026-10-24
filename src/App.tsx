@@ -1,3 +1,4 @@
+import {onPublicVillaRefresh} from "./publicVillaRefresh";
 import AdminVillaPage from "./AdminVillaPage";
 import AdminAccounts from "./AdminAccounts";
 import {useCopy,usePresentation} from "./cms";
@@ -238,7 +239,9 @@ function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Pa
   const [sort, setSort] = useState("ล่าสุด");
   const [liveVillas,setLiveVillas]=useState<(typeof villas[number] & {qr:string;nameEn:string;premiumBanner:boolean;createdAt:string;isDemo?:boolean})[]>([]);
   const [directoryError,setDirectoryError]=useState("");
-  useEffect(()=>{let active=true;void api<{villas:{isDemo?:boolean;name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
+  const [directoryRefresh,setDirectoryRefresh]=useState(0);
+  useEffect(()=>onPublicVillaRefresh(()=>setDirectoryRefresh(n=>n+1)),[]);
+  useEffect(()=>{let active=true;setDirectoryError("");void api<{villas:{isDemo?:boolean;name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[directoryRefresh]);
   const filtered = [...liveVillas]
     .filter(v => `${v.name} ${v.nameEn || ""}`.toLowerCase().includes(query.trim().toLowerCase()))
     .filter(v => !province || v.province === province)

@@ -6,7 +6,7 @@ test('Public reads share only in-flight requests; errors, private reads and muta
  const source=readFileSync(new URL('../src/api.ts',import.meta.url),'utf8'),js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
  const {api}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));const previous=globalThis.fetch,calls=[];globalThis.fetch=async(url,options)=>new Promise(resolve=>calls.push({url,options,resolve}));
  const respond=(index,status=200)=>calls[index].resolve(new Response(JSON.stringify(status===200?{items:[index]}:{error:'retry'}),{status,headers:{'Content-Type':'application/json'}}));
- try{const first=api('/public/villas'),second=api('/public/villas');assert.equal(calls.length,1);respond(0);assert.deepEqual(await first,await second);const next=api('/public/villas');assert.equal(calls.length,2);respond(1,503);await assert.rejects(next,e=>e.status===503);const retry=api('/public/villas');assert.equal(calls.length,3);respond(2);await retry;
+ try{const first=api('/public/villas'),second=api('/public/villas');assert.equal(calls.length,1);assert.equal(calls[0].options.cache,'no-store');respond(0);assert.deepEqual(await first,await second);const next=api('/public/villas');assert.equal(calls.length,2);respond(1,503);await assert.rejects(next,e=>e.status===503);const retry=api('/public/villas');assert.equal(calls.length,3);respond(2);await retry;
  const a=api('/state'),b=api('/state'),c=api('/public/contact',{message:'a'}),d=api('/public/contact',{message:'b'});assert.equal(calls.length,7);for(let i=3;i<7;i++)respond(i);await Promise.all([a,b,c,d]);
  const detail=api('/public/advertisements?placement=detail'),home=api('/public/advertisements?placement=home');assert.equal(calls.length,9);respond(7);respond(8);await Promise.all([detail,home]);
  }finally{globalThis.fetch=previous;}
@@ -33,3 +33,27 @@ test('Concurrent account checks share only a pending request and cannot apply an
   window.location.pathname='/admin';const admin=currentAccount();assert.equal(calls[8].url,'/api/auth/admin-me');respond(8,{user:{...user('admin'),role:'admin'},csrf:'admin-token'});await admin;
  }finally{globalThis.fetch=previousFetch;if(previousWindow===undefined)delete globalThis.window;else globalThis.window=previousWindow;}
 });
+
+test('Visibility refresh invalidates old in-flight public reads across focus/storage and removes listeners',async()=>{
+ const transpile=source=>ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText
+ const apiUrl='data:text/javascript;base64,'+Buffer.from(transpile(readFileSync(new URL('../src/api.ts',import.meta.url),'utf8'))+'\n// refresh invalidation').toString('base64')
+ const refreshSource=transpile(readFileSync(new URL('../src/publicVillaRefresh.ts',import.meta.url),'utf8')).replace('"./api"',JSON.stringify(apiUrl))
+ const previous={fetch:globalThis.fetch,window:globalThis.window,document:globalThis.document,localStorage:globalThis.localStorage}
+ const win=new EventTarget();win.location={pathname:'/'};const doc=new EventTarget();doc.visibilityState='visible'
+ globalThis.window=win;globalThis.document=doc;globalThis.localStorage={setItem(){}}
+ const calls=[];globalThis.fetch=async(url,options)=>new Promise(resolve=>calls.push({url,options,resolve}))
+ try{
+  const {api}=await import(apiUrl),{onPublicVillaRefresh,notifyPublicVillaVisibilityChanged}=await import('data:text/javascript;base64,'+Buffer.from(refreshSource).toString('base64'))
+  const old=api('/public/villas');let count=0,latest
+  const unsubscribe=onPublicVillaRefresh(()=>{count++;latest=api('/public/villas')})
+  notifyPublicVillaVisibilityChanged();assert.equal(count,1);assert.equal(calls.length,2)
+  calls[0].resolve(new Response(JSON.stringify({villas:['old']})));await old
+  const joined=api('/public/villas');assert.equal(calls.length,2,'old completion must not delete fresh in-flight entry')
+  calls[1].resolve(new Response(JSON.stringify({villas:[]})));assert.deepEqual(await latest,{villas:[]});await joined
+  const event=new Event('storage');Object.defineProperty(event,'key',{value:'villacheck:demo-villa-visibility-changed'});win.dispatchEvent(event)
+  assert.equal(count,2);assert.equal(calls.length,3);calls[2].resolve(new Response('{}'));await latest
+  doc.visibilityState='hidden';win.dispatchEvent(new Event('focus'));assert.equal(count,2)
+  doc.visibilityState='visible';doc.dispatchEvent(new Event('visibilitychange'));assert.equal(count,3);calls[3].resolve(new Response('{}'));await latest
+  unsubscribe();win.dispatchEvent(new Event('focus'));win.dispatchEvent(event);assert.equal(count,3)
+ }finally{Object.assign(globalThis,previous)}
+})

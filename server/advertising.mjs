@@ -1,3 +1,4 @@
+import {demoVillasVisible,isDemoVilla} from "./demo-villa-visibility.mjs"
 import {loadTrustContext,selectByIds} from "./villa-read-context.mjs"
 import { randomUUID } from "node:crypto"
 import { audit } from "./database.mjs"
@@ -59,12 +60,13 @@ export async function advertisingApi(db, user, req, path, url, body) {
         ["home","footer"].includes(url.searchParams.get("placement")) ? url.searchParams.get("placement") : "detail",
       now = Date.now()
     if(placement==="detail")return {advertisements:[]}
+    const demosVisible=await demoVillasVisible(db);
     const candidates=(await list(db,"advertisement")).filter(ad=>ad.placement===placement&&ad.approved&&ad.visible&&Date.parse(ad.startsAt)<=now&&Date.parse(ad.endsAt)>now);
     const villas=await selectByIds(db,"SELECT * FROM villas WHERE id",candidates.map(ad=>ad.villaId));
     const context=await loadTrustContext(db,villas,{qr:false});
     context.villas=new Map(villas.map(v=>[v.id,v]));
     const eligible=[];
-    for(const ad of candidates)if(await advertisingEntitlement(db,ad.villaId,placement,context))eligible.push(ad);
+    for(const ad of candidates)if((demosVisible || !(ad.demo===true || isDemoVilla(context.villas.get(ad.villaId)||{}))) && await advertisingEntitlement(db,ad.villaId,placement,context))eligible.push(ad);
     return {
       advertisements: eligible
         .sort((a, b) => a.order - b.order)

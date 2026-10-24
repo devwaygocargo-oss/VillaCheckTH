@@ -17,6 +17,7 @@ async function request<T>(path: string, data?: unknown): Promise<T> {
     response = await fetch(`/api${path}`, {
       method: data === undefined ? "GET" : "POST",
       credentials: "same-origin",
+      cache: "no-store",
       headers: { ...(adminPortal() ? {"X-VillaCheck-Portal":"admin"} : {}), ...(data === undefined ? {} : { "Content-Type": "application/json", "X-CSRF-Token": csrf }) },
       body: data === undefined ? undefined : JSON.stringify(data),
     })
@@ -36,11 +37,12 @@ async function request<T>(path: string, data?: unknown): Promise<T> {
 }
 // Share only simultaneous public reads. Settled responses are never cached.
 const publicReads=new Map<string,Promise<unknown>>();
+export function invalidatePublicVillaReads(){for(const path of publicReads.keys())if(/^\/public\/(?:villas|advertisements)(?:\?|$)/.test(path))publicReads.delete(path);}
 export function api<T>(path:string,data?:unknown):Promise<T>{
   if(data!==undefined && /^\/(?:auth|otp)\//.test(path))sessionEpoch++;
   if(data!==undefined || !(/^\/public\/(?:cms|villas|advertisements)(?:\?|$)/.test(path) || path==="/config"))return request<T>(path,data);
   const existing=publicReads.get(path);if(existing)return existing as Promise<T>;
-  const pending=request<T>(path).then(value=>{publicReads.delete(path);return value;},error=>{publicReads.delete(path);throw error;});
+  const pending=request<T>(path).then(value=>{if(publicReads.get(path)===pending)publicReads.delete(path);return value;},error=>{if(publicReads.get(path)===pending)publicReads.delete(path);throw error;});
   publicReads.set(path,pending);return pending;
 }
 export async function currentAccount() {

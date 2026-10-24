@@ -32,7 +32,7 @@ try {
  ws=new WebSocket(target.webSocketDebuggerUrl);await new Promise((r,j)=>{ws.addEventListener("open",r,{once:true});ws.addEventListener("error",j,{once:true})})
  let sequence=0;const callbacks=new Map(),pausedRequests=[]
  ws.addEventListener("message",event=>{const message=JSON.parse(event.data);if(message.method==="Fetch.requestPaused")pausedRequests.push(message.params.requestId);if(message.id){const c=callbacks.get(message.id);if(c){callbacks.delete(message.id);clearTimeout(c.timer);message.error?c.reject(Error(message.error.message)):c.resolve(message.result)}}})
- const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++sequence;const timer=setTimeout(()=>{callbacks.delete(id);reject(Error("CDP command timed out: "+method))},10000);callbacks.set(id,{resolve,reject,timer});ws.send(JSON.stringify({id,method,params}))})
+ const send=(method,params={},sessionId)=>new Promise((resolve,reject)=>{const id=++sequence;const timer=setTimeout(()=>{callbacks.delete(id);reject(Error("CDP command timed out: "+method))},10000);callbacks.set(id,{resolve,reject,timer});ws.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}))})
  const evaluate=async expression=>(await send("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true})).result.value
  await send("Network.enable");await send("Page.enable");await send("Runtime.enable")
  const login=async(email,admin=false)=>{const r=await fetch(base+(admin?"/api/auth/admin-login":"/api/auth/login"),{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({email,password})});assert.equal(r.status,200);const pair=r.headers.get("set-cookie").split(";")[0],index=pair.indexOf("=");await send("Network.setCookie",{name:pair.slice(0,index),value:pair.slice(index+1),url:base,httpOnly:true,sameSite:"Lax"})}
@@ -42,6 +42,31 @@ try {
  await until(async()=>await leadCount()===expected,"Leads direct link did not load")
  await send("Page.reload",{ignoreCache:true});await until(async()=>await leadCount()===expected,"Leads refresh lost records")
  results.push({name:"Admin Leads direct link and reload",passed:true,count:expected})
+ // Exercise the real settings UI and an already-open public tab. No reload,
+ // no static fallback; the same DB records must disappear and return on focus.
+ await send("Page.navigate",{url:base+"/admin#page=admin-settings"})
+ await until(()=>evaluate("!![...document.querySelectorAll('label')].find(e=>e.textContent.includes('แสดง Demo Villas'))?.querySelector('input')"),"Demo visibility switch missing")
+ const {targetId:publicTab}=await send("Target.createTarget",{url:base+"/#page=directory"})
+ const {sessionId:publicSession}=await send("Target.attachToTarget",{targetId:publicTab,flatten:true})
+ const publicEvaluate=async expression=>(await send("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true},publicSession)).result.value
+ const publicCards=()=>publicEvaluate("document.querySelectorAll('.directory-grid .villa-card').length")
+ await until(async()=>await publicCards()===35,"Public tab must start with 35 DB demo villas")
+ const setVisibility=async visible=>{
+  await send("Page.bringToFront")
+  await until(()=>evaluate("[...document.querySelectorAll('button')].find(e=>e.textContent==='บันทึกการแสดง Demo Villas')?.disabled===false"),"Visibility settings not ready")
+  await evaluate(`(()=>{const input=[...document.querySelectorAll('label')].find(e=>e.textContent.includes('แสดง Demo Villas')).querySelector('input');if(input.checked!==${visible})input.click();[...document.querySelectorAll('button')].find(e=>e.textContent==='บันทึกการแสดง Demo Villas').click()})()`)
+  await until(()=>evaluate(`fetch('/api/admin/settings/demo-villas',{cache:'no-store'}).then(r=>r.json()).then(v=>v.visible===${visible})`),"Saved visibility not persisted")
+  await send("Page.bringToFront",{},publicSession)
+ }
+ await setVisibility(false)
+ await until(async()=>await publicCards()===0,"Open public tab kept stale demo cards after Admin disabled them")
+ const offAds=await publicEvaluate("fetch('/api/public/advertisements?placement=home',{cache:'no-store'}).then(r=>r.json()).then(v=>v.advertisements.length)")
+ assert.equal(offAds,0)
+ await setVisibility(true)
+ await until(async()=>await publicCards()===35,"Open public tab did not restore DB demo cards")
+ results.push({name:"Admin saved demo visibility refreshes an existing public tab without reload",passed:true,before:35,off:0,restored:35,offDemoAds:offAds})
+ await send("Target.closeTarget",{targetId:publicTab})
+ await send("Page.bringToFront")
  await login("demo-merchant@villacheck.example")
  await send("Page.navigate",{url:base+"/#page=owner-package"})
  const basic=await until(()=>evaluate("document.querySelector('[data-plan-id=basic]')?.textContent"),"Merchant pricing missing")
