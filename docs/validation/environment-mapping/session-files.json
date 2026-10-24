@@ -1,0 +1,23 @@
+{
+  "baseRevision": "7b147a8c963eabc60911a63b4d82c3ec1c0baf6a",
+  "preexistingPathsExcluded": 217,
+  "files": [
+    "docs/github-vercel-staging-deployment.md",
+    "docs/staging-configuration-checklist.md",
+    "docs/staging-handover-summary-th.md",
+    "docs/validation/environment-mapping/checks.json",
+    "docs/validation/environment-mapping/session-files.json",
+    "docs/validation/environment-mapping/source-environment-inventory.json",
+    "docs/vercel-staging-environment-inventory.md",
+    "docs/vercel-staging-environment-mapping.md"
+  ],
+  "fileHashes": {
+    "docs/github-vercel-staging-deployment.md": "a46f6b09b8233f895babf40f6853688dee131c11f4dda4712dc7088897c71f03",
+    "docs/staging-configuration-checklist.md": "d445b7b27b8880bbbd237b2715abc3691cf257345a0a1f68a59c20186578b825",
+    "docs/staging-handover-summary-th.md": "05b2ef9804e0f977e684594d7fe069c8bbef389be979146463b4c7c7f25944f4",
+    "docs/validation/environment-mapping/checks.json": "433d81936ee0ffa089fe07307c17044ec7ca311c7c9db7cff977894a3e869c8b",
+    "docs/validation/environment-mapping/source-environment-inventory.json": "ac904d2cbaa943e8817053a27c6673ecf5fb6d4b48241335c75ab623bb1d5197",
+    "docs/vercel-staging-environment-inventory.md": "fb2dff2cef71cf7b0f1f6abaf671c0c1dea9c767770313bed880e5bd23d7edc0",
+    "docs/vercel-staging-environment-mapping.md": "c1e62797abc03596ad332e6431dc4af5015da8d02041d8ad456b3024567ea957"
+  }
+}

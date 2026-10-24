@@ -1,0 +1,50 @@
+{
+  "baseRevision": "7b147a8c963eabc60911a63b4d82c3ec1c0baf6a",
+  "scope": "ตรวจ tracked source/เอกสารเท่านั้น ไม่อ่าน .env/host secrets ไม่เรียก network/provider ไม่ต่อ DB ไม่ push/merge/deploy/แก้ settings",
+  "userConfirmedDashboardFacts": {
+    "project": "design-villacheck",
+    "connectedRepository": "devwaygocargo-oss/VillaCheckTH",
+    "productionBranch": "main",
+    "url": "https://design-villacheck.vercel.app/",
+    "integrationGroup": "VillaCheck_*",
+    "integrationScopes": [
+      "production",
+      "preview"
+    ],
+    "reportedProductionGroups": [
+      "SMTP",
+      "OTP",
+      "ThaibulkSMS",
+      "APP_URL"
+    ],
+    "reportedNotVisibleInScreenshot": [
+      "PAYMENT_ACCESS_MODE",
+      "OMISE_TEST_ENABLED"
+    ],
+    "provenance": "ผู้ใช้ยืนยันจาก Dashboard ไม่ใช่ agent อ่านค่า host"
+  },
+  "requiredNonSecretSettings": {
+    "PAYMENT_ACCESS_MODE": "DISABLED",
+    "OMISE_TEST_ENABLED": "false",
+    "APP_ENV": "staging",
+    "APP_URL": "https://design-villacheck.vercel.app",
+    "DEMO_MODE": "false",
+    "SEED_DEMO_ACCOUNTS": "false",
+    "SEED_PUBLIC_DEMO_DATA": "false",
+    "COOKIE_SECURE": "true"
+  },
+  "databaseAlias": "DATABASE_URL takes precedence over VillaCheck_DATABASE_URL; runtime does not require both",
+  "databaseIsolationVerified": false,
+  "previewDatabaseIsolationVerified": false,
+  "offlineChecks": {
+    "pass": 6,
+    "fail": 0,
+    "externalCalls": 0,
+    "localMarkdownLinks": "passed",
+    "diffCheck": "passed"
+  },
+  "applicationCodeChanged": false,
+  "fullSuiteRerun": false,
+  "preexistingPathsExcluded": 217,
+  "recommendation": "NO-GO จนตรวจ effective DB isolation/Preview scopes/recipient paths และตั้ง payment guards ครบ; Git repo/main ยืนยันจากผู้ใช้แล้ว"
+}

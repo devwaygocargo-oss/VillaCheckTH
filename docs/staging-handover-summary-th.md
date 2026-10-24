@@ -24,3 +24,7 @@ PostgreSQL 262 ผ่าน/0 ล้มเหลว/0 ข้าม; SQLite 254 �
 ## การอัปเดตผ่าน GitHub
 
 ใช้ [GitHub → Vercel](github-vercel-staging-deployment.md) แทนการ deploy ด้วย CLI ต้องตรวจ Connected Repository/Branch Tracking/Domain/env ก่อน Push เพราะ origin/legacy คนละ repo และ Vercel API 403 ยังไม่ยืนยัน Production Branch ไม่เปลี่ยน branch configuration ในงานนี้
+
+## ข้อมูล Dashboard ที่ผู้ใช้ยืนยันเพิ่มเติม
+
+Project design-villacheck เชื่อม devwaygocargo-oss/VillaCheckTH (origin), Production Branch=main; integration VillaCheck_* อยู่ Production/Preview และมี SMTP/OTP/ThaibulkSMS/APP_URL ใน Production ข้อมูลนี้ปิดข้อไม่ทราบ Git repository/Production Branch จาก audit ก่อนหน้า แต่ยังไม่พิสูจน์ DB isolation/payment gate ดู [Environment Mapping](vercel-staging-environment-mapping.md) สำหรับสิ่งที่ต้องเพิ่ม/ตรวจและ Go/No-Go ก่อนอนุญาต deployment

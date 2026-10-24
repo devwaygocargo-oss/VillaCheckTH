@@ -1,6 +1,6 @@
 # GitHub → Vercel Staging — คู่มือที่ใช้จริง
 
-24 ตุลาคม 2026 · **ยังไม่แนะนำให้ Push เพื่อ trigger deploy จนกว่าจะปิด preflight blockers** โค้ดผ่าน local QA แล้ว แต่ยังยืนยัน Git integration/DB/payment บน host ไม่ได้ งานนี้ไม่มี Push/Merge/Deploy/แก้ Branch Configuration/แก้ DB
+24 ตุลาคม 2026 · **ยังไม่แนะนำให้ Push เพื่อ trigger deploy จนกว่าจะปิด preflight blockers** โค้ดผ่าน local QA แล้ว ผู้ใช้ยืนยัน Git integration และ Production Branch แล้ว แต่ DB/payment บน host ยังต้องยืนยัน งานนี้ไม่มี Push/Merge/Deploy/แก้ Branch Configuration/แก้ DB
 
 ## 1. ข้อเท็จจริงจาก Git
 
@@ -22,7 +22,7 @@ origin/main เป็น ancestor ของ HEAD ณ ตรวจ และม�
 
 ## 2. Vercel ที่ต้องตรวจจาก Dashboard
 
-Local linkage ระบุ project `design-villacheck` แต่ GET project/alias/env ล่าสุดยัง 403 จึงยืนยัน connected repo, Production Branch, Branch Tracking, live SHA, env scopes และ DB ไม่ได้ ไม่เดาชื่อ branch แทนข้อมูลจริง
+ผู้ใช้ยืนยันจาก Dashboard แล้วว่า project `design-villacheck` เชื่อม `devwaygocargo-oss/VillaCheckTH` และ Production Branch=`main` ข้อมูลนี้แทนข้อจำกัดเรื่อง repo/Production Branch ใน audit รอบก่อนที่ API 403 ส่วน live SHA, custom Branch Tracking/domain mapping และ effective env/DB ยังไม่ได้ตรวจโดย agent ดู [Environment Mapping ตาม Source](vercel-staging-environment-mapping.md)
 
 ดิวเปิด **Vercel → เลือก Team ที่ถูกต้อง → project ที่เป็นเจ้าของ design-villacheck.vercel.app** แล้วบันทึก:
 
@@ -38,6 +38,8 @@ Local linkage ระบุ project `design-villacheck` แต่ GET project/ali
 ชื่อ Production environment ใน Vercel project สำหรับ staging ไม่ได้หมายถึง production hosting บริษัท `villacheckth.com` ต้องยืนยัน DB/services แยก แม้ทดสอบผ่าน Preview URL ก็อาจใช้บริการ production หาก env ตั้งผิด
 
 ## 3. Push branch ไหนแล้วได้อะไร
+
+ตามข้อมูลยืนยันล่าสุด ให้ใช้ **origin** และ Production Branch=main; push branch งานโดยปกติได้ Preview ไม่อัปเดต URL หลัก เว้นแต่มี custom rule/domain mapping ที่ตรวจยืนยันต่างหาก งานนี้ไม่ push/merge เข้า main
 
 | เงื่อนไขที่ Dashboard ยืนยัน | Push branch งานนี้แล้วเกิดอะไร |
 |---|---|
@@ -57,7 +59,7 @@ Local linkage ระบุ project `design-villacheck` แต่ GET project/ali
 - [ ] ตั้ง `APP_ENV=staging`, APP_URL ให้ตรง URL ที่ทดสอบ, SMTP/OTP และ exact QA inbox allowlist; Preview/custom scopes ต้องตรวจแยก ไม่ copy production env โดยไม่ทบทวน
 - [ ] สำรองฐาน staging/ตรวจ schema compatibility และ rollback artifact โดย Operator ไม่มี migration ใหม่จากเอกสารรอบนี้ ไม่รัน DB migration ภายนอกเอง
 
-Staging GET ล่าสุด: health 200, packages 401, public listing 200; `/api/config` เป็น `paymentConfigured=true`, `demoMode=true` และไม่ส่ง paymentAccessMode จึง **ยังยืนยัน gate ปิดไม่ได้** ไม่อ้างว่ารับเงินจริงได้จาก flag นี้ Headers บางรายการยังขาดตาม source ล่าสุด และไม่ทราบ Git SHA/DB จึงยังไม่แนะนำ deploy ก่อนตรวจ
+หลักฐาน Staging GET จากรอบก่อน (รอบ Environment Mapping นี้ไม่เรียก host): health 200, packages 401, public listing 200; `/api/config` เป็น `paymentConfigured=true`, `demoMode=true` และไม่ส่ง paymentAccessMode จึง **ยังยืนยัน gate ปิดไม่ได้** ไม่อ้างว่ารับเงินจริงได้จาก flag นี้ Headers บางรายการยังขาดตาม source ล่าสุด และไม่ทราบ Git SHA/DB จึงยังไม่แนะนำ deploy ก่อนตรวจ
 
 ## 5. คำสั่ง Git ที่เตรียมให้ดิว — ยังไม่ได้รัน Push
 
@@ -81,11 +83,7 @@ git ls-remote --symref legacy HEAD refs/heads/main refs/heads/fix/autonomous-bus
 git push origin HEAD:refs/heads/fix/autonomous-business-security-20261024
 ```
 
-**หาก Dashboard ยืนยันเชื่อม dewpm/DesignVillaCheck-finish แทน ให้ใช้คำสั่งนี้แทนคำสั่งบน ไม่รันทั้งสอง:**
-
-```sh
-git push legacy HEAD:refs/heads/fix/autonomous-business-security-20261024
-```
+**ไม่ใช้ legacy เป็นปลายทางของ staging นี้** เพราะ Dashboard ที่ผู้ใช้ยืนยันเชื่อม repository ของ origin แล้ว เก็บ remote เดิมไว้โดยไม่ลบหรือเปลี่ยน configuration
 
 คำสั่งไม่ตั้ง upstream ไม่เปลี่ยน remote configuration และไม่ merge ไม่รับรองว่า URL หลักจะเปลี่ยน ต้องใช้ตารางข้อ 3 หากมี remote branch ใหม่หรือ divergent ให้ fetch/review/แก้ conflict ในงานที่ได้รับอนุญาตแยก ห้าม force แทนการตรวจ
 
@@ -113,4 +111,4 @@ git push legacy HEAD:refs/heads/fix/autonomous-business-security-20261024
 
 source/runtime ไม่มีการแก้ในรอบเอกสารนี้ Local QA ล่าสุด PostgreSQL 262 ผ่าน, SQLite 254 ผ่าน/8 ข้าม, Chrome 66 ผ่าน, Build/Typecheck/Lint ผ่าน จาก revision `f95e03f` ตรวจ hashes ของไฟล์ที่บันทึกไว้ก่อนแก้เอกสารแล้วตรง ไม่มี tracked `.env` จริง/ไฟล์ key/backup จาก filename scan ไม่อ้างว่า scan นี้พิสูจน์ไม่มี secret ทุกชนิด/ทุก Git history
 
-**พร้อมด้าน code review/local validation แต่ HOLD การ Push ที่จะ trigger deployment จนยืนยัน integration/DB/payment safety ได้** หลักฐานใหม่อยู่ใน [git-readiness.json](validation/github-staging/git-readiness.json), [Vercel API](validation/github-staging/vercel-readonly.json) และ [Staging GET](validation/github-staging/public-probes.json)
+**พร้อมด้าน code review/local validation แต่ HOLD การ Push ที่จะ trigger deployment จนยืนยัน DB/payment safety และ env scopes ได้** หลักฐานใหม่อยู่ใน [git-readiness.json](validation/github-staging/git-readiness.json), [Vercel API](validation/github-staging/vercel-readonly.json) และ [Staging GET](validation/github-staging/public-probes.json)

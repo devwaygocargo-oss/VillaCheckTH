@@ -1,6 +1,6 @@
 # Staging Configuration Checklist
 
-ใช้ project เดิมที่ local linkage ระบุ `design-villacheck`; ต้องให้ดิวตรวจใน Vercel Dashboard ว่าเป็นเจ้าของ alias `design-villacheck.vercel.app` จริงก่อนดำเนินการ ไม่สร้าง project ใหม่โดยคาดเดา
+ผู้ใช้ยืนยันจาก Dashboard: project `design-villacheck`, repo `devwaygocargo-oss/VillaCheckTH`, Production Branch `main`, URL `design-villacheck.vercel.app` ไม่สร้าง project ใหม่ ดู [Environment Mapping ล่าสุด](vercel-staging-environment-mapping.md) สำหรับค่า non-secret และ DB alias precedence
 
 ## Revision / Runtime
 
@@ -12,7 +12,7 @@
 
 ## Environment — ชื่อและความจำเป็นเท่านั้น
 
-Host inventory ยัง UNKNOWN เพราะ API 403 ตารางนี้เป็นข้อกำหนด ไม่ใช่หลักฐานว่าตั้งบน host แล้ว
+ทราบชื่อกลุ่ม integration/scopes ตามที่ผู้ใช้แจ้ง แต่ effective host values และ DB isolation ยังไม่ตรวจยืนยัน ตารางนี้เป็นข้อกำหนด ไม่ใช่หลักฐานว่าตั้งครบแล้ว
 
 | ชื่อ | จำเป็น/การใช้งาน |
 |---|---|
@@ -42,4 +42,4 @@ Environment scope ของ Vercel (Preview/Production/custom) ต้องต�
 
 ## การอัปเดตผ่าน GitHub
 
-ใช้ [GitHub → Vercel](github-vercel-staging-deployment.md) แทนการ deploy ด้วย CLI ต้องตรวจ Connected Repository/Branch Tracking/Domain/env ก่อน Push เพราะ origin/legacy คนละ repo และ Vercel API 403 ยังไม่ยืนยัน Production Branch ไม่เปลี่ยน branch configuration ในงานนี้
+ใช้ [GitHub → Vercel](github-vercel-staging-deployment.md) แทนการ deploy ด้วย CLI ต้องตรวจ Connected Repository/Branch Tracking/Domain/env ก่อน Push ผู้ใช้ยืนยันใช้ origin และ Production Branch=main แล้ว ส่วน DB/payment/Preview scopes ยังต้องตรวจ ไม่เปลี่ยน branch configuration ในงานนี้
