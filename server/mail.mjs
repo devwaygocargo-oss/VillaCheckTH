@@ -1,3 +1,4 @@
+import {paymentAccess} from "./payment-access.mjs"
 import generatePayload from "promptpay-qr"
 import QRCode from "qrcode"
 import { drainBankNotifications } from "./bank-receiving.mjs"
@@ -13,6 +14,7 @@ export function createMailWorker(db, config, transport) {
     return active
   }
   async function drain() {
+    if(["DISABLED","OMISE_TEST"].includes(paymentAccess(config)))return
     await drainBankNotifications(db,config,transport)
     const demo=await demoMode(db,config)
     if(!transport && !demo)return

@@ -10,7 +10,7 @@ export default function AdminReadiness(){
  useEffect(()=>{void refresh();},[]);
  return <section className="merchant-panel"><div className="button-row"><h2>ความพร้อมเปิดใช้งานและสถานะบริการ</h2><button disabled={busy} onClick={()=>void refresh()}>{busy?"กำลังตรวจ…":"ตรวจสถานะล่าสุด"}</button></div>{error&&<p role="alert">{error}</p>}{data&&<>
  <p>ตรวจล่าสุด {new Date(data.checkedAt).toLocaleString("th-TH")} · CMS เผยแพร่ v{data.cms.publishedRevision}</p>
- <p><strong>โหมดระบบ:</strong> {data.demoMode?"Demo — ยังไม่ใช่การตรวจรับการชำระเงินจริง":"ใช้งานจริง"} · ตรวจสลิปโดยคน ({data.paymentMode})</p>
+ <p><strong>โหมดระบบ:</strong> {data.paymentMode==="DISABLED"?"ปิดการชำระ":data.paymentMode==="OMISE_TEST"?"Omise Test — ยังไม่ผ่าน provider acceptance":data.demoMode?"Demo — ยังไม่ใช่การตรวจรับการชำระเงินจริง":"Legacy manual"} ({data.paymentMode})</p>
  <p>ข้อมูลรับชำระ: {data.paymentConfigured?"ตั้งค่าแล้ว":"ยังไม่ได้ตั้งค่า"} · SMTP สำหรับอีเมลชำระเงิน: {data.smtpConfigured?"ตั้งค่าแล้ว (ตรวจส่งจริงแยกต่างหาก)":"ยังไม่ได้ตั้งค่า"}</p>
  <p>อนุมัติแยก Admin: {data.operations?.dualApprovalRequired?"บังคับใช้":"ไม่ได้บังคับ"} · Scheduled worker: {data.operations?.scheduledWorkerConfigured?"ตั้งค่า secret แล้ว":"รอตั้ง CRON_SECRET"} · ทำงานล่าสุด {data.operations?.lastScheduledRun||"ยังไม่มีบันทึก"}</p>
  <h3>การเข้าสู่ระบบ</h3><p>Facebook: {data.facebookStatus==="waiting-approval"?"รอ Meta อนุมัติ — ปิดใช้งานไว้":data.oauth.facebook?"เปิดใช้งาน — ต้องตรวจรับกับ Meta จริง":"ยังตั้งค่าไม่ครบ"}</p><p>Google: {data.oauth.google?"ตั้งค่าแล้ว":"ยังไม่ตั้งค่า"} · LINE: {data.oauth.line?"ตั้งค่าแล้ว":"ยังไม่ตั้งค่า"}</p>

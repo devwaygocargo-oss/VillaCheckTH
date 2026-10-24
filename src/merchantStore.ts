@@ -1,6 +1,7 @@
 import type { PaymentQrData } from "./PaymentQr";
 export type Document = { name: string; data: string; type: string }
 export type Invoice = {
+  paymentAccessMode?:"DISABLED"|"OMISE_TEST"|"LEGACY_MANUAL"|"DEMO"
   gateway?: "OMISE"|"MANUAL"
   packageName: string
   updatedAt: string
@@ -75,6 +76,7 @@ export type Account = {
   role: "merchant" | "admin" | "user"
 }
 export type Store = {
+  paymentAccessMode?:"DISABLED"|"OMISE_TEST"|"LEGACY_MANUAL"|"DEMO"
   packageModel?: "PER_VILLA"
   subscription: { packageId: string; name: string; amount: number; billingCycle: string; billingMonths: number; capacity: number; used: number; expires: string | null; active: boolean; status: string; renewalDate: string | null; payments: number } | null
   villas: MerchantVilla[]

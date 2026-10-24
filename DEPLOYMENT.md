@@ -87,3 +87,11 @@ SMTP connection-only verification is available in Admin Settings and does not se
 - Vercel team/project: `villa-check/design-villacheck`. Git integration deploys company `main`.
 - Production: https://design-villacheck.vercel.app/
 - Vercel Dashboard Framework Preset: `nextjs`, matching `vercel.json`. Build command `npm run build` and output `.next` are declared in `vercel.json`; Dashboard overrides may remain unset.
+
+## Phase 3 staging preparation
+
+Use [the staging guide](docs/staging-deployment-guide.md) and [external acceptance checklist](docs/staging-external-acceptance.md). No staging/production deployment was performed by the preparation session. Vercel runs Next/Nest/Prisma together; Render is a separate API and is not automatically wired to the frontend.
+
+Production-mode runtime now defaults `PAYMENT_ACCESS_MODE` to `DISABLED`; production `LEGACY_MANUAL` is rejected. Isolated staging may enable `OMISE_TEST` with test-only keys and explicitly selected test methods. Do not rely on an Omise flag or Demo UI alone to disable old manual endpoints. The gate holds invoice/bank-notification workers and preserves histories; see [the manual shutdown plan](docs/legacy-manual-shutdown-plan.md), including the ingress restriction required when rolling back to old code.
+
+Set `APP_ENV=staging` and exact `STAGING_EMAIL_ALLOWLIST` before Email OTP/SMTP acceptance. An empty allowlist fails closed. `scripts/staging-diagnostics.mjs` is configuration-only by default; `--verify-smtp` checks connectivity without sending mail and still does not prove Inbox delivery. No live payment mode is implemented or approved.

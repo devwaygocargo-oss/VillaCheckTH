@@ -128,6 +128,7 @@ export default function VillaPackagePanel({
             className="primary-button"
             disabled={
               busy ||
+              (!pendingInvoice && selectedPlanId!=="basic" && store.paymentAccessMode==="DISABLED") ||
               (!pendingInvoice && (!plan || villa.status !== "approved"))
             }
             onClick={async () => {
@@ -135,14 +136,15 @@ export default function VillaPackagePanel({
               const result = await perform(
                 "/merchant/villa-package",
                 { villaId, packageId: selectedPlanId, couponCode },
-                "สร้างใบแจ้งชำระต่อที่พักแล้ว กรุณาตรวจยอดและแนบสลิปด้านล่าง",
+                "สร้างใบแจ้งชำระแล้ว กรุณาตรวจยอดและดำเนินการตามช่องทางของรายการ",
               )
               if (result) { const invoice = result.villas.find(v=>v.id===villaId)?.invoices.find(i=>i.status!=="paid"); if(invoice) onPayment(invoice.id) }
             }}
           >
-            {busy ? "กำลังสร้างใบแจ้งชำระ…" : pendingInvoice ? "เปิดหน้าชำระเงินของรายการค้าง" : "ซื้อ / ต่ออายุแพ็กเกจสำหรับที่พักนี้"}
+            {busy ? "กำลังสร้างใบแจ้งชำระ…" : pendingInvoice ? "เปิดประวัติและสถานะรายการค้าง" : "ซื้อ / ต่ออายุแพ็กเกจสำหรับที่พักนี้"}
           </button>
-          {pendingInvoice && <div role="status"><p>{pendingInvoice.status === "submitted" ? "ส่งสลิปแล้ว อยู่ระหว่างรอ Admin ตรวจสอบ วันหมดอายุจะปรับหลังยืนยันชำระ" : "มีใบแจ้งชำระค้าง กรุณาชำระและแนบสลิปในรายการเดิมก่อนสร้างรายการใหม่"}</p><button type="button" className="outline-button" onClick={()=>onPayment(pendingInvoice.id)}>ดูใบแจ้งชำระ / แนบสลิป</button></div>}
+          {store.paymentAccessMode==="DISABLED"&&<p role="status">ปิดการชำระชั่วคราว สิทธิ์และประวัติเดิมยังคงอยู่</p>}
+          {pendingInvoice && <div role="status"><p>{pendingInvoice.status === "submitted" ? "ส่งสลิปแล้ว อยู่ระหว่างรอ Admin ตรวจสอบ วันหมดอายุจะปรับหลังยืนยันชำระ" : "มีรายการค้าง กรุณาเปิดดูสถานะและช่องทางของรายการเดิม ไม่สร้างรายการชำระซ้ำ"}</p><button type="button" className="outline-button" onClick={()=>onPayment(pendingInvoice.id)}>ดูประวัติ / สถานะใบแจ้งชำระ</button></div>}
           {villa.status !== "approved" && <p>รอทีมอนุมัติที่พักก่อนเลือกซื้อแพ็กเกจ</p>}
         </>
       )}

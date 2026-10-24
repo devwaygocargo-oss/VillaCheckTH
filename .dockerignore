@@ -9,3 +9,13 @@ server/data
 .next
 .build
 backend/generated
+
+audit-results
+reports
+.codex
+.agents
+.aws
+.DS_Store
+*.pem
+*.key
+docs/validation

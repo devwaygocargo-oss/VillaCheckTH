@@ -8,6 +8,7 @@ import {join} from "node:path"
 import {openTestDatabase} from "../server/test-database.mjs"
 import {seedDemo} from "../server/demo-seed.mjs"
 import {createUser} from "../server/database.mjs"
+const evidenceDir=process.env.VILLACHECK_BROWSER_EVIDENCE_DIR||"docs/validation/phase2"
 const chromePath=process.env.VILLACHECK_CHROME_PATH||"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 if(!process.env.TEST_DATABASE_URL||!["127.0.0.1","localhost"].includes(new URL(process.env.TEST_DATABASE_URL).hostname))throw Error("Disposable localhost test database required")
 if(!existsSync(chromePath))throw Error("Chrome unavailable; browser acceptance cannot run")
@@ -54,7 +55,7 @@ try {
  await until(()=>evaluate("document.body.innerText.includes('ข้อมูลส่วนบุคคลถูกปกปิด')"),"Public QR privacy UI missing")
  assert.equal(await evaluate("document.body.innerText.includes('เพื่อดูเบอร์โทรและเลขบัญชีเต็ม')"),false)
  results.push({name:"Public QR uses masked data and pre-transfer check guidance",passed:true})
- mkdirSync("docs/validation/phase2",{recursive:true})
+ mkdirSync(evidenceDir,{recursive:true})
  const invoiceId="65ef4318-3e0b-49fe-9867-912e3eeb04c1"
  await db.prepare("INSERT INTO invoices(id,villa_id,amount,months,status,package_id,created) VALUES (?,?,199000,1,'pending','starter',?)").run(invoiceId,villa.id,new Date().toISOString())
  const routes=[
@@ -77,7 +78,7 @@ try {
    results.push({name,width,...layout,passed:layout.scrollWidth<=width+1})
    if(["Homepage","Pricing","Villa Detail","Invoice Payment","Admin Dashboard"].includes(name)){
     const shot=await send("Page.captureScreenshot",{format:"png",captureBeyondViewport:false})
-    writeFileSync("docs/validation/phase2/"+name.replaceAll(" ","-").toLowerCase()+"-"+width+".png",Buffer.from(shot.data,"base64"))
+    writeFileSync(evidenceDir+"/"+name.replaceAll(" ","-").toLowerCase()+"-"+width+".png",Buffer.from(shot.data,"base64"))
    }
   }
  }
@@ -103,7 +104,7 @@ try {
  await until(()=>evaluate("document.body.innerText.includes('เริ่มต้นจาก Villa แรก')"),"Empty Merchant state missing")
  results.push({name:"Merchant empty state",passed:true})
  assert(results.every(result=>result.passed),"Responsive QA has failed cases; inspect evidence")
- writeFileSync("docs/validation/phase2/browser.json",JSON.stringify({localSyntheticDataOnly:true,results},null,2)+"\n")
+ writeFileSync(join(evidenceDir,"browser.json"),JSON.stringify({localSyntheticDataOnly:true,results},null,2)+"\n")
  mkdirSync("docs/validation",{recursive:true})
 
  console.log(JSON.stringify({browser:"Chrome headless",results}))

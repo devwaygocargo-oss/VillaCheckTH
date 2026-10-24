@@ -13,7 +13,6 @@ function readLocation() {
   const params = new URLSearchParams(window.location.hash.slice(1));
   const requestedAdmin = params.get("page")?.startsWith("admin-");
   const adminPath = /^\/admin(?:\/|$)/.test(window.location.pathname);
-  if((requestedAdmin || adminPath) && window.location.hostname.endsWith(".vercel.app") && window.location.hostname !== "design-villacheck.vercel.app"){window.location.replace("https://design-villacheck.vercel.app/admin/login");return {page:"admin-login",item:""};}
   if(adminPath && params.has("page") && !requestedAdmin){window.location.replace("/#"+params);return {page:"home",item:""};}
   if(requestedAdmin && !adminPath){window.location.replace("/admin/login");return {page:"admin-login",item:""};}
   if(window.location.pathname === "/admin/login")return {page:"admin-login",item:""};

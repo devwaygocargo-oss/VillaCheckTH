@@ -1,20 +1,22 @@
 # ข้อขัดขวาง Go-Live — Phase 2 (24 ตุลาคม 2026)
 
+ปรับสถานะหลัง Phase 3: เตรียม Test checkout, payment gates และ staging email isolation แล้ว แต่ยังไม่ได้ deploy หรือผ่าน provider acceptance จริง ดู [รายงาน Phase 3](phase3-preparation-report.md) และ [คู่มือ staging](staging-deployment-guide.md)
+
 เป้าหมายเปิดระบบ 31 ตุลาคม 2026 · ผลประเมินปัจจุบัน **NOT READY** สำหรับบริการครบวงจร/รับเงินจริง ไม่ใช่ใบอนุมัติ deploy
 
 ## ระดับและเกณฑ์ปิดงาน
 
 | ID | ระดับ | ข้อค้นพบ/ผลกระทบ | เงื่อนไขปิดงาน | ผู้รับผิดชอบที่เสนอ |
 |---|---|---|---|---|
-| GL-01 | BLOCKER | Omise ทดสอบเฉพาะ mock ไม่มีหลักฐานบัญชีผู้ให้บริการจริง และยังไม่มี source-collection checkout UI; adapter รับเฉพาะ test mode | ทำ Omise Test acceptance ด้วยบัญชีจริง: pending/success/failure/expiry/reversal/replay, browser return/refresh, webhook ที่ host จริง และสร้าง source จาก UI; ตรวจรับ live configuration แยกโดยไม่เรียกเก็บในงานนี้ | ผู้พัฒนา + ผู้ดูแล Omise |
-| GL-02 | BLOCKER | SMTP/Email OTP ยังไม่ยืนยันการส่งและรับจริง การสมัครใหม่พึ่งการยืนยันอีเมล | ทดสอบ staging ถึง Inbox/Spam, รหัสผิด/หมดอายุ/ขอซ้ำ, quota/TLS และตรวจผู้รับจริงที่ได้รับอนุญาต | ผู้ดูแล Email + QA |
+| GL-01 | BLOCKER | Omise Test checkout/source/redirect/refresh UI เตรียมแล้วและทดสอบ mock; ยังไม่มีหลักฐานบัญชี/วิธีชำระจากผู้ให้บริการจริง และ adapter รับเฉพาะ test mode | ทำ Omise Test acceptance ด้วยบัญชีจริง: pending/success/failure/expiry/reversal/replay, browser return/refresh, webhook ที่ host จริง และสร้าง source จาก UI; ตรวจรับ live configuration แยกโดยไม่เรียกเก็บในงานนี้ | ผู้พัฒนา + ผู้ดูแล Omise |
+| GL-02 | BLOCKER | SMTP/Email OTP ยังไม่ยืนยันการส่งและรับจริง; เตรียม diagnostic และ staging recipient allowlist แล้ว การสมัครใหม่พึ่งการยืนยันอีเมล | ทดสอบ staging ถึง Inbox/Spam, รหัสผิด/หมดอายุ/ขอซ้ำ, quota/TLS และตรวจผู้รับจริงที่ได้รับอนุญาต | ผู้ดูแล Email + QA |
 | GL-03 | BLOCKER | ไม่มีหลักฐานตรวจ production env, DB TLS/permissions, demo/บัญชีเดิม, backup/restore และ monitoring บน host | operator ตรวจรายการใน production-readiness-checklist พร้อมหลักฐานที่ไม่เปิดเผย secrets; backup นอก host และ restore drill; ตรวจข้อมูล demo/บัญชี try-* ด้วยแผนแยก | Dew/ผู้ดูแลระบบ |
 | GL-04 | HIGH | BL-01 วันจบโปรโมชั่น/ระยะสิทธิ์/paid renewal และ BL-02 rounding/credit/refund/รอบใหม่ยังไม่ยืนยัน | คุณเกมส์ลงนามข้อกำหนดก่อนเปิด Basic แบบเรียกเก็บหรือเปลี่ยนแพ็กเกจกลางรอบ ปัจจุบันระบบบล็อก flow เหล่านี้ | คุณเกมส์ |
 | GL-05 | HIGH | BL-05 QR เก่ากับการแสดงข้อมูลระหว่างรอตรวจยังรอตัดสินใจ ปัจจุบันรอแล้วซ่อนรายละเอียด และ QR เก่า 404 หลังอนุมัติ | ตรวจรับพฤติกรรมนี้หรือกำหนดนโยบายใหม่ พร้อม UAT ลิงก์ที่พิมพ์/แจกไปแล้ว | คุณเกมส์ + QA |
 | GL-06 | HIGH | Owner notification เป็น private durable outbox ยังไม่มีผู้รับ/ช่องทาง/worker ส่งภายนอก | ระบุ Owner, ช่องทาง, retry/dedup, ทดสอบส่งจริงและตรวจการเข้าถึงหลักฐานส่ง | คุณเกมส์ + ผู้พัฒนา |
 | GL-07 | HIGH | Render/Nest/standalone ใช้ socket IP อย่างปลอดภัย แต่หลัง proxy ผู้ใช้หลายคนอาจแชร์ quota; ไม่มี quota ต่ออีเมลสำหรับ password login | ตรวจ trusted ingress/edge rate policy และทดสอบ topology จริงก่อนเปิด backend นี้สาธารณะ; OTP request มี quota ต่อ destination อยู่แล้ว | ผู้ดูแล backend |
 | GL-08 | HIGH | สิทธิ์ Admin ส่วนใหญ่เป็น role ระดับเดียว มี designated reviewer เฉพาะบัญชีรับเงิน ไม่มี permission matrix ทั่วระบบ | ยืนยันว่า Admin ทุกคนได้รับสิทธิ์ระดับนี้ หรือกำหนด RBAC ก่อนให้บัญชีจำกัดสิทธิ์แก่บุคคลอื่น | คุณเกมส์ + ผู้ดูแลบัญชี |
-| GL-09 | HIGH | Omise UNKNOWN/CREATING และ failed attempt ยังไม่มี operator reconciliation/retry UI; webhook ที่มาก่อนบันทึก charge ID จะได้ 409 | ยืนยัน provider retry/recovery จริง และทำคู่มือกระทบยอดที่ทดลองแล้ว; ห้ามสร้าง charge ใหม่แบบเดาสถานะ | ผู้พัฒนา + การเงิน |
+| GL-09 | HIGH | Omise UNKNOWN/CREATING/SOURCE_REJECTED และ failed attempt ยังไม่มี operator reconciliation/retry UI; webhook ที่มาก่อนบันทึก charge ID จะได้ 409 | ยืนยัน provider retry/recovery จริง และทำคู่มือกระทบยอดที่ทดลองแล้ว; ห้ามสร้าง charge ใหม่แบบเดาสถานะ | ผู้พัฒนา + การเงิน |
 | GL-10 | HIGH | การเปิดบริการเงินจริงต้องทบทวน lifecycle เมื่อบัญชีถูกระงับระหว่างมี invoice/charge ค้าง; legacy invoice บางแบบกระทบทั้งบัญชี | ทดสอบเหตุการณ์ suspension ระหว่างชำระ/คืนรายการและกระทบยอดใบเก่าบน staging ก่อนเปิด payment | ผู้พัฒนา + การเงิน |
 | GL-11 | MEDIUM | บางหน้าพึ่ง hash routes, SSR/SEO ราย Villa จำกัด; adapter ซ้ำ/global write lock และ pg concurrency warning | แยกงาน performance/SEO; วัดโหลด/connection pool ก่อนเพิ่ม traffic | ผู้พัฒนา |
 | GL-12 | HIGH | Business UAT/อุปกรณ์จริง/เครือข่ายจริงยังไม่มีผู้ตรวจรับ | คุณเกมส์ทำ UAT และทีมทดสอบ iOS/Android/desktop ตาม checklist | คุณเกมส์ + QA |
@@ -26,7 +28,9 @@
 
 หากจะพิจารณา production แบบจำกัด ต้องปิด GL-02/GL-03 และความเสี่ยงด้านสิทธิ์/host ที่เกี่ยวข้องก่อน พร้อม UAT รับทราบ GL-04/GL-05 ไม่มีการยืนยันว่า public demo เป็นข้อมูลธุรกิจจริง
 
-ต้องปิดไว้: การรับเงินจริงทุกช่องทาง (รวม manual ใหม่), Omise checkout สำหรับลูกค้า, Basic paid/renewal, upgrade/downgrade ที่ต้อง settlement, การกล่าวอ้างรับประกัน และการกล่าวอ้างว่าส่ง Owner สำเร็จแล้ว การตั้ง `OMISE_TEST_ENABLED=false` เพียงอย่างเดียว **ไม่ใช่** payment kill switch เพราะ manual invoice ยังสร้างได้ถ้ามีบัญชีรับเงิน ต้องตรวจ/จำกัดเส้นทางชำระฝั่ง server/ingress ก่อนเปิดแบบจำกัด
+ต้องปิดไว้: การรับเงินจริงทุกช่องทาง, Omise checkout สำหรับลูกค้าจริง, Basic paid/renewal, upgrade/downgrade ที่ต้อง settlement, การกล่าวอ้างรับประกัน และการกล่าวอ้างว่าส่ง Owner สำเร็จแล้ว
+
+Phase 3 เพิ่ม `PAYMENT_ACCESS_MODE=DISABLED` เพื่อปิด manual/positive invoice/worker ฝั่ง server; production-mode default ปิด และปฏิเสธ LEGACY_MANUAL การตั้ง `OMISE_TEST_ENABLED=false` เป็นเพียงการปิด gateway ต้องตรวจ mode/revision ทุก instance ด้วย โดยเฉพาะ rollout/rollback ไป revision เก่าที่ยังไม่มี gate ดู [แผนปิด manual](legacy-manual-shutdown-plan.md) การตั้งค่าบน host จริงยังไม่ได้ดำเนินการในงานนี้
 
 ## บั๊กที่แก้ใน Phase 2
 

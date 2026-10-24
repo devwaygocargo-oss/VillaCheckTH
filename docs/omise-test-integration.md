@@ -24,3 +24,11 @@ Reviewed on 24 October 2026:
 No undocumented signature header is assumed. Real Omise account/API acceptance was **not** performed; tests inject a mock provider. The production/live gateway remains disabled. No actual credentials are recorded in this document.
 
 Provider reversals preserve the original paid receipt and dates, record FAILED/reversed state and an Owner notification, and queue reconciliation. A reversal blocks subsequent Villa approval until reconciliation; refund/credit handling is deliberately not invented. New Omise invoice DTOs/UI expose gateway status and suppress manual bank/slip controls.
+
+## Phase 3 checkout preparation
+
+`OmiseCheckout` now obtains owner-scoped configuration from `GET /api/payments/:invoiceId/checkout`, creates a test source through Omise.js and sends only that source to the existing POST endpoint. Server retrieval validates source test mode, method, amount and currency. Source methods are opt-in (`promptpay`, `mobile_banking_scb`) for Test acceptance, not a production payment-method decision. Empty methods/public-key configuration disables creation UI. Zero-net does not create a source/charge.
+
+Return URI is server-built from APP_URL and invoice; provider authorize/QR URLs are restricted to test paths on `https://api.omise.co`. Pending actions/expiry persist and refresh/re-entry retrieves status. The return URL's success claim has no payment authority. Source rejection/ambiguous creation remains blocked from automatic duplicate charge creation pending operator reconciliation.
+
+`PAYMENT_ACCESS_MODE=DISABLED` blocks new payment actions; `OMISE_TEST` blocks manual proof/confirmation and legacy invoice conversion while retaining history. Test webhooks/status can reconcile earlier test attempts. See [staging deployment](staging-deployment-guide.md) and [external acceptance](staging-external-acceptance.md). UI browser evidence uses mocked SDK/checkout/status/redirect, paired with separate real-HTTP/database backend regression. No actual Omise account acceptance has been performed.

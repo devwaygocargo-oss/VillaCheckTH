@@ -16,12 +16,16 @@ export class OmiseTestGateway {
   if(value.livemode!==false)fail(502,"Omise live or unverifiable response rejected")
   return value
  }
- async createCharge({invoiceId,amount,source}) {
+ async createCharge({invoiceId,amount,source,returnUri}) {
   if(!Number.isSafeInteger(amount)||amount<=0)fail(400,"A charge requires a positive integer amount")
   if(typeof source!=="string"||!/^src_test_[a-z0-9]+$/.test(source))fail(400,"A test payment source is required")
-  const charge=await this.request("/charges",{amount:String(amount),currency:"THB",source,ref_id:"villacheck-"+invoiceId,"metadata[invoiceId]":invoiceId})
+  const charge=await this.request("/charges",{amount:String(amount),currency:"THB",source,ref_id:"villacheck-"+invoiceId,"metadata[invoiceId]":invoiceId,...(returnUri?{return_uri:returnUri}:{})})
   if(!chargeId(charge.id))fail(502,"Invalid test charge ID")
   return charge
+ }
+ async retrieveSource(id){
+  if(typeof id!=="string"||!/^src_test_[a-z0-9]+$/.test(id))fail(400,"Invalid test source")
+  return this.request("/sources/"+id)
  }
  async retrieveCharge(id) {
   if(!chargeId(id))fail(400,"Invalid test charge ID")
@@ -33,8 +37,18 @@ export class OmiseTestGateway {
  }
 }
 const read=async(db,key)=>{const row=await db.prepare("SELECT value FROM system_settings WHERE key=?").get(key);return row?JSON.parse(row.value):null}
-const dto=attempt=>({invoiceId:attempt.invoiceId,provider:"OMISE",mode:"TEST",status:attempt.status,chargeId:attempt.chargeId||null,approvalRequired:["successful","reversed"].includes(attempt.status)})
-export function createOmisePayments(db,gateway) {
+const dto=attempt=>({invoiceId:attempt.invoiceId,provider:"OMISE",mode:"TEST",status:attempt.status,chargeId:attempt.chargeId||null,approvalRequired:["successful","reversed"].includes(attempt.status),authorizeUri:attempt.status==="pending"?attempt.authorizeUri||null:null,qrImage:attempt.status==="pending"?attempt.qrImage||null:null,expiresAt:attempt.expiresAt||null})
+export function chargePresentation(charge){
+ const safe=(value,kind)=>{
+  if(!value)return null
+  let url;try{url=new URL(value)}catch{fail(502,"Invalid provider payment URL")}
+  const prefix=kind==="authorize"?/^\/payments\/paym_test_[a-z0-9]+\/authorize$/:new RegExp("^/charges/"+charge.id+"/documents/docu_test_[a-z0-9]+/downloads/[a-zA-Z0-9]+$")
+  if(url.protocol!=="https:"||url.hostname!=="api.omise.co"||url.port||url.username||url.password||url.search||url.hash||!prefix.test(url.pathname))fail(502,"Untrusted provider payment URL")
+  return url.href
+ }
+ return {authorizeUri:safe(charge.authorize_uri,"authorize"),qrImage:safe(charge.source?.scannable_code?.image?.download_uri,"qr"),expiresAt:typeof charge.expires_at==="string"&&Number.isFinite(Date.parse(charge.expires_at))?charge.expires_at:null}
+}
+export function createOmisePayments(db,gateway,{appUrl="http://localhost",methods}={}) {
  const enabled=()=>{if(!gateway)fail(503,"Omise test integration is not configured")}
  async function reconcile(charge,eventId=null) {
   if(!chargeId(charge.id)||charge.livemode!==false)fail(400,"Invalid test charge")
@@ -69,6 +83,7 @@ export function createOmisePayments(db,gateway) {
      await confirmPayment(db,{...invoice,external_provider:"OMISE"},villa,null)
     }
     if(charge.status!=="successful")await db.prepare("UPDATE invoices SET payment_status=? WHERE id=? AND status!='paid'").run(charge.status==="pending"?"VERIFYING":"FAILED",invoiceId)
+    Object.assign(attempt,chargePresentation(charge))
     attempt.status=charge.status;attempt.updatedAt=new Date().toISOString()
     await saveRecord(db,"omise_payment:"+invoiceId,attempt)
     await saveRecord(db,"omise_audit:"+invoiceId+":"+(eventId||attempt.updatedAt),{invoiceId,chargeId:charge.id,status:attempt.status,eventId,at:attempt.updatedAt})
@@ -91,6 +106,7 @@ export function createOmisePayments(db,gateway) {
    assertNoUnsettledPackageChange(villa,current.package_id||villa.package_id)
    const existing=await read(db,"omise_payment:"+invoice.id)
    if(existing)return {...existing,existing:true}
+   if(gateway.retrieveSource&&(!Array.isArray(methods)||!methods.some(method=>["promptpay","mobile_banking_scb"].includes(method))))fail(503,"No test checkout methods configured")
    if(typeof source!=="string"||!/^src_test_[a-z0-9]+$/.test(source))fail(400,"A test payment source is required")
    const pending={invoiceId:invoice.id,ownerId:user.id,status:"CREATING",createdAt:new Date().toISOString()}
    await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run("invoice_gateway:"+invoice.id,"OMISE")
@@ -100,7 +116,17 @@ export function createOmisePayments(db,gateway) {
   })
   if(attempt.existing){if(!attempt.chargeId)fail(409,"Payment creation requires reconciliation; automatic duplicate creation is blocked");return this.status(invoice.id)}
   let charge
-  try{charge=await gateway.createCharge({invoiceId:invoice.id,amount:invoice.amount,source})}catch(error){await db.transaction(()=>saveRecord(db,"omise_payment:"+invoice.id,{...attempt,status:"UNKNOWN"}));throw error}
+  try{
+   if(gateway.retrieveSource){
+    if(!Array.isArray(methods)||!methods.length)fail(503,"No test checkout methods configured")
+    const verifiedSource=await gateway.retrieveSource(source)
+    if(verifiedSource.id!==source||verifiedSource.livemode!==false||verifiedSource.amount!==invoice.amount||String(verifiedSource.currency).toUpperCase()!=="THB"||!["promptpay","mobile_banking_scb"].includes(verifiedSource.type)||!methods.includes(verifiedSource.type))fail(400,"Test source does not match invoice or enabled methods")
+   }
+   const base=new URL(appUrl)
+   if(base.protocol!=="https:"&&!["127.0.0.1","localhost"].includes(base.hostname))fail(503,"HTTPS checkout return URL required")
+   const returnUri=new URL("/",base);returnUri.hash=new URLSearchParams({page:"owner-package",item:invoice.id}).toString()
+   charge=await gateway.createCharge({invoiceId:invoice.id,amount:invoice.amount,source,returnUri:returnUri.href})
+  }catch(error){await db.transaction(()=>saveRecord(db,"omise_payment:"+invoice.id,{...attempt,status:error.status===400?"SOURCE_REJECTED":"UNKNOWN"}));throw error}
   await db.transaction(()=>saveRecord(db,"omise_payment:"+invoice.id,{...attempt,status:"pending",chargeId:charge.id}))
   return reconcile(charge)
  },

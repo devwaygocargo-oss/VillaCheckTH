@@ -1,0 +1,126 @@
+{
+  "checkedAt": "2026-10-24T09:00:27.242229+00:00",
+  "branch": "fix/autonomous-business-security-20261024",
+  "preservedBaseCommit": "5fc7615",
+  "runtimeAndTestSourceSha256": "c97fe3cd4e03ba75314757b89efe0c3bb257f7922fc2fbf591e8361b55cbb712",
+  "sourceFilesHashed": 246,
+  "tests": {
+    "postgres": {
+      "tests": 255,
+      "pass": 255,
+      "fail": 0,
+      "skipped": 0
+    },
+    "sqlite": {
+      "tests": 255,
+      "pass": 247,
+      "fail": 0,
+      "skipped": 8
+    }
+  },
+  "browser": {
+    "general": {
+      "checks": 32,
+      "passed": 32,
+      "failed": 0
+    },
+    "payment": {
+      "checks": 12,
+      "passed": 12,
+      "failed": 0
+    }
+  },
+  "commands": {
+    "postgres": {
+      "exitCode": 0,
+      "logSha256": "8fb937225ec03c65d0f0ecb23bb2e047905fad826ee249d30fc9759ff402edcd"
+    },
+    "sqlite": {
+      "exitCode": 0,
+      "logSha256": "c06ae48b4417e36c018119efd1c57daf9aa43bc07c3b3e266cf351fc7587dcff"
+    },
+    "build": {
+      "exitCode": 0,
+      "logSha256": "212103b823243b38a81089ab8941046df77c59bd5f46302dcb47bd8bc61db42e"
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "logSha256": "79a33c4c1f3dcb26f886d0235fd4d226d769e1ff84fcba625c92dc930523aafd"
+    },
+    "lint": {
+      "exitCode": 0,
+      "logSha256": "004867a5738f19805221c5c5da3dc09d574b34c7c030748a64756c787d8c2dab"
+    }
+  },
+  "scope": "Disposable local PostgreSQL/SQLite and synthetic data. Payment browser uses mocked SDK/checkout/status/redirect. No provider credentials, production database or external mail delivery used.",
+  "externalAcceptance": {
+    "omise": false,
+    "smtpInbox": false,
+    "hostedStaging": false,
+    "production": false,
+    "physicalDevices": false,
+    "businessUatSigned": false
+  },
+  "goLive": "NOT READY",
+  "phase3Files": [
+    ".dockerignore",
+    ".env.example",
+    ".vercelignore",
+    "DEPLOYMENT.md",
+    "docs/go-live-blockers.md",
+    "docs/legacy-manual-shutdown-plan.md",
+    "docs/omise-test-integration.md",
+    "docs/phase3-preparation-report.md",
+    "docs/staging-deployment-guide.md",
+    "docs/staging-external-acceptance.md",
+    "docs/validation/phase3/checks.json",
+    "docs/validation/phase3/diagnostics-config-only.json",
+    "docs/validation/phase3/general/admin-dashboard-1440.png",
+    "docs/validation/phase3/general/admin-dashboard-390.png",
+    "docs/validation/phase3/general/browser.json",
+    "docs/validation/phase3/general/homepage-1440.png",
+    "docs/validation/phase3/general/homepage-390.png",
+    "docs/validation/phase3/general/invoice-payment-1440.png",
+    "docs/validation/phase3/general/invoice-payment-390.png",
+    "docs/validation/phase3/general/pricing-1440.png",
+    "docs/validation/phase3/general/pricing-390.png",
+    "docs/validation/phase3/general/villa-detail-1440.png",
+    "docs/validation/phase3/general/villa-detail-390.png",
+    "docs/validation/phase3/payment-browser.json",
+    "docs/validation/phase3/payment-test-mobile.png",
+    "render.yaml",
+    "scripts/browser-regression.mjs",
+    "scripts/payment-browser-regression.mjs",
+    "scripts/staging-diagnostics.mjs",
+    "scripts/test-postgres.mjs",
+    "server/app.mjs",
+    "server/demo-payment.mjs",
+    "server/index.mjs",
+    "server/login-otp.mjs",
+    "server/mail.mjs",
+    "server/omise.mjs",
+    "server/payment-access.mjs",
+    "server/phase3.test.mjs",
+    "server/readiness.mjs",
+    "server/staging-mail.mjs",
+    "server/vercel.test.mjs",
+    "src/AdminReadiness.tsx",
+    "src/Backoffice.tsx",
+    "src/OmiseCheckout.tsx",
+    "src/VillaPackagePanel.tsx",
+    "src/merchantStore.ts",
+    "src/navigation.ts"
+  ],
+  "preservedExistingPaths": 217,
+  "deploymentAudit": {
+    "buildMigratesOrSeeds": false,
+    "vercel": "Next -> local Nest -> PrismaPg",
+    "render": "standalone Nest API; no frontend proxy wiring",
+    "paymentProductionDefault": "DISABLED",
+    "liveGatewayImplemented": false,
+    "credentialUploadGuards": [
+      ".dockerignore",
+      ".vercelignore"
+    ]
+  }
+}

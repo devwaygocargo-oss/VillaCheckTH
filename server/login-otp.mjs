@@ -51,6 +51,7 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
    if(data.purpose==='link_identity'&&bindingUser?.role!=='merchant')fail(403,'เข้าสู่ระบบ Merchant ก่อนเชื่อมช่องทางเข้าสู่ระบบ')
    const business=await cmsBusiness(db),deliveryConfig=await cmsLoginConfig(db,config)
    const channel=data.channel,destination=otpDestination(channel,data.destination)
+   if(channel==='email'&&config.appEnvironment==='staging'&&!config.stagingEmailAllowlist?.includes(destination))fail(403,'Staging อนุญาตส่ง OTP เฉพาะอีเมลทดสอบที่กำหนด')
    if(!otpChannels(deliveryConfig,transport)[channel])fail(503,channel==='email'?'ยังไม่ได้ตั้งค่าการส่ง OTP ทางอีเมล':'ยังไม่ได้ตั้งค่าการส่ง OTP ทาง SMS')
    const id=randomUUID(),code=String(randomInt(0,1000000)).padStart(6,'0'),now=Date.now()
    await db.transaction(async()=>{

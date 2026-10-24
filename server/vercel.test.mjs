@@ -5,8 +5,9 @@ import { createServer } from "node:http"
 import { createVercelHandler } from "./legacy-vercel.mjs"
 import { openTestDatabase } from "./test-database.mjs"
 
-async function serve(handler) {
+async function serve(handler,platformHost) {
   const server = createServer(async (req, res) => {
+    if(platformHost)req.headers.host=platformHost // Simulate the platform host preserved by Vercel ingress.
     const url = new URL(req.url, "http://localhost")
     req.query = Object.fromEntries(url.searchParams)
     if (req.method === "POST") {
@@ -52,8 +53,8 @@ test(
     }
     const a = createVercelHandler(env),
       b = createVercelHandler(env)
-    const one = await serve(a),
-      two = await serve(b)
+    const one = await serve(a,new URL(env.APP_URL).host),
+      two = await serve(b,new URL(env.APP_URL).host)
     t.after(async () => {
       await Promise.all([
         new Promise((resolve) => one.server.close(resolve)),

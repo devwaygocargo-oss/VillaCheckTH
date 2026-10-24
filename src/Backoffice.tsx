@@ -1,3 +1,4 @@
+import OmiseCheckout from "./OmiseCheckout"
 import {lastAdminPage} from "./navigation";
 import PropertyDetails,{type Details} from "./PropertyDetails";
 import {useCopy} from "./cms";
@@ -849,7 +850,8 @@ function PaymentPanel({
   const [reason, setReason] = useState("")
   const [error, setError] = useState("")
   const [reading, setReading] = useState(false)
-  if(invoice.gateway === "OMISE")return <section className="payment-panel"><strong>ใบแจ้งชำระ ฿{invoice.amount.toLocaleString("th-TH")} · {invoice.packageName}</strong><p>Omise Test Mode · ยังไม่เปิดรับเงินจริง</p><p>สถานะ: {({pending:"รอชำระ",successful:"รับชำระแล้ว รอ Admin อนุมัติ",failed:"ชำระไม่สำเร็จ",expired:"รายการหมดอายุ",reversed:"กลับรายการ รอทีมตรวจสอบ",UNKNOWN:"รอตรวจสอบรายการ",CREATING:"กำลังสร้างรายการ"} as Record<string,string>)[reference] || invoice.paymentStatus}</p><button type="button" disabled={reading} onClick={async()=>{setReading(true);setError("");try{const result=await api<{status:string}>(`/payments/${invoice.id}/omise`);setReference(result.status);}catch(error){setError(error instanceof Error?error.message:"ตรวจสถานะไม่สำเร็จ");}finally{setReading(false);}}}>ตรวจสถานะล่าสุด</button>{error&&<p role="alert">{error}</p>}<p>การรับชำระสำเร็จยังต้องผ่านการตรวจสอบและอนุมัติ Villa</p></section>
+  if(invoice.gateway === "OMISE")return <OmiseCheckout key={invoice.id} invoice={invoice} admin={admin}/>
+  if(invoice.paymentAccessMode==="DISABLED"||invoice.paymentAccessMode==="OMISE_TEST")return <section className="payment-panel"><strong>ประวัติใบแจ้งชำระ ฿{invoice.amount.toLocaleString("th-TH")}</strong><p>ปิดรับชำระ manual รายการเดิมเก็บไว้สำหรับตรวจสอบ กรุณาติดต่อผู้ดูแลหากเคยโอนแล้ว</p></section>
   const selectProof = (selected?: File) => {
     setFile(null)
     setError("")

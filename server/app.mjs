@@ -1,3 +1,4 @@
+import {paymentAccess,requireManualPayment,requireNewPayment} from "./payment-access.mjs"
 import {beginPasswordRegistration,finishPasswordRegistration} from "./password-registration.mjs"
 import {reserveManualProof} from "./manual-proof.mjs"
 import {OmiseTestGateway,createOmisePayments} from "./omise.mjs"
@@ -162,7 +163,7 @@ async function insertDocument(db, owner, file) {
 export function createApp(db, config, transport) {
   const worker = createMailWorker(db, config, transport)
   const omiseGateway = config.omiseTestEnabled ? (config.omiseGateway || new OmiseTestGateway({secretKey:config.omiseTestSecretKey})) : null
-  const omise = createOmisePayments(db,omiseGateway)
+  const omise = createOmisePayments(db,omiseGateway,{appUrl:config.appUrl,methods:config.omiseTestMethods})
   const attempts = new Map()
   async function rateLimit(req, bucket = "auth") {
     // Vercel overwrites this header. Other hosts use only the direct socket IP.
@@ -274,15 +275,16 @@ export function createApp(db, config, transport) {
         .get(invoice.proof_id))
     return {
       id: invoice.id,
+      paymentAccessMode: paymentAccess(config),
       gateway: invoice.external_provider === "OMISE" ? "OMISE" : "MANUAL",
       packageName: (await readContextPlan(db,invoice.package_id || (context?.villas.get(invoice.villa_id) || await db.prepare("SELECT package_id FROM villas WHERE id=?").get(invoice.villa_id)).package_id,context)).name,
-      bankQrImage: JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${invoice.id}`))?.value || '""'),
-      paymentQr: await paymentQrDto(db, invoice.id),
+      bankQrImage: ["DISABLED","OMISE_TEST"].includes(paymentAccess(config))?"":JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${invoice.id}`))?.value || '""'),
+      paymentQr: ["DISABLED","OMISE_TEST"].includes(paymentAccess(config))?null:await paymentQrDto(db, invoice.id),
       scope: invoice.subscription_owner ? "merchant" : "villa",
       villaId: invoice.villa_id,
       amount: invoice.amount / 100,
       months: invoice.months,
-      paymentInstructions: (await db.prepare("SELECT payment_instructions FROM mails WHERE invoice_id=?").get(invoice.id))?.payment_instructions ?? null,
+      paymentInstructions: ["DISABLED","OMISE_TEST"].includes(paymentAccess(config))?null:(await db.prepare("SELECT payment_instructions FROM mails WHERE invoice_id=?").get(invoice.id))?.payment_instructions ?? null,
       status: invoice.status,
       paymentStatus: invoice.payment_status,
       verificationMode: invoice.verification_mode,
@@ -408,12 +410,13 @@ export function createApp(db, config, transport) {
       subscription,
       packageModel: "PER_VILLA",
       demoMode:isDemo,
-      paymentBankQrImage: isDemo ? "" : (bank?.qrImage || cms.content.site.paymentQrImage || ""),
+      paymentBankQrImage: ["DISABLED","OMISE_TEST"].includes(paymentAccess(config))||isDemo ? "" : (bank?.qrImage || cms.content.site.paymentQrImage || ""),
       paymentInstructions:
-        instructions ||
+        ["DISABLED","OMISE_TEST"].includes(paymentAccess(config))?"ปิดรับชำระชั่วคราว":instructions ||
         "ยังไม่ได้ตั้งค่าบัญชีรับชำระ กรุณาติดต่อทีมงานก่อนโอนเงิน",
       paymentVerificationMode,
-      paymentConfigured: isDemo || Boolean(bank) || config.omiseTestEnabled === true,
+      paymentAccessMode:paymentAccess(config),
+      paymentConfigured: paymentAccess(config)!=="DISABLED" && (isDemo || Boolean(bank) || config.omiseTestEnabled === true),
       smtpConfigured: Boolean(transport),
     }
   }
@@ -465,7 +468,7 @@ export function createApp(db, config, transport) {
         }
         if (!imageUrls.includes(path)) {
           const viewer = await session(req).catch(error => { if (error.status === 401) return null; throw error })
-          const merchantQr = viewer?.role === "merchant" && (release.content.site.paymentQrImage === path || await db.prepare("SELECT i.id FROM invoices i JOIN villas v ON v.id=i.villa_id JOIN system_settings s ON s.key='invoice_bank_qr:' || i.id WHERE v.owner_id=? AND s.value=?").get(viewer.id,JSON.stringify(path)))
+          const merchantQr = ["LEGACY_MANUAL","DEMO"].includes(paymentAccess(config)) && viewer?.role === "merchant" && (release.content.site.paymentQrImage === path || await db.prepare("SELECT i.id FROM invoices i JOIN villas v ON v.id=i.villa_id JOIN system_settings s ON s.key='invoice_bank_qr:' || i.id WHERE v.owner_id=? AND s.value=?").get(viewer.id,JSON.stringify(path)))
           if (viewer?.role !== "admin" && !merchantQr) fail(404, "ไม่พบรูปภาพ")
         }
         const image = await db.prepare("SELECT mime,bytes FROM documents WHERE id=? AND name LIKE 'cms-image:%'").get(cmsMedia[1])
@@ -537,7 +540,8 @@ export function createApp(db, config, transport) {
       if (req.method === "GET" && path === "/api/config")
         return json({
           localAccounts: Boolean(config.seedDemo),
-          paymentConfigured: (await demoMode(db,config)) || Boolean(await receivingBank(db)) || config.omiseTestEnabled === true,
+          paymentAccessMode:paymentAccess(config),
+          paymentConfigured: paymentAccess(config)!=="DISABLED" && ((await demoMode(db,config)) || Boolean(await receivingBank(db)) || config.omiseTestEnabled === true),
           oauth: oauthProviders(await cmsLoginConfig(db,config)),
           oauthStatus:{facebook:(await cmsLoginConfig(db,config)).facebookLoginEnabled?"enabled":"pending_approval"},
           otp: otpChannels(await cmsLoginConfig(db,config),transport),
@@ -586,7 +590,7 @@ export function createApp(db, config, transport) {
       ) {
         checkOrigin(req)
         await rateLimit(req)
-        if(path === "/api/auth/admin-login" && process.env.VERCEL === "1" && new URL(config.appUrl).hostname === "design-villacheck.vercel.app" && req.headers.host?.split(":")[0] !== "design-villacheck.vercel.app")fail(403,"เข้าสู่ระบบ Admin ที่ https://design-villacheck.vercel.app/admin/login เท่านั้น");
+        if(path === "/api/auth/admin-login" && config.trustVercelProxy === true && req.headers.host !== new URL(config.appUrl).host)fail(403,"เข้าสู่ระบบ Admin ผ่าน origin ที่กำหนดใน APP_URL เท่านั้น");
         const data = await body(req)
         let user
         if (path.endsWith("register") || path.endsWith("register-user")) {
@@ -797,6 +801,7 @@ export function createApp(db, config, transport) {
         const bankImage=path.match(/^\/api\/receiving-bank\/qr\/([a-f0-9-]{36})$/)
         if(bankImage&&req.method==="GET"){
           if(!["admin","merchant"].includes(user.role))fail(403,"เฉพาะ Admin และ Merchant")
+          if(user.role!=="admin")requireManualPayment(config)
           const image=await db.prepare("SELECT mime,bytes FROM documents WHERE id=? AND name LIKE 'receiving-bank-qr:%'").get(bankImage[1])
           if(!image)fail(404,"ไม่พบ QR รับเงิน")
           res.writeHead(200,{"Content-Type":image.mime,"Cache-Control":"private, no-store","Content-Disposition":url.searchParams.get("download")==="1"?'attachment; filename="villacheck-bank-qr.png"':"inline"});return res.end(Buffer.from(image.bytes))
@@ -816,6 +821,7 @@ export function createApp(db, config, transport) {
         })
         if(approvalResult!==undefined)return json(approvalResult)
 
+        if(path==="/api/admin/receiving-bank/email"&&req.method==="POST")requireManualPayment(config)
         const bankResult=await adminReceivingBank(db,user,req,path,body,config,transport)
         if(bankResult!==undefined){json(bankResult);if(req.method==="POST")void worker.run();return}
         const cms = await adminCms(db, user, req, path, body)
@@ -958,6 +964,7 @@ export function createApp(db, config, transport) {
         const demoPayment=path.match(/^\/api\/payments\/([a-f0-9-]+)\/demo-slip$/)
         if(req.method === "POST" && demoPayment){
           if(user.role!=="merchant")fail(403,"เฉพาะ Merchant")
+          requireManualPayment(config)
           if(!await demoMode(db,config))fail(403,"Demo mode ปิดอยู่")
           const {invoice}=await invoiceFor(user,demoPayment[1])
           const qr=await paymentQrDto(db,invoice.id)
@@ -967,6 +974,7 @@ export function createApp(db, config, transport) {
         const regenerate = path.match(/^\/api\/payments\/([a-f0-9-]+)\/qr$/)
         if (req.method === "POST" && regenerate) {
           if (user.role !== "merchant") fail(403, "เฉพาะ Merchant")
+          requireManualPayment(config)
           const { invoice } = await invoiceFor(user, regenerate[1])
           const qr = await db.transaction(() =>
             generatePaymentQr(db, invoice.id, config.appUrl),
@@ -974,6 +982,7 @@ export function createApp(db, config, transport) {
           return json(qr)
         }
         if (req.method === "GET" && path === "/api/payments/attempt") {
+          requireManualPayment(config)
           const attempt = await db
             .prepare("SELECT * FROM payment_qrs WHERE id=?")
             .get(url.searchParams.get("id"))
@@ -1058,6 +1067,8 @@ export function createApp(db, config, transport) {
               return
             }
             if(await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status!='paid'").get(villa.id)) fail(409,"มีใบแจ้งชำระค้างสำหรับที่พักนี้")
+            requireNewPayment(config)
+            if(paymentAccess(config)==="OMISE_TEST"&&!config.omiseTestEnabled)fail(503,"Omise Test ยังไม่พร้อม")
             if(!config.omiseTestEnabled && !await demoMode(db,config) && !await receivingBank(db))fail(503,"ยังไม่ได้ตั้งค่าช่องทางรับชำระ ไม่สามารถสร้างใบแจ้งชำระได้")
             await selectCoupon(db,user.id,plan,data.couponCode)
             const id=await createInvoice(db,{...villa,package_id:plan.id},config.appUrl,config.paymentInstructions)
@@ -1220,7 +1231,9 @@ export function createApp(db, config, transport) {
               if(!target.active||target.amount<=0)fail(400,"เลือกแพ็กเกจที่เปิดขาย")
               if(target.id==="basic")fail(409,"Basic ใช้สิทธิ์โปรโมชั่นเดิม เงื่อนไขการสมัครแบบชำระเงินและต่ออายุรอยืนยัน")
               if(await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status!='paid'").get(villa.id))fail(409,"มีใบแจ้งชำระค้างสำหรับที่พักนี้")
-              if(!config.omiseTestEnabled && !await demoMode(db,config) && !await receivingBank(db))fail(503,"ยังไม่ได้ตั้งค่าช่องทางรับชำระ ไม่สามารถสร้างใบแจ้งชำระได้")
+              requireNewPayment(config)
+            if(paymentAccess(config)==="OMISE_TEST"&&!config.omiseTestEnabled)fail(503,"Omise Test ยังไม่พร้อม")
+            if(!config.omiseTestEnabled && !await demoMode(db,config) && !await receivingBank(db))fail(503,"ยังไม่ได้ตั้งค่าช่องทางรับชำระ ไม่สามารถสร้างใบแจ้งชำระได้")
               await selectCoupon(db,user.id,target,data.couponCode)
               const invoiceId=await createInvoice(db,{...villa,package_id:target.id},config.appUrl,config.paymentInstructions)
               await db.prepare("UPDATE invoices SET package_id=? WHERE id=?").run(target.id,invoiceId)
@@ -1233,12 +1246,22 @@ export function createApp(db, config, transport) {
           void worker.run()
           return
         }
+        const checkout=path.match(/^\/api\/payments\/([a-f0-9-]+)\/checkout$/)
+        if(checkout&&req.method==="GET"){
+          const {invoice}=await invoiceFor(user,checkout[1])
+          const methods=(config.omiseTestMethods||[]).filter(method=>["promptpay","mobile_banking_scb"].includes(method))
+          const publicKey=/^pkey_test_[a-zA-Z0-9]+$/.test(config.omiseTestPublicKey||"")?config.omiseTestPublicKey:null
+          const ready=paymentAccess(config)!=="DISABLED"&&config.omiseTestEnabled===true&&Boolean(publicKey)&&methods.length>0&&(paymentAccess(config)!=="OMISE_TEST"||invoice.external_provider==="OMISE")
+          return json({mode:"TEST",enabled:ready,statusAvailable:config.omiseTestEnabled===true,publicKey:ready?publicKey:null,methods:ready?methods:[],invoiceId:invoice.id,amount:invoice.amount,currency:"THB",paid:invoice.status==="paid"})
+        }
         const omiseAction=path.match(/^\/api\/payments\/([a-f0-9-]+)\/omise$/)
         if(omiseAction && ["GET","POST"].includes(req.method)) {
           const {invoice}=await invoiceFor(user,omiseAction[1])
           if(req.method === "POST") {
             if(user.role!=="merchant")fail(403,"เฉพาะ Merchant")
             await rateLimit(req,"omise:"+user.id)
+            requireNewPayment(config)
+            if(paymentAccess(config)==="OMISE_TEST"&&invoice.external_provider!=="OMISE")fail(409,"Legacy manual invoice ต้องกระทบยอดแยก ไม่แปลงเป็น Omise charge")
             const data=await body(req)
             return json(await omise.create(invoice,user,data.source))
           }
@@ -1249,6 +1272,7 @@ export function createApp(db, config, transport) {
         )
         if (["POST", "PATCH"].includes(req.method) && invoiceAction) {
           const [, id, action] = invoiceAction
+          if(action!=="reject")requireManualPayment(config)
           const gatewayRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get("invoice_gateway:"+id)
           if(gatewayRow?.value === "OMISE")fail(409,"รายการนี้รับชำระและตรวจสถานะผ่าน Omise เท่านั้น")
           const data = await body(req)
