@@ -1,4 +1,4 @@
-// Free licensed local assets; source and SHA-256 records are in docs/image-licenses/diverse-manifest.json.
+// Free licensed local assets; source and SHA-256 records are in server/image-licenses/diverse-manifest.json.
 export const diverseDemoImages=[
   {
     "url": "/demo/diverse/photo-17837145.jpg",
