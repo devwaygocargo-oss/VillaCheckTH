@@ -1,3 +1,4 @@
+import {onPublicVillaRefresh} from "./publicVillaRefresh";
 import {useEffect,useRef,useState} from "react";
 import {api} from "./api";
 import {useCms,useCopy,usePresentation} from "./cms";
@@ -11,6 +12,7 @@ export default function HomeVillaShowcase({go,onSearch}:{go:(page:Page,item?:str
  const [province,setProvince]=useState(""),[items,setItems]=useState<Villa[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[attempt,setAttempt]=useState(0),[position,setPosition]=useState({start:true,end:true,index:0});
  const track=useRef<HTMLDivElement>(null);
  useEffect(()=>{let active=true;setLoading(true);setError("");setItems([]);setPosition({start:true,end:true,index:0});track.current?.scrollTo({left:0});const params=new URLSearchParams({limit:String(presentation.showcaseLimit)});if(province)params.set("province",province);void api<{villas:Villa[]}>("/public/villas?"+params).then(data=>{if(active)setItems(data.villas);}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[province,attempt,presentation.showcaseLimit]);
+ useEffect(()=>onPublicVillaRefresh(()=>setAttempt(n=>n+1)),[]);
  const measure=()=>{const el=track.current,card=el?.firstElementChild as HTMLElement|null;if(!el||!card)return;setPosition({start:el.scrollLeft<2,end:el.scrollLeft+el.clientWidth>=el.scrollWidth-2,index:Math.max(0,Math.min(items.length-1,Math.round(el.scrollLeft/(card.getBoundingClientRect().width+20))))});};
  useEffect(()=>{const el=track.current;if(!el)return;const observer=new ResizeObserver(measure);observer.observe(el);measure();return()=>observer.disconnect();},[items,loading]);
  const move=(direction:number)=>{const el=track.current,card=el?.firstElementChild as HTMLElement|null;if(el&&card)el.scrollBy({left:direction*(card.getBoundingClientRect().width+20),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});};

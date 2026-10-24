@@ -72,3 +72,17 @@ Runtime logs ของ deployment dpl_3KEeWHX3qBFjZXyetvU9rxwN7FoU พบ APP_UR
 เพิ่ม APP_URL เฉพาะ Preview branch fix/autonomous-business-security-20261024 เป็น HTTPS branch URL ที่ผู้ใช้ส่ง: https://design-villacheck-git-fix-autonomous-busines-7256c7-villa-check.vercel.app ไม่แก้ Production scope, integration หรือฐานข้อมูล Safety flags ของ Preview ตรวจด้วย CLI env pull แบบไม่พิมพ์ secret values แล้วตรง DISABLED/Omise false/staging/demo false/seed false ทั้งหมด Preview ไม่มี SMTP transport/SMS credentials ตาม configuration ที่อ่านได้ จึงไม่ทดสอบส่งจริง
 
 Source ไม่ต้องลด validation หรือเพิ่มระบบเพื่อแก้กรณีนี้ ชุด PostgreSQL local ล่าสุด 263 ผ่าน/0 ล้มเหลว/0 ข้าม รวม Next/Nest/Prisma การนำ APP_URL ใหม่ไปใช้ต้องสร้าง Preview deployment ใหม่ผ่าน GitHub จากนั้นตรวจ API จริงก่อนอนุมัติ Merge ไม่ถือว่า build READY เท่ากับ API ผ่าน ไม่รัน migration/seed/reset/delete ฐานภายนอก
+
+## แก้ Demo ที่ค้างหน้าเว็บหลังปิดสวิตช์ — รอบถัดจาก main 539b039
+
+ทดสอบ Admin จริงบน Staging โดยอ่านค่าหลัง Save ทุกครั้ง: เปิด 51 รายการ (Demo 35/รายการอื่น 16), ปิด 16 รายการ (Demo 0/รายการอื่น 16), เปิดคืน 51 แล้วคืนค่าเริ่มทดสอบเป็นปิด พบ Public listing no-store/MISS และบันทึกในฐานถูกต้อง แต่โฆษณาหน้าแรกยังเป็น Demo 8/8 ขณะปิด เพราะ API โฆษณาไม่ได้อ่านสวิตช์ และหน้ารายการที่เปิดค้างโหลดข้อมูลเพียงตอน mount
+
+แก้ให้ API โฆษณาหน้าแรก/ก่อน Footer ใช้ค่า visibility เดียวกับรายการ Villa ร่วมกับ ad.demo หรือ provenance ของ Villa ในฐาน ไม่เดาจากชื่อ คง eligibility/approval/QR Active และสิทธิ์เดิม รายการจริงและโฆษณาจริงไม่ถูกซ่อน
+
+หน้ารายการ/ส่วนที่พักหน้าแรก/แบนเนอร์/ก่อน Footer โหลดใหม่เมื่อกลับมาแท็บ, ได้รับ storage event จาก Admin Save หรือ event ภายในหน้าเดียวกัน ใช้ fetch no-store และล้างเฉพาะ in-flight public reads ที่เกี่ยวข้อง ป้องกันคำตอบเก่าทับผลใหม่ ไม่เก็บสำเนารายการเป็น static data ไม่เปลี่ยน Demo Mode หรือ Payment Settings
+
+เพิ่ม regression ชุด 35 Demo + 16 รายการอื่น: เปิด 51 → ปิด 16/Demo0 → เปิดคืน51; ตรวจ Admin/CSRF, คงข้อมูล Villa/Invoice, snapshot, pagination, โฆษณาจริงที่มีคำ Demo ในชื่อไม่ถูกซ่อน และการ invalidate/focus/storage/คำตอบเก่า เพิ่ม Chrome สองแท็บกดสวิตช์ Admin จริงและตรวจแท็บ public ที่เปิดค้างโดยไม่ reload
+
+ไม่ได้ Seed/Migrate/Reset/Delete ฐานภายนอก การเปลี่ยน DB ในงานตรวจรับจำกัดเฉพาะ visibility setting และ audit/session ตาม Admin API ที่ได้รับอนุญาต คืนค่าที่ใช้ก่อนทดสอบทุกครั้ง ไม่มี credential ใน repository หรือรายงาน
+
+ผลตรวจโค้ดรอบแก้: PostgreSQL 264 ผ่าน/0 ล้มเหลว/0 ข้าม; SQLite 256 ผ่าน/0 ล้มเหลว/8 ข้าม; Chrome 33 checks ผ่าน รวม Admin UI เปิด–ปิดจริงและแท็บ public เดิมแสดง 35 → 0 → 35 โดยไม่ reload และโฆษณา Demo เป็น 0 ขณะปิด Build/Typecheck/Lint ผ่าน จะตรวจเปิด–ปิดบน Feature Preview จริงก่อน Merge ตามคำสั่ง ไม่เปลี่ยน Payment Settings

@@ -1,3 +1,4 @@
+import {onPublicVillaRefresh} from "./publicVillaRefresh";
 import {carouselBanners} from "../server/banner-display.mjs";
 import { useEffect, useRef, useState } from "react"
 import { api } from "./api"
@@ -9,21 +10,25 @@ export default function HomeBanner() {
   const [now, setNow] = useState(Date.now())
   const [advertisements, setAdvertisements] = useState<HomeBannerItem[]>([])
   useEffect(() => {
-    let active = true
-    const load = () =>
+    let active = true, sequence = 0
+    const load = () => {
+      const request = ++sequence;
       void api<{ advertisements: HomeBannerItem[] }>(
         "/public/advertisements?placement=home",
       )
         .then((d) => {
-          if (active) setAdvertisements(d.advertisements)
+          if (active && request === sequence) setAdvertisements(d.advertisements)
         })
-        .catch(() => {})
+        .catch(() => { if(active && request === sequence)setAdvertisements([]) })
+    }
+    const unsubscribe=onPublicVillaRefresh(load)
     const changed=(event:StorageEvent)=>{if(event.key==="villacheck-advertisements-updated")load()};
     window.addEventListener("villacheck-advertisements-updated",load);window.addEventListener("storage",changed);
     load()
     const timer = setInterval(load, 30000)
     return () => {
       active = false
+      unsubscribe()
       clearInterval(timer)
       window.removeEventListener("villacheck-advertisements-updated",load);window.removeEventListener("storage",changed);
     }

@@ -32,5 +32,5 @@ test("Public listing uses bounded snapshot batches; Member Room batches metadata
 });
 
 test("Homepage advertising batches entitlements without caching visibility or suspension",async()=>{
- const {advertisingApi}=await import('./advertising.mjs');const db=await openTestDatabase();try{await seedDemo(db,{password:"PerformanceDummy123"});const meter=instrument(db);const read=()=>advertisingApi(meter.db,null,{method:"GET"},"/api/public/advertisements",new URL("http://localhost?placement=home"),()=>{});const ads=await read();assert.equal(ads.advertisements.length,8);assert.equal(meter.queries.length,5);await db.prepare("UPDATE subscriptions SET lifecycle='SUSPENDED'").run();assert.equal((await read()).advertisements.length,0);}finally{await db.close();}
+ const {advertisingApi}=await import('./advertising.mjs');const db=await openTestDatabase();try{await seedDemo(db,{password:"PerformanceDummy123"});const meter=instrument(db);const read=()=>advertisingApi(meter.db,null,{method:"GET"},"/api/public/advertisements",new URL("http://localhost?placement=home"),()=>{});const ads=await read();assert.equal(ads.advertisements.length,8);assert.equal(meter.queries.length,6);await db.prepare("UPDATE subscriptions SET lifecycle='SUSPENDED'").run();assert.equal((await read()).advertisements.length,0);}finally{await db.close();}
 });
