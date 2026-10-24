@@ -22,6 +22,11 @@ test('Admin toggles DB demo listing without deletion, payment-mode changes or el
   const id=randomUUID();tryIds.push(id)
   await db.prepare("INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,status,qr,created) VALUES (?,?,?,?,?,?,?,?,?,'approved',?,'2026-10-24')").run(id,owner.id,'บ้านเดโม '+label+' — ข้อมูลสาธิต','DEMO '+label+' Villa','ชลบุรี','ธุรกิจสาธิต — ไม่ใช่ที่พักจริง','try-'+packageId+'@villacheck.example',packageId,doc.document_id,'VC-DEMO-'+id)
  }
+ const legacyIds=[]
+ for(let index=0;index<12;index++){
+  const id=randomUUID();legacyIds.push(id)
+  await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,qr,created) VALUES (?,?,?,'ชลบุรี','Legacy business label',?,'basic',?,'approved',?,'2026-10-24')").run(id,owner.id,'Legacy fixture '+index,'demo-legacy-'+index+'@villacheck.example',doc.document_id,'VC-legacy-'+id)
+ }
  const pending=await db.prepare("SELECT * FROM villas WHERE email LIKE 'demo-free-%' LIMIT 1").get()
  await preserveApprovedVilla(db,pending)
  await db.prepare("UPDATE villas SET status='pending',name='PRIVATE DRAFT' WHERE id=?").run(pending.id)
@@ -46,14 +51,14 @@ test('Admin toggles DB demo listing without deletion, payment-mode changes or el
  assert.equal((await request(path,undefined,a)).body.visible,true)
  const list=async query=>(await request('/public/villas'+(query||''))).body.villas
  const initial=await list()
- assert.equal(initial.length,55);assert.equal(initial.filter(v=>v.isDemo).length,39);assert(tryIds.every(id=>initial.some(v=>v.id===id&&v.isDemo)));assert(initial.some(v=>v.id===pending.id));assert(initial.every(v=>v.qrStatus==='ACTIVE'))
+ assert.equal(initial.length,67);assert.equal(initial.filter(v=>v.isDemo).length,51);assert([...tryIds,...legacyIds].every(id=>initial.some(v=>v.id===id&&v.isDemo)));assert(initial.some(v=>v.id===pending.id));assert(initial.every(v=>v.qrStatus==='ACTIVE'))
  assert(!JSON.stringify(initial).includes('PRIVATE DRAFT'))
  assert(!JSON.stringify(initial).includes('demo-merchant@'))
  const adsBefore=(await request('/public/advertisements?placement=home')).body.advertisements
  assert(adsBefore.length>1)
  assert.equal((await request(path,{visible:false},a)).status,200)
  assert.deepEqual((await request('/public/advertisements?placement=home')).body.advertisements.map(ad=>ad.id),['real'])
- const hidden=await list();assert.equal(hidden.length,16);assert(tryIds.every(id=>!hidden.some(v=>v.id===id)));assert.equal(hidden.filter(v=>v.isDemo).length,0);assert.deepEqual(hidden.map(v=>v.id).sort(),[...normalIds].sort());assert.equal(hidden[0].isDemo,false)
+ const hidden=await list();assert.equal(hidden.length,16);assert([...tryIds,...legacyIds].every(id=>!hidden.some(v=>v.id===id)));assert.equal(hidden.filter(v=>v.isDemo).length,0);assert.deepEqual(hidden.map(v=>v.id).sort(),[...normalIds].sort());assert.equal(hidden[0].isDemo,false)
  assert.deepEqual((await list('?limit=1&province='+encodeURIComponent('ชลบุรี'))).map(v=>v.id),[hidden[0].id])
  assert.equal((await request('/public/qr/'+pending.qr)).body.valid,true)
  assert.equal((await request(path,{visible:false},a)).status,200)
