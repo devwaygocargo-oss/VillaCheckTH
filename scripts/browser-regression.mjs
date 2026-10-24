@@ -22,6 +22,11 @@ const stop=async child=>{if(child&&child.exitCode===null){child.kill("SIGTERM");
 try {
  const password="LocalBrowserFixture123"
  await seedDemo(db,{password,adminEmail:"browser-admin@example.test",adminPassword:password})
+ const tryLabels=['Social Verify','Online Verify','Basic Verify','Premium Verify']
+ const tryDocument=await db.prepare('SELECT document_id,owner_id FROM villas LIMIT 1').get()
+ for(const [i,label] of tryLabels.entries()){
+  await db.prepare("INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,status,qr,created) VALUES (?,?,?,?,?,?,?,'basic',?,'approved',?,'2026-10-24')").run('browser-try-'+i,tryDocument.owner_id,'บ้านเดโม '+label+' — ข้อมูลสาธิต','DEMO '+label+' Villa','ชลบุรี','ธุรกิจสาธิต — ไม่ใช่ที่พักจริง','try-browser-'+i+'@villacheck.example',tryDocument.document_id,'VC-DEMO-browser-try-'+i)
+ }
  const expected=Number((await db.prepare("SELECT count(*) AS n FROM leads").get()).n)
  const env={...process.env,NODE_ENV:"test",PAYMENT_ACCESS_MODE:process.env.VILLACHECK_PHASE1_QA==="1"?"DISABLED":"LEGACY_MANUAL",APP_URL:base,DATABASE_URL:db.testConnectionString,DIRECT_URL:db.testConnectionString,VillaCheck_DATABASE_URL:db.testConnectionString,NEXT_TELEMETRY_DISABLED:"1",SMTP_HOST:"",SMTP_FROM:"",SMTP_USER:"",SMTP_PASSWORD:"",OMISE_TEST_ENABLED:"false",OMISE_TEST_SECRET_KEY:"",SEED_PUBLIC_DEMO_DATA:"false",SEED_DEMO_ACCOUNTS:"false",ADMIN_EMAIL:"",ADMIN_PASSWORD:""}
  next=spawn(process.execPath,["node_modules/next/dist/bin/next","start","--port",String(port),"--hostname","127.0.0.1"],{env,stdio:"ignore"})
@@ -50,7 +55,8 @@ try {
  const {sessionId:publicSession}=await send("Target.attachToTarget",{targetId:publicTab,flatten:true})
  const publicEvaluate=async expression=>(await send("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true},publicSession)).result.value
  const publicCards=()=>publicEvaluate("document.querySelectorAll('.directory-grid .villa-card').length")
- await until(async()=>await publicCards()===35,"Public tab must start with 35 DB demo villas")
+ await until(async()=>await publicCards()===39,"Public tab must start with 39 DB demo villas")
+ assert(await publicEvaluate("[...document.querySelectorAll('.villa-card')].filter(e=>/Social Verify|Online Verify|Basic Verify|Premium Verify/.test(e.innerText)&&e.innerText.includes('บ้านเดโม')).every(e=>e.innerText.includes('ไม่ใช่ผลตรวจที่พักจริง'))"))
  const setVisibility=async visible=>{
   await send("Page.bringToFront")
   await until(()=>evaluate("[...document.querySelectorAll('button')].find(e=>e.textContent==='บันทึกการแสดง Demo Villas')?.disabled===false"),"Visibility settings not ready")
@@ -63,8 +69,8 @@ try {
  const offAds=await publicEvaluate("fetch('/api/public/advertisements?placement=home',{cache:'no-store'}).then(r=>r.json()).then(v=>v.advertisements.length)")
  assert.equal(offAds,0)
  await setVisibility(true)
- await until(async()=>await publicCards()===35,"Open public tab did not restore DB demo cards")
- results.push({name:"Admin saved demo visibility refreshes an existing public tab without reload",passed:true,before:35,off:0,restored:35,offDemoAds:offAds})
+ await until(async()=>await publicCards()===39,"Open public tab did not restore DB demo cards")
+ results.push({name:"Admin saved demo visibility refreshes an existing public tab without reload",passed:true,before:39,off:0,restored:39,offDemoAds:offAds})
  await send("Target.closeTarget",{targetId:publicTab})
  await send("Page.bringToFront")
  await login("demo-merchant@villacheck.example")
