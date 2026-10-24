@@ -62,3 +62,13 @@ Admin → ตั้งค่าระบบ → แสดงที่พัก�
 เฉพาะ Admin เปลี่ยนได้ ผ่าน auth/CSRF เดิม มี audit เมื่อค่าเปลี่ยน ไม่เพิ่ม audit ซ้ำเมื่อส่งค่าเดิม และปฏิเสธค่าที่ไม่ใช่ boolean สวิตช์แยกจาก Demo Mode การเงิน/อีเมล
 
 ผล local: 263 tests ผ่าน 255/ล้มเหลว 0/ข้าม 8 ที่ต้องใช้ PostgreSQL; Build/Typecheck/Lint และ diff checks ผ่าน ยังไม่ได้อ่านหรือเปลี่ยน setting บน Neon จริง ยังไม่มี Commit/Push/Deploy ของฟีเจอร์นี้ ผู้ดูแลต้องยืนยัน target ก่อนทดสอบ Admin QA เปิด–ปิด/refresh บน Preview โดยไม่ seed
+
+## ผลวิเคราะห์ HTTP 500 จาก Preview จริง — 24 ตุลาคม 2026
+
+หลังต่ออายุ OAuth session เดิมด้วย Vercel CLI whoami อ่าน project/environment/runtime logs ได้แล้ว ข้อจำกัด 403 ในรายงานก่อนหน้าเป็นประวัติ ไม่ใช่สถานะสิทธิ์ปัจจุบัน ไม่ได้ใช้ CLI deploy
+
+Runtime logs ของ deployment dpl_3KEeWHX3qBFjZXyetvU9rxwN7FoU พบ APP_URL must be your public HTTPS URL in production บน /api/config และ /api/public/advertisements ตรวจพบ APP_URL มีเฉพาะ Production scope ไม่มีใน Preview สาเหตุที่ยืนยันรอบนี้คือ Preview configuration ไม่ครบ ไม่ใช่หลักฐานว่าข้อมูล Demo ถูกลบ
+
+เพิ่ม APP_URL เฉพาะ Preview branch fix/autonomous-business-security-20261024 เป็น HTTPS branch URL ที่ผู้ใช้ส่ง: https://design-villacheck-git-fix-autonomous-busines-7256c7-villa-check.vercel.app ไม่แก้ Production scope, integration หรือฐานข้อมูล Safety flags ของ Preview ตรวจด้วย CLI env pull แบบไม่พิมพ์ secret values แล้วตรง DISABLED/Omise false/staging/demo false/seed false ทั้งหมด Preview ไม่มี SMTP transport/SMS credentials ตาม configuration ที่อ่านได้ จึงไม่ทดสอบส่งจริง
+
+Source ไม่ต้องลด validation หรือเพิ่มระบบเพื่อแก้กรณีนี้ ชุด PostgreSQL local ล่าสุด 263 ผ่าน/0 ล้มเหลว/0 ข้าม รวม Next/Nest/Prisma การนำ APP_URL ใหม่ไปใช้ต้องสร้าง Preview deployment ใหม่ผ่าน GitHub จากนั้นตรวจ API จริงก่อนอนุมัติ Merge ไม่ถือว่า build READY เท่ากับ API ผ่าน ไม่รัน migration/seed/reset/delete ฐานภายนอก
