@@ -1,3 +1,5 @@
+> อัปเดตวิธี deploy: ใช้ GitHub → Vercel ตาม [คู่มือ Git integration](github-vercel-staging-deployment.md) ส่วนคำสั่ง local build/DB ด้านล่างเป็น preflight เท่านั้น ห้ามรัน DB ภายนอกโดยไม่มีการอนุญาต
+
 # คู่มือเตรียมและ Deploy Staging — VillaCheck Phase 3
 
 24 ตุลาคม 2026 · ต่อจาก commit `5fc7615` บน `fix/autonomous-business-security-20261024`
@@ -59,28 +61,16 @@ node --env-file=.env.staging scripts/deploy-db.mjs
 
 เลือก project staging ที่แยกจาก production ใน dashboard ตรวจ env scope ของ preview/staging ให้ตรง deployment ใช้ `npm ci`, `npm run build`, output `.next` ตาม `vercel.json` ไม่มีคำสั่ง deploy อัตโนมัติใน session นี้
 
-หาก deploy จาก local โดยไม่ push ให้ operator ใช้ checkout ที่ตรวจ revision แล้ว และเลือก **staging project เท่านั้น**:
+VillaCheck ใช้ GitHub → Vercel Git integration ให้ใช้ [คู่มือปัจจุบัน](github-vercel-staging-deployment.md) ตรวจ Connected Repository/Branch Tracking/Domain/env scopes ก่อน Push ไม่ใช้ Vercel CLI เพื่อ deploy โดยตรง และไม่สมมติว่า Push feature branch จะเปลี่ยน URL หลัก
 
-```sh
-npx vercel link
-npx vercel deploy
-```
-
-คำสั่ง deploy ปกติเป็น Preview ตาม [เอกสาร Vercel](https://vercel.com/docs/cli/deploy) ไม่เพิ่ม production flag หรือ promote ตรวจ project linkage ก่อนส่ง source และใช้ `.vercelignore` ที่เตรียมไว้กัน `.env*`/credentials/local reports/artifacts ออกจาก upload อย่าคิดว่า `.gitignore` แทน upload ignore ได้
-
-เตรียม stable staging alias/domain และตั้ง APP_URL/PUBLIC_URL ตรง alias นั้น ให้ operator ผูก Preview deployment เข้ากับ **staging alias ที่ยืนยันแล้ว** ใน dashboard แล้วทดสอบผ่าน alias เนื่องจาก random deployment hostname ไม่ใช่ canonical Admin host อย่า alias ไป production domain
-
-- API timeout 60 วินาที; provider calls timeout 10 วินาที; ตรวจ latency และ DB pool ภายใต้ traffic ที่จะใช้
+- APP_URL/PUBLIC_URL ต้องตรง staging URL ที่ใช้จริง ตรวจ domain/branch assignment ใน Dashboard ไม่ alias ไป production domain
+- API timeout 60 วินาที; provider calls timeout 10 วินาที ตรวจ latency/DB pool กับ traffic เป้าหมาย
 - Cron `/api/ops/cron` ต้องตั้ง `CRON_SECRET` และตรวจ hosting plan/schedule จริง รอบรายวันไม่รับประกันส่ง mail ทันที
-- อย่าตั้ง DATABASE_URL ของ production ใน preview; ตรวจ app artifact มาจาก revision ที่ผ่าน QA
+- อย่าตั้ง production DATABASE_URL ใน Preview; artifact ต้องเป็น revision ที่ผ่าน QA
 
-### Render (เฉพาะทดสอบ backend แยก)
+### Render (ข้อมูล backend แยก ไม่ใช่เส้นทางอัปเดต staging นี้)
 
-ใช้ service staging แยกและ Dockerfile ใน repo ตั้ง APP_URL เป็น frontend origin ที่เลือก ตั้ง BACKEND_PORT ตาม service และ health `/api/health` ตรวจ TLS/ingress และ quota จริง อย่าเชื่อ header IP ที่ผู้เรียกใส่เอง Render ยังใช้ socket IP ซึ่งอาจรวมผู้ใช้หลายคนหลัง proxy
-
-หาก source revision มีอยู่ใน remote แล้ว operator เลือก Deploys → Manual Deploy → Deploy a specific commit ใน staging service และปิด auto-deploy ตาม [เอกสาร Render](https://render.com/docs/deploys) ถ้า commit ยังไม่อยู่ remote ให้บันทึกรอผู้ดูแล ไม่ push ใน session นี้
-
-ไม่ตั้ง `VERCEL=1` บน Render เพื่อแก้ IP; flag นี้ใช้เฉพาะ ingress Vercel ที่เชื่อถือได้ ระบบยังไม่ได้เพิ่ม browser cross-origin transport ไป Render
+Render เป็น backend แยก ไม่สมมติว่า Vercel frontend ต่อให้อัตโนมัติ งานนี้ไม่เปลี่ยน routing/hosting หรือ deploy ไป Render หากใช้ service แยกในอนาคตให้ตรวจ Dockerfile, APP_URL/frontend origin, BACKEND_PORT, health `/api/health`, TLS/ingress และ quota จริง Socket IP อาจรวมผู้ใช้หลัง proxy ห้ามตั้ง `VERCEL=1` บน Render เพื่อแก้ปัญหา IP เพราะ flag นี้ใช้เฉพาะ ingress Vercel ที่เชื่อถือได้ ระบบยังไม่ได้เพิ่ม browser cross-origin transport ไป Render
 
 ## 4. เปิด Omise Test checkout เฉพาะ staging
 

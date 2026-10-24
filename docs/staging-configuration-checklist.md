@@ -39,3 +39,7 @@ Environment scope ของ Vercel (Preview/Production/custom) ต้องต�
 - [ ] `/api/config` ต้อง paymentConfigured=false และไม่แสดง bank/QR/instructions ใน Owner DTO/UI/worker
 - [ ] HEAD/deployment SHA ตรง, headers ครบ, health 200, packages 401 เมื่อไม่ login
 - [ ] ลงชื่อผู้ตรวจ/เวลา/หลักฐาน DB isolation, migration, SMTP/OTP และ UAT แยกกัน ไม่ใช้ health แทนทั้งหมด
+
+## การอัปเดตผ่าน GitHub
+
+ใช้ [GitHub → Vercel](github-vercel-staging-deployment.md) แทนการ deploy ด้วย CLI ต้องตรวจ Connected Repository/Branch Tracking/Domain/env ก่อน Push เพราะ origin/legacy คนละ repo และ Vercel API 403 ยังไม่ยืนยัน Production Branch ไม่เปลี่ยน branch configuration ในงานนี้

@@ -20,3 +20,7 @@ PostgreSQL 262 ผ่าน/0 ล้มเหลว/0 ข้าม; SQLite 254 �
 ไม่มี deploy staging/production, push, merge, เปลี่ยน Vercel settings, migration/เขียน DB ภายนอก, live payment หรือส่งเมลลูกค้า ไม่แตะ production `villacheckth.com` หรือ hosting บริษัท งานเดิมผู้ใช้และหลักฐานก่อนหน้าคงไว้
 
 เอกสารประกอบ: [Readiness report](staging-readiness-report.md), [Database safety](staging-database-safety-assessment.md), [Staging QA 16 กรณี](phase1-staging-qa-checklist.md), [Deploy/Rollback](staging-deployment-and-rollback.md)
+
+## การอัปเดตผ่าน GitHub
+
+ใช้ [GitHub → Vercel](github-vercel-staging-deployment.md) แทนการ deploy ด้วย CLI ต้องตรวจ Connected Repository/Branch Tracking/Domain/env ก่อน Push เพราะ origin/legacy คนละ repo และ Vercel API 403 ยังไม่ยืนยัน Production Branch ไม่เปลี่ยน branch configuration ในงานนี้
