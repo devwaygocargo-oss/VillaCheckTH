@@ -1,3 +1,5 @@
+> แผน fixed staging-preview นี้ถูกแทนที่ตามคำสั่งล่าสุด: ใช้ Neon main ผ่าน Native Integration เดิม ดู [แผนปัจจุบัน](preview-database-target-guard.md) ห้ามใช้ขั้นตอนสร้าง fixed branch/attestation ของแผนเก่าเป็นข้อกำหนด deploy ปัจจุบัน
+
 # Preview Environment Template — staging-preview
 
 เป็นข้อเสนอรออนุมัติ ไม่ใช่ค่าที่ตั้งแล้ว ไม่ระบุ connection string/secret values

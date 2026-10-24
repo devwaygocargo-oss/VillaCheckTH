@@ -1,3 +1,5 @@
+> แผน fixed staging-preview นี้ถูกแทนที่ตามคำสั่งล่าสุด: ใช้ Neon main ผ่าน Native Integration เดิม ดู [แผนปัจจุบัน](preview-database-target-guard.md) ห้ามใช้ขั้นตอนสร้าง fixed branch/attestation ของแผนเก่าเป็นข้อกำหนด deploy ปัจจุบัน
+
 # Approval Runbook — Neon Preview → GitHub → Vercel
 
 คู่มือนี้เตรียมไว้เท่านั้น ทุก external mutation ต้องได้รับอนุมัติตามชุด A–F ก่อน ห้ามตีความการอนุมัติสร้าง branch เป็นการอนุมัติ seed/migration/push/merge ด้วย
