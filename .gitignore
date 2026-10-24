@@ -31,3 +31,8 @@ backend/generated/
 # Vercel project metadata and downloaded environment files
 .vercel/
 .env*.local
+
+# Local documentation and audit output (keep on disk, exclude from Git)
+/docs/
+/audit-result/
+/audit-results/
