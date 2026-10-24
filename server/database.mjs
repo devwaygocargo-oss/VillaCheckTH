@@ -1,3 +1,4 @@
+import {packagePricing} from "./package-promotions.mjs"
 import {promisify} from "node:util"
 import generatePromptPay from "promptpay-qr"
 import QRCode from "qrcode"
@@ -253,7 +254,11 @@ async function createInvoiceInternal(db, villa, appUrl, paymentInstructions="") 
   if(plan.id === "basic")throw Object.assign(Error("Basic uses a promotion grant; paid signup and renewal terms require confirmation"),{status:409})
   const couponRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get('merchant_coupon:'+villa.owner_id)
   const coupon=plan.amount>0?await quoteCoupon(db,couponRow?JSON.parse(couponRow.value):'',villa.owner_id,plan):null
-  const amount=coupon?coupon.amount:plan.amount
+  const promotion=await packagePricing(db,plan)
+  if(promotion.pricingPending)throw Object.assign(Error("การปัดเศษส่วนลดรอยืนยัน"),{status:409})
+  if(coupon&&promotion.promotion)throw Object.assign(Error("การใช้คูปองร่วมโปรโมชั่นรอยืนยัน"),{status:409})
+  const amount=coupon?coupon.amount:promotion.netAmount
+  if(amount===0)throw Object.assign(Error("ยอดสุทธิ 0 บาท ไม่สร้าง charge หรือ invoice เรียกเก็บ ระยะสิทธิ์และวิธีเปิดระดับฟรีรอยืนยัน"),{status:409})
   const months=invoicePerVilla(plan.id) && plan.billing_cycle === "MONTHLY" ? 1 : monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
   const created = new Date().toISOString()
   const instructions=await cmsPaymentSnapshot(db,paymentInstructions)
@@ -266,6 +271,7 @@ async function createInvoiceInternal(db, villa, appUrl, paymentInstructions="") 
       "INSERT INTO invoices(id,villa_id,amount,months,created,updated_at) VALUES (?,?,?,?,?,?)",
     )
     .run(id, villa.id, amount, months, created, created)
+  await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run("invoice_package_promotion:"+id,JSON.stringify(promotion))
   if(coupon){await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_discount:${id}`,JSON.stringify(coupon));await db.prepare("DELETE FROM system_settings WHERE key=?").run("merchant_coupon:"+villa.owner_id)}
   await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_bank_qr:${id}`,JSON.stringify(bankQrImage))
   if(receiver)await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_receiving_bank:${id}`,JSON.stringify(receiver))

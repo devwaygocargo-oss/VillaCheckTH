@@ -2,9 +2,15 @@ import { saveRecord } from "./approval-history.mjs"
 import { audit } from "./database.mjs"
 const fail=(status,message)=>{throw Object.assign(Error(message),{status})}
 // Preserve the established moderation policy as package data, independent of price.
+export const verificationCapabilities={
+ basic:{tier:1,documentCheck:true,onlineOwnerVerification:false,propertyInspection:false,latestPhotos:false,guaranteeScopes:[]},
+ starter:{tier:2,documentCheck:true,onlineOwnerVerification:true,propertyInspection:false,latestPhotos:false,guaranteeScopes:[]},
+ pro:{tier:3,documentCheck:true,onlineOwnerVerification:true,propertyInspection:false,latestPhotos:false,guaranteeScopes:["BOOKING_PROPERTY_PROVIDED"]},
+ premium:{tier:4,documentCheck:true,onlineOwnerVerification:true,propertyInspection:true,latestPhotos:true,guaranteeScopes:["PROPERTY_ACCURACY"]}
+}
 export async function packageEntitlements(db,packageId) {
  const row=await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`package_entitlements:${packageId}`)
- return row?JSON.parse(row.value):{reviewModerationRequired:["pro","premium"].includes(packageId),guarantee:null,revision:1}
+ return {...(row?JSON.parse(row.value):{reviewModerationRequired:["pro","premium"].includes(packageId),revision:1}),capabilities:verificationCapabilities[packageId]||null,guarantee:null,guaranteeTermsConfirmed:false}
 }
 export async function packageEntitlementsApi(db,user,req,path,body) {
  const match=path.match(/^\/api\/admin\/package-entitlements\/([a-z0-9_-]+)$/)

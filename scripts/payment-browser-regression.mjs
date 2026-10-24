@@ -8,6 +8,7 @@ import {join} from "node:path"
 import {openTestDatabase} from "../server/test-database.mjs"
 import {seedDemo} from "../server/demo-seed.mjs"
 import {createUser} from "../server/database.mjs"
+const evidenceDir=process.env.VILLACHECK_PAYMENT_EVIDENCE_DIR||"docs/validation/phase3"
 const chromePath=process.env.VILLACHECK_CHROME_PATH||"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 if(!process.env.TEST_DATABASE_URL||!["127.0.0.1","localhost"].includes(new URL(process.env.TEST_DATABASE_URL).hostname))throw Error("Disposable localhost test database required")
 if(!existsSync(chromePath))throw Error("Chrome unavailable; browser acceptance cannot run")
@@ -65,14 +66,15 @@ try {
  await send("Page.navigate",{url:pageUrl})
  const status=()=>evaluate("document.querySelector('[data-testid=omise-status]')?.innerText")
  await until(()=>evaluate("[...document.querySelectorAll('button')].some(b=>b.innerText==='เริ่มชำระทดสอบ'&&!b.disabled)"),"Test checkout not ready")
+ assert.equal(await evaluate("document.querySelector('[aria-label=\"วิธีชำระ Omise Test\"]').options.length"),1);results.push({name:"Checkout offers QR source only",passed:true})
  assert.equal(creates,0);results.push({name:"Checkout restores no-attempt state without creating charge",passed:true})
  await evaluate("{const b=[...document.querySelectorAll('button')].find(b=>b.innerText==='เริ่มชำระทดสอบ');b.click();b.click();}")
  await until(async()=>(await status())?.includes("รอชำระ"),"Pending status absent")
  assert.equal(creates,1);assert.equal(await evaluate("window.__sourceCalls"),1)
  results.push({name:"Rapid duplicate clicks create one source and one payment request",passed:true})
  assert(await evaluate("document.documentElement.scrollWidth<=innerWidth+1"));results.push({name:"Payment UI mobile 390px",passed:true})
- mkdirSync("docs/validation/phase3",{recursive:true})
- const screenshot=await send("Page.captureScreenshot",{format:"png",captureBeyondViewport:false});writeFileSync("docs/validation/phase3/payment-test-mobile.png",Buffer.from(screenshot.data,"base64"))
+ mkdirSync(evidenceDir,{recursive:true})
+ const screenshot=await send("Page.captureScreenshot",{format:"png",captureBeyondViewport:false});writeFileSync(join(evidenceDir,"payment-test-mobile.png"),Buffer.from(screenshot.data,"base64"))
  await evaluate("document.querySelector('[data-testid=omise-redirect]').click()")
  await until(()=>evaluate("location.hash.includes('status=successful')"),"Provider return not restored")
  await until(async()=>(await status())?.includes("รอชำระ"),"Return URL falsely trusted success")
@@ -105,6 +107,6 @@ try {
  assert.equal(await evaluate("[...document.querySelectorAll('button')].some(b=>b.innerText==='เริ่มชำระทดสอบ')"),false)
  results.push({name:"Zero-net invoice has no source/charge button",passed:true})
  assert.equal(protocolErrors.length,0);assert.equal(creates,1);assert(statusReads>=5)
- writeFileSync("docs/validation/phase3/payment-browser.json",JSON.stringify({scope:"UI tests on local Next/Nest/PostgreSQL with checkout/status endpoints and Omise SDK/redirect mocked via CDP. No provider network or real payment.",results,creates,redirects,statusReads},null,2)+"\n")
+ writeFileSync(join(evidenceDir,"payment-browser.json"),JSON.stringify({scope:"UI tests on local Next/Nest/PostgreSQL with checkout/status endpoints and Omise SDK/redirect mocked via CDP. No provider network or real payment.",results,creates,redirects,statusReads},null,2)+"\n")
  console.log(JSON.stringify({browser:"Chrome",results}))
 }finally{ws?.close();await stop(chrome);await stop(next);await db.close();rmSync(profile,{recursive:true,force:true})}

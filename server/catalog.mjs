@@ -1,6 +1,6 @@
 import {normalizeSocialFeatures,packageContent,footerAdFeature,premiumGuaranteeFeature,basicVerificationNotice,onlineVerificationFeatures} from './package-content.mjs'
 import { packages } from "./database.mjs"
-import { basicPricing } from "./basic-promotion.mjs"
+import {packagePricing} from "./package-promotions.mjs"
 export const levels = [
   "REGISTERED",
   "BASIC_CHECKED",
@@ -87,20 +87,16 @@ export async function getPlan(db, id) {
   const rows=await db.prepare("SELECT * FROM package_catalog ORDER BY sort_order,id").all();
   const plan=effectivePlans(rows).find(row=>row.id===id);
   if(!plan)throw Object.assign(Error("ไม่พบแพ็กเกจ"),{status:400});
-  return pricedPlan(plan,plan.id==="basic"?await basicPricing(db):null);
+  return {...plan,...await packagePricing(db,plan)};
 }
 const tierOrder=["basic","starter","pro","premium"];
 export function effectivePlans(rows){
  const plans=rows.map(planDto).map(plan=>plan.id==="pro"?{...plan,features:normalizeSocialFeatures(plan.features),description:normalizeSocialFeatures([plan.description]).length?plan.description:packageContent.pro.description}:plan),byId=new Map(plans.map(plan=>[plan.id,plan]));
  let inherited=[];
  for(const id of tierOrder){const plan=byId.get(id);const required=packageContent[id]?.features||[];inherited=[...new Set([...inherited,...required,...(plan?.features||[]).filter(f=>!(/แบนเนอร์|โฆษณา/.test(f)&&/รายละเอียด/.test(f)))].map(value=>value.trim()).filter(Boolean))];if(plan)plan.features=[...inherited];}
- return plans.map(plan=>({...plan,features:plan.features.filter(feature=>!feature.includes(premiumGuaranteeFeature)),description:plan.id==="basic"?packageContent.basic.description:plan.description.replace(/และการันตีบ้านตรงปก|การันตีบ้านตรงปก/g,""),guarantee:null}));
+ return plans.map(plan=>({...plan,features:plan.features.filter(feature=>!/(?<!ไม่)(?:รับประกัน|การันตี)|guarantee/i.test(feature)),description:plan.id==="basic"?packageContent.basic.description:(/(?<!ไม่)(?:รับประกัน|การันตี)|guarantee/i.test(plan.description)?packageContent[plan.id]?.description||"ตรวจสอบตามสิทธิ์แพ็กเกจ":plan.description),guarantee:null}));
 }
 
-function pricedPlan(plan,basic) {
- if(plan.id!=="basic")return {...plan,regularAmount:plan.amount,discountAmount:0,netAmount:plan.amount,promotion:null}
- return {...plan,...basic,description:basic.promotion?packageContent.basic.description:`${basicVerificationNotice} · ราคาปกติ 990 บาท โปรโมชั่นสิ้นสุดแล้ว สิทธิ์ที่ได้รับเดิมยังคงอยู่`}
-}
 function planDto(row) {
   return {
     ...row,
@@ -115,8 +111,7 @@ function planDto(row) {
 }
 export async function listPlans(db, all = false) {
   const rows=await db.prepare("SELECT * FROM package_catalog ORDER BY sort_order,id").all();
-  const pricing=await basicPricing(db);
-  return effectivePlans(rows).filter(plan=>all||plan.isActive).map(plan=>pricedPlan(plan,pricing));
+  return Promise.all(effectivePlans(rows).filter(plan=>all||plan.isActive).map(async plan=>({...plan,...await packagePricing(db,plan)})));
 }
 
 export async function getVerificationMode() {

@@ -90,7 +90,7 @@ export default function VillaPackagePanel({
           const included=new Set(p.features.map(feature=>feature.trim()));
           return <article key={p.id} data-plan-id={p.id} className={`subscription-plan${selectedPlanId===p.id?" active":""}`}>
             <button type="button" aria-pressed={selectedPlanId===p.id} onClick={()=>setSelected(p.id)}>
-              <strong>{p.name}</strong><span>{p.discountAmount ? <><del>฿{((p.regularAmount ?? p.amount)/100).toLocaleString("th-TH")}</del> · ลด 100% · สุทธิ ฿0</> : <>฿{((p.netAmount ?? p.amount)/100).toLocaleString("th-TH")} / เดือน / ที่พัก</>}</span><small>รวมภาษี · ทุกแพ็กเกจเขียนรีวิวได้</small>
+              <strong>{p.name}</strong><span>{p.pricingPending ? <>ราคาเต็ม ฿{((p.regularAmount??p.amount)/100).toLocaleString("th-TH")} · ส่วนลด {p.promotion?.percent}% · ยอดสุทธิรอยืนยันการปัดเศษ</> : p.promotion ? <><del>฿{((p.regularAmount ?? p.amount)/100).toLocaleString("th-TH")}</del> · ลด {p.promotion?.percent}% (Discount {p.promotion?.percent}%) · ส่วนลด ฿{((p.discountAmount??0)/100).toLocaleString("th-TH")} · สุทธิ ฿{((p.netAmount??0)/100).toLocaleString("th-TH")}</> : <>฿{((p.netAmount ?? p.amount)/100).toLocaleString("th-TH")} / เดือน / ที่พัก</>}</span><small>รวมภาษี · ทุกแพ็กเกจเขียนรีวิวได้</small>
             </button>
             {p.id === "basic" && <p>{basicVerificationNotice}</p>}
             <ul className="package-feature-list" aria-label={`สิทธิ์ของ ${p.name}`}>
@@ -128,7 +128,7 @@ export default function VillaPackagePanel({
             className="primary-button"
             disabled={
               busy ||
-              (!pendingInvoice && selectedPlanId!=="basic" && store.paymentAccessMode==="DISABLED") ||
+              (!pendingInvoice && selectedPlanId!=="basic" && (store.paymentAccessMode==="DISABLED"||plan?.netAmount===0||plan?.pricingPending===true)) ||
               (!pendingInvoice && (!plan || villa.status !== "approved"))
             }
             onClick={async () => {
@@ -143,6 +143,7 @@ export default function VillaPackagePanel({
           >
             {busy ? "กำลังสร้างใบแจ้งชำระ…" : pendingInvoice ? "เปิดประวัติและสถานะรายการค้าง" : "ซื้อ / ต่ออายุแพ็กเกจสำหรับที่พักนี้"}
           </button>
+          {selectedPlanId!=="basic"&&plan?.netAmount===0&&<p role="status">โปรโมชั่นสุทธิ 0 บาท ไม่ต้องชำระ ระยะสิทธิ์และวิธีเปิดระดับฟรีรอยืนยัน</p>}
           {store.paymentAccessMode==="DISABLED"&&<p role="status">ปิดการชำระชั่วคราว สิทธิ์และประวัติเดิมยังคงอยู่</p>}
           {pendingInvoice && <div role="status"><p>{pendingInvoice.status === "submitted" ? "ส่งสลิปแล้ว อยู่ระหว่างรอ Admin ตรวจสอบ วันหมดอายุจะปรับหลังยืนยันชำระ" : "มีรายการค้าง กรุณาเปิดดูสถานะและช่องทางของรายการเดิม ไม่สร้างรายการชำระซ้ำ"}</p><button type="button" className="outline-button" onClick={()=>onPayment(pendingInvoice.id)}>ดูประวัติ / สถานะใบแจ้งชำระ</button></div>}
           {villa.status !== "approved" && <p>รอทีมอนุมัติที่พักก่อนเลือกซื้อแพ็กเกจ</p>}

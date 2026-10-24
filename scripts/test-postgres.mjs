@@ -20,10 +20,10 @@ try {
  const child=spawn(process.execPath,["--test","--test-concurrency=2",...tests],{stdio:"inherit",env:isolatedEnv})
  const exitCode=await new Promise((resolve,reject)=>{child.once("exit",resolve);child.once("error",reject)})
  process.exitCode=exitCode??1
- if(exitCode===0 && ["--browser","--payment-browser","--all-browsers"].some(flag=>process.argv.includes(flag))) {
-  const scripts=process.argv.includes("--all-browsers")?["scripts/browser-regression.mjs","scripts/payment-browser-regression.mjs"]:[process.argv.includes("--payment-browser")?"scripts/payment-browser-regression.mjs":"scripts/browser-regression.mjs"]
+ if(exitCode===0 && ["--browser","--payment-browser","--all-browsers","--business-browser"].some(flag=>process.argv.includes(flag))) {
+  const scripts=(process.argv.includes("--all-browsers")||process.argv.includes("--business-browser"))?["scripts/browser-regression.mjs","scripts/payment-browser-regression.mjs"]:[process.argv.includes("--payment-browser")?"scripts/payment-browser-regression.mjs":"scripts/browser-regression.mjs"]
   for(const script of scripts){
-   const browser=spawn(process.execPath,[script],{stdio:"inherit",env:{...isolatedEnv,...(process.argv.includes("--all-browsers")?{VILLACHECK_BROWSER_EVIDENCE_DIR:"docs/validation/phase3/general"}:{})}})
+   const browser=spawn(process.execPath,[script],{stdio:"inherit",env:{...isolatedEnv,...(process.argv.includes("--business-browser")?{VILLACHECK_BUSINESS_QA:"1",VILLACHECK_BROWSER_EVIDENCE_DIR:"docs/validation/business-20261024/general",VILLACHECK_PAYMENT_EVIDENCE_DIR:"docs/validation/business-20261024/payment"}:{}),...(process.argv.includes("--all-browsers")?{VILLACHECK_BROWSER_EVIDENCE_DIR:"docs/validation/phase3/general"}:{})}})
    process.exitCode=await new Promise((resolve,reject)=>{browser.once("exit",resolve);browser.once("error",reject)})??1
    if(process.exitCode)break
   }

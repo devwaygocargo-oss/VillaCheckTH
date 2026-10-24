@@ -3,7 +3,7 @@ import {dummyPropertyDetails} from './property-details.mjs'
 import {audit} from './database.mjs'
 import {recordCmsChange,cmsChangeById} from './cms-change-history.mjs'
 const fail=(status,message)=>{throw Object.assign(Error(message),{status})}
-export async function villaPage(db,villa){const row=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('villa_page:'+villa.id);return row?JSON.parse(row.value).details:dummyPropertyDetails(villa)}
+export async function villaPage(db,villa){if(villa._approvedSnapshot)return villa._approvedSnapshot.propertyDetails?.details||dummyPropertyDetails(villa);const row=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('villa_page:'+villa.id);return row?JSON.parse(row.value).details:dummyPropertyDetails(villa)}
 export async function villaPagesApi(db,user,req,path,url,body){
  if(path!=='/api/admin/villa-pages')return undefined
  if(!user||user.role!=='admin')fail(403,'เฉพาะ Admin')

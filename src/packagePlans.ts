@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 export type PackagePlan = {
- regularAmount?: number; discountAmount?: number; netAmount?: number; promotion?: {code:string;percent:number;revision:number}|null;
+ regularAmount?: number; discountAmount?: number|null; netAmount?: number|null; pricingPending?:boolean; promotion?: {code:string;percent:number;revision:number}|null;
  id: string; name: string; slug: string; amount: number; capacity: number; description: string;
  currency: string; billingCycle: string; trialMonths: number; features: string[];
  maximumVerificationLevel: string; showPremiumBanner: boolean; isActive: boolean; sort_order: number;

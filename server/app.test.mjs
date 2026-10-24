@@ -284,7 +284,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         .villas[0]
       const invoice = current.invoices[0]
       assert.equal(invoice.months, 1)
-      assert.equal(invoice.amount, 4990)
+      assert.equal(invoice.amount, 998)
       assert.ok(current.qr.startsWith("VC-"))
       assert.equal(
         (await request(`/api/invoices/${invoice.id}/confirm`, {}, owner))

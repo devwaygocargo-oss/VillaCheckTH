@@ -23,7 +23,7 @@
 - [ ] ยืนยัน Test account, public/secret key pair และ methods ที่เปิดใน account ตรงกับรายการ staging
 - [ ] สร้าง source จริงจาก UI ด้วยยอด invoice และสร้าง charge เพียงหนึ่งครั้งเมื่อกดซ้ำ
 - [ ] PromptPay Test QR แสดงจาก charge ที่ตรง invoice ไม่สแกนด้วยแอปธนาคารจริง; จำลอง success/failure ผ่าน Test Dashboard
-- [ ] SCB Test redirect/return ที่ staging host จริง ตรวจ allowlisted URL; ทดสอบ refresh/กลับเข้า invoice เดิมทั้งก่อนและหลัง callback
+- [ ] QR Test browser return ที่ staging host จริง ตรวจ allowlisted URL; ทดสอบ refresh/กลับเข้า invoice เดิมทั้งก่อนและหลัง callback
 - [ ] pending, successful, failed, expired และ reversed ตาม capability ของ account พร้อมหลักฐาน provider ที่ปกปิดแล้ว หาก account ไม่รองรับ scenario ให้บันทึกขอบเขตและวิธีที่ provider แนะนำ
 - [ ] Replay/duplicate/reordered/early webhook ที่ host จริง ผลไม่เพิ่มวัน/payments ซ้ำ ไม่เชื่อ payload หรือ URL success claim
 - [ ] Provider timeout/charge creation ambiguous: คง attempt เดิมและกระทบยอดจาก ref_id ไม่สร้างรายการเดาใหม่
@@ -56,4 +56,4 @@
 
 ผล: [ ] Pass [ ] Fail [ ] Blocked ผู้ตรวจ/วันที่/evidence: __________
 
-เอกสาร provider ที่ตรวจประกอบ implementation: [Omise.js](https://docs.omise.co/omise-js), [Charges API](https://docs.omise.co/charges-api), [PromptPay](https://docs.omise.co/promptpay), [SCB Mobile Banking](https://docs.omise.co/mobile-banking-scb) ลิงก์เหล่านี้ไม่ใช่หลักฐานว่า account ของ VillaCheck ผ่านการตรวจรับ
+เอกสาร provider ที่ตรวจประกอบ implementation: [Omise.js](https://docs.omise.co/omise-js), [Charges API](https://docs.omise.co/charges-api), [PromptPay](https://docs.omise.co/promptpay) ลิงก์เหล่านี้ไม่ใช่หลักฐานว่า account ของ VillaCheck ผ่านการตรวจรับ

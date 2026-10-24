@@ -1,14 +1,29 @@
-# Pending business decisions
+# ข้อกำหนดที่ยืนยันและรายละเอียดที่ยังรอ — 24 ตุลาคม 2026
 
-- BL-01: promotion end date, subscription duration and renewal rules. Preserve existing free grants; never retroactively charge.
-- BL-02: partial-day convention, rounding, residual credit/refund handling and new billing-cycle start. Exact rational value calculation may be used for review; do not settle a package change automatically.
-- BL-05: treatment of historical QR URLs and public visibility while edits await approval. Conservative default: retain approved snapshot privately, suspend public pending details, rotate after approval; no destructive deletion.
-- BL-06: confirmed guarantee scope, exclusions and legally approved wording per package. Do not advertise a guarantee until confirmed.
-- BL-07: identify Owner account/notification destination. Persist notifications for later delivery; do not invent an email recipient.
-- BL-03: Omise test credentials and approved enabled payment methods required before provider end-to-end testing. Live payments remain disabled.
-- Operations: operator must repair SMTP credentials, review existing inactive-package invoices, production demo cleanup and credential rotation; no production mutation authorized in this session.
+คำตอบเจ้าของธุรกิจใน session นี้มีผลเหนือข้อเสนอใน Feedback PDF และรายงานรอบก่อน ไม่มีการอนุมัติรับเงินจริงหรือ deploy
 
-Implementation limits needing a later acceptance pass:
+## ยืนยันแล้ว
 
-- Basic promotion disabled: new free grants are rejected, existing grants preserved. Paid Basic onboarding remains blocked until duration/renewal terms are confirmed; no automatic charge is attempted.
-- Owner notifications are a durable private outbox, not confirmed external delivery. Owner identity/channel and delivery acceptance remain required.
+- แสดงราคาเต็ม ส่วนลด และยอดสุทธิ; โปรโมชั่นเปิดตัวระดับ 1–2 ลด 100% ระดับ 3–4 ลด 80% โดยใช้ราคาเต็มจาก catalog ไม่แก้ราคา/ระยะเวลาเดิม
+- Upgrade จ่ายส่วนต่าง; Downgrade ไม่คืนเงิน ให้นำมูลค่าคงเหลือลดค่าบริการเดือนถัดไป
+- QR เก่าไปข้อมูลล่าสุดที่อนุมัติแล้ว; ระหว่างรอตรวจใช้ approved snapshot เดิม ห้ามเปิด draft
+- ระดับ 1 ตรวจเอกสารเบื้องต้น/ยืนยันข้อมูลตรง ไม่รับประกัน; ระดับ 2 ตรวจเอกสาร/ยืนยันเจ้าของออนไลน์ ไม่รับประกัน
+- ระดับ 3 มีสิทธิ์รับประกันการจองได้บ้าน; ระดับ 4 ตรวจเอกสาร/บ้าน/ภาพล่าสุด มีสิทธิ์รับประกันบ้านจริงตรงปก **ยังห้ามเผยแพร่คำรับประกันจนเงื่อนไขครบ**
+- แจ้ง Email และ Notice หลังบ้าน; LINE/Telegram เป็นตัวเลือกเพิ่มเติม
+- Checkout ช่วงแรก QR เท่านั้น; Test integration อนุญาตเฉพาะ PromptPay และปิดรับเงินจริงต่อไป
+
+## ต้องยืนยันก่อนเปิด flow ที่เกี่ยวข้อง
+
+| เรื่อง | รายละเอียดที่ยังต้องตอบ | การป้องกันปัจจุบัน |
+|---|---|---|
+| โปรโมชั่น/สิทธิ์ | วันเริ่ม–จบ, ระยะสิทธิ์ฟรีระดับ 2, ผู้มีสิทธิ์สมัครใหม่/ต่ออายุ/สมาชิกเดิม, ส่วนลดซ้อน | สิทธิ์เดิมและ invoice เดิมไม่เปลี่ยน; ระดับ 2 สุทธิ 0 ยังไม่เปิด activation; ไม่สร้าง invoice ยอด 0; ไม่ซ้อน coupon กับ launch |
+| Paid Basic/renewal | อายุสมาชิกและเงื่อนไขต่ออายุหลังโปรโมชั่น | ยังบล็อก Basic แบบเรียกเก็บ |
+| ส่วนต่าง Upgrade | ราคาเป้าหมายก่อน/หลังโปรโมชั่น, ช่วงเวลาที่เทียบ, วันเริ่มรอบใหม่, partial day และ rounding | มี exact preview เมื่อระบุ input ชัดเจน; ไม่ settlement |
+| เครดิต Downgrade | ฐานมูลค่าคงเหลือที่จะบันทึก, การหักค่าระดับใหม่, รอบเดือนถัดไป, การใช้บางส่วน/ยกยอด/หมดอายุ และ rounding | เก็บ proposal `PROPOSED_NOT_SPENDABLE` เท่านั้น ไม่ใช่ยอดเครดิตใช้ได้ ไม่คืนเงิน |
+| ราคาเศษสตางค์ | วิธีปัดเศษส่วนลด | แสดงรอยืนยัน และไม่ออก invoice ใหม่กรณีคำนวณไม่ลงสตางค์ |
+| รับประกันระดับ 3–4 | ผู้ได้รับสิทธิ์, วงเงิน, ข้อยกเว้น, ระยะคุ้มครอง, หลักฐาน/ขั้นตอนเคลม และข้อความที่อนุมัติ | capability ภายในแยกจากราคา; public guarantee=null และกรองข้อความรับประกัน |
+| แจ้งเตือน Owner | บัญชี/Email ผู้รับ, ผู้เห็น Notice, worker, retry/retention และหลักฐานส่งถึง | Email/In-App outbox มี event dedup; รอผู้รับ ไม่อ้างว่าส่งแล้ว |
+| QR ย้อนหลัง | รหัสเก่าที่ไม่มี snapshot/alias ในประวัติ, การเพิกถอนเมื่อปิดกิจการ | ไม่เดาว่า QR ที่หาไม่พบเป็นของใคร; รักษา suspension/financial hold |
+| Provider/operations | Omise Test credentials/host webhook, SMTP staging inbox, host security/backup/restore, UAT | ยัง NOT READY; mock/local ผ่านไม่แทน provider acceptance |
+
+ไม่มีการเปลี่ยนราคาเต็ม ระยะเวลาสมาชิก invoice ย้อนหลัง หรือ grant ของสมาชิกเดิมจากการเปิดโปรโมชั่นนี้

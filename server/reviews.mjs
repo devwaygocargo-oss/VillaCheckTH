@@ -1,3 +1,4 @@
+import {resolvePublicQr} from "./public-revision.mjs"
 import {packageEntitlements} from "./package-entitlements.mjs"
 import { randomUUID } from "node:crypto"
 import { audit } from "./database.mjs"
@@ -15,7 +16,7 @@ const clean = (value, max = 4000) => {
   return value.trim()
 }
 const publicationPolicy = "เผยแพร่รีวิวตามสิทธิ์การตรวจสอบของแพ็กเกจ ใช้กติกาเดียวกันทุกคะแนน"
-const reviewVilla = (db, qr) => db.prepare("SELECT v.id,v.name,v.package_id,p.name AS package_name,p.amount FROM villas v JOIN package_catalog p ON p.id=v.package_id WHERE v.qr=? AND v.status='approved'").get(qr)
+const reviewVilla=async(db,qr)=>{const villa=await resolvePublicQr(db,qr);if(villa?.status!=="approved")return null;const plan=await db.prepare("SELECT name,amount FROM package_catalog WHERE id=?").get(villa.package_id);return {...villa,package_name:plan.name,amount:plan.amount}}
 const requiresModeration = async (db,villa) => (await packageEntitlements(db,villa.package_id)).reviewModerationRequired
 const key = (id) => "customer_review:" + id
 const read = async (db) =>

@@ -1,3 +1,5 @@
+import {resolvePublicQr,publicRevision,rememberQr,publishedVillas} from "./public-revision.mjs"
+import {savePackagePromotion} from "./package-promotions.mjs"
 import {paymentAccess,requireManualPayment,requireNewPayment} from "./payment-access.mjs"
 import {beginPasswordRegistration,finishPasswordRegistration} from "./password-registration.mjs"
 import {reserveManualProof} from "./manual-proof.mjs"
@@ -487,9 +489,11 @@ export function createApp(db, config, transport) {
       if (slipAction) path = `/api/invoices/${slipAction[1]}/proof`
       const publicPhoto=path.match(/^\/api\/public\/villa-photo\/([a-f0-9-]+)$/)
       if(req.method==='GET'&&publicPhoto){
-        const photo=await db.prepare('SELECT d.mime,d.bytes,v.owner_id,v.status FROM documents d JOIN villas v ON v.photo_url=? AND v.owner_id=d.owner_id WHERE d.id=? AND d.name=?').get(path,publicPhoto[1],'villa-photo')
+        const photo=await db.prepare("SELECT mime,bytes,owner_id FROM documents WHERE id=? AND name='villa-photo'").get(publicPhoto[1])
         if(!photo||!['image/jpeg','image/png'].includes(photo.mime))fail(404,'ไม่พบรูป Villa')
-        if(photo.status!=='approved'){
+        const villas=await db.prepare("SELECT * FROM villas WHERE owner_id=?").all(photo.owner_id)
+        const published=await Promise.all(villas.map(v=>publicRevision(db,v)))
+        if(!published.some(v=>v.status==='approved'&&v.photo_url===path)){
           const viewer=await session(req).catch(error=>{if(error.status===401)return null;throw error})
           if(viewer?.role!=='admin'&&viewer?.id!==photo.owner_id)fail(404,'ไม่พบรูป Villa')
         }
@@ -670,7 +674,8 @@ export function createApp(db, config, transport) {
         if(requestedLimit!==null&&(!/^\d+$/.test(requestedLimit)||!Number.isInteger(limit)||limit<1||limit>100))fail(400,"จำนวนที่พักต้องเป็นจำนวนเต็ม 1–100");
         const province=(url.searchParams.get("province")||"").trim();
         if(province.length>100||/[\x00-\x1f]/.test(province))fail(400,"จังหวัดไม่ถูกต้อง");
-        const rows = await db.prepare("SELECT * FROM villas WHERE status='approved' AND qr IS NOT NULL"+(province?" AND province=?":"")+" ORDER BY created DESC,id DESC"+(limit?" LIMIT ?":"")).all(...(province?[province]:[]),...(limit?[limit]:[]));
+        const published=(await publishedVillas(db)).filter(v=>!province||v.province===province);
+        const rows=limit?published.slice(0,limit):published;
         const context=await loadTrustContext(db,rows)
         return json({
           villas: await Promise.all(
@@ -695,9 +700,9 @@ export function createApp(db, config, transport) {
         if (!adminQrVerification) await rateLimit(req, "public")
         let viewer
         if(adminQrVerification){viewer=await auth(req);if(viewer.role!=="admin")fail(403,"เฉพาะ Admin")}
-        const v = await db
-          .prepare("SELECT * FROM villas WHERE qr=?")
-          .get(decodeURIComponent(path.slice(adminQrVerification?"/api/admin/qr-verification/".length:15)))
+        const reference=decodeURIComponent(path.slice(adminQrVerification?"/api/admin/qr-verification/".length:15))
+        const v=adminQrVerification?await db.prepare("SELECT * FROM villas WHERE qr=?").get(reference):await resolvePublicQr(db,reference)
+        if(!adminQrVerification&&v?.status==="approved"&&v.qr!==reference){res.writeHead(307,{Location:"/api/public/qr/"+encodeURIComponent(v.qr),"Cache-Control":"no-store"});res.end();return}
         if (!v) fail(404, "ไม่พบ QR ในระบบ")
         try {
           if(!viewer)viewer = await session(req)
@@ -710,7 +715,7 @@ export function createApp(db, config, transport) {
           name: v.name,
           nameEn: v.name_en,
           ...(adminQrVerification?{villaId:v.id}:{}),
-          propertyDetails: await villaPage(db,v),
+          propertyDetails: v._approvedSnapshot?.propertyDetails?.details??await villaPage(db,v),
           guestCapacity:v.guest_capacity,
           bankName:v.bank_name,
           ...(unlocked?{accountName:v.account_name}:{}),
@@ -810,6 +815,8 @@ export function createApp(db, config, transport) {
         if(acceptance!==undefined)return json(acceptance)
         const entitlementResult=await packageEntitlementsApi(db,user,req,path,body)
         if(entitlementResult!==undefined)return json(entitlementResult)
+        const packagePromotion=path.match(/^\/api\/admin\/package-promotions\/([a-z0-9_-]+)$/)
+        if(packagePromotion&&req.method==="POST")return json(await savePackagePromotion(db,user,packagePromotion[1],await body(req)))
         const basicPromotion=await basicPromotionApi(db,user,req,path,body)
         if(basicPromotion!==undefined)return json(basicPromotion)
         const promotions=await promotionsApi(db,user,req,path,body)
@@ -1067,6 +1074,7 @@ export function createApp(db, config, transport) {
               return
             }
             if(await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status!='paid'").get(villa.id)) fail(409,"มีใบแจ้งชำระค้างสำหรับที่พักนี้")
+            if(plan.netAmount===0)fail(409,"โปรโมชั่นสุทธิ 0 บาท ไม่ต้องชำระ ระยะสิทธิ์ระดับนี้รอยืนยันก่อนเปิดใช้งาน")
             requireNewPayment(config)
             if(paymentAccess(config)==="OMISE_TEST"&&!config.omiseTestEnabled)fail(503,"Omise Test ยังไม่พร้อม")
             if(!config.omiseTestEnabled && !await demoMode(db,config) && !await receivingBank(db))fail(503,"ยังไม่ได้ตั้งค่าช่องทางรับชำระ ไม่สามารถสร้างใบแจ้งชำระได้")
@@ -1200,6 +1208,7 @@ export function createApp(db, config, transport) {
               if (data.status === "approved") {
                 const sub = await getSubscription(db, villa.owner_id)
                 if (!sub) fail(409, "Merchant ต้องสมัครแพ็กเกจที่บัญชีก่อน")
+                await rememberQr(db,villa)
                 await db.prepare("UPDATE villas SET qr=? WHERE id=?").run(`VC-${randomUUID()}`,id)
                 await activateVilla(db, {...villa,qr:(await db.prepare("SELECT qr FROM villas WHERE id=?").get(id)).qr})
                 await preserveApprovedVilla(db,await db.prepare("SELECT * FROM villas WHERE id=?").get(id))
@@ -1231,6 +1240,7 @@ export function createApp(db, config, transport) {
               if(!target.active||target.amount<=0)fail(400,"เลือกแพ็กเกจที่เปิดขาย")
               if(target.id==="basic")fail(409,"Basic ใช้สิทธิ์โปรโมชั่นเดิม เงื่อนไขการสมัครแบบชำระเงินและต่ออายุรอยืนยัน")
               if(await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status!='paid'").get(villa.id))fail(409,"มีใบแจ้งชำระค้างสำหรับที่พักนี้")
+              if(target.netAmount===0)fail(409,"ยอดสุทธิ 0 บาท เงื่อนไขต่ออายุรอยืนยัน ไม่มีการเรียกเก็บ")
               requireNewPayment(config)
             if(paymentAccess(config)==="OMISE_TEST"&&!config.omiseTestEnabled)fail(503,"Omise Test ยังไม่พร้อม")
             if(!config.omiseTestEnabled && !await demoMode(db,config) && !await receivingBank(db))fail(503,"ยังไม่ได้ตั้งค่าช่องทางรับชำระ ไม่สามารถสร้างใบแจ้งชำระได้")
@@ -1249,7 +1259,7 @@ export function createApp(db, config, transport) {
         const checkout=path.match(/^\/api\/payments\/([a-f0-9-]+)\/checkout$/)
         if(checkout&&req.method==="GET"){
           const {invoice}=await invoiceFor(user,checkout[1])
-          const methods=(config.omiseTestMethods||[]).filter(method=>["promptpay","mobile_banking_scb"].includes(method))
+          const methods=(config.omiseTestMethods||[]).filter(method=>["promptpay"].includes(method))
           const publicKey=/^pkey_test_[a-zA-Z0-9]+$/.test(config.omiseTestPublicKey||"")?config.omiseTestPublicKey:null
           const ready=paymentAccess(config)!=="DISABLED"&&config.omiseTestEnabled===true&&Boolean(publicKey)&&methods.length>0&&(paymentAccess(config)!=="OMISE_TEST"||invoice.external_provider==="OMISE")
           return json({mode:"TEST",enabled:ready,statusAvailable:config.omiseTestEnabled===true,publicKey:ready?publicKey:null,methods:ready?methods:[],invoiceId:invoice.id,amount:invoice.amount,currency:"THB",paid:invoice.status==="paid"})

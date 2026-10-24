@@ -106,7 +106,7 @@ export function createOmisePayments(db,gateway,{appUrl="http://localhost",method
    assertNoUnsettledPackageChange(villa,current.package_id||villa.package_id)
    const existing=await read(db,"omise_payment:"+invoice.id)
    if(existing)return {...existing,existing:true}
-   if(gateway.retrieveSource&&(!Array.isArray(methods)||!methods.some(method=>["promptpay","mobile_banking_scb"].includes(method))))fail(503,"No test checkout methods configured")
+   if(gateway.retrieveSource&&(!Array.isArray(methods)||!methods.some(method=>["promptpay"].includes(method))))fail(503,"No test checkout methods configured")
    if(typeof source!=="string"||!/^src_test_[a-z0-9]+$/.test(source))fail(400,"A test payment source is required")
    const pending={invoiceId:invoice.id,ownerId:user.id,status:"CREATING",createdAt:new Date().toISOString()}
    await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run("invoice_gateway:"+invoice.id,"OMISE")
@@ -120,7 +120,7 @@ export function createOmisePayments(db,gateway,{appUrl="http://localhost",method
    if(gateway.retrieveSource){
     if(!Array.isArray(methods)||!methods.length)fail(503,"No test checkout methods configured")
     const verifiedSource=await gateway.retrieveSource(source)
-    if(verifiedSource.id!==source||verifiedSource.livemode!==false||verifiedSource.amount!==invoice.amount||String(verifiedSource.currency).toUpperCase()!=="THB"||!["promptpay","mobile_banking_scb"].includes(verifiedSource.type)||!methods.includes(verifiedSource.type))fail(400,"Test source does not match invoice or enabled methods")
+    if(verifiedSource.id!==source||verifiedSource.livemode!==false||verifiedSource.amount!==invoice.amount||String(verifiedSource.currency).toUpperCase()!=="THB"||!["promptpay"].includes(verifiedSource.type)||!methods.includes(verifiedSource.type))fail(400,"Test source does not match invoice or enabled methods")
    }
    const base=new URL(appUrl)
    if(base.protocol!=="https:"&&!["127.0.0.1","localhost"].includes(base.hostname))fail(503,"HTTPS checkout return URL required")

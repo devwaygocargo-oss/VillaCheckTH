@@ -730,12 +730,15 @@ export function MerchantVerification({
     setLoading(true)
     setVilla(null)
     setError("")
-    void api<{ villaId?:string; propertyDetails?:Details|null; nameEn?: string; basicVerificationNotice?: string | null; ownerVerificationRequired?: boolean; ownerVerification?: {status:string;reviewedAt:string;method:string} | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
+    void api<{ villaId?:string; propertyDetails?:Details|null; nameEn?: string; basicVerificationNotice?: string | null; ownerVerificationRequired?: boolean; ownerVerification?: {status:string;reviewedAt:string;method:string} | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; qr?:string; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
       `${adminView?"/admin/qr-verification":"/public/qr"}/${encodeURIComponent(reference)}`,
     )
       .then((value) => {
         if (!cancelled) {
           setVilla(value)
+          if(!adminView&&!preview&&value.qr&&value.qr!==reference){
+            window.history.replaceState(null,"","/#"+new URLSearchParams({page:"verify",item:value.qr}));window.dispatchEvent(new PopStateEvent("popstate"));return
+          }
           if(preview || value.viewerRole==="admin")return
           const activityKey=reference+":"+value.locked
           if(activityLogged.current===activityKey)return

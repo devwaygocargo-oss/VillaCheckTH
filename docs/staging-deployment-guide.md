@@ -85,10 +85,10 @@ npx vercel deploy
 ## 4. เปิด Omise Test checkout เฉพาะ staging
 
 1. ผู้ดูแล Omise เปิด method ที่ต้องทดสอบในบัญชี Test และใส่ `OMISE_TEST_PUBLIC_KEY`, `OMISE_TEST_SECRET_KEY` แบบ Test เท่านั้น
-2. ตั้ง `OMISE_TEST_ENABLED=true`, `PAYMENT_ACCESS_MODE=OMISE_TEST` และ `OMISE_TEST_METHODS` เป็นรายการที่ผู้ดูแลอนุมัติสำหรับ Test ปัจจุบันเตรียม `promptpay` กับ `mobile_banking_scb` ไว้ แต่ไม่เปิด method ใดเองเมื่อรายการว่าง
+2. ตั้ง `OMISE_TEST_ENABLED=true`, `PAYMENT_ACCESS_MODE=OMISE_TEST` และ `OMISE_TEST_METHODS` เป็น `promptpay` เท่านั้นตามข้อกำหนด QR-only ล่าสุด รายการว่างปิด UI และ server ปฏิเสธวิธีอื่น
 3. สร้าง invoice ใหม่จาก Villa ที่อนุมัติและมีสิทธิ์เลือกแพ็กเกจ ไม่แปลง invoice manual เก่าอัตโนมัติ ไม่เปิด Basic paid หรือ settlement ที่ยังรอข้อกำหนด
 4. Merchant กดเริ่มชำระทดสอบ: Omise.js สร้าง source, server ดึง source ตรวจ Test mode/method/amount/currency แล้วสร้าง charge จากยอด invoice
-5. PromptPay แสดง QR จาก provider Test เท่านั้น **ห้ามใช้แอปธนาคารจริงสแกน/โอน** ให้จำลองผลใน Test Dashboard ตามเอกสาร provider; SCB Test ใช้หน้าจำลองที่ผู้ให้บริการกำหนด
+5. PromptPay แสดง QR จาก provider Test เท่านั้น **ห้ามใช้แอปธนาคารจริงสแกน/โอน** ให้จำลองผลใน Test Dashboard ตามเอกสาร provider
 6. URL authorize รับเฉพาะ HTTPS `api.omise.co` และ path Test ที่อนุญาต; return URI สร้างจาก APP_URL และ invoice ฝั่ง server ไม่รับจาก client กลับแล้วโหลด status ใหม่ ไม่เชื่อ `status=successful` ใน URL
 7. ตั้ง webhook เป็น staging `/api/webhooks/omise` ตรวจว่าไม่มี login redirect/provider access protection มาขวาง; event และ charge ถูกดึงยืนยันจาก API ฝั่ง server
 8. กรณี UNKNOWN/CREATING/SOURCE_REJECTED/failed ยังไม่อนุญาตสร้าง charge ทับอัตโนมัติ ให้ operator ตรวจรายการเดิม รายการ reconciliation/retry UI ยังไม่ครบ

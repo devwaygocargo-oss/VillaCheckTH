@@ -1,3 +1,4 @@
+import {resolvePublicQr,publicRevision} from "./public-revision.mjs"
 import {preserveApprovedVilla,rotateApprovedRevision} from "./approval-history.mjs"
 import { randomUUID } from "node:crypto"
 import { mediaDate } from "./media-date.mjs"
@@ -22,11 +23,10 @@ export async function propertyMediaApi(db, user, req, path, url, body) {
   )
     return undefined
   let villa
-  if (path.startsWith("/api/public/"))
-    villa = await db
-      .prepare("SELECT * FROM villas WHERE qr=? AND status='approved'")
-      .get(url.searchParams.get("qr") || "")
-  else {
+  if (path.startsWith("/api/public/")){
+    villa=await resolvePublicQr(db,url.searchParams.get("qr")||"")
+    if(villa?.status!=="approved")villa=null
+  } else {
     if (!user) fail(401, "กรุณาเข้าสู่ระบบ")
     if (user.role !== (path.includes("/admin/") ? "admin" : "merchant"))
       fail(403, "ไม่มีสิทธิ์")
@@ -39,7 +39,7 @@ export async function propertyMediaApi(db, user, req, path, url, body) {
     if (!villa) fail(404, "ไม่พบที่พัก")
     if (user?.role === "merchant" && villa.owner_id !== user.id)
       fail(404, "ไม่พบที่พัก")
-    const storedMedia = await list(db, villa.id)
+    const storedMedia = villa._approvedSnapshot?.media??await list(db, villa.id)
     const media = path.startsWith("/api/public/") ? storedMedia.filter(m=>m.reviewedAt).map(({reviewedBy,...safe})=>safe) : storedMedia
     if (villa.photo_url && !media.some((m) => m.url === villa.photo_url))
       media.unshift({
@@ -164,11 +164,13 @@ export async function propertyMediaFile(db, id, user) {
   const m = rows.map((r) => JSON.parse(r.value)).find((m) => m.id === id)
   if (!m) fail(404, "ไม่พบสื่อ")
   const v = await db
-    .prepare("SELECT owner_id,status FROM villas WHERE id=?")
+    .prepare("SELECT * FROM villas WHERE id=?")
     .get(m.villaId)
+  const published=await publicRevision(db,v)
+  const visible=published?.status==="approved"&&(published._approvedSnapshot?published._approvedSnapshot.media.some(item=>item.id===id):Boolean(m.reviewedAt))
   if (
     !v ||
-    ((!m.reviewedAt || v.status !== "approved") &&
+    (!visible &&
       user?.role !== "admin" &&
       user?.id !== v.owner_id)
   )

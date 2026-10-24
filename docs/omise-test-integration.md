@@ -27,7 +27,7 @@ Provider reversals preserve the original paid receipt and dates, record FAILED/r
 
 ## Phase 3 checkout preparation
 
-`OmiseCheckout` now obtains owner-scoped configuration from `GET /api/payments/:invoiceId/checkout`, creates a test source through Omise.js and sends only that source to the existing POST endpoint. Server retrieval validates source test mode, method, amount and currency. Source methods are opt-in (`promptpay`, `mobile_banking_scb`) for Test acceptance, not a production payment-method decision. Empty methods/public-key configuration disables creation UI. Zero-net does not create a source/charge.
+`OmiseCheckout` now obtains owner-scoped configuration from `GET /api/payments/:invoiceId/checkout`, creates a test source through Omise.js and sends only that source to the existing POST endpoint. Server retrieval validates source test mode, method, amount and currency. Latest confirmed requirement: QR only. Source methods are restricted to `promptpay` by both UI and server, including Test mode. Empty methods/public-key configuration disables creation UI. Zero-net does not create a source/charge.
 
 Return URI is server-built from APP_URL and invoice; provider authorize/QR URLs are restricted to test paths on `https://api.omise.co`. Pending actions/expiry persist and refresh/re-entry retrieves status. The return URL's success claim has no payment authority. Source rejection/ambiguous creation remains blocked from automatic duplicate charge creation pending operator reconciliation.
 

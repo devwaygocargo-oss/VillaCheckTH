@@ -8,6 +8,7 @@ import {join} from "node:path"
 import {openTestDatabase} from "../server/test-database.mjs"
 import {seedDemo} from "../server/demo-seed.mjs"
 import {createUser} from "../server/database.mjs"
+import {preserveApprovedVilla} from "../server/approval-history.mjs"
 const evidenceDir=process.env.VILLACHECK_BROWSER_EVIDENCE_DIR||"docs/validation/phase2"
 const chromePath=process.env.VILLACHECK_CHROME_PATH||"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 if(!process.env.TEST_DATABASE_URL||!["127.0.0.1","localhost"].includes(new URL(process.env.TEST_DATABASE_URL).hostname))throw Error("Disposable localhost test database required")
@@ -103,6 +104,31 @@ try {
  await send("Page.navigate",{url:base+"/#page=owner-villas"})
  await until(()=>evaluate("document.body.innerText.includes('เริ่มต้นจาก Villa แรก')"),"Empty Merchant state missing")
  results.push({name:"Merchant empty state",passed:true})
+ if(process.env.VILLACHECK_BUSINESS_QA==="1"){
+  await db.prepare("INSERT INTO system_settings(key,value) VALUES ('launch_promotion_active','true') ON CONFLICT(key) DO UPDATE SET value=excluded.value").run()
+  await login("demo-merchant@villacheck.example")
+  await send("Page.navigate",{url:base+"/#page=owner-package"})
+  await until(()=>evaluate("document.querySelector('[data-plan-id=pro]')?.innerText.includes('598')"),"Launch price missing")
+  for(const [id,percent,net]of [["basic",100,"สุทธิ ฿0"],["starter",100,"สุทธิ ฿0"],["pro",80,"สุทธิ ฿598"],["premium",80,"สุทธิ ฿998"]]){
+   const text=await evaluate("document.querySelector('[data-plan-id="+id+"]').innerText")
+   assert(text.includes("Discount "+percent+"%"));assert(text.includes(net))
+   results.push({name:"Launch promotion "+id,passed:true})
+  }
+  const previous=await db.prepare("SELECT * FROM villas WHERE id=?").get(villa.id)
+  await preserveApprovedVilla(db,previous)
+  await db.prepare("UPDATE villas SET status='pending',name='PRIVATE DRAFT NOT PUBLIC' WHERE id=?").run(villa.id)
+  await send("Page.navigate",{url:base+"/#page=verify&item="+previous.qr})
+  await until(()=>evaluate("document.querySelector('h1')?.innerText==='Sea Sky Demo Villa'"),"Approved snapshot missing")
+  assert.equal(await evaluate("document.body.innerText.includes('PRIVATE DRAFT NOT PUBLIC')"),false)
+  results.push({name:"Pending edit displays approved snapshot without draft",passed:true})
+  await db.prepare("UPDATE villas SET status='approved',name='Latest Approved QA Villa',qr='VC-business-approved' WHERE id=?").run(villa.id)
+  await preserveApprovedVilla(db,await db.prepare("SELECT * FROM villas WHERE id=?").get(villa.id))
+  await send("Page.navigate",{url:base+"/#page=home"})
+  await until(()=>evaluate("!document.body.innerText.includes('QR Reference:')"),"Previous QR view did not leave")
+  await send("Page.navigate",{url:base+"/#page=verify&item="+previous.qr})
+  await until(()=>evaluate("location.hash.includes('VC-business-approved')&&document.querySelector('h1')?.innerText==='Latest Approved QA Villa'"),"Old QR did not canonicalize to approved latest")
+  results.push({name:"Old QR browser URL redirects to latest approved QR",passed:true})
+ }
  assert(results.every(result=>result.passed),"Responsive QA has failed cases; inspect evidence")
  writeFileSync(join(evidenceDir,"browser.json"),JSON.stringify({localSyntheticDataOnly:true,results},null,2)+"\n")
  mkdirSync("docs/validation",{recursive:true})

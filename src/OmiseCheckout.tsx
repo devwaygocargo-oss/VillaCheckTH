@@ -29,21 +29,21 @@ export default function OmiseCheckout({invoice,admin=false}:{invoice:Invoice;adm
  const refresh=async()=>{
   if(inFlight.current)return;inFlight.current=true;setBusy(true);setError("");const current=++epoch.current
   try{await currentAccount();const settings=await api<CheckoutConfig>(`/payments/${invoice.id}/checkout`);let result:Payment|null=null
-   if(current===epoch.current)setConfig(settings)
+   if(current===epoch.current)setConfig({...settings,methods:settings.methods.filter(m=>m==="promptpay")})
    try{if(settings.enabled||settings.statusAvailable)result=await api<Payment>(`/payments/${invoice.id}/omise`)}catch(e){if(!(e instanceof ApiError&&e.status===404))throw e}
-   if(current===epoch.current){setConfig(settings);setMethod(old=>settings.methods.includes(old)?old:settings.methods[0]||"");setPayment(result)}
+   if(current===epoch.current){setConfig({...settings,methods:settings.methods.filter(m=>m==="promptpay")});setMethod(settings.methods.includes("promptpay")?"promptpay":"");setPayment(result)}
   }catch(e){if(current===epoch.current){setError(e instanceof Error?e.message:"อ่านสถานะไม่สำเร็จ");setPayment({status:"UNKNOWN"})}}finally{if(current===epoch.current){setBusy(false);inFlight.current=false}}
  }
  useEffect(()=>{void refresh();return()=>{epoch.current++;inFlight.current=false}},[invoice.id])
  const start=async()=>{
-  if(inFlight.current||!config?.enabled||!config.publicKey||payment||config.paid||config.amount<=0||admin)return
+  if(inFlight.current||!config?.enabled||!config.publicKey||payment||config.paid||config.amount<=0||method!=="promptpay"||admin)return
   inFlight.current=true;setBusy(true);setError("")
   try{
    if(!/^pkey_test_[A-Za-z0-9]+$/.test(config.publicKey))throw Error("รองรับเฉพาะ Omise Test key")
    const sdk=await loadOmise();sdk.setPublicKey(config.publicKey)
    const source=await new Promise<string>((resolve,reject)=>{
     const timer=setTimeout(()=>reject(Error("สร้างวิธีชำระไม่สำเร็จ กรุณาตรวจสถานะก่อนลองใหม่")),15000)
-    sdk.createSource(method,{amount:config.amount,currency:config.currency,...(method==="mobile_banking_scb"?{platform_type:"WEB"}:{})},(status,value)=>{clearTimeout(timer);if(status===200&&value.livemode===false&&/^src_test_[a-z0-9]+$/.test(value.id||""))resolve(value.id!);else reject(Error("สร้าง Omise Test source ไม่สำเร็จ"))})
+    sdk.createSource(method,{amount:config.amount,currency:config.currency},(status,value)=>{clearTimeout(timer);if(status===200&&value.livemode===false&&/^src_test_[a-z0-9]+$/.test(value.id||""))resolve(value.id!);else reject(Error("สร้าง Omise Test source ไม่สำเร็จ"))})
    })
    // No client return/status fields are trusted; the backend binds invoice amount and return URI.
    const result=await api<Payment>(`/payments/${invoice.id}/omise`,{source});setPayment(result)
@@ -55,7 +55,7 @@ export default function OmiseCheckout({invoice,admin=false}:{invoice:Invoice;adm
  <p data-testid="omise-status">สถานะ: {payment?labels[payment.status]||"รอตรวจสอบรายการ":config?.paid?"บันทึกชำระแล้ว กรุณาตรวจสถานะล่าสุด":"ยังไม่ได้เริ่มรายการ"}</p>
  {!busy&&config&&!config.enabled&&<p>ยังไม่เปิด Omise Test checkout กรุณาให้ผู้ดูแลตั้งค่า Test keys และวิธีชำระ</p>}
  {config?.amount===0&&<p>ยอดสุทธิ 0 บาท ไม่ต้องสร้างรายการชำระ</p>}
- {!admin&&config?.enabled&&config.amount>0&&!config.paid&&!payment&&<><label>วิธีชำระทดสอบ<select aria-label="วิธีชำระ Omise Test" disabled={busy} value={method} onChange={e=>setMethod(e.target.value)}>{config.methods.map(m=><option key={m} value={m}>{m==="promptpay"?"PromptPay Test QR":"SCB Mobile Banking Test"}</option>)}</select></label><button className="primary-button" type="button" disabled={busy||!method} onClick={()=>void start()}>เริ่มชำระทดสอบ</button></>}
+ {!admin&&config?.enabled&&config.amount>0&&!config.paid&&!payment&&<><label>วิธีชำระทดสอบ<select aria-label="วิธีชำระ Omise Test" disabled={busy} value={method} onChange={e=>setMethod(e.target.value)}>{config.methods.filter(m=>m==="promptpay").map(m=><option key={m} value={m}>PromptPay Test QR</option>)}</select></label><button className="primary-button" type="button" disabled={busy||!method} onClick={()=>void start()}>เริ่มชำระทดสอบ</button></>}
  {authorization&&<p><a className="outline-button" data-testid="omise-redirect" href={authorization} rel="noreferrer">ไปหน้ายืนยัน Omise Test</a></p>}
  {qr&&<img src={qr} alt="QR จาก Omise Test เท่านั้น" width={256} height={256} referrerPolicy="no-referrer"/>}
  {payment?.expiresAt&&<p>หมดอายุ: {new Date(payment.expiresAt).toLocaleString("th-TH")}</p>}

@@ -1,10 +1,10 @@
+import {packagePricing} from "./package-promotions.mjs"
 import { saveRecord } from "./approval-history.mjs"
 import { audit } from "./database.mjs"
 const fail=(status,message)=>{throw Object.assign(Error(message),{status})}
 export async function basicPricing(db) {
- const row=await db.prepare("SELECT value FROM system_settings WHERE key='basic_promotion'").get()
- const promotion=row?JSON.parse(row.value):{active:true,revision:1}
- return {regularAmount:99000,discountAmount:promotion.active?99000:0,netAmount:promotion.active?0:99000,promotion:promotion.active?{code:"BASIC_LAUNCH_100",percent:100,revision:promotion.revision}:null}
+ const plan=await db.prepare("SELECT * FROM package_catalog WHERE id='basic'").get()
+ return packagePricing(db,plan)
 }
 export async function grantBasicPromotion(db,villaId,ownerId) {
  const existing=await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`basic_grant:${villaId}`)

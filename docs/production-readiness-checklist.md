@@ -107,3 +107,14 @@
 - [ ] กู้คืนบน DB ใหม่จริงใน staging จับเวลา ยืนยัน RPO/RTO, key custody และ on-call owner; provider PITR/retention ยังไม่ยืนยัน
 - [ ] บันทึก previous app artifact/revision และวิธี rollback app; หาก schema เปลี่ยนให้ตรวจ compatibility ก่อน rollback อย่า restore ทับฐานที่มีธุรกรรมใหม่โดยไม่กระทบยอด
 - [ ] ก่อนปล่อย 31 ต.ค. คุณเกมส์ลงนาม UAT, operator แนบหลักฐานด้าน host, การเงินตรวจ provider; หากยังไม่ครบใช้สถานะ NOT READY และเลื่อน flow ที่เกี่ยวข้อง
+
+## ข้อกำหนดเจ้าของล่าสุด — 24 ตุลาคม 2026
+
+- [ ] ตรวจราคาเต็มบน host เทียบ catalog จริง; launch ระดับ 1–2 ลด 100%, ระดับ 3–4 ลด 80% โดยไม่เปลี่ยน invoice/grant เดิม
+- [ ] ใช้ `OMISE_TEST_METHODS=promptpay` เท่านั้นใน staging; คง payment gate ปิดเงินจริง
+- [ ] UAT QR เก่า/ใหม่และ approved snapshot ระหว่าง pending รวมรูป/ข้อมูลตรวจเทียบและการระงับสิทธิ์
+- [ ] ยังปิด activation ฟรีระดับ 2 และ settlement Upgrade/Downgrade จนรายละเอียดใน [Pending Decisions](pending-business-decisions.md) ครบ
+- [ ] Email/In-App outbox ยังรอผู้รับและ worker; ห้ามถือการมีแถว outbox เป็นหลักฐานส่งถึง
+- [ ] ไม่เผยแพร่คำรับประกันระดับ 3–4 ก่อนอนุมัติเงื่อนไข
+
+ผลปรับและหลักฐานล่าสุด: [business-logic-update-2026-10-24.md](business-logic-update-2026-10-24.md) ไม่เปลี่ยนสถานะ NOT READY ของการเปิดรับเงินจริง

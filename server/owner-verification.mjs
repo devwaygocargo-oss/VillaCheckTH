@@ -11,7 +11,7 @@ const text=(v,max=300)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/[\x00
 export async function publicOwnerVerification(db,villa){
  if(!eligible(villa))return null
  const subscription=await db.prepare('SELECT lifecycle FROM subscriptions WHERE owner_id=?').get(villa.owner_id)
- const row=eligible({...villa,owner_lifecycle:subscription?.lifecycle})?await read(db,villa.id):null
+ const row=eligible({...villa,owner_lifecycle:subscription?.lifecycle})?(villa._approvedSnapshot?villa._approvedSnapshot.ownerVerification:await read(db,villa.id)):null
  return row?.status==='accepted'?{status:'accepted',reviewedAt:row.reviewedAt,method:row.demo?'DUMMY · สถานะยืนยันสำเร็จสำหรับสาธิต ไม่ใช่การตรวจหลักฐานจริง':'Admin ตรวจใบหน้าและทะเบียนบ้าน พร้อมยืนยันเจ้าของบ้าน'}:null
 }
 export async function ownerVerificationApi(db,user,req,path,url,body){
