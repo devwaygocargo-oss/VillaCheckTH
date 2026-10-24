@@ -26,15 +26,15 @@ test('Per-property package selection preserves free access and changes paid righ
   assert.equal((await req(`/villas/${villa.id}/renew`,{packageId:'premium'},expired)).status,409)
   const slip=(await req(`/payments/${invoice.id}/demo-slip`,{},expired)).value;assert.equal((await req(`/invoices/${invoice.id}/proof`,slip,expired)).status,200)
   const paid=await req(`/invoices/${invoice.id}/confirm`,{},admin);assert.equal(paid.status,200)
-  const state=(await req('/state',undefined,expired)).value;assert.equal(state.villas[0].packageId,'pro');assert.equal(state.villas[0].qr,oldQr);assert.equal(state.villas[0].qrStatus,'ACTIVE')
+  const state=(await req('/state',undefined,expired)).value;assert.equal(state.villas[0].packageId,'pro');assert.equal(state.villas[0].qr,oldQr);assert.equal(state.villas[0].qrStatus,'PENDING');assert.equal((await req(`/villas/${villa.id}/review`,{status:'approved'},admin)).status,200)
  })
  await t.test('Active property can request another level without immediately changing existing rights',async()=>{
-  assert.equal((await req(`/villas/${villa.id}/renew`,{packageId:'premium'},expired)).status,200);assert.equal((await req('/state',undefined,expired)).value.villas[0].packageId,'pro')
+  assert.equal((await req(`/villas/${villa.id}/renew`,{packageId:'premium'},expired)).status,409);assert.equal((await req('/state',undefined,expired)).value.villas[0].packageId,'pro')
  })
  await t.test('Per-villa renewal ignores account capacity and rejects inactive plans',async()=>{
   await db.prepare("UPDATE subscriptions SET expires='2000-01-01T00:00:00.000Z' WHERE owner_id=(SELECT id FROM users WHERE email='demo-merchant@villacheck.example')").run()
   const state=(await req('/state',undefined,main)).value,v=state.villas.find(v=>v.status==='approved'&&v.qr);assert.ok(state.villas.length>2)
-  assert.equal((await req(`/villas/${v.id}/renew`,{packageId:'starter'},main)).status,200)
+  assert.equal((await req(`/villas/${v.id}/renew`,{packageId:'starter'},main)).status,409)
   await db.prepare("UPDATE package_catalog SET active=0 WHERE id='premium'").run()
   assert.equal((await req(`/villas/${v.id}/renew`,{packageId:'premium'},main)).status,400)
   assert.equal((await req('/state',undefined,main)).value.subscription.packageId,'premium')

@@ -1,3 +1,4 @@
+import {notifyOwner} from "./approval-history.mjs"
 import { randomUUID } from "node:crypto"
 import generatePayload from "promptpay-qr"
 import QRCode from "qrcode"
@@ -55,6 +56,10 @@ export async function adminReceivingBank(db,user,req,path,readBody,config,transp
   if(user.role!=="admin")fail(403,"เฉพาะ Admin")
   if(path==="/api/admin/receiving-bank"&&req.method==="GET")return view(db,config,transport)
   if(path==="/api/admin/receiving-bank"&&req.method==="POST"){
+    if(!validateOnly){
+      const policy=await db.prepare("SELECT value FROM system_settings WHERE key='approval:reviewer_email'").get()
+      if(policy && String(JSON.parse(policy.value)).trim() && String(JSON.parse(policy.value)).trim().toLowerCase()!==user.email?.toLowerCase())fail(403,"เฉพาะ Admin ผู้มีสิทธิ์อนุมัติที่กำหนด")
+    }
     const data=await readBody(req),fields=validate(data)
     await db.transaction(async()=>{
       const current=await receivingBank(db)
@@ -71,6 +76,7 @@ export async function adminReceivingBank(db,user,req,path,readBody,config,transp
       const bank={...fields,revision:(current?.revision||0)+1,payload,qrDocumentId,qrImage,generatedAt,updatedAt:new Date().toISOString(),updatedBy:user.name}
       await put(db,"receiving_bank",bank)
       await audit(db,user,"receiving_bank.save",String(bank.revision))
+      await notifyOwner(db,{type:"BANK_UPDATED",targetId:String(bank.revision),actorId:user.id,result:"APPROVED"})
     })
     return view(db,config,transport)
   }

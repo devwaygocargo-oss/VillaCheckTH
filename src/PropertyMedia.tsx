@@ -71,7 +71,7 @@ export default function PropertyMedia({
         file: { name: file.name, type: file.type, data },
       })
       await load()
-      setMessage("อัปโหลดสื่อแล้ว วันที่อัปโหลดบันทึกอัตโนมัติ")
+      setMessage("อัปโหลดสื่อแล้ว รอ Admin ตรวจอนุมัติก่อนเผยแพร่ วันที่อัปโหลดบันทึกอัตโนมัติ")
     } catch (e) {
       setError(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ")
     } finally {
@@ -151,9 +151,14 @@ export default function PropertyMedia({
                 )}
               </p>
             </figcaption>
+            {mode === "merchant" && m.id!=="cover" && <button disabled={busy} onClick={async()=>{
+              setBusy(true);setError("")
+              try{await api("/merchant/property-media",{villaId,mediaId:m.id,action:"remove"});await load();setMessage("ส่งคำขอนำสื่อออกให้ Admin ตรวจแล้ว ข้อมูลสาธารณะเดิมคงอยู่จนอนุมัติ กรุณาโหลดสถานะ Villa ล่าสุด")}
+              catch(e){setError(e instanceof Error?e.message:"นำสื่อออกไม่สำเร็จ")}finally{setBusy(false)}
+            }}>นำสื่อนี้ออกและส่งตรวจ</button>}
             {mode === "admin" && (
               <button
-                disabled={busy}
+                disabled={busy || Boolean(m.reviewedAt)}
                 onClick={async () => {
                   setBusy(true)
                   setError("")
@@ -163,7 +168,7 @@ export default function PropertyMedia({
                       mediaId: m.id,
                     })
                     await load()
-                    setMessage("บันทึกการตรวจสื่อแล้ว")
+                    setMessage("อนุมัติสื่อแล้ว ระบบออก QR ใหม่สำหรับข้อมูลที่อนุมัติ กรุณาโหลดหน้าที่พักล่าสุด")
                   } catch (e) {
                     setError(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ")
                   } finally {

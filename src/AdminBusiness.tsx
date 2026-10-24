@@ -2,7 +2,7 @@ import Advertising from "./Advertising";
 import Reviews from "./Reviews";
 import AdminAcceptance from "./AdminAcceptance";
 import AdminPromotions from "./AdminPromotions";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api,currentAccount } from "./api";
 import { PortalShell,type Page } from "./prototype";
 import type { PackagePlan } from "./packagePlans";
@@ -11,31 +11,40 @@ import AdminReadiness from "./AdminReadiness";
 import AdminLeadList,{type Lead} from "./AdminLeadList";
 export default function AdminBusiness({page,go}:{page:Page;go:(page:Page)=>void}) {
  const [packages,setPackages]=useState<PackagePlan[]>([]),[draft,setDraft]=useState<PackagePlan|null>(null),[leads,setLeads]=useState<Lead[]>([]),[demo,setDemo]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
+ const [demoVillasVisible,setDemoVillasVisible]=useState(true);
+ const [loading,setLoading]=useState(true);
+ const loadSequence=useRef(0);
  const [adsDirty,setAdsDirty]=useState(false),[baseline,setBaseline]=useState("");
  const dirty=adsDirty||!!draft&&JSON.stringify(draft)!==baseline;
  useEffect(()=>{const warn=(e:BeforeUnloadEvent)=>{if(dirty){e.preventDefault();e.returnValue="";}};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);},[dirty]);
  const navigate=(target:Page)=>{if(!dirty||window.confirm("มีการแก้ไขที่ยังไม่บันทึก ต้องการออกจากหน้านี้หรือไม่?"))go(target);};
  const edit=(plan:PackagePlan)=>{if(dirty&&!window.confirm("ละทิ้งการแก้ไขแพ็กเกจที่ยังไม่บันทึก?"))return;setDraft({...plan,features:[...plan.features]});setBaseline(JSON.stringify(plan));};
- const load=async()=>{await currentAccount();
- if(page==="admin-packages")setPackages((await api<{packages:PackagePlan[]}>("/admin/packages")).packages);
- if(page==="admin-leads")setLeads((await api<{leads:Lead[]}>("/admin/leads")).leads);
- if(page==="admin-settings")setDemo((await api<{demoMode:boolean}>("/admin/settings")).demoMode);
+ const load=async()=>{
+  const sequence=++loadSequence.current;setLoading(true);
+  try {
+   await currentAccount();
+   if(page==="admin-packages"){const value=await api<{packages:PackagePlan[]}>("/admin/packages");if(sequence===loadSequence.current)setPackages(value.packages);}
+   if(page==="admin-leads"){const value=await api<{leads:Lead[]}>("/admin/leads");if(sequence===loadSequence.current)setLeads(value.leads);}
+   if(page==="admin-settings"){const value=await api<{demoMode:boolean}>("/admin/settings");const visibility=await api<{visible:boolean}>("/admin/settings/demo-villas");if(sequence===loadSequence.current){setDemo(value.demoMode);setDemoVillasVisible(visibility.visible);}}
+  } finally {if(sequence===loadSequence.current)setLoading(false);}
  };
- useEffect(()=>{setError("");setMessage("");void load().catch(e=>setError(e.message));},[page]);
+ useEffect(()=>{let active=true;setError("");setMessage("");void load().catch(e=>{if(active)setError(e.message);});return()=>{active=false;loadSequence.current++;};},[page]);
  const save=async(path:string,data:unknown)=>{setBusy(true);setError("");try{await api(path,data);if(path.startsWith("/admin/packages"))setBaseline(JSON.stringify(data));await load();setMessage("บันทึกแล้ว");}catch(e){setError(e instanceof Error?e.message:"บันทึกไม่สำเร็จ");}finally{setBusy(false);}};
  const blank=():PackagePlan=>({id:"",name:"",slug:"",description:"",amount:0,capacity:1,currency:"THB",billingCycle:"MONTHLY",trialMonths:0,features:[],maximumVerificationLevel:"VERIFIED",showPremiumBanner:false,isActive:true,sort_order:0});
  return <PortalShell role="Admin" page={page} go={navigate}><h1>{page==="admin-packages"?"จัดการแพ็กเกจ":page==="admin-leads"?"Lead Management":page==="admin-advertising"?"โฆษณาและงาน Social Media":page==="admin-reviews"?"จัดการรีวิวลูกค้า":page==="admin-owner-verification"?"ตรวจยืนยันเจ้าของบ้าน":"ตั้งค่าระบบ"}</h1>{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}
- {page==="admin-packages"&&<section className="merchant-panel"><p>ราคาและสิทธิ์ชุดเดียวกับหน้า Merchant · ต่อที่พัก รวมภาษี · Basic Verify ใช้ฟรีไม่มีกำหนดจนกว่าจะซื้อแพ็กเกจ</p><p>{basicVerificationNotice}</p><div className="admin-package-comparison" role="region" aria-label="ตารางเปรียบเทียบแพ็กเกจ เลื่อนแนวนอนได้" tabIndex={0}><table><caption>เปรียบเทียบสิทธิ์ตามหน้า Merchant — ✓ มีสิทธิ์ / ✕ ไม่มีสิทธิ์</caption><thead><tr><th>สิทธิ์</th>{packages.map(p=><th key={p.id}>{p.name}<br/>฿{(p.amount/100).toLocaleString("th-TH")}</th>)}</tr></thead><tbody>{[...new Set(packages.flatMap(p=>p.features.map(f=>f.trim()).filter(Boolean)))].map(f=><tr key={f}><th>{f}</th>{packages.map(p=><td key={p.id} aria-label={p.features.some(x=>x.trim()===f)?"มีสิทธิ์":"ไม่มีสิทธิ์"}>{p.features.some(x=>x.trim()===f)?"✓":"✕"}</td>)}</tr>)}</tbody></table></div><button className="primary-button" onClick={()=>edit(blank())}>เพิ่มแพ็กเกจ</button>{packages.map(p=><div key={p.id} className="button-row"><strong>{p.name} · ฿{p.amount/100} · {p.capacity} Villa · {p.isActive?"เปิด":"ปิด"}</strong><button onClick={()=>edit(p)}>แก้ไข</button></div>)}{draft&&<form className="portal-form" onSubmit={e=>{e.preventDefault();void save(draft.id?`/admin/packages/${draft.id}`:"/admin/packages",draft);}}>
+ {page==="admin-packages"&&<section className="merchant-panel"><p>ราคาและสิทธิ์ชุดเดียวกับหน้า Merchant · ต่อที่พัก รวมภาษี · Basic Verify ราคาปกติ 990 บาท ช่วงโปรโมชั่นลด 100%</p><p>{basicVerificationNotice}</p><div className="admin-package-comparison" role="region" aria-label="ตารางเปรียบเทียบแพ็กเกจ เลื่อนแนวนอนได้" tabIndex={0}><table><caption>เปรียบเทียบสิทธิ์ตามหน้า Merchant — ✓ มีสิทธิ์ / ✕ ไม่มีสิทธิ์</caption><thead><tr><th>สิทธิ์</th>{packages.map(p=><th key={p.id}>{p.name}<br/>฿{(p.amount/100).toLocaleString("th-TH")}</th>)}</tr></thead><tbody>{[...new Set(packages.flatMap(p=>p.features.map(f=>f.trim()).filter(Boolean)))].map(f=><tr key={f}><th>{f}</th>{packages.map(p=><td key={p.id} aria-label={p.features.some(x=>x.trim()===f)?"มีสิทธิ์":"ไม่มีสิทธิ์"}>{p.features.some(x=>x.trim()===f)?"✓":"✕"}</td>)}</tr>)}</tbody></table></div><button className="primary-button" onClick={()=>edit(blank())}>เพิ่มแพ็กเกจ</button>{packages.map(p=><div key={p.id} className="button-row"><strong>{p.name} · ฿{p.amount/100} · {p.capacity} Villa · {p.isActive?"เปิด":"ปิด"}</strong><button onClick={()=>edit(p)}>แก้ไข</button></div>)}{draft&&<form className="portal-form" onSubmit={e=>{e.preventDefault();void save(draft.id?`/admin/packages/${draft.id}`:"/admin/packages",draft);}}>
  {(["name","slug","description"] as const).map(k=><label key={k}>{{name:"ชื่อแพ็กเกจที่แสดงให้ Merchant",slug:"รหัส URL",description:"คำอธิบายแพ็กเกจ"}[k]}<input required={k!=="description"} value={draft[k]} onChange={e=>setDraft({...draft,[k]:e.target.value})}/></label>)}
  <label>ราคา THB<input type="number" min="0" step="0.01" value={draft.amount/100} onChange={e=>setDraft({...draft,amount:Math.round(Number(e.target.value)*100)})}/></label>
  {(["capacity","trialMonths","sort_order"] as const).map(k=><label key={k}>{{capacity:"จำนวนที่พักตามระบบเดิม",trialMonths:"ระยะทดลองเดิม (เดือน)",sort_order:"ลำดับแสดงผล"}[k]}<input type="number" min={k==="capacity"?1:0} value={draft[k]} onChange={e=>setDraft({...draft,[k]:Number(e.target.value)})}/></label>)}
  <label>สิทธิ์ที่แสดงบนหน้า Merchant (หนึ่งรายการต่อบรรทัด)<textarea value={draft.features.join("\n")} onChange={e=>setDraft({...draft,features:e.target.value.split("\n")})}/></label>
  <label>Maximum Verification Level<select value={draft.maximumVerificationLevel} onChange={e=>setDraft({...draft,maximumVerificationLevel:e.target.value})}>{["REGISTERED","BASIC_CHECKED","VERIFIED","PREMIUM_VERIFIED"].map(x=><option key={x}>{x}</option>)}</select></label>
  <label><input type="checkbox" checked={draft.showPremiumBanner} onChange={e=>setDraft({...draft,showPremiumBanner:e.target.checked})}/>สิทธิ์แบนเนอร์ Premium (ต้องผ่านเงื่อนไขเผยแพร่โฆษณา)</label><label><input type="checkbox" checked={draft.isActive} onChange={e=>setDraft({...draft,isActive:e.target.checked})}/>เปิดใช้งาน</label><label>Billing cycle<select value={draft.billingCycle} onChange={e=>setDraft({...draft,billingCycle:e.target.value})}><option value="MONTHLY">Monthly</option><option value="QUARTERLY">Quarterly (3 months)</option><option value="YEARLY">Yearly (12 months)</option></select></label><p>ราคาต่อที่พัก รวมภาษี · บาท / รอบบิล · หน้า Merchant ใช้ข้อมูลชุดเดียวกัน การเปลี่ยนราคาไม่แก้ยอดใบแจ้งชำระเดิม</p><button disabled={busy} className="primary-button">บันทึกแพ็กเกจ</button></form>}</section>}
- {page==="admin-leads"&&<AdminLeadList leads={leads} setLeads={setLeads} busy={busy} save={save}/>}
+ {page==="admin-leads"&&loading&&<p role="status">กำลังโหลดผู้สนใจ…</p>}
+ {page==="admin-leads"&&!loading&&!error&&<AdminLeadList leads={leads} setLeads={setLeads} busy={busy} save={save}/>}
  {page==="admin-settings"&&<section className="merchant-panel"><p><strong>ตรวจสลิปโดย Admin</strong> · ตรวจยอดและเลขธุรกรรมก่อนอนุมัติ หรือระบุเหตุผลเมื่อส่งกลับให้ Merchant แนบใหม่</p><label><input type="checkbox" checked={demo} onChange={e=>setDemo(e.target.checked)}/>Demo Mode · dummy slips and email outbox (no real money or emails)</label><button disabled={busy} className="primary-button" onClick={()=>void save("/admin/settings",{paymentVerificationMode:"MANUAL",demoMode:demo})}>บันทึกการตั้งค่า</button></section>}
+ {page==="admin-settings"&&<section className="merchant-panel"><h2>แสดงที่พักสาธิตจากฐานข้อมูล</h2><p>ใช้ข้อมูลในฐานที่เว็บเชื่อมอยู่ ปิดเพื่อซ่อนจากหน้าแรกและรายการค้นหา โดยไม่ลบข้อมูลหรือเปลี่ยนสิทธิ์สมาชิก รายการยังต้องผ่านอนุมัติและมี QR Active</p><label><input type="checkbox" checked={demoVillasVisible} disabled={loading||busy||!!error} onChange={e=>setDemoVillasVisible(e.target.checked)}/>แสดง Demo Villas</label><p>แยกจาก Demo Mode ของการชำระเงิน ลิงก์ QR เดิมยังตรวจได้ตามสิทธิ์</p><button disabled={loading||busy||!!error} className="primary-button" onClick={()=>void save("/admin/settings/demo-villas",{visible:demoVillasVisible})}>บันทึกการแสดง Demo Villas</button></section>}
  {page==="admin-settings"&&<><div className="button-row"><button onClick={()=>go("admin-reviews")}>จัดการรีวิวลูกค้า</button><button onClick={()=>go("admin-pending-villas")}>ตรวจยืนยันเจ้าของบ้าน</button></div><AdminReadiness/><AdminAcceptance/></>}
- {page==="admin-reviews"&&<><p>แพ็กเกจต่ำกว่า 2,990 เผยแพร่รีวิวทันที ส่วน 2,990 ขึ้นไปต้องผ่าน Admin ตรวจและกรองก่อนแสดงหน้าลูกค้า</p><Reviews mode="admin"/></>}
+ {page==="admin-reviews"&&<><p>การตรวจรีวิวขึ้นกับสิทธิ์ที่ตั้งค่าไว้รายแพ็กเกจ ใช้กติกาเดียวกันทุกคะแนน</p><Reviews mode="admin"/></>}
  {page==="admin-advertising"&&<><p>2,990: ภาพเดี่ยว 1 โพสต์ และโฆษณาเล็กก่อน Footer · 4,990: ภาพเดี่ยว 1 โพสต์ + วิดีโอ และ Carousel หน้าแรก · โปรโมทบนทุก Social รวมงบโฆษณา</p><Advertising onDirtyChange={setAdsDirty}/></>}
  {page==="admin-packages"&&<AdminPromotions/>}
  </PortalShell>;

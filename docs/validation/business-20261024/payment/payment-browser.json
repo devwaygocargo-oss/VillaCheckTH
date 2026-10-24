@@ -1,0 +1,60 @@
+{
+  "scope": "UI tests on local Next/Nest/PostgreSQL with checkout/status endpoints and Omise SDK/redirect mocked via CDP. No provider network or real payment.",
+  "results": [
+    {
+      "name": "Checkout offers QR source only",
+      "passed": true
+    },
+    {
+      "name": "Checkout restores no-attempt state without creating charge",
+      "passed": true
+    },
+    {
+      "name": "Rapid duplicate clicks create one source and one payment request",
+      "passed": true
+    },
+    {
+      "name": "Payment UI mobile 390px",
+      "passed": true
+    },
+    {
+      "name": "Redirect returns to same invoice; URL success claim cannot mark payment paid",
+      "passed": true
+    },
+    {
+      "name": "Refresh retrieves pending attempt without duplicate POST",
+      "passed": true
+    },
+    {
+      "name": "failed status and duplicate prevention",
+      "passed": true
+    },
+    {
+      "name": "successful status and duplicate prevention",
+      "passed": true
+    },
+    {
+      "name": "UNKNOWN status and duplicate prevention",
+      "passed": true
+    },
+    {
+      "name": "Unsafe authorization URL never renders a redirect link",
+      "passed": true
+    },
+    {
+      "name": "Payment status network/provider error is visible",
+      "passed": true
+    },
+    {
+      "name": "Missing configuration disables payment creation",
+      "passed": true
+    },
+    {
+      "name": "Zero-net invoice has no source/charge button",
+      "passed": true
+    }
+  ],
+  "creates": 1,
+  "redirects": 1,
+  "statusReads": 9
+}

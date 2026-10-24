@@ -27,6 +27,8 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
  await t.test('checks compare actual data, deduplicate retries, and survive new sessions',async()=>{
   const input={villa:villa.name,account:'0000000000',contact:'0800000000',requestKey:'same-request'}
   const first=await request('/user/checks',input,u);assert.equal(first.status,200);assert.equal(first.value.status,'MATCHED');assert.equal((await request('/user/checks',input,u)).value.id,first.value.id)
+  const empty=await request('/user/checks',{villa:villa.name,requestKey:'empty-details'},u);assert.equal(empty.value.status,'REVIEW_REQUIRED');
+  const blank=await request('/user/checks',{villa:villa.name,account:' - ',contact:' -- ',requestKey:'blank-details'},u);assert.equal(blank.value.status,'REVIEW_REQUIRED');
   const bad=await request('/user/checks',{...input,account:'9999999999',requestKey:'bad-account'},u);assert.equal(bad.value.status,'REVIEW_REQUIRED');assert.equal((await request('/user/checks',input,m)).status,403)
   assert.equal((await request('/user/checks',undefined,other)).value.checks.length,0);const newSession=await login('demo-user@villacheck.example');assert.ok((await request('/user/checks',undefined,newSession)).value.checks.some(x=>x.id===first.value.id));u.cookie=newSession.cookie;u.csrf=newSession.csrf
  })
@@ -45,7 +47,7 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
   assert.equal((await request(`/payments/${invoice.id}/demo-slip`,{},m)).status,404)
   assert.equal((await request(`/invoices/${invoice.id}/proof`,slip.value,payer)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].invoices[0].paymentStatus,'PENDING_REVIEW');assert.ok(state.villas[0].qr)
   assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},payer)).status,403)
-  assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},a)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].qrStatus,'ACTIVE');assert.equal(state.villas[0].qrStatus,'ACTIVE')
+  assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},a)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].qrStatus,'PENDING');assert.equal((await request(`/villas/${v.id}/review`,{status:'approved'},a)).status,200)
   await app.runMail();assert.equal(sends,0);assert.equal((await db.prepare('SELECT status FROM mails WHERE invoice_id=?').get(invoice.id)).status,'demo')
   await request('/admin/settings',{paymentVerificationMode:'MANUAL',demoMode:false},a);assert.equal((await request(`/payments/${invoice.id}/demo-slip`,{},payer)).status,403);await request('/admin/settings',{paymentVerificationMode:'MANUAL',demoMode:true},a)
  })
@@ -60,13 +62,14 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
   assert.equal((await request(`/merchant/villas/${villa.id}`,{...input,photo:{...image,data:'data:image/jpeg;base64,aGVsbG8='}},m)).status,400);
   assert.equal((await request(`/merchant/villas/${villa.id}`,input,m)).status,200);
   const saved=await db.prepare('SELECT photo_url,qr FROM villas WHERE id=?').get(villa.id);assert.equal(saved.qr,villa.qr);
-  const response=await fetch(base+saved.photo_url);assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/jpeg');assert.deepEqual(Buffer.from(await response.arrayBuffer()),readFileSync('public/demo/villas/villa-1.jpg'));
+  assert.equal((await fetch(base+saved.photo_url)).status,404);
+  const response=await fetch(base+saved.photo_url,{headers:{Cookie:m.cookie}});assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/jpeg');assert.deepEqual(Buffer.from(await response.arrayBuffer()),readFileSync('public/demo/villas/villa-1.jpg'));
   assert.equal((await fetch(base+'/api/public/villa-photo/'+villa.document_id)).status,404);
  })
  await t.test('Merchant edits require fresh document review but preserve QR identity',async()=>{
   assert.equal((await request(`/merchant/villas/${villa.id}`,{name:'Bad'},outsider)).status,404)
   assert.equal((await request(`/merchant/villas/${villa.id}`,{name:villa.name,nameEn:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photoUrl:villa.photo_url},m)).status,200)
-  const result=(await request('/public/qr/'+villa.qr)).value;assert.equal(result.valid,false);assert.equal(result.qrStatus,'PENDING');assert.equal(result.premiumBanner,false);assert.equal((await db.prepare('SELECT qr FROM villas WHERE id=?').get(villa.id)).qr,villa.qr);assert.equal((await request(`/villas/${villa.id}/review`,{status:'changes',reason:'Line one\nLine two'},a)).status,200)
+  const result=(await request('/public/qr/'+villa.qr)).value;assert.equal(result.valid,true);assert.equal(result.qrStatus,'ACTIVE');assert.equal(result.premiumBanner,true);assert.equal((await db.prepare('SELECT qr FROM villas WHERE id=?').get(villa.id)).qr,villa.qr);assert.equal((await request(`/villas/${villa.id}/review`,{status:'changes',reason:'Line one\nLine two'},a)).status,200)
  })
  await t.test('free trial bypasses invoice and quarterly catalog changes actually affect payment period',async()=>{
   const v=await db.prepare("SELECT * FROM villas WHERE name='Free Trial Demo Villa'").get();await request(`/villas/${v.id}/review`,{status:'approved',verificationLevel:'BASIC_CHECKED'},a);const state=(await request('/state',undefined,trial)).value;assert.equal(state.villas[0].qrStatus,'ACTIVE');assert.equal(state.villas[0].invoices.length,0)

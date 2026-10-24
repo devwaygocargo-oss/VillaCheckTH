@@ -110,7 +110,7 @@ export default function Advertising({
     setError("")
     try {
       const result=await api<{advertisement?:Ad}>(path, value)
-      if(result.advertisement){const next={...blankAd,...result.advertisement};setAd(next);setBaseline(JSON.stringify(next));window.dispatchEvent(new Event("villacheck-advertisements-updated"));try{localStorage.setItem("villacheck-advertisements-updated",String(Date.now()));}catch{}}
+      if(result.advertisement){const next={...blankAd,...result.advertisement};setAd(next);setBaseline(JSON.stringify(next));window.dispatchEvent(new Event("villacheck-advertisements-updated"));try{localStorage.setItem("villacheck-advertisements-updated",String(Date.now()));}catch{/* Storage may be unavailable in private browsing. */}}
       await load()
       setMessage("บันทึกแล้ว")
     } catch (e) {

@@ -57,7 +57,7 @@ test('Admin receiving bank uses stable decodable PromptPay QR, scoped email outb
   const otherVilla=randomUUID();await db.prepare("INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,created) VALUES (?,?,?,?,?,?,?,?,?,?)").run(otherVilla,other.id,'Other Dummy Villa','ชลบุรี','Other Dummy',other.email,'pro',documentId,'approved',new Date().toISOString())
   const otherInvoice=await createInvoice(db,await db.prepare('SELECT * FROM villas WHERE id=?').get(otherVilla),config.appUrl)
   await db.prepare("UPDATE invoices SET subscription_owner=?,package_id='pro' WHERE id=?").run(other.id,otherInvoice)
-  const state=(await req('/state',undefined,m)).value;assert.equal(state.paymentBankQrImage,first.qrImage);assert.equal(state.villas[0].invoices[0].bankQrImage,first.qrImage)
+  const state=(await req('/state',undefined,m)).value;assert.equal(state.paymentBankQrImage,first.qrImage);const encoded=state.villas[0].invoices[0].bankQrImage;assert.match(encoded,/^data:image\/png;base64,/);const payload=decode(Buffer.from(encoded.split(',')[1],'base64'));assert.equal(tlv(payload)['54'],'1990.00');first.invoiceQr=encoded
   const publicCms=(await req('/public/cms')).value;assert.equal(publicCms.content.site.paymentInstructions,'');assert.equal(publicCms.content.site.paymentQrImage,'')
  })
  const email=(ids=[merchant.id],extra={})=>({requestId:randomUUID(),revision:saved.revision,merchantIds:ids,subject:'DUMMY bank account details',message:'DUMMY - NO PAYMENT',...extra})
@@ -81,7 +81,7 @@ test('Admin receiving bank uses stable decodable PromptPay QR, scoped email outb
   let history=(await req('/admin/receiving-bank',undefined,a)).value.notifications;assert.equal(history.find(x=>x.id===id).status,'failed');assert.ok(!JSON.stringify(history).includes('secret-provider-detail'))
   const changed=await req('/admin/receiving-bank',{...fields,promptpayId:'0898765432',revision:saved.revision},a);assert.equal(changed.status,200);saved=changed.value.bank;assert.notEqual(saved.qrImage,first.qrImage)
   assert.equal(decode((await req(first.qrImage.replace('/api',''),undefined,m)).value),first.payload)
-  const state=(await req('/state',undefined,m)).value;assert.equal(state.paymentBankQrImage,saved.qrImage);assert.equal(state.villas[0].invoices.find(i=>i.id===invoice).bankQrImage,first.qrImage);assert.ok(state.villas[0].invoices[0].paymentInstructions.includes('0812345678'))
+  const state=(await req('/state',undefined,m)).value;assert.equal(state.paymentBankQrImage,saved.qrImage);assert.equal(state.villas[0].invoices.find(i=>i.id===invoice).bankQrImage,first.invoiceQr);assert.ok(state.villas[0].invoices[0].paymentInstructions.includes('0812345678'))
   smtpFailure=false;assert.equal((await req(`/admin/receiving-bank/notifications/${id}/retry`,{},a)).status,200);await server.runMail();assert.equal(sent.length,3);assert.equal(tlv(decode(sent[2].attachments[0].content))['29'],tlv(first.payload)['29'])
   assert.equal((await req(`/admin/receiving-bank/notifications/${id}/retry`,{},a)).status,409)
  })

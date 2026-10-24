@@ -3,7 +3,7 @@ import {api} from "./api";
 import {useCms,useCopy,usePresentation} from "./cms";
 import type {Page} from "./prototype";
 import {popularProvinces} from "./ProvinceExplorer";
-type Villa={id:string;name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;premiumBanner:boolean;guestCapacity:number|null};
+type Villa={isDemo?:boolean;id:string;name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;premiumBanner:boolean;guestCapacity:number|null};
 const statusLabel:Record<string,string>={ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"};
 export default function HomeVillaShowcase({go,onSearch}:{go:(page:Page,item?:string)=>void;onSearch:(query:string,province:string)=>void}){
  const t=useCopy(),presentation=usePresentation();
@@ -20,7 +20,7 @@ export default function HomeVillaShowcase({go,onSearch}:{go:(page:Page,item?:str
   <div id="villa-discovery-track" className="villa-discovery-track" ref={track} onScroll={measure} aria-busy={loading} aria-label={province?`ที่พักใน${province}`:"ที่พักทุกจังหวัด"}>
     {loading?Array.from({length:4},(_,index)=><div key={index} className="villa-discovery-skeleton" aria-hidden="true"><div/><span/><span/></div>):items.map(villa=><a className="discovery-villa-card" key={villa.id} href={`#page=detail&item=${encodeURIComponent(villa.qr)}`} onClick={e=>{if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();go("detail",villa.qr);}}>
       <div className="discovery-villa-photo"><img src={villa.photoUrl||"/villa-placeholder.svg"} alt={`ภาพ ${villa.name}`} loading="lazy"/><span className={`discovery-villa-status${villa.qrStatus==="ACTIVE"?"":" inactive"}`}><span aria-hidden="true">{villa.qrStatus==="ACTIVE"?"✓":"◷"}</span>{statusLabel[villa.qrStatus]||villa.qrStatus}</span>{villa.premiumBanner&&<span className="discovery-villa-premium">✦ Premium Verified</span>}</div>
-      <div className="discovery-villa-body"><span className="discovery-villa-location">{villa.province}</span><h3>{villa.name}</h3>{villa.nameEn&&villa.nameEn!==villa.name&&<p className="discovery-villa-english">{villa.nameEn}</p>}<div className="discovery-villa-meta"><span>{villa.guestCapacity===null?"ไม่ระบุจำนวนผู้เข้าพัก":`สูงสุด ${villa.guestCapacity} คน`}</span><span>Trust Profile <span aria-hidden="true">↗</span></span></div><small>{villa.updated?`ตรวจล่าสุด ${new Date(villa.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"})}`:"ยังไม่มีข้อมูลวันที่ตรวจ"}</small></div>
+      <div className="discovery-villa-body"><span className="discovery-villa-location">{villa.province}</span><h3>{villa.name}</h3>{villa.isDemo&&<small>ข้อมูลสาธิต · ไม่ใช่ที่พักจริงสำหรับจอง</small>}{villa.nameEn&&villa.nameEn!==villa.name&&<p className="discovery-villa-english">{villa.nameEn}</p>}<div className="discovery-villa-meta"><span>{villa.guestCapacity===null?"ไม่ระบุจำนวนผู้เข้าพัก":`สูงสุด ${villa.guestCapacity} คน`}</span><span>Trust Profile <span aria-hidden="true">↗</span></span></div><small>{villa.updated?`ตรวจล่าสุด ${new Date(villa.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"})}`:"ยังไม่มีข้อมูลวันที่ตรวจ"}</small></div>
     </a>)}
   </div>
   {!loading&&error&&<div className="villa-discovery-message" role="alert"><p>{error}</p><button onClick={()=>setAttempt(n=>n+1)}>ลองโหลดอีกครั้ง</button></div>}

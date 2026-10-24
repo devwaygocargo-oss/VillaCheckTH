@@ -6,7 +6,7 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: APP_URL
-        value: https://design-villacheck.vercel.app
+        sync: false
       - key: BACKEND_PORT
         value: 10000
       - key: DATABASE_URL
@@ -20,4 +20,24 @@ services:
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: APP_ENV
+        value: staging
+      - key: PAYMENT_ACCESS_MODE
+        value: DISABLED
+      - key: OMISE_TEST_ENABLED
+        value: "false"
+      - key: OTP_SECRET
+        sync: false
+      - key: STAGING_EMAIL_ALLOWLIST
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: CRON_SECRET
         sync: false

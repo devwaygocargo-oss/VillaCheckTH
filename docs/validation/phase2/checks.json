@@ -1,0 +1,105 @@
+{
+  "checkedAt": "2026-10-24T08:03:52.414543+00:00",
+  "branch": "fix/autonomous-business-security-20261024",
+  "previousReviewBase": "9e2b160",
+  "previousImplementationCommit": "816195d",
+  "runtimeAndTestSourceSha256": "a05463de28f7c2db4cc36190f73bd452190cf3b228dcd8bd9fbab123803fa116",
+  "sourceFilesHashed": 240,
+  "environment": "disposable localhost PostgreSQL/SQLite, captured OTP mail, mocked payment provider; no production connections",
+  "tests": {
+    "postgres": {
+      "tests": 247,
+      "pass": 247,
+      "fail": 0,
+      "skipped": 0
+    },
+    "sqlite": {
+      "tests": 247,
+      "pass": 239,
+      "fail": 0,
+      "skipped": 8
+    }
+  },
+  "browser": {
+    "checks": 32,
+    "passed": 32,
+    "failed": 0,
+    "widths": [
+      1440,
+      390
+    ]
+  },
+  "commands": {
+    "postgres": {
+      "exitCode": 0,
+      "logSha256": "9f947692137771a5321903dd6212892e1cd0ab00d4ecabff59652e0adf47ff25"
+    },
+    "sqlite": {
+      "exitCode": 0,
+      "logSha256": "a21047bf4be658b7a7e420b13670b6392b617c28f4e46a7d2af442d73efac8f6"
+    },
+    "build": {
+      "exitCode": 0,
+      "logSha256": "5ccd830d25115bb87c442800d322833a2325d100980ab9f1880ef18cda9bff09"
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "logSha256": "79a33c4c1f3dcb26f886d0235fd4d226d769e1ff84fcba625c92dc930523aafd"
+    },
+    "lint": {
+      "exitCode": 0,
+      "logSha256": "004867a5738f19805221c5c5da3dc09d574b34c7c030748a64756c787d8c2dab"
+    }
+  },
+  "externalAcceptance": {
+    "omise": false,
+    "smtpInbox": false,
+    "productionHost": false,
+    "businessUatSigned": false,
+    "physicalDevices": false
+  },
+  "goLive": "NOT READY",
+  "phase2Files": [
+    ".env.example",
+    "docs/business-uat-checklist.md",
+    "docs/final-qa-report.md",
+    "docs/go-live-blockers.md",
+    "docs/production-readiness-checklist.md",
+    "docs/validation/phase2/admin-dashboard-1440.png",
+    "docs/validation/phase2/admin-dashboard-390.png",
+    "docs/validation/phase2/browser.json",
+    "docs/validation/phase2/checks.json",
+    "docs/validation/phase2/homepage-1440.png",
+    "docs/validation/phase2/homepage-390.png",
+    "docs/validation/phase2/invoice-payment-1440.png",
+    "docs/validation/phase2/invoice-payment-390.png",
+    "docs/validation/phase2/pricing-1440.png",
+    "docs/validation/phase2/pricing-390.png",
+    "docs/validation/phase2/source-config-audit.json",
+    "docs/validation/phase2/villa-detail-1440.png",
+    "docs/validation/phase2/villa-detail-390.png",
+    "scripts/browser-regression.mjs",
+    "scripts/health-check.mjs",
+    "scripts/operations-check.mjs",
+    "scripts/qa-source-audit.mjs",
+    "server/app.mjs",
+    "server/health-check.test.mjs",
+    "server/index.mjs",
+    "server/login-otp.mjs",
+    "server/login-otp.test.mjs",
+    "server/omise-http.test.mjs",
+    "server/operations-scheduling.test.mjs",
+    "server/operations.mjs",
+    "server/operations.test.mjs",
+    "server/phase2-journey.test.mjs",
+    "server/phase2-security.test.mjs",
+    "server/vercel.test.mjs",
+    "src/VillaPackagePanel.tsx",
+    "src/merchantStore.ts"
+  ],
+  "secretPatternManualReview": {
+    "file": "server/backup.test.mjs",
+    "rule": 5,
+    "disposition": "synthetic remote.example URL used to verify remote restore refusal; not a real provider credential"
+  }
+}

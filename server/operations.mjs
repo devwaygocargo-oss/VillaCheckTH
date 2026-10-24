@@ -1,3 +1,4 @@
+import {resolvePublicQr,publishedVillas} from "./public-revision.mjs"
 import { mediaDate } from "./media-date.mjs";
 import {recordVillaReview} from './villa-review.mjs'
 import {saveVillaPhoto} from './villa-photo.mjs'
@@ -22,8 +23,8 @@ export async function createReport(db,data,user){
 }
 export async function recordEvent(db,qr,kind){
  if(!['PROFILE_VIEW','QR_SCAN','CONTACT_VIEW'].includes(kind))error(400,'ประเภทสถิติไม่ถูกต้อง')
- const villa=await db.prepare("SELECT * FROM villas WHERE qr=? AND status='approved'").get(clean(qr,'QR',100))
- if(!villa)error(404,'ไม่พบ Villa')
+ const villa=await resolvePublicQr(db,clean(qr,'QR',100))
+ if(!villa||villa.status!=='approved')error(404,'ไม่พบ Villa')
  await db.prepare('INSERT INTO villa_events VALUES (?,?,?,?)').run(randomUUID(),villa.id,kind,new Date().toISOString())
  return {ok:true}
 }
@@ -61,12 +62,12 @@ export async function operations(db,user,req,path,url,readBody){
   return db.transaction(async()=>{
    const existing=await db.prepare('SELECT * FROM user_checks WHERE user_id=? AND request_key=?').get(user.id,key);if(existing)return existing
    const qr=clean(data.qr||'','QR',100,false),name=clean(data.villa||'','Villa',200,!qr)
-   let villa=qr?await db.prepare('SELECT * FROM villas WHERE qr=?').get(qr):null
-   if(!qr){const matches=await db.prepare("SELECT * FROM villas WHERE name=? AND status='approved'").all(name);if(matches.length===1)villa=matches[0]}
+   let villa=qr?await resolvePublicQr(db,qr):null
+   if(!qr){const matches=(await publishedVillas(db)).filter(v=>v.name===name);if(matches.length===1)villa=matches[0]}
    const account=clean(data.account||'','บัญชี',50,false),contact=clean(data.contact||'','ติดต่อ',200,false)
    const trust=villa?await trustDto(db,villa):null
    const normalize=v=>String(v||'').replace(/[\s-]/g,'')
-   const matched=trust?.qrStatus==='ACTIVE'&&(!account||(villa.account_number&&normalize(account)===normalize(villa.account_number)))&&(!contact||(villa.phone&&normalize(contact)===normalize(villa.phone)))
+   const matched=Boolean(normalize(account)||normalize(contact))&&trust?.qrStatus==='ACTIVE'&&(!account||(villa.account_number&&normalize(account)===normalize(villa.account_number)))&&(!contact||(villa.phone&&normalize(contact)===normalize(villa.phone)))
    const status=matched?'MATCHED':'REVIEW_REQUIRED'
    const result=!villa?'ไม่พบที่พักที่ระบุในระบบ':trust.qrStatus!=='ACTIVE'?`QR ไม่พร้อมใช้งาน: ${trust.qrStatus}`:matched?'ข้อมูลตรงกับทะเบียน ณ เวลาตรวจสอบ ไม่ใช่การรับประกันการจอง':'บัญชีหรือช่องทางติดต่อไม่ตรง กรุณาตรวจสอบกับที่พักก่อนโอน'
    const id=randomUUID(),reference=ref('CHK'),created=new Date().toISOString()

@@ -1,3 +1,4 @@
+import {testReceivingBank} from "./test-receiving-bank.mjs"
 import {legacyVilla} from "./test-legacy-villa.mjs";
 import { basicVerificationNotice } from "./package-content.mjs"
 import { qrReference } from "../src/qrReference.ts"
@@ -44,6 +45,7 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
     "Reviewer",
     "user",
   )
+  await testReceivingBank(db)
   const config = {
     appUrl: "http://localhost:3001",
     allowedOrigins: ["http://localhost:3001"],
@@ -266,6 +268,9 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
           .get(invoice.id),
         v = await db.prepare("SELECT * FROM villas WHERE id=?").get(first.id)
       await db.transaction(() => confirmPayment(db, bill, v, adminUser.id))
+      const pending = (await request("/state", undefined, owner)).value.villas.find(v=>v.id===first.id)
+      assert.equal(pending.status,"pending");assert.equal(pending.verificationLevel,"REGISTERED")
+      assert.equal((await request(`/villas/${first.id}/review`,{status:"approved",verificationLevel:"BASIC_CHECKED"},admin)).status,200)
       const r = (await request("/state", undefined, owner)).value
       first = r.villas.find((v) => v.id === first.id)
       second = r.villas.find((v) => v.id === second.id)
@@ -509,6 +514,7 @@ test("VillaCheck brief: bilingual, per-property packages, unlimited trial, revie
         ).status,
         200,
       )
+      first=(await request("/state",undefined,owner)).value.villas.find(v=>v.id===first.id)
       r = await request("/public/property-media?qr=" + first.qr)
       assert.ok(r.value.media[0].reviewedAt)
       assert.equal(r.value.latestUpdatedAt, m.uploadedAt)

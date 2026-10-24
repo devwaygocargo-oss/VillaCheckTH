@@ -1,5 +1,6 @@
 import {normalizeSocialFeatures,packageContent,footerAdFeature,premiumGuaranteeFeature,basicVerificationNotice,onlineVerificationFeatures} from './package-content.mjs'
 import { packages } from "./database.mjs"
+import {packagePricing} from "./package-promotions.mjs"
 export const levels = [
   "REGISTERED",
   "BASIC_CHECKED",
@@ -86,14 +87,14 @@ export async function getPlan(db, id) {
   const rows=await db.prepare("SELECT * FROM package_catalog ORDER BY sort_order,id").all();
   const plan=effectivePlans(rows).find(row=>row.id===id);
   if(!plan)throw Object.assign(Error("ไม่พบแพ็กเกจ"),{status:400});
-  return plan;
+  return {...plan,...await packagePricing(db,plan)};
 }
 const tierOrder=["basic","starter","pro","premium"];
 export function effectivePlans(rows){
  const plans=rows.map(planDto).map(plan=>plan.id==="pro"?{...plan,features:normalizeSocialFeatures(plan.features),description:normalizeSocialFeatures([plan.description]).length?plan.description:packageContent.pro.description}:plan),byId=new Map(plans.map(plan=>[plan.id,plan]));
  let inherited=[];
  for(const id of tierOrder){const plan=byId.get(id);const required=packageContent[id]?.features||[];inherited=[...new Set([...inherited,...required,...(plan?.features||[]).filter(f=>!(/แบนเนอร์|โฆษณา/.test(f)&&/รายละเอียด/.test(f)))].map(value=>value.trim()).filter(Boolean))];if(plan)plan.features=[...inherited];}
- return plans;
+ return plans.map(plan=>({...plan,features:plan.features.filter(feature=>!/(?<!ไม่)(?:รับประกัน|การันตี)|guarantee/i.test(feature)),description:plan.id==="basic"?packageContent.basic.description:(/(?<!ไม่)(?:รับประกัน|การันตี)|guarantee/i.test(plan.description)?packageContent[plan.id]?.description||"ตรวจสอบตามสิทธิ์แพ็กเกจ":plan.description),guarantee:null}));
 }
 
 function planDto(row) {
@@ -110,7 +111,7 @@ function planDto(row) {
 }
 export async function listPlans(db, all = false) {
   const rows=await db.prepare("SELECT * FROM package_catalog ORDER BY sort_order,id").all();
-  return effectivePlans(rows).filter(plan=>all||plan.isActive);
+  return Promise.all(effectivePlans(rows).filter(plan=>all||plan.isActive).map(async plan=>({...plan,...await packagePricing(db,plan)})));
 }
 
 export async function getVerificationMode() {
@@ -133,8 +134,10 @@ export async function trustDto(db, villa, context) {
     .prepare("SELECT * FROM subscriptions WHERE owner_id=?")
     .get(villa.owner_id)
   const plan = await readContextPlan(db,villa.payments === 0 ? "basic" : villa.package_id,context)
-  const override = context ? context.settings.get("villa_qr:"+villa.id) : await db.prepare("SELECT value FROM system_settings WHERE key=?").get("villa_qr:"+villa.id)
-  const qrStatus = ["SUSPENDED","INACTIVE"].includes(override?.value) ? override.value : qrState(villa, sub)
+  const settings=context?.settings||new Map((await db.prepare("SELECT key,value FROM system_settings WHERE key IN (?,?)").all("villa_qr:"+villa.id,"account_status:"+villa.owner_id)).map(row=>[row.key,row]))
+  const override=settings.get("villa_qr:"+villa.id),account=settings.get("account_status:"+villa.owner_id)
+  const accountSuspended=account&&JSON.parse(account.value).status==="suspended"
+  const qrStatus = accountSuspended ? "SUSPENDED" : ["SUSPENDED","INACTIVE"].includes(override?.value) ? override.value : qrState(villa, sub)
   const actual = qrStatus === "ACTIVE" ? villa.verification_level : "REGISTERED"
   return {
     qrStatus,
@@ -161,4 +164,9 @@ export async function trustDto(db, villa, context) {
   }
 }
 
-export async function readContextPlan(db,id,context){return context?.plans.has(id)?planDto(context.plans.get(id)):getPlan(db,id)}
+export async function readContextPlan(db,id,context){
+ if(context?.plans.has(id))return planDto(context.plans.get(id));
+ const row=await db.prepare("SELECT * FROM package_catalog WHERE id=?").get(id);
+ if(!row)throw Object.assign(Error("Unknown package"),{status:400});
+ return planDto(row);
+}

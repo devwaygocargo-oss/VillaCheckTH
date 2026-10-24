@@ -18,7 +18,7 @@ test('Each package can edit its own villa page without changing approval or expo
  const uploaded=await propertyMediaApi(db,admin,{method:'POST'},'/api/admin/property-media',new URL('http://localhost'),async()=>({villaId:v.id,file:{name:'fixture.png',type:'image/png',data:'data:image/png;base64,iVBORw0KGgo='}}));assert.equal(uploaded.media.villaId,v.id)
  const details={...initial.details,description:'Updated '+tier}
  await call(admin,'POST',{id:v.id,details});assert.equal((await villaPage(db,v)).description,'Updated '+tier)
- const after=await db.prepare('SELECT * FROM villas WHERE id=?').get(v.id);assert.deepEqual(after,v)
+ const after=await db.prepare('SELECT * FROM villas WHERE id=?').get(v.id);assert.deepEqual({...after,qr:v.qr},{...v});if(v.status==="approved")assert.notEqual(after.qr,v.qr)
  const history=(await cmsChanges(db)).entries.find(h=>h.kind==='villa_page'&&h.action==='before_edit'&&h.targetId===v.id);assert(history)
  await call(admin,'POST',{historyId:history.id});assert.deepEqual(await villaPage(db,v),initial.details)
  await assert.rejects(call(admin,'POST',{id:v.id,details:{...details,bedrooms:-1}}),e=>e.status===400)

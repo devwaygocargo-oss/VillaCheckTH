@@ -8,6 +8,7 @@ export function demoSlip(invoice){
  return {reference,document:{name:'demo-payment-slip.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from(pdf).toString('base64')}}
 }
 export async function demoMode(db,config={}){
+ if(config.paymentAccessMode==="DEMO")return true
  const row=await db.prepare("SELECT value FROM system_settings WHERE key='demo_mode'").get()
  return row?row.value==='true':config.demoMode===true
 }

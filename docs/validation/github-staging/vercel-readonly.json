@@ -1,0 +1,19 @@
+{
+  "readOnly": true,
+  "projectName": "design-villacheck",
+  "localHead": "f95e03f",
+  "requests": [
+    {
+      "path": "/v9/projects/prj_3A3Lygt3Z9Pt3D9p8bk693fTfHiC",
+      "status": 403
+    },
+    {
+      "path": "/v4/aliases/design-villacheck.vercel.app",
+      "status": 403
+    },
+    {
+      "path": "/v10/projects/prj_3A3Lygt3Z9Pt3D9p8bk693fTfHiC/env",
+      "status": 403
+    }
+  ]
+}

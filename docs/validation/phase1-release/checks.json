@@ -1,0 +1,67 @@
+{
+  "baseRevision": "9c5f8ba73afea876fc637f44587def5fd4b63d67",
+  "branch": "fix/autonomous-business-security-20261024",
+  "sourceFilesSha256": {
+    "docs/go-live-blockers.md": "f62ac18a53edd47f547c6b4007e77149c2c2077e13b4edf57b9d93147bff5c12",
+    "docs/phase1-business-uat-checklist.md": "edce7a395ba346e20ad1240829a38d746ad4992d6a945b60dbc02e58d7fbfb69",
+    "docs/phase1-critical-blockers.md": "91a312bc7177ef7ae08eff7e2c01cc0f4fa8bc37810c61e504c8a857e6179643",
+    "docs/phase1-go-live-readiness.md": "3bcb6a9bf97d171b9a96b7fbfe3a1f52106ce0f8a92cf61b3395b884c2489dad",
+    "docs/phase1-handover-summary-th.md": "441142efc82a77702eb1f8406888a6f25c807c56f5e741706d9a5eee70e62920",
+    "docs/phase1-release-and-rollback-plan.md": "66fffd141a410eebb22388a24ee8be58d169ccda47aa9d6bb035de4d6ad49909",
+    "docs/phase1-staging-deployment-checklist.md": "24d5f4a620de4927e9406530b87f739e298132d4c33ad1a6637f74c281e1d221",
+    "docs/phase1-test-evidence.md": "45d06fc5b762c151c180a844f52179e53f21c108e4a40fde52249b1eb376bb83",
+    "scripts/browser-regression.mjs": "6f909fe4c915de103b7630aa8a0087871749e15d118d49d3c6baaca119a727bd",
+    "scripts/test-postgres.mjs": "7a0a122fe20e9350400d51c2acb3f734f6e3e8b8cdb4bdc31255e5437d22605f",
+    "server/app.mjs": "9ae165deaee4734efb26017586318462d5acf3e66e66c84ae3c5113f258478b9",
+    "server/approval-history.mjs": "d44acde40961abe2aa9462908e8ab6ebc69d360e354b48a9e96e5c426ac96242",
+    "server/catalog.mjs": "4849bd0e7accd2379bc67f53a55890b8d2c08586d7faeec8447e2f5aceb2896a",
+    "server/phase1-release.test.mjs": "d5c4029a0a0f7acb5bdbde562ac4ee7355cdc81540065c02e01e8fa23e8d7ae7",
+    "server/phase2-journey.test.mjs": "dfec980087c827aa8f6608ce7728a86ac7c02055cc969c4c1769c0a0bab3c60e",
+    "server/phase2-security.test.mjs": "b3bd16e4ecdfb8734c8e85ae70e5809db9971c9a218bf0f2ac89b5809f010622",
+    "server/property-media.mjs": "3fda26dd8a9d10e49524c74de6d0f3eba7d10968ae35216450d98d44c67c01ed",
+    "server/read-performance.test.mjs": "607e36fb979e5263b9f77c9cee7533267d95c2c3a85be09149cffc0662f96368",
+    "server/reviews.mjs": "c6d793e0ee421a70125b3bad9dc5cb9cac564b2d8fe25dd935f8b1eacac9d7da",
+    "server/users.test.mjs": "62003c4dd361acc1ac63878c5f0781c994063d29011196f84fc7513983f7aef4",
+    "server/villa-read-context.mjs": "f3da4a0817b968d85a58657f1c5db9078badb5950bdb6d4f8c37d36125fbf9b7",
+    "server/villa-review.mjs": "25e9d40e4116d507710b48beac24b639c1ae18876e30173120a3724f09dbdcd0",
+    "src/Backoffice.tsx": "6458ba494dfa874f8785ddb492066c0ca90d812a096eede3953448d1c28c46ff",
+    "src/PropertyMedia.tsx": "2b488012e8d778bac005777894a533af08611452c9d270a918f849c97d884ba1",
+    "src/VillaPackagePanel.tsx": "a829826f6a04924d4a53d8904b1b44fcf9b04d9e363c16d7630a0855331f7063"
+  },
+  "scope": "ทดสอบ localhost/ข้อมูลสมมติและ process จริง ไม่มี external provider acceptance; Email transport/Omise เป็น mock; ไม่ deploy/ส่งเมลลูกค้า/เรียกเก็บเงิน/แตะ production DB",
+  "postgres": {
+    "tests": 261,
+    "pass": 261,
+    "fail": 0,
+    "skip": 0
+  },
+  "sqlite": {
+    "tests": 261,
+    "pass": 253,
+    "fail": 0,
+    "skip": 8
+  },
+  "build": {
+    "exitCode": 0
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "lint": {
+    "exitCode": 0
+  },
+  "diffCheck": {
+    "exitCode": 0
+  },
+  "preexistingPathsExcluded": 217,
+  "generalBrowser": {
+    "pass": 53,
+    "fail": 0,
+    "evidence": "general/browser.json"
+  },
+  "paymentBrowser": {
+    "pass": 13,
+    "fail": 0,
+    "evidence": "payment/payment-browser.json"
+  }
+}

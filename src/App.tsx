@@ -169,11 +169,11 @@ function Header({ page, go, account, preview=false }: { page: Page; go: (page: P
   </header>;
 }
 
-function VillaCard({ villa, onClick }: { villa: typeof villas[0] & {premiumBanner?:boolean}; onClick: () => void }) {
+function VillaCard({ villa, onClick }: { villa: typeof villas[0] & {premiumBanner?:boolean;isDemo?:boolean}; onClick: () => void }) {
   return <article className="villa-card" onClick={onClick}>
     <div className="card-image"><img src={villa.image} alt={`ภาพ ${villa.name}`} /><Badge pending={villa.status !== "ตรวจสอบข้อมูลแล้ว"}>{villa.status}</Badge></div>
     <div className="card-body">
-      <h3>{villa.name}</h3>{villa.premiumBanner && <small>✦ Premium Verified</small>}
+      <h3>{villa.name}</h3>{villa.isDemo&&<small>ข้อมูลสาธิต · ไม่ใช่ที่พักจริงสำหรับจอง</small>}{villa.premiumBanner && <small>✦ Premium Verified</small>}
       <div className="villa-meta"><span><Icon name="pin" size={17} />{villa.province}</span>{villa.guests !== "ไม่ระบุ" && <span><Icon name="users" size={17} />สูงสุด {villa.guests}</span>}</div>
       <div className="card-foot"><span><Icon name="clock" size={15} />อัปเดตล่าสุด {villa.updated}</span><button aria-label={`ดู ${villa.name}`} onClick={event => { event.stopPropagation(); onClick(); }}><Icon name="arrow" size={18} /></button></div>
     </div>
@@ -236,9 +236,9 @@ function Directory({ go, initialQuery = "", initialProvince = "" }: { go: (p: Pa
   const [status, setStatus] = useState("");
   const [guests, setGuests] = useState("");
   const [sort, setSort] = useState("ล่าสุด");
-  const [liveVillas,setLiveVillas]=useState<(typeof villas[number] & {qr:string;nameEn:string;premiumBanner:boolean;createdAt:string})[]>([]);
+  const [liveVillas,setLiveVillas]=useState<(typeof villas[number] & {qr:string;nameEn:string;premiumBanner:boolean;createdAt:string;isDemo?:boolean})[]>([]);
   const [directoryError,setDirectoryError]=useState("");
-  useEffect(()=>{let active=true;void api<{villas:{name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void api<{villas:{isDemo?:boolean;name:string;nameEn:string;province:string;qr:string;qrStatus:string;photoUrl:string;updated:string|null;createdAt:string;premiumBanner:boolean;guestCapacity:number|null}[]}>("/public/villas").then(data=>{if(active)setLiveVillas(data.villas.map(v=>({...v,createdAt:v.updated || v.createdAt,updated:v.updated ? new Date(v.updated).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}) : "ยังไม่มีข้อมูลวันที่ตรวจ",guests:v.guestCapacity == null ? "ไม่ระบุ" : `${v.guestCapacity} คน`,status:({ACTIVE:"ตรวจสอบข้อมูลแล้ว",EXPIRED:"หมดอายุ",SUSPENDED:"ถูกระงับ",INACTIVE:"ปิดใช้งาน",PENDING:"รอตรวจสอบ"} as Record<string,string>)[v.qrStatus] || v.qrStatus,image:v.photoUrl || "/villa-placeholder.svg"})));}).catch(e=>{if(active)setDirectoryError(e.message);});return()=>{active=false;};},[]);
   const filtered = [...liveVillas]
     .filter(v => `${v.name} ${v.nameEn || ""}`.toLowerCase().includes(query.trim().toLowerCase()))
     .filter(v => !province || v.province === province)

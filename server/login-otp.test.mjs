@@ -51,3 +51,11 @@ test('Email OTP provider uses template and API credentials, encrypts token and p
 test('Email provider credit failure invalidates challenge and records sanitized response',async t=>{
  const db=await openTestDatabase();t.after(()=>db.close());const otp=createLoginOtp(db,{...config,thaiBulkSmsEmailOtpTemplateId:'template'},null,async()=>({ok:false,status:402,json:async()=>({code:'ERROR_INSUFFICIENT_CREDIT',message:'Error insufficient credit'})}));await assert.rejects(()=>otp.request({channel:'email',destination:'credit@example.com'}),e=>e.status===503);assert.equal((await db.prepare('SELECT consumed FROM login_otps WHERE destination=?').get('credit@example.com')).consumed,1);const diagnostic=JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key='otp_delivery_email'").get()).value);assert.equal(diagnostic.httpStatus,402);assert.equal(diagnostic.category,'ERROR_INSUFFICIENT_CREDIT');
 });
+
+ test("provider diagnostics never persist free-text mailbox, OTP or opaque token echoes",async()=>{
+ const {smsDiagnostic}=await import('./login-otp.mjs');
+ const diagnostic=smsDiagnostic({},400,{message:'Recipient person@example.test OTP 123456 token opaque-private-token',token:'opaque-private-token'});
+ const serialized=JSON.stringify(diagnostic);
+ for(const secret of ['person@example.test','123456','opaque-private-token'])assert(!serialized.includes(secret));
+ assert.equal(diagnostic.category,'PROVIDER_REJECTED');
+ });

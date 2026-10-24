@@ -1,3 +1,5 @@
+import {stagingMailTransport} from "./staging-mail.mjs"
+import {paymentConfiguration} from "./payment-access.mjs"
 import {smtpTransportOptions} from "./smtp-diagnostics.mjs"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -11,6 +13,7 @@ export async function startServer(env = process.env, { listen = true, databaseFa
     ...env,
     DATABASE_URL: env.DATABASE_URL || env.VillaCheck_DATABASE_URL,
   }
+  const paymentAccessMode=paymentConfiguration(env)
   const production = env.NODE_ENV === "production"
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
   const appUrl = (env.APP_URL || "http://localhost:8443").replace(/\/$/, "")
@@ -75,8 +78,14 @@ export async function startServer(env = process.env, { listen = true, databaseFa
       const { default: nodemailer } = await import("nodemailer")
       transport = nodemailer.createTransport(smtpTransportOptions(env))
     }
+    transport=stagingMailTransport(transport,env)
     const config = {
       appUrl,
+      appEnvironment:env.APP_ENV,
+      stagingEmailAllowlist:(env.STAGING_EMAIL_ALLOWLIST||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean),
+      paymentAccessMode,
+      omiseTestPublicKey:env.OMISE_TEST_PUBLIC_KEY,
+      omiseTestMethods:(env.OMISE_TEST_METHODS||"").split(",").map(x=>x.trim()).filter(Boolean),
       demoMode:env.DEMO_MODE === "true",
       paymentVerificationMode: env.PAYMENT_VERIFICATION_MODE || "MANUAL",
       otpSecret: env.OTP_SECRET,
@@ -95,6 +104,7 @@ export async function startServer(env = process.env, { listen = true, databaseFa
       facebookVersion: env.FACEBOOK_GRAPH_VERSION,
       seedDemo,
       serverless: !listen,
+      trustVercelProxy: env.VERCEL === "1",
       secureCookies: production || env.COOKIE_SECURE === "true",
       allowedOrigins: [
         new URL(appUrl).origin,
@@ -107,7 +117,9 @@ export async function startServer(env = process.env, { listen = true, databaseFa
           : []),
       ],
       smtpFrom: env.SMTP_FROM,
-      requireDualApproval:true,
+      requireDualApproval:false,
+      omiseTestEnabled:env.OMISE_TEST_ENABLED === "true",
+      omiseTestSecretKey:env.OMISE_TEST_SECRET_KEY,
       cronSecret:env.CRON_SECRET,
       facebookLoginEnabled:env.FACEBOOK_LOGIN_ENABLED==='true',
       paymentInstructions: env.PAYMENT_INSTRUCTIONS,

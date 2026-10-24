@@ -8,7 +8,7 @@ import {join} from 'node:path'
 import {openTestDatabase} from './test-database.mjs'
 const run=promisify(execFile)
 test('Health monitoring reports failures without leaking provider credentials',async t=>{
- let failed=false;const server=createServer((req,res)=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(failed?{}:req.url.includes('health')?{ok:true}:req.url.includes('cms')?{content:{}}:{packages:[]}))});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)))
+ let failed=false;const server=createServer((req,res)=>{res.setHeader('Content-Type','application/json');res.statusCode=!failed&&req.url.includes('packages')?401:200;res.end(JSON.stringify(failed?{}:req.url.includes('health')?{ok:true}:req.url.includes('cms')?{content:{}}:{error:'Sign in'}))});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)))
  const env={...process.env,PUBLIC_URL:`http://127.0.0.1:${server.address().port}`,ALERT_WEBHOOK_URL:''}
  assert.equal(JSON.parse((await run(process.execPath,['scripts/operations-check.mjs'],{env})).stdout).ok,true)
  failed=true

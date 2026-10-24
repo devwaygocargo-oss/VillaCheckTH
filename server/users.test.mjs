@@ -27,12 +27,14 @@ test("user registration and QR contacts are enforced by the API", async (t) => {
       "INSERT INTO villas(id,owner_id,name,province,merchant,email,package_id,document_id,status,qr,expires,created,phone,bank_name,account_name,account_number) VALUES ('villa',?,'Villa','Bangkok','Merchant','owner@example.com','starter','doc','approved','VC-test','2099-01-01T00:00:00Z','now','0812345678','Test Bank','Private Account Holder','1234567890')",
     )
     .run(owner.id)
+  let registrationCode
   const config = {
     appUrl: "http://localhost:3001",
+    otpSecret:"local-test-otp-secret-with-more-than-32-characters",smtpFrom:"test@example.test",
     allowedOrigins: ["http://localhost:3001"],
     fakeHash: hashPassword("fake-password-placeholder"),
   }
-  const server = createApp(db, config)
+  const server = createApp(db, config,{sendMail:async message=>{registrationCode=message.text.match(/\d{6}/)[0]}})
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
   t.after(async () => {
     await new Promise((resolve) => server.close(resolve))
@@ -56,19 +58,22 @@ test("user registration and QR contacts are enforced by the API", async (t) => {
   }
   const guest = await request("/api/public/qr/VC-test")
   assert.equal(guest.value.locked, true)
-  assert.equal(guest.value.bankName,"Test Bank")
-  assert.equal(guest.value.accountName,"Private Account Holder")
+  assert.equal(guest.value.bankName,undefined)
+  assert.equal(guest.value.accountName,undefined)
   for (const secret of [
     "0812345678",
     "1234567890",
+    "Private Account Holder",
   ])
     assert.ok(!JSON.stringify(guest.value).includes(secret))
-  const member = await request("/api/auth/register-user", {
+  const pendingMember = await request("/api/auth/register-user", {
     name: "Member",
     email: "member@example.com",
     password: "Member-password-123",
     role: "admin",
   })
+  assert.equal(pendingMember.status,202)
+  const member=await request("/api/auth/registration/verify",{challengeId:pendingMember.value.challengeId,code:registrationCode},pendingMember.cookie)
   assert.equal(member.status, 200)
   assert.equal(member.value.user.role, "user")
   const visible = await request(
@@ -76,9 +81,9 @@ test("user registration and QR contacts are enforced by the API", async (t) => {
     undefined,
     member.cookie,
   )
-  assert.equal(visible.value.locked, false)
-  assert.equal(visible.value.phone, "0812345678")
-  assert.equal(visible.value.accountNumber, "1234567890")
+  assert.equal(visible.value.locked, true)
+  assert.equal(visible.value.phone, undefined)
+  assert.equal(visible.value.accountNumber, undefined)
   const merchant = await request("/api/auth/login", {
     email: "owner@example.com",
     password: "Owner-password-123",

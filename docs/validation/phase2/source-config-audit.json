@@ -1,0 +1,381 @@
+{
+  "scope": "tracked and task files excluding existing audit-results/reports; no production access; pattern scan is not proof of absence of secrets",
+  "base": "9e2b160",
+  "reviewedCommit": "816195d",
+  "reviewFiles": [
+    "DEPLOYMENT.md",
+    "app/layout.tsx",
+    "docs/architecture-refactoring-plan.md",
+    "docs/final-implementation-report.md",
+    "docs/implementation-plan.md",
+    "docs/implementation-progress.md",
+    "docs/omise-test-integration.md",
+    "docs/pending-business-decisions.md",
+    "docs/validation/checks-2026-10-24.json",
+    "docs/validation/local-browser-2026-10-24.json",
+    "docs/validation/session-files-2026-10-24.json",
+    "next.config.mjs",
+    "package.json",
+    "scripts/browser-regression.mjs",
+    "scripts/seed-public-demo.mjs",
+    "scripts/test-postgres.mjs",
+    "server/README.md",
+    "server/admin-business.mjs",
+    "server/app.mjs",
+    "server/app.test.mjs",
+    "server/approval-history.mjs",
+    "server/bank-receiving.mjs",
+    "server/bank-receiving.test.mjs",
+    "server/basic-promotion.mjs",
+    "server/brief-revision.test.mjs",
+    "server/business.test.mjs",
+    "server/catalog.mjs",
+    "server/change-approvals.mjs",
+    "server/confirmed-business.test.mjs",
+    "server/database.mjs",
+    "server/demo-relations.test.mjs",
+    "server/document-acceptance.test.mjs",
+    "server/email-identity.mjs",
+    "server/index.mjs",
+    "server/login-otp.mjs",
+    "server/mail-reminder.test.mjs",
+    "server/mail.mjs",
+    "server/manual-proof.mjs",
+    "server/manual-proof.test.mjs",
+    "server/media-approval.test.mjs",
+    "server/nest.test.mjs",
+    "server/news-content.mjs",
+    "server/next.test.mjs",
+    "server/omise-http.test.mjs",
+    "server/omise.mjs",
+    "server/omise.test.mjs",
+    "server/operations.test.mjs",
+    "server/otp-concurrency.test.mjs",
+    "server/owner-verification.mjs",
+    "server/owner-verification.test.mjs",
+    "server/package-content.mjs",
+    "server/package-entitlements.mjs",
+    "server/package-selection.test.mjs",
+    "server/password-registration.mjs",
+    "server/password-registration.test.mjs",
+    "server/payment-service.mjs",
+    "server/payment-verification.test.mjs",
+    "server/priority-uat.test.mjs",
+    "server/property-media.mjs",
+    "server/proration.mjs",
+    "server/proration.test.mjs",
+    "server/public-privacy.test.mjs",
+    "server/read-performance.test.mjs",
+    "server/readiness.mjs",
+    "server/reviews.mjs",
+    "server/security-hardening.test.mjs",
+    "server/subscriptions.test.mjs",
+    "server/test-receiving-bank.mjs",
+    "server/users.test.mjs",
+    "server/vercel.test.mjs",
+    "server/villa-pages.mjs",
+    "server/villa-pages.test.mjs",
+    "server/villa-review.mjs",
+    "server/villa-review.test.mjs",
+    "src/AdminApprovalNotice.tsx",
+    "src/AdminBusiness.tsx",
+    "src/AdminChangeApprovals.tsx",
+    "src/AdminReadiness.tsx",
+    "src/AdminReceivingBank.tsx",
+    "src/Advertising.tsx",
+    "src/Backoffice.tsx",
+    "src/OperationsPortal.tsx",
+    "src/PasswordRegistration.tsx",
+    "src/PropertyMedia.tsx",
+    "src/UserAccounts.tsx",
+    "src/VillaEntitlements.tsx",
+    "src/VillaPackagePanel.tsx",
+    "src/api.ts",
+    "src/cms-publish-sync.ts",
+    "src/cms.tsx",
+    "src/merchantStore.ts",
+    "src/navigation.ts",
+    "src/packagePlans.ts",
+    "src/prototype.tsx",
+    "tsconfig.backend.json"
+  ],
+  "environment": [
+    {
+      "name": "DATABASE_URL",
+      "requirement": "จำเป็น (หรือ VillaCheck_DATABASE_URL)",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "DIRECT_URL",
+      "requirement": "จำเป็นตอน migration",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "APP_URL",
+      "requirement": "จำเป็น HTTPS",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "NODE_ENV",
+      "requirement": "จำเป็น production",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "OTP_SECRET",
+      "requirement": "จำเป็นสำหรับ OTP",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "SMTP_HOST",
+      "requirement": "จำเป็นเมื่อใช้ SMTP OTP",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "SMTP_PORT",
+      "requirement": "จำเป็นเมื่อใช้ SMTP",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "SMTP_SECURE",
+      "requirement": "จำเป็นเมื่อใช้ SMTP",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "SMTP_USER",
+      "requirement": "ตามผู้ให้บริการ SMTP",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "SMTP_PASSWORD",
+      "requirement": "ตามผู้ให้บริการ SMTP",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "SMTP_FROM",
+      "requirement": "จำเป็นเมื่อใช้ SMTP",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "OMISE_TEST_ENABLED",
+      "requirement": "จำเป็นต้องปิดใน production ปัจจุบัน",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "OMISE_TEST_SECRET_KEY",
+      "requirement": "จำเป็นเฉพาะทดสอบ Omise",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "CRON_SECRET",
+      "requirement": "จำเป็นสำหรับ scheduled worker",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "ADMIN_EMAIL",
+      "requirement": "จำเป็นเฉพาะ bootstrap Admin",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "ADMIN_PASSWORD",
+      "requirement": "จำเป็นเฉพาะ bootstrap Admin",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "SEED_DEMO_ACCOUNTS",
+      "requirement": "จำเป็นต้องปิด",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "SEED_PUBLIC_DEMO_DATA",
+      "requirement": "จำเป็นต้องปิด",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "DEMO_MODE",
+      "requirement": "จำเป็นต้องปิด และตรวจ DB setting",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "COOKIE_SECURE",
+      "requirement": "production บังคับ Secure อยู่แล้ว",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "BACKUP_SECRET",
+      "requirement": "จำเป็นสำหรับ encrypted backup",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "BACKUP_DATABASE_URL",
+      "requirement": "จำเป็นสำหรับ scheduled backup; manual มี fallback",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "GOOGLE_CLIENT_ID",
+      "requirement": "เฉพาะเปิด Google Login",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "GOOGLE_CLIENT_SECRET",
+      "requirement": "เฉพาะเปิด Google Login",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "LINE_CHANNEL_ID",
+      "requirement": "เฉพาะเปิด LINE Login",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "LINE_CHANNEL_SECRET",
+      "requirement": "เฉพาะเปิด LINE Login",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "FACEBOOK_APP_ID",
+      "requirement": "เฉพาะเปิด Facebook Login",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "FACEBOOK_APP_SECRET",
+      "requirement": "เฉพาะเปิด Facebook Login",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "FACEBOOK_LOGIN_ENABLED",
+      "requirement": "เฉพาะเปิด Facebook Login",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "THAIBULKSMS_API_KEY",
+      "requirement": "เฉพาะเลือก ThaiBulkSMS",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "THAIBULKSMS_API_SECRET",
+      "requirement": "เฉพาะเลือก ThaiBulkSMS",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "THAIBULKSMS_EMAIL_OTP_TEMPLATE_ID",
+      "requirement": "เฉพาะ Email OTP provider",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "THAIBULKSMS_OTP_KEY",
+      "requirement": "เฉพาะ SMS OTP provider",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "THAIBULKSMS_OTP_SECRET",
+      "requirement": "เฉพาะ SMS OTP provider",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "THAIBULKSMS_SENDER",
+      "requirement": "เฉพาะ SMS API",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "ALERT_WEBHOOK_URL",
+      "requirement": "เฉพาะเปิดแจ้งเตือน monitoring",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "PUBLIC_URL",
+      "requirement": "จำเป็นเมื่อรัน health/operations probe กับ host ที่เลือก",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "BACKUP_DIR",
+      "requirement": "จำเป็นเมื่อใช้ scheduled backup",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "BACKUP_RETENTION_DAYS",
+      "requirement": "จำเป็นต้องกำหนดนโยบาย retention",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "BACKUP_SCHEMA",
+      "requirement": "ตัวเลือกเมื่อใช้ schema แยก",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "BACKEND_HOST",
+      "requirement": "จำเป็นตาม topology backend",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "BACKEND_PORT",
+      "requirement": "จำเป็นตาม topology backend",
+      "localStatus": "ตั้งค่าใน local (ยังไม่ตรวจผู้ให้บริการ)",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "FACEBOOK_GRAPH_VERSION",
+      "requirement": "เฉพาะเปิด Facebook Login",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "DATABASE_URL_UNPOOLED",
+      "requirement": "ตัวเลือก direct migration",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    },
+    {
+      "name": "VillaCheck_DATABASE_URL",
+      "requirement": "ตัวเลือกแทน DATABASE_URL",
+      "localStatus": "ไม่พบค่าที่ไม่ว่างใน .env local",
+      "productionStatus": "ยังไม่ได้เข้าถึง configuration ของ host"
+    }
+  ],
+  "secretPatternFindings": [
+    {
+      "file": "server/backup.test.mjs",
+      "rule": 5,
+      "requiresReview": true
+    }
+  ]
+}

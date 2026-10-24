@@ -1,3 +1,7 @@
+import {packagePricing} from "./package-promotions.mjs"
+import {promisify} from "node:util"
+import generatePromptPay from "promptpay-qr"
+import QRCode from "qrcode"
 const invoicePerVilla = id => ["basic","starter","pro","premium"].includes(id);
 import {packageContent} from "./package-content.mjs";
 import {quoteCoupon} from "./promotions.mjs"
@@ -11,6 +15,7 @@ import {
   randomBytes,
   randomUUID,
   scryptSync,
+  scrypt,
   timingSafeEqual,
 } from "node:crypto"
 export const packages = {
@@ -29,6 +34,14 @@ export function verifyPassword(password, value) {
     Buffer.from(hash, "hex"),
     scryptSync(password, salt, 64),
   )
+}
+const derivePassword=promisify(scrypt)
+// Same salt:hex format and scrypt defaults as verifyPassword; no stored hash changes.
+export async function verifyPasswordAsync(password,value) {
+ const [salt,encoded]=String(value||"").split(":")
+ const expected=typeof encoded==="string"&&/^[a-f0-9]{128}$/i.test(encoded)?Buffer.from(encoded,"hex"):null
+ const actual=await derivePassword(password,salt||"invalid-password-record",64)
+ return expected!==null&&timingSafeEqual(expected,actual)
 }
 export function openDatabase(path) {
   if (path !== ":memory:")
@@ -238,23 +251,29 @@ async function createInvoiceInternal(db, villa, appUrl, paymentInstructions="") 
   const plan = await db
     .prepare("SELECT * FROM package_catalog WHERE id=?")
     .get(villa.package_id)
+  if(plan.id === "basic")throw Object.assign(Error("Basic uses a promotion grant; paid signup and renewal terms require confirmation"),{status:409})
   const couponRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get('merchant_coupon:'+villa.owner_id)
   const coupon=plan.amount>0?await quoteCoupon(db,couponRow?JSON.parse(couponRow.value):'',villa.owner_id,plan):null
-  const amount=coupon?coupon.amount:plan.amount
+  const promotion=await packagePricing(db,plan)
+  if(promotion.pricingPending)throw Object.assign(Error("การปัดเศษส่วนลดรอยืนยัน"),{status:409})
+  if(coupon&&promotion.promotion)throw Object.assign(Error("การใช้คูปองร่วมโปรโมชั่นรอยืนยัน"),{status:409})
+  const amount=coupon?coupon.amount:promotion.netAmount
+  if(amount===0)throw Object.assign(Error("ยอดสุทธิ 0 บาท ไม่สร้าง charge หรือ invoice เรียกเก็บ ระยะสิทธิ์และวิธีเปิดระดับฟรีรอยืนยัน"),{status:409})
   const months=invoicePerVilla(plan.id) && plan.billing_cycle === "MONTHLY" ? 1 : monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
   const created = new Date().toISOString()
   const instructions=await cmsPaymentSnapshot(db,paymentInstructions)
   const release=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
-  const bankQrImage=(await receivingBank(db))?.qrImage || (release?JSON.parse(release.value).content.site.paymentQrImage || "":"")
+  const receiver=await receivingBank(db)
+  const bankQrImage=receiver && amount>0 ? await QRCode.toDataURL(generatePromptPay(receiver.promptpayId,{amount:amount/100}),{width:512,margin:4}) : (release?JSON.parse(release.value).content.site.paymentQrImage || "":"")
   // Snapshot the published validity rule on each new invoice; existing invoices retain their terms.
   await db
     .prepare(
       "INSERT INTO invoices(id,villa_id,amount,months,created,updated_at) VALUES (?,?,?,?,?,?)",
     )
     .run(id, villa.id, amount, months, created, created)
+  await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run("invoice_package_promotion:"+id,JSON.stringify(promotion))
   if(coupon){await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_discount:${id}`,JSON.stringify(coupon));await db.prepare("DELETE FROM system_settings WHERE key=?").run("merchant_coupon:"+villa.owner_id)}
   await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_bank_qr:${id}`,JSON.stringify(bankQrImage))
-  const receiver=await receivingBank(db)
   if(receiver)await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_receiving_bank:${id}`,JSON.stringify(receiver))
   const subject = `VillaCheck: ${villa.name} ${
     villa.payments === 0 ? "ผ่านการอนุมัติ" : "ต่ออายุ QR"

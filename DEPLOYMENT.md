@@ -1,20 +1,20 @@
 # VillaCheck deployment, UAT and operations
 
-Updated 19 October 2026. Current runtime: Next.js 16 / React 19, NestJS 12, Prisma 7, PostgreSQL and Node.js 24. Historical Vite/dist/raw-server instructions are obsolete.
+Updated 24 October 2026. Current runtime: Next.js 16 / React 19, NestJS 12, Prisma 7, PostgreSQL and Node.js 24. Historical Vite/dist/raw-server instructions are obsolete.
 
 ## Deployment
 
-Vercel framework is Next.js; `npm ci`, `npm run build`, output `.next`. The build generates Prisma, compiles Nest and deploys additive database migrations before Next build. Do not point local builds or preview deployments at an unintended production database. `pages/api/[...route].ts` forwards API requests into the shared Nest runtime. Direct standalone Nest is optional.
+Vercel framework is Next.js; `npm ci`, `npm run build`, output `.next`. The build generates Prisma, compiles Nest and builds Next only. Run `npm run db:deploy` separately as an explicit operator step against the intended database. Do not point local builds or preview deployments at an unintended production database. `pages/api/[...route].ts` forwards API requests into the shared Nest runtime. Direct standalone Nest is optional.
 
 Required private configuration: `DATABASE_URL` (pooled runtime), `DIRECT_URL` (direct migration connection where supported), HTTPS `APP_URL`, initial `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Existing Admin passwords are not overwritten by changing environment variables. Set support values through CMS. No secrets may use NEXT_PUBLIC prefixes or enter Git/audit files.
 
 Migrations preserve existing data and QR identities; never edit deployed migrations, use migrate reset, or use db push against production. scripts/deploy-db.mjs handles legacy baselining and migration lock retry. Diagnose lock holders before terminating a confirmed abandoned deployment; do not disable locking.
 
-`SEED_DEMO_ACCOUNTS=false` for operator-owned real production data. Demo fixtures and Demo Mode are separate concerns: inspect existing demo content and payment state before approving any cleanup. Do not delete fixtures or reset a production database as part of UAT.
+`SEED_DEMO_ACCOUNTS=false` and `SEED_PUBLIC_DEMO_DATA=false` for operator-owned real production data. Public demo seed never runs during build and requires explicit opt-in. Demo fixtures and Demo Mode are separate concerns: inspect existing demo content and payment state before approving any cleanup. Do not delete fixtures or reset a production database as part of UAT.
 
-## Independent Admin approval
+## Single authorized Admin approval
 
-CMS editor and banking proposer submit requests. Another named Admin reviews proposed details/current draft Preview and approves or rejects with reason. Proposer and reviewer cannot be the same account; stale revisions require re-submission. An approved bank change affects new invoices only. CMS restore returns content to draft, requiring a new approval.
+A single authorized Admin can propose and approve a bank change, including their own proposal. A configured reviewer permission still applies; duplicate/stale approvals are rejected. Actor/approver/time/outcome and durable Owner notifications are retained. External Owner delivery requires a confirmed recipient/channel. Admin publishes CMS directly after reviewing Preview. Approved bank changes affect new invoices only; old receiver/amount snapshots remain.
 
 Use `node --env-file-if-exists=.env scripts/provision-admin.mjs` only in the designated environment, with `NEW_ADMIN_EMAIL`, `NEW_ADMIN_NAME`, `NEW_ADMIN_PASSWORD` in the operator environment. The script refuses existing emails and never prints passwords. Provisioning is an operator action, not public signup. Do not share Admin credentials for approval separation.
 
@@ -44,10 +44,10 @@ Admin Settings → acceptance register records area, result, reviewer/time and e
 
 1. User: register/login, verify OTP, home refresh/new tab, dropdown logout, public/private QR fields, report and response.
 2. Merchant: Google/LINE real consent, OTP real login, explicit account linking, profile, package selection, valid/invalid/expired coupon, add Villa with actual permitted PDF/image, edit/resubmit.
-3. Admin: independent CMS/bank proposal/review, self-approval denial, stale revision, rejection reason, pending/approved Villa pages, full data/document view and role denial.
+3. Admin: independent CMS/bank proposal/review, single-Admin approval with role checks, stale revision, rejection reason, pending/approved Villa pages, full data/document view and role denial.
 4. Finance: use business-approved bank/PromptPay only. Create invoice; confirm price/discount/duration/receiver. Automatic and selected mail must include correct bank PNG; compare decoded payload and name shown by banking app. No transfer until amount/test transaction explicitly authorized by finance.
 5. Slip: upload, reject/resubmit, confirm once, verify no activation before confirmation and no double extension. Check renewal/current upgrade/capacity constraints and immutable bank data on old invoices.
-6. CMS: approved real banners/FAQ/contact/social/policies; draft Preview, second-Admin publish, public render, history restore/reapproval. Do not treat revision 0/default content as business acceptance.
+6. CMS: approved real banners/FAQ/contact/social/policies; draft Preview, authorized-Admin publish, public render, history restore/reapproval. Do not treat revision 0/default content as business acceptance.
 7. Physical iPhone/iPad Safari: record model/OS if available, portrait/landscape, menu, login/logout, file picker, upload feedback, forms, QR full-size save/download. Browser simulation is separately labeled.
 8. Operations: SMTP inbox/spam/retry, provider quota, scheduled worker last run, backup/restore drill, alert delivery, Admin training and agreed escalation/SLA.
 
@@ -55,7 +55,7 @@ Release decision: record named business/finance reviewers and their Pass/Fail ev
 
 ## Useful commands
 
-`npm run typecheck`; `npm run lint`; `npm run check:health`; `npm run test:backend` with TEST_DATABASE_URL for full PostgreSQL integration. `npm run build` has database side effects; use a safe isolated audit harness for local validation.
+`npm run typecheck`; `npm run lint`; `npm run check:health`; `npm run test:backend` with TEST_DATABASE_URL for full PostgreSQL integration. `npm run build` has no migration/seed step. Run `node scripts/test-postgres.mjs --browser` for isolated PostgreSQL and optional local Chrome acceptance.
 
 ## Current agreed delivery scope (19 October 2026)
 
@@ -76,7 +76,7 @@ SMTP connection-only verification is available in Admin Settings and does not se
 - Receiving account: waiting for the new VillaCheck company account. Existing bank/name/number/account-type/PromptPay fields remain available; preserve Dummy testing and do not claim a real account or transfer is approved.
 - SMTP: provider or sending account awaiting confirmation. Preserve historical SMTP 535 evidence; configure provider-approved credentials only after confirmation.
 - ThaiBulkSMS: user confirmed Token purchased and Sender Name submitted, pending provider approval. Existing OTP results do not certify the new Sender Name. No additional test messages sent for this confirmation.
-- Designated approval Admin: support@villacheckth.com. The private `approval:reviewer_email` setting limits bank/CMS review to this account and prevents it proposing bank/CMS requests. Other Admins can propose but cannot approve/reject. Self-approval protection remains enforced. Manage this setting through authorized operator configuration, not public signup. Initial login credential is stored privately in the operator keys directory, outside Git; do not paste it into reports or chat.
+- Designated approval Admin: support@villacheckth.com. The private `approval:reviewer_email` setting limits bank review to this account. It may also propose and approve its own bank request; dual approval is not required. Other Admins can propose but cannot approve/reject bank requests while this restriction is configured. Manage this setting through authorized operator configuration, not public signup. Initial login credential is stored privately in the operator keys directory, outside Git; do not paste it into reports or chat.
 - UAT owners: คุณปริ้นท์ and คุณเกมส์. Naming owners is not a Pass or Production Acceptance; record their actual evidence in the acceptance register.
 - Facebook stays disabled pending Meta approval; preserve OAuth implementation and callback configuration.
 
@@ -87,3 +87,11 @@ SMTP connection-only verification is available in Admin Settings and does not se
 - Vercel team/project: `villa-check/design-villacheck`. Git integration deploys company `main`.
 - Production: https://design-villacheck.vercel.app/
 - Vercel Dashboard Framework Preset: `nextjs`, matching `vercel.json`. Build command `npm run build` and output `.next` are declared in `vercel.json`; Dashboard overrides may remain unset.
+
+## Phase 3 staging preparation
+
+Use [the staging guide](docs/staging-deployment-guide.md) and [external acceptance checklist](docs/staging-external-acceptance.md). No staging/production deployment was performed by the preparation session. Vercel runs Next/Nest/Prisma together; Render is a separate API and is not automatically wired to the frontend.
+
+Production-mode runtime now defaults `PAYMENT_ACCESS_MODE` to `DISABLED`; production `LEGACY_MANUAL` is rejected. Isolated staging may enable `OMISE_TEST` with test-only keys and explicitly selected test methods. Do not rely on an Omise flag or Demo UI alone to disable old manual endpoints. The gate holds invoice/bank-notification workers and preserves histories; see [the manual shutdown plan](docs/legacy-manual-shutdown-plan.md), including the ingress restriction required when rolling back to old code.
+
+Set `APP_ENV=staging` and exact `STAGING_EMAIL_ALLOWLIST` before Email OTP/SMTP acceptance. An empty allowlist fails closed. `scripts/staging-diagnostics.mjs` is configuration-only by default; `--verify-smtp` checks connectivity without sending mail and still does not prove Inbox delivery. No live payment mode is implemented or approved.

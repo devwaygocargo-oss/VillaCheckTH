@@ -48,7 +48,7 @@ test('private owner evidence requires two files, consent, current package, and m
  })
  await t.test('Admin confirms face, register and owner separately; only approved summary is public',async()=>{
   assert.equal((await act({action:'review',status:'accepted'},admin)).status,400)
-  let r=await act({action:'review',status:'accepted',faceMatched:true,houseMatched:true,ownerConfirmed:true},admin);assert.equal(r.status,200);revision=r.value.submission.revision
+  let r=await act({action:'review',status:'accepted',faceMatched:true,houseMatched:true,ownerConfirmed:true},admin);assert.equal(r.status,200);revision=r.value.submission.revision;assert.notEqual(r.value.qr,villa.qr);villa.qr=r.value.qr
   const publicRow=(await request('/public/qr/'+villa.qr)).value.ownerVerification;assert.equal(publicRow.status,'accepted');assert.ok(publicRow.reviewedAt);assert.equal(publicRow.files,undefined);assert.equal(publicRow.ownerName,undefined)
   const subscription=await db.prepare('SELECT lifecycle FROM subscriptions WHERE owner_id=?').get(owner.id);assert.ok(subscription)
   await db.prepare("UPDATE subscriptions SET lifecycle='SUSPENDED' WHERE owner_id=?").run(owner.id);assert.equal((await request('/public/qr/'+villa.qr)).value.ownerVerification,null)
@@ -57,11 +57,11 @@ test('private owner evidence requires two files, consent, current package, and m
   await db.prepare("UPDATE villas SET expires=? WHERE id=?").run('2000-01-01',villa.id);assert.equal((await request('/public/qr/'+villa.qr)).value.ownerVerification,null)
   await db.prepare("UPDATE villas SET expires=? WHERE id=?").run(new Date(Date.now()+86400000).toISOString(),villa.id)
   assert.equal((await act({action:'review',status:'changes',reason:''},admin)).status,400)
-  r=await act({action:'review',status:'changes',reason:'กรุณาส่งภาพใหม่'},admin);assert.equal(r.status,200);revision=r.value.submission.revision
+  r=await act({action:'review',status:'changes',reason:'กรุณาส่งภาพใหม่'},admin);assert.equal(r.status,200);revision=r.value.submission.revision;villa.qr=r.value.qr
   assert.equal((await request('/public/qr/'+villa.qr)).value.ownerVerification,null)
-  r=await act({action:'upload',slot:'face',file:face});assert.equal(r.status,200);revision=r.value.submission.revision;assert.equal((await request('/documents/'+faceId,undefined,merchant)).status,404)
+  r=await act({action:'upload',slot:'face',file:face});assert.equal(r.status,200);revision=r.value.submission.revision;assert.equal((await request('/documents/'+faceId,undefined,merchant)).status,200)
   r=await act({action:'submit',ownerName:'Dummy Owner',consent:true});assert.equal(r.status,200);revision=r.value.submission.revision
-  r=await act({action:'review',status:'rejected',reason:'หลักฐานยังไม่ตรงกัน'},admin);assert.equal(r.status,200)
+  r=await act({action:'review',status:'rejected',reason:'หลักฐานยังไม่ตรงกัน'},admin);assert.equal(r.status,200);villa.qr=r.value.qr
   assert.equal((await request('/public/qr/'+villa.qr)).value.ownerVerification,null)
  })
  await t.test('Basic Verify is exempt, removed from the owner-review queue, and historical evidence is retained',async()=>{

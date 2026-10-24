@@ -3,17 +3,16 @@ const pages = new Set(["admin-villa-page","admin-advertising","admin-reviews","a
 const adminReturnKey="villacheck-admin-return";
 const returnableAdmin=(page:string)=>pages.has(page)&&page.startsWith("admin-")&&!["admin-login","admin-verify","admin-villa-page"].includes(page);
 export function lastAdminPage(){
- try{const saved=JSON.parse(sessionStorage.getItem(adminReturnKey)||"null");if(saved&&returnableAdmin(saved.page)&&typeof saved.item==="string")return {page:saved.page as import("./prototype").Page,item:saved.item};}catch{}
+ try{const saved=JSON.parse(sessionStorage.getItem(adminReturnKey)||"null");if(saved&&returnableAdmin(saved.page)&&typeof saved.item==="string")return {page:saved.page as import("./prototype").Page,item:saved.item};}catch{/* Storage may be unavailable in private browsing. */}
  return {page:"admin-approved-villas" as import("./prototype").Page,item:""};
 }
 function rememberAdminPage(location:{page:string;item:string}){
- try{if(location.page==="admin-login")sessionStorage.removeItem(adminReturnKey);else if(returnableAdmin(location.page))sessionStorage.setItem(adminReturnKey,JSON.stringify(location));}catch{}
+ try{if(location.page==="admin-login")sessionStorage.removeItem(adminReturnKey);else if(returnableAdmin(location.page))sessionStorage.setItem(adminReturnKey,JSON.stringify(location));}catch{/* Storage may be unavailable in private browsing. */}
 }
 function readLocation() {
   const params = new URLSearchParams(window.location.hash.slice(1));
   const requestedAdmin = params.get("page")?.startsWith("admin-");
   const adminPath = /^\/admin(?:\/|$)/.test(window.location.pathname);
-  if((requestedAdmin || adminPath) && window.location.hostname.endsWith(".vercel.app") && window.location.hostname !== "design-villacheck.vercel.app"){window.location.replace("https://design-villacheck.vercel.app/admin/login");return {page:"admin-login",item:""};}
   if(adminPath && params.has("page") && !requestedAdmin){window.location.replace("/#"+params);return {page:"home",item:""};}
   if(requestedAdmin && !adminPath){window.location.replace("/admin/login");return {page:"admin-login",item:""};}
   if(window.location.pathname === "/admin/login")return {page:"admin-login",item:""};

@@ -1,3 +1,4 @@
+import {createUser} from "./database.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import {spawn} from "node:child_process"
@@ -7,17 +8,17 @@ import {openTestDatabase} from "./test-database.mjs"
 import {seedDemo} from "./demo-seed.mjs"
 test("Next production serves React and routes API through NestJS/Prisma",{skip:!process.env.TEST_DATABASE_URL || !existsSync('.next/BUILD_ID'),timeout:45000},async t=>{
  const db=await openTestDatabase();await seedDemo(db,{password:"NextMaterialsPassword123"});const reservation=createServer();await new Promise(r=>reservation.listen(0,"127.0.0.1",r));const port=reservation.address().port;await new Promise(r=>reservation.close(r));
- const child=spawn(process.execPath,["node_modules/next/dist/bin/next","start","--port",String(port),"--hostname","127.0.0.1"],{env:{...process.env,NODE_ENV:"production",DATABASE_URL:db.testConnectionString,APP_URL:"https://villacheck.test",ADMIN_EMAIL:"admin@next.test",ADMIN_PASSWORD:"AdminPassword123",NEXT_TELEMETRY_DISABLED:"1"},stdio:"ignore"});
+ const child=spawn(process.execPath,["node_modules/next/dist/bin/next","start","--port",String(port),"--hostname","127.0.0.1"],{env:{...process.env,NODE_ENV:"production",DATABASE_URL:db.testConnectionString,APP_URL:"https://villacheck.test",ADMIN_EMAIL:"admin@next.test",ADMIN_PASSWORD:"AdminPassword123",NEXT_TELEMETRY_DISABLED:"1",SMTP_HOST:"",SMTP_FROM:"",OTP_SECRET:"",OMISE_TEST_ENABLED:"false"},stdio:"ignore"});
  t.after(async()=>{if(child.exitCode===null){child.kill("SIGTERM");await new Promise(r=>child.once("exit",r));}await db.close()});
  const base=`http://127.0.0.1:${port}`;let ready=false;
  for(let n=0;n<60;n++){try{if((await fetch(base)).status===200){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,200));}
- assert.ok(ready,"Next production started");assert.match(await (await fetch(base)).text(),/VillaCheck/);
+ assert.ok(ready,"Next production started");const page=await fetch(base),html=await page.text();assert.match(html,/VillaCheck/);assert.match(html,/property="og:title"/);assert.equal((html.match(/name="description"/g)||[]).length,1);assert.equal(page.headers.get("x-frame-options"),"DENY");
  const image=await fetch(base+'/demo/villas/villa-1.jpg');assert.equal(image.status,200);assert.match(image.headers.get('content-type'),/image\/jpeg/);
  const health=await fetch(base+"/api/health");assert.equal(health.status,200);assert.deepEqual(await health.json(),{ok:true});
  const packages=await fetch(base+"/api/packages");assert.equal(packages.status,401);
  const admin=await fetch(base+"/api/auth/admin-login",{method:"POST",headers:{"Content-Type":"application/json",Origin:"https://villacheck.test"},body:JSON.stringify({email:"admin@next.test",password:"AdminPassword123"})});assert.equal(admin.status,200);const adminCookie=admin.headers.get('set-cookie').split(';')[0];
  const memberPackages=await fetch(base+"/api/packages",{headers:{Cookie:adminCookie}});assert.equal(memberPackages.status,200);assert.equal((await memberPackages.json()).packages.length,4);
- const r=await fetch(base+"/api/auth/register-user",{method:"POST",headers:{"Content-Type":"application/json",Origin:"https://villacheck.test"},body:JSON.stringify({name:"Customer",email:"customer@next.test",password:"CustomerPassword123"})});assert.equal(r.status,200);const session=await r.json();assert.equal(session.user.role,"user");const cookie=r.headers.get('set-cookie').split(';')[0];assert.match(r.headers.get('set-cookie'),/Secure/);
+ const attempted=await fetch(base+"/api/auth/register-user",{method:"POST",headers:{"Content-Type":"application/json",Origin:"https://villacheck.test"},body:JSON.stringify({name:"Customer",email:"customer@next.test",password:"CustomerPassword123"})});assert.equal(attempted.status,503);assert.equal(await db.prepare("SELECT id FROM users WHERE email='customer@next.test'").get(),undefined);await createUser(db,"customer@next.test","CustomerPassword123","Customer","user");const r=await fetch(base+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json",Origin:"https://villacheck.test"},body:JSON.stringify({email:"customer@next.test",password:"CustomerPassword123"})});assert.equal(r.status,200);const session=await r.json();assert.equal(session.user.role,"user");const cookie=r.headers.get('set-cookie').split(';')[0];assert.match(r.headers.get('set-cookie'),/Secure/);
  const blocked=await fetch(base+"/api/admin/users",{headers:{Cookie:cookie}});assert.equal(blocked.status,403);
  // Exercise private, chunked document storage through the actual Next -> Nest
  // -> Prisma adapter, including PostgreSQL bytea reads and session protection.

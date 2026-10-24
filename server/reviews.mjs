@@ -1,3 +1,6 @@
+import {trustDto} from "./catalog.mjs"
+import {resolvePublicQr} from "./public-revision.mjs"
+import {packageEntitlements} from "./package-entitlements.mjs"
 import { randomUUID } from "node:crypto"
 import { audit } from "./database.mjs"
 const fail = (status, message) => {
@@ -13,9 +16,9 @@ const clean = (value, max = 4000) => {
     fail(400, "กรุณาระบุข้อความให้ถูกต้อง")
   return value.trim()
 }
-const publicationPolicy = "แพ็กเกจต่ำกว่า 2,990 บาทเผยแพร่รีวิวทันที ส่วนแพ็กเกจ 2,990 บาทขึ้นไปรอ Admin ตรวจอนุมัติก่อนเผยแพร่ ใช้กติกาเดียวกันทุกคะแนน"
-const reviewVilla = (db, qr) => db.prepare("SELECT v.id,v.name,v.package_id,p.name AS package_name,p.amount FROM villas v JOIN package_catalog p ON p.id=v.package_id WHERE v.qr=? AND v.status='approved'").get(qr)
-const requiresModeration = (villa) => villa.amount >= 299000
+const publicationPolicy = "เผยแพร่รีวิวตามสิทธิ์การตรวจสอบของแพ็กเกจ ใช้กติกาเดียวกันทุกคะแนน"
+const reviewVilla=async(db,qr)=>{const villa=await resolvePublicQr(db,qr);if(villa?.status!=="approved"||(await trustDto(db,villa)).qrStatus!=="ACTIVE")return null;const plan=await db.prepare("SELECT name,amount FROM package_catalog WHERE id=?").get(villa.package_id);return {...villa,package_name:plan.name,amount:plan.amount}}
+const requiresModeration = async (db,villa) => (await packageEntitlements(db,villa.package_id)).reviewModerationRequired
 const key = (id) => "customer_review:" + id
 const read = async (db) =>
   (
@@ -59,7 +62,7 @@ export async function reviewsApi(db, user, req, path, url, body) {
           reply: r.reply || null,
         })),
       policy: publicationPolicy,
-      moderationRequired: requiresModeration(villa),
+      moderationRequired: await requiresModeration(db,villa),
     }
   }
   if (!user) fail(401, "กรุณาเข้าสู่ระบบ")
@@ -103,7 +106,7 @@ export async function reviewsApi(db, user, req, path, url, body) {
         )
       )
         fail(409, "คุณส่งรีวิวที่พักนี้แล้ว ดูสถานะหรือขอทบทวนผลในรีวิวของฉัน")
-      const moderationRequired = requiresModeration(villa)
+      const moderationRequired = await requiresModeration(db,villa)
       const now = new Date().toISOString()
       const r = {
         id: randomUUID(),

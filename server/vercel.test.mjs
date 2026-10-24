@@ -1,11 +1,13 @@
+import {createUser} from "./database.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { createServer } from "node:http"
 import { createVercelHandler } from "./legacy-vercel.mjs"
 import { openTestDatabase } from "./test-database.mjs"
 
-async function serve(handler) {
+async function serve(handler,platformHost) {
   const server = createServer(async (req, res) => {
+    if(platformHost)req.headers.host=platformHost // Simulate the platform host preserved by Vercel ingress.
     const url = new URL(req.url, "http://localhost")
     req.query = Object.fromEntries(url.searchParams)
     if (req.method === "POST") {
@@ -41,6 +43,7 @@ test(
   async (t) => {
     const db = await openTestDatabase()
     const env = {
+      VERCEL: "1", // Simulate the trusted platform, including its overwritten IP header.
       VillaCheck_DATABASE_URL: db.testConnectionString,
       APP_URL: "https://design-villacheck.vercel.app",
       ADMIN_EMAIL: "admin-online@example.com",
@@ -50,8 +53,8 @@ test(
     }
     const a = createVercelHandler(env),
       b = createVercelHandler(env)
-    const one = await serve(a),
-      two = await serve(b)
+    const one = await serve(a,new URL(env.APP_URL).host),
+      two = await serve(b,new URL(env.APP_URL).host)
     t.after(async () => {
       await Promise.all([
         new Promise((resolve) => one.server.close(resolve)),
@@ -73,16 +76,20 @@ test(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-forwarded-for": ip,
+          "x-vercel-forwarded-for": ip,
           Origin: env.APP_URL,
         },
         body: JSON.stringify(data),
       })
-    const registration = await post(one.base, "auth/register-user", {
+    const attempted = await post(one.base, "auth/register-user", {
       name: "Online User",
       email: "online@example.com",
       password: "Online-password-123",
     })
+    assert.equal(attempted.status,503)
+    assert.equal(await db.prepare("SELECT id FROM users WHERE email='online@example.com'").get(),undefined)
+    await createUser(db,"online@example.com","Online-password-123","Online User","user")
+    const registration=await post(one.base,"auth/login",{email:"online@example.com",password:"Online-password-123"})
     assert.equal(registration.status, 200)
     const member = await registration.json()
     assert.equal(member.user.role, "user")

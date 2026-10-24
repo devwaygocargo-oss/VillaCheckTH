@@ -54,19 +54,10 @@ export async function currentAccount() {
   accountRead={path,epoch,promise}
   return promise
 }
-export async function authenticate(
-  email: string,
-  password: string,
-  name?: string,
-  role: "merchant" | "user" = "merchant",
-  businessNameEn?: string,
-) {
-  const session = await api<{ user: Account; csrf: string }>(
-    name === undefined ? "/auth/login" : role === "user" ? "/auth/register-user" : "/auth/register",
-    { email, password, name, businessNameEn },
-  )
-  csrf = session.csrf
-  return session.user
+export async function authenticate(email: string,password: string) {
+ const session=await api<{user:Account;csrf:string}>("/auth/login",{email,password})
+ csrf=session.csrf
+ return session.user
 }
 export async function authenticateAdmin(email:string,password:string) {
   const session=await api<{user:Account;csrf:string}>("/auth/admin-login",{email,password});
