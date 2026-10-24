@@ -172,9 +172,9 @@ function Header({ page, go, account, preview=false }: { page: Page; go: (page: P
 
 function VillaCard({ villa, onClick }: { villa: typeof villas[0] & {premiumBanner?:boolean;isDemo?:boolean}; onClick: () => void }) {
   return <article className="villa-card" onClick={onClick}>
-    <div className="card-image"><img src={villa.image} alt={`ภาพ ${villa.name}`} /><Badge pending={villa.status !== "ตรวจสอบข้อมูลแล้ว"}>{villa.status}</Badge></div>
+    <div className="card-image"><img src={villa.image} alt={`ภาพ ${villa.name}`} /><Badge pending={villa.isDemo || villa.status !== "ตรวจสอบข้อมูลแล้ว"}>{villa.isDemo?"ข้อมูลสาธิต · ไม่ใช่ผลตรวจที่พักจริง":villa.status}</Badge></div>
     <div className="card-body">
-      <h3>{villa.name}</h3>{villa.isDemo&&<small>ข้อมูลสาธิต · ไม่ใช่ที่พักจริงสำหรับจอง</small>}{villa.premiumBanner && <small>✦ Premium Verified</small>}
+      <h3>{villa.name}</h3>{villa.isDemo&&<small>ข้อมูลสาธิต · ไม่ใช่ที่พักจริงสำหรับจอง</small>}{!villa.isDemo && villa.premiumBanner && <small>✦ Premium Verified</small>}
       <div className="villa-meta"><span><Icon name="pin" size={17} />{villa.province}</span>{villa.guests !== "ไม่ระบุ" && <span><Icon name="users" size={17} />สูงสุด {villa.guests}</span>}</div>
       <div className="card-foot"><span><Icon name="clock" size={15} />อัปเดตล่าสุด {villa.updated}</span><button aria-label={`ดู ${villa.name}`} onClick={event => { event.stopPropagation(); onClick(); }}><Icon name="arrow" size={18} /></button></div>
     </div>
