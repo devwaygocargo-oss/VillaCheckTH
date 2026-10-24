@@ -16,7 +16,7 @@ test('User Merchant and Admin share the same demo Villa QR checks reports and re
  const m=(await req('/state',undefined,merchant)).value,a=(await req('/state',undefined,admin)).value,villa=m.villas.find(v=>v.name==='Sea Sky Demo Villa')
  await t.test('all roles refer to one Villa identity and QR while ownership remains scoped',async()=>{
   const adminVilla=a.villas.find(v=>v.id===villa.id);assert.equal(adminVilla.qr,villa.qr);assert.equal(adminVilla.document.data,villa.document.data);assert.equal(adminVilla.guestCapacity,villa.guestCapacity)
-  const shown=(await req('/public/qr/'+villa.qr,undefined,user)).value;assert.equal(shown.name,villa.name);assert.equal(shown.phone,villa.phone);assert.equal(shown.accountNumber,villa.accountNumber)
+  const shown=(await req('/public/qr/'+villa.qr,undefined,user)).value;assert.equal(shown.name,villa.name);assert.equal(shown.phone,undefined);assert.equal(shown.accountNumber,undefined)
   assert.ok(!(await req('/state',undefined,regional)).value.villas.some(v=>v.id===villa.id))
   const docs=await fetch(base.replace('/api','')+villa.document.data,{headers:{Cookie:admin.cookie}});const text=await docs.text();assert.ok(text.includes(villa.id));assert.ok(text.includes(villa.email))
  })

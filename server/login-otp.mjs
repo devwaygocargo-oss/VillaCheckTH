@@ -1,3 +1,4 @@
+import {claimVerifiedEmail} from "./email-identity.mjs"
 import { cmsBusiness, cmsLoginConfig, otpTemplate } from "./cms-business.mjs"
 import {randomInt,randomUUID,randomBytes,createHmac,timingSafeEqual,createCipheriv,createDecipheriv,createHash} from 'node:crypto'
 import {createUser} from './database.mjs'
@@ -92,9 +93,8 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
    if(typeof data.challengeId!=='string'||!/^[-a-f0-9]{36}$/.test(data.challengeId)||typeof data.code!=='string'||!/^\d{6}$/.test(data.code))fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
    if(!config.otpSecret||config.otpSecret.length<32)fail(503,'OTP ยังไม่พร้อมใช้งาน')
    let verificationDiagnostic,verificationChannel;
-   const result=await db.transaction(async()=>{
     const row=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(data.challengeId)
-    if(!row||row.consumed||Number(row.expires)<=Date.now()||row.attempts>=5)return {invalid:true}
+    if(!row||row.consumed||Number(row.expires)<=Date.now()||row.attempts>=5)fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
     if(row.binding_user_id&&(!bindingUser||bindingUser.id!==row.binding_user_id||bindingUser.role!=='merchant'))fail(403,'ใช้บัญชี Merchant ที่เริ่มยืนยันช่องทางนี้')
     verificationChannel=row.channel;
     let valid;
@@ -114,6 +114,11 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
      }
     }else valid=timingSafeEqual(Buffer.from(row.code_hash,'hex'),Buffer.from(hash(config,row.id,data.code),'hex'))
     if(!verificationDiagnostic)verificationDiagnostic={category:valid?'OK':'INVALID_OTP'};
+   // Provider I/O is outside the global write transaction. Recheck replay,
+   // expiration and attempt limits atomically after the provider returns.
+   const result=await db.transaction(async()=>{
+    const current=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(data.challengeId)
+    if(!current||current.consumed||Number(current.expires)<=Date.now()||current.attempts>=5||current.code_hash!==row.code_hash)return {invalid:true}
     if(!valid){await db.prepare('UPDATE login_otps SET attempts=attempts+1 WHERE id=?').run(row.id);return {invalid:true}}
     await db.prepare('UPDATE login_otps SET consumed=1 WHERE id=?').run(row.id)
     if(row.binding_user_id){
@@ -128,13 +133,15 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
       await db.prepare("DELETE FROM oauth_identities WHERE provider='phone_otp' AND user_id=?").run(row.binding_user_id)
       await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,row.binding_user_id)
      }
-     return {user:await db.prepare('SELECT * FROM users WHERE id=?').get(row.binding_user_id)}
+     const boundUser=await db.prepare('SELECT * FROM users WHERE id=?').get(row.binding_user_id)
+     return {user:row.channel==='email'?await claimVerifiedEmail(db,boundUser):boundUser}
     }
     if(row.channel==='email'){
      const existing=await db.prepare('SELECT * FROM users WHERE email=?').get(row.destination)
      if(existing&&row.account_type==='merchant'&&existing.role!=='merchant')return {wrongAccount:true}
      if(!existing&&row.account_type==='merchant'&&row.purpose!=='register')return {unlinked:true}
-     return {user:existing||await createUser(db,row.destination,randomBytes(48).toString('hex'),row.destination.split('@')[0],row.account_type||'user')}
+     const verifiedUser=existing||await createUser(db,row.destination,randomBytes(48).toString('hex'),row.destination.split('@')[0],row.account_type||'user');
+     return {user:await claimVerifiedEmail(db,verifiedUser)}
     }
     // Never treat an unverified contact phone on a Merchant/Admin profile as a login identity.
     let user=await db.prepare("SELECT u.* FROM oauth_identities o JOIN users u ON u.id=o.user_id WHERE o.provider='phone_otp' AND o.subject=?").get(row.destination)

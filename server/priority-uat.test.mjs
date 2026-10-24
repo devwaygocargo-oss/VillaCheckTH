@@ -16,13 +16,13 @@ test('Priority UAT: independent approvals, coupon invoice, automatic bank QR, ma
  const login=async(email)=>{const r=await req(((await db.prepare("SELECT role FROM users WHERE email=?").get(email))?.role === "admin" ? "/auth/admin-login" : "/auth/login"),{email,password});assert.equal(r.status,200);return{cookie:r.cookie,csrf:r.value.csrf}}
  const editor=await login(a.email),approver=await login(b.email),m=await login(merchant.email),u=await login('uat-user@example.test')
  const fields={bankName:'DUMMY BANK - NO REAL MONEY',accountName:'DUMMY ACCOUNT',accountNumber:'0000000000',accountType:'current',promptpayType:'phone',promptpayId:'0812345678',instructions:'DUMMY ONLY',confirmedBinding:true,revision:0}
- await t.test('Bank changes need a different Admin, reject bypass and preserve unapproved current values',async()=>{
-  assert.equal((await req('/admin/receiving-bank',fields,editor)).status,403)
+ await t.test('One authorized Admin can approve a bank proposal; merchant and duplicate approvals are rejected',async()=>{
+  assert.equal((await req('/admin/receiving-bank',fields,m)).status,403)
   const proposed=await req('/admin/change-approvals',{kind:'bank',payload:fields},editor);assert.equal(proposed.status,200)
   assert.equal((await req('/admin/receiving-bank',undefined,editor)).value.bank,null)
-  assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},editor)).status,403)
+  assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},editor)).status,200)
   assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},m)).status,403)
-  assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},approver)).status,200)
+  assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},approver)).status,409)
   assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},approver)).status,409)
   assert.equal((await req('/admin/receiving-bank',undefined,editor)).value.bank.accountType,'current')
   assert.equal((await req('/admin/change-approvals',{kind:'bank',payload:fields},editor)).status,409)
@@ -78,6 +78,7 @@ test('Priority UAT: independent approvals, coupon invoice, automatic bank QR, ma
   assert.equal((await req(`/invoices/${invoice.id}/proof`,proof,m)).status,200)
   assert.equal((await req(`/invoices/${invoice.id}/confirm`,{},u)).status,403)
   assert.equal((await req(`/invoices/${invoice.id}/confirm`,{},editor)).status,200)
+  assert.equal((await req(`/villas/${villa.id}/review`,{status:'approved'},editor)).status,200);
   const s=(await req('/state',undefined,m)).value,qr=s.villas[0].qr;assert.equal(s.villas[0].trialUnlimited,false);assert.ok(qr)
   const r=await req(`/villas/${villa.id}/renew`,{packageId:'starter'},m);assert.equal(r.status,200);assert.equal(r.value.villas[0].qr,qr);assert.ok(r.value.villas[0].invoices.some(x=>x.status==='pending'&&x.amount===1990))
  })
@@ -93,10 +94,10 @@ test('Priority UAT: independent approvals, coupon invoice, automatic bank QR, ma
  await t.test('Designated approval account cannot propose and other Admins cannot review',async()=>{
   await db.prepare("INSERT INTO system_settings(key,value) VALUES ('approval:reviewer_email',?)").run(JSON.stringify(b.email))
   const queue=await req('/admin/change-approvals',undefined,editor);assert.equal(queue.value.canReview,false);assert.equal(queue.value.canPropose,true)
-  const reviewerQueue=await req('/admin/change-approvals',undefined,approver);assert.equal(reviewerQueue.value.canReview,true);assert.equal(reviewerQueue.value.canPropose,false)
+  const reviewerQueue=await req('/admin/change-approvals',undefined,approver);assert.equal(reviewerQueue.value.canReview,true);assert.equal(reviewerQueue.value.canPropose,true)
   const bank=(await req('/admin/receiving-bank',undefined,editor)).value.bank
   const payload={kind:'bank',payload:{...bank,confirmedBinding:true}}
-  assert.equal((await req('/admin/change-approvals',payload,approver)).status,403)
+  assert.equal((await req('/admin/change-approvals',payload,approver)).status,200)
   const proposed=await req('/admin/change-approvals',payload,editor);assert.equal(proposed.status,200)
   assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},editor)).status,403)
   assert.equal((await req(`/admin/change-approvals/${proposed.value.request.id}/approve`,{},approver)).status,200)

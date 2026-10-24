@@ -25,6 +25,7 @@ export default function VillaPackagePanel({
   const [couponCode, setCouponCode] = useState("")
   const villa = store.villas.find((v) => v.id === villaId)
   const selectedPlanId = selected || (villa?.trialUnlimited ? "basic" : villa?.packageId) || "basic"
+  const basicPlan=plans.find(p=>p.id==="basic")
   const plan = plans.find((p) => p.id === selectedPlanId)
   const pendingInvoice = villa?.invoices.find(i => i.status !== "paid")
   const expiresAt = villa?.expires ? Date.parse(villa.expires) : NaN
@@ -39,9 +40,9 @@ export default function VillaPackagePanel({
       {error && <p role="alert">{error}</p>}
       {!store.villas.length ? (
         <>
-          <p>เพิ่มที่พักเพื่อใช้สิทธิ์ Basic Verify ฟรีไม่มีกำหนด จนกว่าจะเลือกซื้อแพ็กเกจเอง</p>
-          <button className="primary-button" onClick={onAdd}>
-            เพิ่มที่พักฟรี
+          <p>{basicPlan?.promotion?"Basic Verify ราคาปกติ 990 บาท โปรโมชั่นลด 100% ยอดสุทธิ 0 บาท":"Basic Verify ราคาปกติ 990 บาท การสมัครสิทธิ์ใหม่รอเงื่อนไขโปรโมชั่น"}</p>
+          <button className="primary-button" disabled={!basicPlan || basicPlan.netAmount!==0} onClick={onAdd}>
+            เพิ่มที่พัก
           </button>
         </>
       ) : (
@@ -61,10 +62,11 @@ export default function VillaPackagePanel({
           <h3>{villa.name}</h3>
           <p>
             แพ็กเกจปัจจุบัน:{" "}
-            {villa.trialUnlimited ? "Basic Verify · ฟรีไม่มีกำหนด" : villa.package}
+            {villa.trialUnlimited ? "Basic Verify · สิทธิ์โปรโมชั่น" : villa.package}
           </p>
           <p>
             สถานะการตรวจสอบ: {villa.verificationLevel} · {villa.status}
+            {villa.status === "pending" && villa.invoices.some(i=>i.status==="paid") && <strong> · ชำระเงินแล้ว รอ Admin ตรวจสอบและอนุมัติ</strong>}
           </p>
           <p>
             เริ่มใช้บริการ:{" "}
@@ -74,11 +76,11 @@ export default function VillaPackagePanel({
             )}{" "}
             ·{" "}
             {villa.trialUnlimited
-              ? "สิ้นสุดทดลองใช้ฟรี: ไม่มีกำหนด จนกว่าจะซื้อเอง"
+              ? "วันสิ้นสุดโปรโมชั่น: รอประกาศ สิทธิ์เดิมยังคงอยู่"
               : `สิ้นสุดแพ็กเกจ: ${expiryDate || "ยังไม่มีวันสิ้นสุดที่ยืนยัน"}`}
           </p>
           <p className={`package-expiry-notice${!villa.trialUnlimited && daysLeft <= 7 ? " package-expiry-urgent" : ""}`} role="status">
-            {villa.trialUnlimited ? "Basic Verify ฟรีไม่มีกำหนด ไม่มีวันครบกำหนดชำระจนกว่าจะเลือกซื้อแพ็กเกจ" : expiryDate ? `${expiresAt <= Date.now() ? "แพ็กเกจหมดอายุแล้ว" : daysLeft <= 7 ? "แพ็กเกจใกล้หมดอายุ" : "กำหนดสิ้นสุดแพ็กเกจ"}: ${expiryDate}${expiresAt > Date.now() ? ` · เหลือ ${daysLeft} วัน` : " · กรุณาต่ออายุเพื่อใช้สิทธิ์แพ็กเกจต่อ"}` : "วันหมดอายุจะแสดงหลัง Admin ยืนยันการชำระเงิน"}
+            {villa.trialUnlimited ? "สิทธิ์ Basic จากโปรโมชั่นยังคงอยู่ วันสิ้นสุดและเงื่อนไขต่ออายุรอประกาศ" : expiryDate ? `${expiresAt <= Date.now() ? "แพ็กเกจหมดอายุแล้ว" : daysLeft <= 7 ? "แพ็กเกจใกล้หมดอายุ" : "กำหนดสิ้นสุดแพ็กเกจ"}: ${expiryDate}${expiresAt > Date.now() ? ` · เหลือ ${daysLeft} วัน` : " · กรุณาต่ออายุเพื่อใช้สิทธิ์แพ็กเกจต่อ"}` : "วันหมดอายุจะแสดงหลัง Admin ยืนยันการชำระเงิน"}
           </p>
         </div>
       )}
@@ -88,7 +90,7 @@ export default function VillaPackagePanel({
           const included=new Set(p.features.map(feature=>feature.trim()));
           return <article key={p.id} data-plan-id={p.id} className={`subscription-plan${selectedPlanId===p.id?" active":""}`}>
             <button type="button" aria-pressed={selectedPlanId===p.id} onClick={()=>setSelected(p.id)}>
-              <strong>{p.name}</strong><span>฿{(p.amount/100).toLocaleString("th-TH")} / เดือน / ที่พัก</span><small>รวมภาษี · ทุกแพ็กเกจเขียนรีวิวได้</small>
+              <strong>{p.name}</strong><span>{p.discountAmount ? <><del>฿{((p.regularAmount ?? p.amount)/100).toLocaleString("th-TH")}</del> · ลด 100% · สุทธิ ฿0</> : <>฿{((p.netAmount ?? p.amount)/100).toLocaleString("th-TH")} / เดือน / ที่พัก</>}</span><small>รวมภาษี · ทุกแพ็กเกจเขียนรีวิวได้</small>
             </button>
             {p.id === "basic" && <p>{basicVerificationNotice}</p>}
             <ul className="package-feature-list" aria-label={`สิทธิ์ของ ${p.name}`}>
@@ -120,7 +122,7 @@ export default function VillaPackagePanel({
           <p>
             ใช้ฟรีได้ครบสิทธิ์ Basic Verify โดยไม่ต้องชำระหรือเปิดการต่ออายุอัตโนมัติ
             แพ็กเกจที่ซื้อเปิดใช้หลัง Admin ยืนยันสลิป หากต่อแพ็กเกจเดิมก่อนหมดอายุจะเพิ่ม
-            1 เดือนจากวันสิ้นสุดเดิม หากหมดอายุแล้วหรือเปลี่ยนระดับ จะเริ่ม 1 เดือนจากวันยืนยันชำระ
+            1 เดือนจากวันสิ้นสุดเดิม การเปลี่ยนระดับระหว่างรอบต้องรักษามูลค่าคงเหลือและรอยืนยันเงื่อนไข
           </p>
           <button
             className="primary-button"

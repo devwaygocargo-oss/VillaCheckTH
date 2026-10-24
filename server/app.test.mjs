@@ -1,3 +1,4 @@
+import {testReceivingBank} from "./test-receiving-bank.mjs"
 import {legacyVilla} from "./test-legacy-villa.mjs";
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -33,18 +34,20 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
     "Merchant A",
   )
   await createUser(db, "other@example.com", "Other-password-123", "Merchant B")
-  const delivered = []
+  await testReceivingBank(db)
+  const delivered = [],otpDelivered=[]
   const config = {
     appUrl: "http://localhost:8443",
     allowedOrigins: ["http://localhost:8443"],
     smtpFrom: "system@example.com",
+    otpSecret:"local-test-otp-secret-with-more-than-32-characters",
     paymentInstructions: "Test bank account",
     fakeHash: hashPassword("no-account-placeholder"),
     seedDemo: false,
   }
   const transport = {
     sendMail: async (message) => {
-      delivered.push(message)
+      if(message.text?.includes("รหัส OTP"))otpDelivered.push(message);else delivered.push(message)
     },
   }
   let server = createApp(db, config, transport)
@@ -163,8 +166,10 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         password: "New-password-123",
         role: "admin",
       })
-      assert.equal(response.status, 200)
-      assert.equal(response.value.user.role, "merchant")
+      assert.equal(response.status,202)
+      assert.equal((await db.prepare("SELECT id FROM users WHERE email='new@example.com'").get()),undefined)
+      const verified=await request("/api/auth/registration/verify",{challengeId:response.value.challengeId,code:otpDelivered.at(-1).text.match(/\d{6}/)[0]},{cookie:response.cookie.split(";")[0]})
+      assert.equal(verified.status,200);assert.equal(verified.value.user.role,"merchant")
     },
   )
   await t.test(
@@ -262,8 +267,8 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         (await db.prepare("SELECT count(*) AS n FROM mails").get()).n,
         1,
       )
-      // SMTP worker completes asynchronously; yield to the same event loop.
-      await new Promise((resolve) => setTimeout(resolve, 20))
+      // Wait for the actual delivery worker, independent of machine timing.
+      await server.runMail()
       assert.equal(delivered.length, 1)
       assert.equal(delivered[0].to, "merchant@example.com")
       assert.equal(
@@ -333,6 +338,10 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       )
       assert.equal(repeated.value.villas[0].expires, current.expires)
       assert.equal(repeated.value.villas[0].payments, 1)
+      assert.equal(current.status,"pending")
+      const reviewed=await request(`/api/villas/${villaId}/review`,{status:"approved"},operator)
+      assert.equal(reviewed.status,200)
+      qr=reviewed.value.villas.find(v=>v.id===villaId).qr
       const publicResult = await request(`/api/public/qr/${qr}`)
       assert.equal(publicResult.value.valid, true)
       assert.equal(publicResult.value.email, undefined)
@@ -340,7 +349,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
     },
   )
   await t.test(
-    "renewal adds one month to the same QR and concurrent requests make one invoice",
+    "renewal preserves paid duration, awaits approval and concurrent requests make one invoice",
     async () => {
       const previous = (await request("/api/state", undefined, owner)).value
         .villas[0]
@@ -355,7 +364,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       assert.equal(current.invoices.length, 2)
       await request(
         `/api/invoices/${invoice.id}/proof`,
-        { reference: "TRANSFER2", document: file },
+        { reference: "TRANSFER2", document: {...file,data:"data:application/pdf;base64,"+Buffer.from("%PDF-1.4 Test receipt TRANSFER2").toString("base64")} },
         owner,
       )
       const result = await request(
@@ -364,6 +373,10 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         operator,
       )
       assert.equal(result.value.villas[0].qr, qr)
+      assert.equal(result.value.villas[0].status,"pending")
+      const renewedApproval=await request(`/api/villas/${villaId}/review`,{status:"approved"},operator)
+      assert.equal(renewedApproval.status,200)
+      qr=renewedApproval.value.villas.find(v=>v.id===villaId).qr
       assert.equal(
         result.value.villas[0].expires,
         addMonths(previous.expires, 1),
@@ -423,7 +436,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         .invoices.find((i) => i.status === "pending")
       await request(
         `/api/invoices/${invoice.id}/proof`,
-        { document: file, reference: "TRANSFER3" },
+        { document: {...file,data:"data:application/pdf;base64,"+Buffer.from("%PDF-1.4 Test receipt TRANSFER3").toString("base64")}, reference: "TRANSFER3" },
         owner,
       )
       assert.equal(
@@ -445,10 +458,12 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       )
       await request(
         `/api/invoices/${invoice.id}/proof`,
-        { document: file, reference: "TRANSFER3-RESUBMIT" },
+        { document: {...file,data:"data:application/pdf;base64,"+Buffer.from("%PDF-1.4 Test receipt TRANSFER3").toString("base64")}, reference: "TRANSFER3-RESUBMIT" },
         owner,
       )
       await request(`/api/invoices/${invoice.id}/confirm`, {}, operator)
+      const reviewed=await request(`/api/villas/${villaId}/review`,{status:"approved"},operator)
+      assert.equal(reviewed.status,200);qr=reviewed.value.villas.find(v=>v.id===villaId).qr
     },
   )
   await t.test(
@@ -470,7 +485,7 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
       const invoice = v.invoices.find((i) => i.status === "pending")
       await request(
         `/api/invoices/${invoice.id}/proof`,
-        { reference: "TRANSFER4", document: file },
+        { reference: "TRANSFER4", document: {...file,data:"data:application/pdf;base64,"+Buffer.from("%PDF-1.4 Test receipt TRANSFER4").toString("base64")} },
         owner,
       )
       const confirmed = await request(
@@ -485,6 +500,8 @@ test("real HTTP workflow, authorization, mail outbox and persistent QR", async (
         confirmed.value.villas.find((v) => v.id === villaId).expires,
         addMonths(paid.paid_at, 1),
       )
+      const reviewed=await request(`/api/villas/${villaId}/review`,{status:"approved"},operator)
+      assert.equal(reviewed.status,200);qr=reviewed.value.villas.find(v=>v.id===villaId).qr
     },
   )
   await t.test(

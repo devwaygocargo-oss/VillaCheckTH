@@ -1,8 +1,9 @@
+import PasswordRegistration from "./PasswordRegistration"
 import {useCopy} from "./cms";
 import SocialLogin from "./SocialLogin";
 import HomeLogoLink from "./HomeLogoLink";
 import { useEffect, useState } from "react";
-import { api, authenticate, currentAccount } from "./api";
+import { api, currentAccount } from "./api";
 import { PortalShell, type Page } from "./prototype";
 import type { Account } from "./merchantStore";
 
@@ -10,17 +11,7 @@ export { SocialLogin };
 
 export function UserRegistration({ go, reference }: { go: (page: Page, item?: string) => void; reference: string }) {
   const t=useCopy();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault(); if (busy) return;
-    setBusy(true); setError("");
-    try { await authenticate(form.email, form.password, form.name, "user"); go(reference ? "verify" : "user-dashboard", reference); }
-    catch (error) { setError(error instanceof Error ? error.message : "สมัครไม่สำเร็จ"); }
-    finally { setBusy(false); }
-  };
-  return <main className="auth-page"><div className="auth-card"><HomeLogoLink className="flow-brand" onNavigate={()=>go("home")}>Villa<span>Check</span></HomeLogoLink><button className="text-button" onClick={() => go("login", reference)}>← เข้าสู่ระบบ</button><span className="kicker">VILLACHECK / USER ACCOUNT</span><h1>{t("registration.userTitle")}</h1><p>{t("registration.userDescription")}</p><SocialLogin reference={reference} /><form className="form-stack" onSubmit={submit}><label><span>{t("registration.name")}</span><input required autoComplete="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></label><label><span>{t("registration.email")}</span><input required type="email" autoComplete="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></label><label><span>{t("registration.password")}</span><input required type="password" minLength={10} autoComplete="new-password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} /></label>{error && <p role="alert">{error}</p>}<button className="primary-button" type="submit" disabled={busy}>{busy ? "กำลังสมัคร…" : t("registration.submitUser")}</button></form></div></main>;
+  return <main className="auth-page"><div className="auth-card"><HomeLogoLink className="flow-brand" onNavigate={()=>go("home")}>Villa<span>Check</span></HomeLogoLink><button className="text-button" onClick={() => go("login", reference)}>← เข้าสู่ระบบ</button><span className="kicker">VILLACHECK / USER ACCOUNT</span><h1>{t("registration.userTitle")}</h1><p>{t("registration.userDescription")}</p><SocialLogin reference={reference} /><PasswordRegistration accountType="user" onRegistered={()=>go(reference?"verify":"user-dashboard",reference)}/></div></main>;
 }
 
 type Member = { id: string; name: string; email: string; created: string; lastLogin: string | null; providers: string[] };
@@ -43,5 +34,5 @@ export function MemberDashboard({ go }: { go: (page: Page) => void }) {
   const [user, setUser] = useState<Account | null>(null);
   const [error, setError] = useState("");
   useEffect(() => { let cancelled = false; void currentAccount().then(value => { if (!cancelled) { if (value.role !== "user") go("login"); else setUser(value); } }).catch(error => { if (!cancelled) setError(error.message); }); return () => { cancelled = true; }; }, []);
-  return <PortalShell role="User" page="user-dashboard" go={go}><div className="portal-head"><div><span className="kicker">VILLACHECK / MEMBER</span><h1>{user ? `สวัสดี ${user.name}` : "บัญชี User"}</h1><p>{user?.email}</p></div></div>{error ? <div className="merchant-panel"><p role="alert">{error}</p><button className="primary-button" onClick={() => go("login")}>เข้าสู่ระบบ</button></div> : <div className="merchant-panel"><h2>ตรวจสอบที่พักก่อนโอน</h2><p>สแกน QR ของที่พักเพื่อดูข้อมูลที่ผ่านการตรวจสอบ พร้อมเบอร์โทรและเลขบัญชีรับเงิน</p><button className="primary-button" onClick={() => go("scan")}>สแกน QR ที่พัก →</button></div>}</PortalShell>;
+  return <PortalShell role="User" page="user-dashboard" go={go}><div className="portal-head"><div><span className="kicker">VILLACHECK / MEMBER</span><h1>{user ? `สวัสดี ${user.name}` : "บัญชี User"}</h1><p>{user?.email}</p></div></div>{error ? <div className="merchant-panel"><p role="alert">{error}</p><button className="primary-button" onClick={() => go("login")}>เข้าสู่ระบบ</button></div> : <div className="merchant-panel"><h2>ตรวจสอบที่พักก่อนโอน</h2><p>สแกน QR ของที่พักเพื่อดูข้อมูลที่ผ่านการตรวจสอบ และกรอกข้อมูลที่ได้รับเพื่อตรวจว่าตรงกับทะเบียนหรือไม่</p><button className="primary-button" onClick={() => go("scan")}>สแกน QR ที่พัก →</button></div>}</PortalShell>;
 }

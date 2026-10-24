@@ -1,3 +1,4 @@
+import {preserveApprovedVilla,rotateApprovedRevision} from "./approval-history.mjs"
 import { randomUUID } from 'node:crypto'
 import { audit } from './database.mjs'
 const fail=(status,message)=>{throw Object.assign(Error(message),{status})}
@@ -54,8 +55,9 @@ export async function ownerVerificationApi(db,user,req,path,url,body){
     const valid=file.type==='image/jpeg'?bytes[0]===255&&bytes[1]===216&&bytes[2]===255:file.type==='image/png'?bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):file.type==='video/mp4'?bytes.subarray(4,8).toString()==='ftyp':bytes.subarray(0,5).toString()==='%PDF-'
     if(!valid)fail(400,'เนื้อหาไฟล์ไม่ตรงกับชนิดไฟล์')
     const id=randomUUID(),name=text(file.name,200)
+    if(/^(cms-image:|receiving-bank-qr:)/i.test(name))fail(400,"ชื่อไฟล์สงวนสำหรับระบบ")
     await db.prepare('INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?)').run(id,user.id,name,file.type,bytes)
-    if(row.files[data.slot])await db.prepare('DELETE FROM documents WHERE id=? AND owner_id=?').run(row.files[data.slot].id,user.id)
+    if(row.files[data.slot]){row.fileHistory ||= [];row.fileHistory.push({...row.files[data.slot],slot:data.slot,replacedAt:now,replacedBy:user.id})}
     row.files[data.slot]={id,name,type:file.type,url:'/api/documents/'+id,uploadedAt:now}
     row.status='draft'
    }else if(data.action==='submit'){
@@ -65,7 +67,10 @@ export async function ownerVerificationApi(db,user,req,path,url,body){
     row.history.push({action:'submit',by:user.id,at:now})
    }else fail(400,'คำขอไม่ถูกต้อง')
   }
-  row.updatedAt=now;row.revision=revision+1;await save(db,row);await audit(db,user,'owner_verification.'+data.action,villa.id)
-  return {submission:row}
+  if(admin)await preserveApprovedVilla(db,villa)
+  row.updatedAt=now;row.revision=revision+1;await save(db,row);
+  const qr=admin?await rotateApprovedRevision(db,villa,user,'OWNER_VERIFICATION_'+row.status.toUpperCase()):null
+  await audit(db,user,'owner_verification.'+data.action,villa.id)
+  return {submission:row,qr}
  })
 }

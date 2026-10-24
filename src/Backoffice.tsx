@@ -29,7 +29,7 @@ function status(v: MerchantVilla) {
   if (v.status === "rejected") return "ไม่ผ่านการอนุมัติ"
   if (["SUSPENDED","INACTIVE"].includes(v.qrStatus))return "QR ถูกระงับหรือปิดใช้งาน"
   if (!v.qr) return "อนุมัติแล้ว · รอชำระเงิน"
-  return v.trialUnlimited ? "QR ใช้งานได้ · Basic Verify ฟรีไม่มีกำหนด" : new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
+  return v.trialUnlimited ? "QR ใช้งานได้ · Basic Verify · สิทธิ์โปรโมชั่น" : new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
 }
 const approvalStatus = (value: MerchantVilla["status"]) => ({pending:"รออนุมัติ",approved:"อนุมัติแล้ว",changes:"ต้องแก้ไข",rejected:"ไม่อนุมัติ"})[value];
 export function VillaQr({ villa, admin = false }: { villa: Pick<MerchantVilla,"name"|"qr"|"qrStatus"|"verificationLevel"|"trialUnlimited"|"expires">; admin?: boolean }) {
@@ -58,7 +58,7 @@ export function VillaQr({ villa, admin = false }: { villa: Pick<MerchantVilla,"n
     <div className="merchant-qr">
       <div ref={qrRef} />
       <strong>{villa.qr}</strong><p>{villa.qrStatus} · {villa.verificationLevel}</p>
-      <small>{villa.trialUnlimited ? "Basic Verify ฟรีไม่มีกำหนดจนกว่าจะซื้อแพ็กเกจ" : `หมดอายุ ${date(villa.expires)}`}</small>
+      <small>{villa.trialUnlimited ? "Basic Verify · สิทธิ์โปรโมชั่นเดิมยังคงอยู่" : `หมดอายุ ${date(villa.expires)}`}</small>
       <a href={admin?`/admin#${new URLSearchParams({page:"admin-verify",item:villa.qr})}`:url}>เปิดหน้าตรวจสอบ ↗</a>
       {downloadUrl && <a className="outline-button" href={downloadUrl} download={`VillaCheck-${villa.qr}.svg`}>ดาวน์โหลด QR (SVG)</a>}
     </div>
@@ -325,7 +325,7 @@ export default function Backoffice({
       </div>
       <div className="merchant-demo">
         แพ็กเกจคิดต่อที่พัก ต่อเดือน รวมภาษี · แต่ละที่พักต้องผ่าน Admin อนุมัติ
-        · Basic Verify ใช้ฟรีไม่มีกำหนดจนกว่าจะเลือกซื้อแพ็กเกจ
+        · Basic Verify ราคาปกติ 990 บาท ช่วงโปรโมชั่นลด 100%
       </div>
 
       {!admin && (billing || dashboard || (adding && !store.subscription)) && <VillaPackagePanel store={store} busy={busy} perform={perform} onAdd={()=>go("owner-add-villa")} onPayment={invoiceId=>go("owner-package",invoiceId)}/>}
@@ -377,7 +377,7 @@ export default function Backoffice({
           </div>
         </>
       )}
-      {false ? <section className="merchant-panel"><h2>สิทธิ์ Villa เต็มแล้ว</h2><p>ไม่สามารถเพิ่ม Villa ได้ กรุณาดูตัวเลือกอัปเกรดที่หน้า Package</p></section> : adding ? (
+      {adding ? (
         <form className="portal-form merchant-panel" onSubmit={submit}>
           <h2>ข้อมูลที่พักและ Merchant</h2>
           <p>กรอกชื่อที่พักทั้งภาษาไทยและภาษาอังกฤษ เพื่อให้ลูกค้าค้นหาได้จากทั้งสองชื่อ ใช้ชื่อเดียวกับป้ายที่พักและช่องทางทางการ</p>
@@ -559,7 +559,7 @@ export default function Backoffice({
                     if(error instanceof ApiError && error.status===401)go(admin ? "admin-login" : "owner-auth");
                     setMessage(error instanceof Error?error.message:"บันทึกไม่สำเร็จ กรุณาลองใหม่");
                   }finally{busyRef.current=false;setBusy(false);}
-                }}><h2>แก้ไขข้อมูล Villa</h2><p role="status" className="merchant-status">สถานะ: {status(active)}</p><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><label>วันที่ถ่ายภาพ (หากทราบ)<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ โดยคง QR เดิม</p>{(["name","nameEn","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{({name:"ชื่อที่พักภาษาไทย",nameEn:"ชื่อที่พักภาษาอังกฤษ"} as Record<string,string>)[k] || k}<input required={["name","nameEn","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
+                }}><h2>แก้ไขข้อมูล Villa</h2><p role="status" className="merchant-status">สถานะ: {status(active)}</p><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/><label>วันที่ถ่ายภาพ (หากทราบ)<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ และออก QR ใหม่หลังอนุมัติ</p>{(["name","nameEn","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{({name:"ชื่อที่พักภาษาไทย",nameEn:"ชื่อที่พักภาษาอังกฤษ"} as Record<string,string>)[k] || k}<input required={["name","nameEn","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
                 {!editing&&active.photoUrl&&<img src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/>}
                 <PropertyMedia villaId={active.id} mode={admin?"admin":"merchant"}/>
                 {!admin&&!editing&&<><OwnerVerification villaId={active.id}/><SocialMaterials villaId={active.id}/></>}
@@ -780,7 +780,7 @@ export function MerchantVerification({
       <div className="container merchant-verification merchant-panel">
         <span className="kicker">{isAdmin?"VILLACHECK / ADMIN PROPERTY DETAILS":"VILLACHECK / PROPERTY DETAILS"}</span>
         <h1>
-          {loading ? "กำลังโหลดรายละเอียดที่พัก…" : villa?.name || "ไม่พบรายละเอียดที่พัก"}
+          {loading ? "กำลังโหลดรายละเอียดที่พัก…" : villa?.name || (villa?"ข้อมูลที่พักอยู่ระหว่างตรวจสอบ":"ไม่พบรายละเอียดที่พัก")}
         </h1>
         {error && <p role="alert">{error}</p>}
         {villa && (
@@ -796,22 +796,22 @@ export function MerchantVerification({
             {villa.basicVerificationNotice && <p className="verification-reminder">{villa.basicVerificationNotice}</p>}
             <p>{villa.nameEn}</p><p>อัปเดตรูปภาพล่าสุดเมื่อ {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"}</p>{villa.photoUrl && <p>วันที่อัปโหลด: {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"} · วันที่ถ่าย: {villa.photoTakenAt ? date(villa.photoTakenAt) : "ไม่ระบุ"}{villa.photoReviewedAt && <> · วันที่ทีมตรวจสื่อ: {date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
             {villa.premiumBanner && <p className="merchant-status">✦ Premium Verified · เอกสารผ่านและ Subscription ใช้งานได้</p>}
-            <a href={`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:`${villa.name} ${villa.province}`})}`} target="_blank" rel="noopener noreferrer">{t("profile.map")}</a>
-            <p>วันหมดอายุ: {villa.trialUnlimited ? "ไม่มีกำหนด · ใช้ฟรี Basic Verify จนกว่าจะซื้อแพ็กเกจ" : date(villa.expires)}</p>
+            {villa.name&&<a href={`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:`${villa.name} ${villa.province}`})}`} target="_blank" rel="noopener noreferrer">{t("profile.map")}</a>}
+            <p>วันหมดอายุ: {villa.trialUnlimited ? "ยังไม่มีวันสิ้นสุดที่ยืนยัน · Basic โปรโมชั่น" : date(villa.expires)}</p>
             {!isAdmin&&<button onClick={()=>go("villa-report",reference)}>{t("profile.report")}</button>}
             <section className={`verification-contact ${villa.locked ? "locked" : ""}`}>
-              <div className="verification-contact-head"><h2>{t("profile.contacts")}</h2><span>{isAdmin?"ข้อมูลเต็มสำหรับ Admin":villa.locked ? "สำหรับสมาชิก User" : "เข้าสู่ระบบ User แล้ว"}</span></div>
+              <div className="verification-contact-head"><h2>{t("profile.contacts")}</h2><span>{isAdmin?"ข้อมูลเต็มสำหรับ Admin":villa.locked ? "ข้อมูลส่วนบุคคลถูกปกปิด" : "ข้อมูลทะเบียน"}</span></div>
               <dl>
                 <div><dt>{t("profile.phone")}</dt><dd>{villa.locked ? "•••-•••-••••" : villa.phone || "ยังไม่ได้ระบุ"}</dd></div>
                 <div><dt>{t("profile.bank")}</dt><dd>{villa.bankName || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>{t("profile.bankName")}</dt><dd>{villa.accountName || "ยังไม่ได้ระบุ"}</dd></div>
+                <div><dt>{t("profile.bankName")}</dt><dd>{villa.locked ? "ข้อมูลถูกปกปิด" : villa.accountName || "ยังไม่ได้ระบุ"}</dd></div>
                 <div><dt>{t("profile.bankNumber")}</dt><dd>{villa.locked ? "•••-•-•••••-•" : villa.accountNumber || "ยังไม่ได้ระบุ"}</dd></div>
               </dl>
-              {villa.locked && !isAdmin ? <div className="verification-login"><p>เข้าสู่ระบบด้วยบัญชี User เพื่อดูเบอร์โทรและเลขบัญชีเต็ม โดยกลับมาตรวจ QR นี้ได้ทันที</p><div className="button-row"><button className="primary-button" onClick={() => go("login", reference)}>เข้าสู่ระบบเพื่อดูข้อมูล</button><button className="outline-button" onClick={() => go("user-registration", reference)}>สมัครสมาชิก User</button></div></div> : <p className="verification-reminder">{isAdmin?"ข้อมูลทะเบียนสำหรับผู้ดูแลระบบ":t("profile.contactReminder")}</p>}
+              {villa.locked && !isAdmin ? <div className="verification-login"><p>กรอกเลขบัญชีหรือเบอร์ที่ได้รับในหน้าตรวจข้อมูลก่อนโอน ระบบจะแจ้งว่าตรงกับทะเบียนหรือไม่ โดยไม่เปิดเผยข้อมูลเต็ม</p><div className="button-row"><button className="primary-button" onClick={() => go(villa.viewerRole === "user"?"user-precheck":"login", reference)}>{villa.viewerRole === "user"?"ตรวจข้อมูลก่อนโอน":"เข้าสู่ระบบเพื่อตรวจข้อมูล"}</button><button className="outline-button" onClick={() => go("user-registration", reference)}>สมัครสมาชิก User</button></div></div> : <p className="verification-reminder">{isAdmin?"ข้อมูลทะเบียนสำหรับผู้ดูแลระบบ":t("profile.contactReminder")}</p>}
             </section>
           </>
         )}
-        {villa && <>{isAdmin&&villa.villaId&&villa.ownerVerificationRequired&&<OwnerVerification admin villaId={villa.villaId}/>}<PropertyMedia key={`media-${reference}`} qr={reference} villaId={villa.villaId} mode={isAdmin?"admin":"public"}/><Reviews qr={reference} mode={isAdmin?"admin":"public"}/></>}
+        {villa?.name && <>{isAdmin&&villa.villaId&&villa.ownerVerificationRequired&&<OwnerVerification admin villaId={villa.villaId}/>}<PropertyMedia key={`media-${reference}`} qr={reference} villaId={villa.villaId} mode={isAdmin?"admin":"public"}/><Reviews qr={reference} mode={isAdmin?"admin":"public"}/></>}
         <p>QR Reference: {reference}</p>
         <button className="outline-button" disabled={returning} onClick={()=>void backToAccount()}>
           {returning?"กำลังกลับหน้าบัญชี…":isAdmin?"กลับหน้าก่อนหน้า Admin":villa?.viewerRole==="merchant"?"กลับหน้าหลัก Merchant":villa?.viewerRole==="user"?"กลับหน้าหลัก User":"กลับหน้าหลัก"}
@@ -849,6 +849,7 @@ function PaymentPanel({
   const [reason, setReason] = useState("")
   const [error, setError] = useState("")
   const [reading, setReading] = useState(false)
+  if(invoice.gateway === "OMISE")return <section className="payment-panel"><strong>ใบแจ้งชำระ ฿{invoice.amount.toLocaleString("th-TH")} · {invoice.packageName}</strong><p>Omise Test Mode · ยังไม่เปิดรับเงินจริง</p><p>สถานะ: {({pending:"รอชำระ",successful:"รับชำระแล้ว รอ Admin อนุมัติ",failed:"ชำระไม่สำเร็จ",expired:"รายการหมดอายุ",reversed:"กลับรายการ รอทีมตรวจสอบ",UNKNOWN:"รอตรวจสอบรายการ",CREATING:"กำลังสร้างรายการ"} as Record<string,string>)[reference] || invoice.paymentStatus}</p><button type="button" disabled={reading} onClick={async()=>{setReading(true);setError("");try{const result=await api<{status:string}>(`/payments/${invoice.id}/omise`);setReference(result.status);}catch(error){setError(error instanceof Error?error.message:"ตรวจสถานะไม่สำเร็จ");}finally{setReading(false);}}}>ตรวจสถานะล่าสุด</button>{error&&<p role="alert">{error}</p>}<p>การรับชำระสำเร็จยังต้องผ่านการตรวจสอบและอนุมัติ Villa</p></section>
   const selectProof = (selected?: File) => {
     setFile(null)
     setError("")
@@ -959,11 +960,11 @@ function PaymentPanel({
                 void perform(
                   `/invoices/${invoice.id}/confirm`,
                   { externalTransactionId: bankTransaction },
-                  "ยืนยันการชำระแล้ว เปิดใช้ / ต่ออายุ QR เรียบร้อย",
+                  "บันทึกรับชำระแล้ว Villa รอ Admin ตรวจสอบและอนุมัติ",
                 )
               }
             >
-              ยืนยันได้รับชำระและเปิดใช้ QR
+              ยืนยันได้รับชำระ (รออนุมัติ Villa)
             </button>
             <button
               disabled={busy || !reason.trim()}

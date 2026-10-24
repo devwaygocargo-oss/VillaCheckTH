@@ -12,8 +12,8 @@ import {PrismaDatabaseService} from '../.build/backend/prisma.service.js';
 import {removeSampleWord} from '../server/remove-sample-word.mjs';
 import {seedDemo} from '../server/demo-seed.mjs';
 import {advertisingApi} from '../server/advertising.mjs';
-// User-authorized demo deployment. Disable with SEED_PUBLIC_DEMO_DATA=false.
-if(process.env.VERCEL!=='1'||process.env.SEED_PUBLIC_DEMO_DATA==='false')process.exit(0);
+// Explicit opt-in only; never run demo seed during an application build.
+if(process.env.SEED_PUBLIC_DEMO_DATA!=='true')process.exit(0);
 const db=new PrismaDatabaseService();
 try{
  const result=await seedDemo(db,{password:process.env.DEMO_PASSWORD || randomBytes(24).toString('base64url')});

@@ -1,3 +1,4 @@
+import {createUser} from "./database.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { createServer } from "node:http"
@@ -78,11 +79,15 @@ test(
         },
         body: JSON.stringify(data),
       })
-    const registration = await post(one.base, "auth/register-user", {
+    const attempted = await post(one.base, "auth/register-user", {
       name: "Online User",
       email: "online@example.com",
       password: "Online-password-123",
     })
+    assert.equal(attempted.status,503)
+    assert.equal(await db.prepare("SELECT id FROM users WHERE email='online@example.com'").get(),undefined)
+    await createUser(db,"online@example.com","Online-password-123","Online User","user")
+    const registration=await post(one.base,"auth/login",{email:"online@example.com",password:"Online-password-123"})
     assert.equal(registration.status, 200)
     const member = await registration.json()
     assert.equal(member.user.role, "user")

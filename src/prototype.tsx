@@ -1,3 +1,4 @@
+import PasswordRegistration from "./PasswordRegistration"
 import HomeLogoLink from "./HomeLogoLink";
 import AdminApprovalNotice from "./AdminApprovalNotice";
 import { CmsPublicPage,useCopy } from "./cms";
@@ -157,20 +158,7 @@ export function OwnerPackageAuth({ go }: { go: Go; packageName: string; onOwnerL
 
 export function OwnerRegistration({ go }: { go: Go; packageName: string }) {
   const t=useCopy();
-  const [name, setName] = useState("");
-  const [nameEn, setNameEn] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault(); if (busy) return;
-    setBusy(true); setError("");
-    try { await authenticate(email, password, name, "merchant", nameEn); go("owner-information"); }
-    catch (error) { setError(error instanceof Error ? error.message : "สมัครไม่สำเร็จ"); }
-    finally { setBusy(false); }
-  };
-  return <FlowPage onHome={()=>go("home")} kicker="MERCHANT REGISTRATION" title={t("registration.merchantTitle")} subtitle={t("registration.merchantDescription")} onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><form className="form-stack" onSubmit={submit}><label><span>{t("registration.businessTh")}</span><input required maxLength={200} placeholder="เช่น บริษัท วิลล่าริมทะเล" value={name} onChange={e => setName(e.target.value)} /></label><label><span>{t("registration.businessEn")}</span><input required maxLength={200} placeholder="เช่น Seaside Villa Co., Ltd." value={nameEn} onChange={e => setNameEn(e.target.value)} /></label><label><span>{t("registration.email")}</span><input required type="email" value={email} onChange={e => setEmail(e.target.value)} /></label><label><span>{t("registration.password")}</span><input required type="password" minLength={10} value={password} onChange={e => setPassword(e.target.value)} /></label>{error && <div className="form-message error-state">{error}</div>}<button className="primary-button" disabled={busy} type="submit">{busy ? "กำลังสมัคร…" : t("registration.submitMerchant")}</button></form></FlowPage>;
+  return <FlowPage onHome={()=>go("home")} kicker="MERCHANT REGISTRATION" title={t("registration.merchantTitle")} subtitle={t("registration.merchantDescription")} onBack={() => go("owner-auth")}><SocialLogin accountType="merchant" variant="stacked"/><OtpLogin accountType="merchant" purpose="register" onAuthenticated={account=>{if(account.role==="merchant")go("owner-information");}}/><div className="login-divider"><span>OTP / Password</span></div><PasswordRegistration accountType="merchant" onRegistered={()=>go("owner-information")}/></FlowPage>;
 }
 
 export function OwnerOnboardingVilla({ go, onVillaAdded }: { go: Go; onVillaAdded: (name: string) => void }) {

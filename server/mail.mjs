@@ -32,6 +32,11 @@ export function createMailWorker(db, config, transport) {
       )
       if (!mail) break
       try {
+        const currentInvoice=await db.prepare("SELECT status FROM invoices WHERE id=?").get(mail.invoice_id)
+        if(!currentInvoice || currentInvoice.status!=="pending") {
+          await db.prepare("UPDATE mails SET status='cancelled',last_error='Invoice no longer awaiting payment' WHERE id=?").run(mail.id)
+          continue
+        }
         if(demo || /\.example$/.test(mail.recipient)){
           await db.prepare("UPDATE mails SET status='demo',sent_at=?,last_error='' WHERE id=?").run(new Date().toISOString(),mail.id)
           continue

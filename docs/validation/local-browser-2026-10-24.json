@@ -1,0 +1,22 @@
+{
+  "localSyntheticDataOnly": true,
+  "results": [
+    {
+      "name": "Admin Leads direct link and reload",
+      "passed": true,
+      "count": 10
+    },
+    {
+      "name": "Merchant Basic regular/discount/net pricing",
+      "passed": true
+    },
+    {
+      "name": "Merchant pricing mobile width 390",
+      "passed": true
+    },
+    {
+      "name": "Public QR uses masked data and pre-transfer check guidance",
+      "passed": true
+    }
+  ]
+}

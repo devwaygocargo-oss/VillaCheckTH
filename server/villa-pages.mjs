@@ -1,3 +1,4 @@
+import {preserveApprovedVilla,rotateApprovedRevision} from "./approval-history.mjs"
 import {dummyPropertyDetails} from './property-details.mjs'
 import {audit} from './database.mjs'
 import {recordCmsChange,cmsChangeById} from './cms-change-history.mjs'
@@ -23,11 +24,13 @@ export async function villaPagesApi(db,user,req,path,url,body){
   for(const k of ['description','location','checkIn','checkOut','notice']){if(typeof d[k]!=='string'||d[k].length>5000||/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(d[k]))fail(400,'ข้อความไม่ถูกต้อง');details[k]=d[k].trim()}
   for(const k of ['guestCapacity','bedrooms','bathrooms']){if(!Number.isInteger(d[k])||d[k]<0||d[k]>10000)fail(400,'จำนวนไม่ถูกต้อง');details[k]=d[k]}
   for(const k of ['amenities','rules']){if(!Array.isArray(d[k])||d[k].length>100||d[k].some(v=>typeof v!=='string'||v.length>500||/[\x00-\x1f]/.test(v)))fail(400,'รายการไม่ถูกต้อง');details[k]=d[k].map(v=>v.trim()).filter(Boolean)}
+  await preserveApprovedVilla(db,villa)
   const previous=await villaPage(db,villa)
   if(previous)await recordCmsChange(db,{kind:'villa_page',action:'before_edit',snapshot:{id:villa.id,name:villa.name,details:previous},user})
   const snapshot={id:villa.id,name:villa.name,details}
   await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('villa_page:'+villa.id,JSON.stringify(snapshot))
   await recordCmsChange(db,{kind:'villa_page',action:restoring?'restore':'save',snapshot,user});await audit(db,user,'villa_page.save',villa.id)
-  return {ok:true,details}
+  const qr=await rotateApprovedRevision(db,villa,user,"DETAILS_APPROVED")
+  return {ok:true,details,qr}
  })
 }

@@ -32,7 +32,7 @@ export default function AdminReceivingBank({go}:{go:(page:Page)=>void}) {
     {!data?<p role="status">กำลังโหลดข้อมูลบัญชีรับเงิน…</p>:<>
       <AdminChangeApprovals kind="bank"/>
       <div className="receiving-bank-grid">
-        <form className="merchant-panel portal-form" onSubmit={e=>{e.preventDefault();void act(async()=>{await api("/admin/change-approvals",{kind:"bank",payload:{...form,revision,confirmedBinding:confirmed}});setMessage("เสนอข้อมูลบัญชีแล้ว รอ Admin อีกบัญชีอนุมัติ ข้อมูลรับเงินเดิมยังใช้ตามปกติ");});}}>
+        <form className="merchant-panel portal-form" onSubmit={e=>{e.preventDefault();void act(async()=>{await api("/admin/change-approvals",{kind:"bank",payload:{...form,revision,confirmedBinding:confirmed}});setMessage("เสนอข้อมูลบัญชีแล้ว รอ Admin ผู้มีสิทธิ์อนุมัติ ข้อมูลรับเงินเดิมยังใช้ตามปกติ");});}}>
           <h2>ข้อมูลบัญชีรับเงิน</h2><p>เตรียมช่องสำหรับบัญชีบริษัท VillaCheck และพร้อมเพย์ไว้แล้ว ระหว่างรอเปิดบัญชีใหม่ให้ใช้ข้อมูล Dummy สำหรับทดสอบเท่านั้น เมื่อได้รับข้อมูลจริงให้เสนอแก้ไขและรอผู้อนุมัติก่อนใช้งาน</p><label>ประเภทบัญชี<select value={form.accountType} disabled={busy} onChange={e=>change("accountType",e.target.value as Fields["accountType"])}><option value="savings">ออมทรัพย์</option><option value="current">กระแสรายวัน</option><option value="other">อื่น ๆ</option></select></label>
           <label>ธนาคาร<input required maxLength={200} disabled={busy} value={form.bankName} onChange={e=>change("bankName",e.target.value)}/></label>
           <label>ชื่อบัญชี<input required maxLength={200} disabled={busy} value={form.accountName} onChange={e=>change("accountName",e.target.value)}/></label>

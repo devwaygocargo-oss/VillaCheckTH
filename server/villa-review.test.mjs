@@ -30,8 +30,8 @@ test('Villa approval requests retain actual changes, documents, permissions and 
  await t.test('stale approval cannot approve changed data',async()=>{
   const r=await request('/villas/'+villa.id+'/review',{status:'approved',verificationLevel:'VERIFIED',expectedReviewId:submission},admin);assert.equal(r.status,409);assert.equal((await state()).status,'pending')
  })
- await t.test('current approval succeeds, preserves QR and rejects duplicate review',async()=>{
-  const v=await state(),input={status:'approved',verificationLevel:'VERIFIED',expectedReviewId:v.reviewRequest.id};assert.equal((await request('/villas/'+villa.id+'/review',input,merchant)).status,403);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,200);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,409);assert.equal((await state()).qr,villa.qr)
+ await t.test('current approval rotates QR and rejects duplicate review',async()=>{
+  const v=await state(),input={status:'approved',verificationLevel:'VERIFIED',expectedReviewId:v.reviewRequest.id};assert.equal((await request('/villas/'+villa.id+'/review',input,merchant)).status,403);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,200);assert.equal((await request('/villas/'+villa.id+'/review',input,admin)).status,409);assert.notEqual((await state()).qr,villa.qr);assert.equal((await request("/public/qr/"+villa.qr)).status,404);villa.qr=(await state()).qr
  })
  await t.test('Admin session stays separate from the public QR profile',async()=>{
   const detail=(await request('/admin/qr-verification/'+villa.qr,undefined,admin)).value;assert.equal(detail.locked,false);assert.equal(detail.villaId,villa.id);assert.equal(detail.phone,villa.phone);assert.equal(detail.accountNumber,villa.account_number);assert(detail.propertyDetails.description)

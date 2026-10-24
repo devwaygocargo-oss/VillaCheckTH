@@ -160,7 +160,7 @@ export function CmsProvider({ children }: { children: React.ReactNode }) {
           const r=await api<{revision:number;content:CmsContent}>("/public/cms")
           if(active&&r.revision>revision.current){revision.current=r.revision;configureSupport(r.content.site);setContent(r.content)}
         }while(active&&reload)
-      }catch{}finally{loading=false}
+      }catch{/* Retain the last published content until the next refresh. */}finally{loading=false}
     }
     const refresh=()=>{void load()}
     const stored=(event:StorageEvent)=>{if(event.key===cmsPublishStorageKey)refresh()}
@@ -196,6 +196,7 @@ export function CmsProvider({ children }: { children: React.ReactNode }) {
         document.head.append(meta)
       }
       meta.content = info?.description || content.site.description
+      document.querySelectorAll('meta[name="description"]').forEach((element,index)=>{if(index>0)element.remove();})
     }
     update()
     window.addEventListener("hashchange", update)

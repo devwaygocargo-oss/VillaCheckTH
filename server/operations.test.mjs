@@ -45,7 +45,7 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
   assert.equal((await request(`/payments/${invoice.id}/demo-slip`,{},m)).status,404)
   assert.equal((await request(`/invoices/${invoice.id}/proof`,slip.value,payer)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].invoices[0].paymentStatus,'PENDING_REVIEW');assert.ok(state.villas[0].qr)
   assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},payer)).status,403)
-  assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},a)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].qrStatus,'ACTIVE');assert.equal(state.villas[0].qrStatus,'ACTIVE')
+  assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},a)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].qrStatus,'PENDING');assert.equal((await request(`/villas/${v.id}/review`,{status:'approved'},a)).status,200)
   await app.runMail();assert.equal(sends,0);assert.equal((await db.prepare('SELECT status FROM mails WHERE invoice_id=?').get(invoice.id)).status,'demo')
   await request('/admin/settings',{paymentVerificationMode:'MANUAL',demoMode:false},a);assert.equal((await request(`/payments/${invoice.id}/demo-slip`,{},payer)).status,403);await request('/admin/settings',{paymentVerificationMode:'MANUAL',demoMode:true},a)
  })

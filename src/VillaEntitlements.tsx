@@ -9,7 +9,7 @@ export default function VillaEntitlements({villa,plan,error,go}:{villa:MerchantV
   <dl className="subscription-detail-grid">
    <div><dt>แพ็กเกจปัจจุบัน</dt><dd>{villa.package}{plan&&<small>฿{(plan.amount/100).toLocaleString("th-TH")} / {billingLabel(plan.billingCycle)} / ที่พัก · รวมภาษี</small>}</dd></div>
    <div><dt>สถานะ QR</dt><dd><span className={`subscription-status status-${villa.qrStatus.toLowerCase()}`}>{qrLabels[villa.qrStatus]||villa.qrStatus}</span></dd></div>
-   <div><dt>วันหมดอายุ</dt><dd>{villa.trialUnlimited?"Basic Verify ฟรีไม่มีกำหนด จนกว่าจะซื้อแพ็กเกจ":villa.expires?new Date(villa.expires).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}):"ยังไม่เปิดสิทธิ์"}</dd></div>
+   <div><dt>วันหมดอายุ</dt><dd>{villa.trialUnlimited?"Basic Verify · ยังไม่มีวันสิ้นสุดที่ยืนยัน":villa.expires?new Date(villa.expires).toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric",timeZone:"Asia/Bangkok"}):"ยังไม่เปิดสิทธิ์"}</dd></div>
    <div><dt>การชำระเงิน</dt><dd>{villa.paymentPending?"มีรายการรอชำระ / ตรวจสลิป":"ไม่มีรายการรอชำระ"}</dd></div>
    <div><dt>ระดับที่ตรวจแล้ว</dt><dd>{villa.verificationLevel||"ยังไม่ตรวจ"}</dd></div>
    <div><dt>ยืนยันเจ้าของบ้าน</dt><dd>{villa.packageId==="basic"?"Basic Verify ไม่ต้องยืนยันเจ้าของบ้าน":"ตรวจใบหน้าและทะเบียนบ้านในหน้ารายละเอียดที่พัก · การซื้อแพ็กเกจไม่ถือว่ายืนยันแล้ว"}</dd></div>

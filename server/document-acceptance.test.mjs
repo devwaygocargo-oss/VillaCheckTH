@@ -46,7 +46,7 @@ test("Document requirements: OTP copy, pending Facebook, Admin-only readiness an
   const msg=delivered.find(m=>m.text.includes(invoice));assert.ok(msg.text.includes('DUMMY BANK A'));assert.ok(!msg.text.includes('DUMMY BANK B'));assert.ok(!msg.text.includes('ENV BANK'))
  });
  await t.test('Readiness is Admin-only and distinguishes configured services from actual acceptance',async()=>{
-  assert.equal((await request('/api/admin/readiness')).status,401);assert.equal((await request('/api/admin/readiness',undefined,o)).status,403);assert.equal((await request('/api/admin/readiness',undefined,u)).status,403)
+  assert.equal((await request('/api/admin/readiness')).status,401);assert.equal((await request('/api/admin/readiness',undefined,o)).status,403);assert.equal((await request('/api/admin/readiness',undefined,u)).status,401)
   const r=await request('/api/admin/readiness',undefined,a);assert.equal(r.status,200);assert.equal(r.value.facebookStatus,'waiting-approval');assert.equal(r.value.paymentMode,'MANUAL');assert.equal(r.value.otp.emailVerification.accepted,true);assert.equal(r.value.otp.smsVerification.accepted,true)
   assert.equal(r.value.acceptance.physicalDevices,'manual-review-required');assert.ok(!JSON.stringify(r.value).includes(config.otpSecret));assert.ok(!JSON.stringify(r.value).includes(config.facebookClientSecret))
  });

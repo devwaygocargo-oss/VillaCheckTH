@@ -1,3 +1,4 @@
+import {testReceivingBank} from "./test-receiving-bank.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { openTestDatabase } from "./test-database.mjs"
@@ -235,7 +236,13 @@ test("dynamic catalog, trial without invoice, leads, settings, payment QR expiry
         .run(merchant.id)
     },
   )
-  await request(`/api/villas/${id}/renew`, {}, m)
+  await t.test("positive checkout refuses an unconfigured receiver without leaving an invoice",async()=>{
+    assert.equal((await request(`/api/villas/${id}/renew`,{packageId:"starter"},m)).status,503)
+    assert.equal((await request("/api/config")).value.paymentConfigured,false)
+    assert.equal((await db.prepare("SELECT count(*) AS n FROM invoices").get()).n,0)
+  })
+  await testReceivingBank(db)
+  assert.equal((await request(`/api/villas/${id}/renew`,{packageId:"starter"},m)).status,200)
   state = (await request("/api/state", undefined, m)).value
   const invoice = state.villas[0].invoices[0]
   await t.test(

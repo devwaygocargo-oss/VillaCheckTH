@@ -71,7 +71,7 @@ export default function PropertyMedia({
         file: { name: file.name, type: file.type, data },
       })
       await load()
-      setMessage("อัปโหลดสื่อแล้ว วันที่อัปโหลดบันทึกอัตโนมัติ")
+      setMessage("อัปโหลดสื่อแล้ว รอ Admin ตรวจอนุมัติก่อนเผยแพร่ วันที่อัปโหลดบันทึกอัตโนมัติ")
     } catch (e) {
       setError(e instanceof Error ? e.message : "อัปโหลดไม่สำเร็จ")
     } finally {
@@ -153,7 +153,7 @@ export default function PropertyMedia({
             </figcaption>
             {mode === "admin" && (
               <button
-                disabled={busy}
+                disabled={busy || Boolean(m.reviewedAt)}
                 onClick={async () => {
                   setBusy(true)
                   setError("")
@@ -163,7 +163,7 @@ export default function PropertyMedia({
                       mediaId: m.id,
                     })
                     await load()
-                    setMessage("บันทึกการตรวจสื่อแล้ว")
+                    setMessage("อนุมัติสื่อแล้ว ระบบออก QR ใหม่สำหรับข้อมูลที่อนุมัติ กรุณาโหลดหน้าที่พักล่าสุด")
                   } catch (e) {
                     setError(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ")
                   } finally {

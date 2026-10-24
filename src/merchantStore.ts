@@ -1,6 +1,7 @@
 import type { PaymentQrData } from "./PaymentQr";
 export type Document = { name: string; data: string; type: string }
 export type Invoice = {
+  gateway?: "OMISE"|"MANUAL"
   packageName: string
   updatedAt: string
   bankQrImage: string
@@ -22,6 +23,9 @@ export type Invoice = {
 }
 export type VillaReviewRequest = {id:string|null;kind:string;submittedAt:string|null;submittedBy:string|null;summary:string;changes:{field:string;label:string;before:string;after:string}[]}
 export type MerchantVilla = {
+  approvalStatus?: "APPROVED"|"REJECTED"|"PENDING_APPROVAL"
+  paymentStatus?: "PENDING_REVIEW"|"UNPAID"|"PAID"|"NO_PAYMENT_REQUIRED"
+  subscriptionStatus?: "PROMOTIONAL"|"ACTIVE"|"EXPIRED"
   reviewRequest?: VillaReviewRequest
   id: string
   name: string

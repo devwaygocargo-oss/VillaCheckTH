@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "prisma generate && npm run build:backend && node scripts/deploy-db.mjs --if-configured && node scripts/seed-public-demo.mjs && next build --webpack",
+    "build": "prisma generate && npm run build:backend && next build --webpack",
     "preview": "next start --port 8443",
     "format": "oxfmt",
     "backend": "npm run build:backend && node --env-file-if-exists=.env .build/backend/main.js",
@@ -22,7 +22,8 @@
     "db:seed": "prisma generate && npm run build:backend && node scripts/seed-demo.mjs",
     "db:backup": "node --env-file-if-exists=.env scripts/application-backup.mjs backup",
     "db:restore": "node --env-file-if-exists=.env scripts/application-backup.mjs restore",
-    "check:health": "node scripts/health-check.mjs"
+    "check:health": "node scripts/health-check.mjs",
+    "demo:seed-public": "node scripts/seed-public-demo.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^12.1.2",

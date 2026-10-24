@@ -1,3 +1,10 @@
+import {beginPasswordRegistration,finishPasswordRegistration} from "./password-registration.mjs"
+import {reserveManualProof} from "./manual-proof.mjs"
+import {OmiseTestGateway,createOmisePayments} from "./omise.mjs"
+import {packageEntitlementsApi} from "./package-entitlements.mjs"
+import {approvalHistory,preserveApprovedVilla,rotateApprovedRevision} from "./approval-history.mjs"
+import {basicPromotionApi,grantBasicPromotion} from "./basic-promotion.mjs"
+import {assertNoUnsettledPackageChange} from "./proration.mjs"
 import {villaPage,villaPagesApi} from "./villa-pages.mjs";
 import {presentationMedia} from "./cms-presentation.mjs"
 import {accountManagement} from "./account-management.mjs"
@@ -51,9 +58,8 @@ import { readFileSync, existsSync } from "node:fs"
 import { resolve, sep } from "node:path"
 import {
   audit,
-  createUser,
   transaction,
-  verifyPassword,
+  verifyPasswordAsync,
 } from "./database.mjs"
 import { createMailWorker } from "./mail.mjs"
 class ApiError extends Error {
@@ -123,6 +129,8 @@ async function body(req) {
 function document(value) {
   if (!value || typeof value !== "object") fail(400, "ต้องแนบเอกสาร")
   const name = text(value.name, "ชื่อไฟล์", 180).replace(/[\\/]/g, "_")
+  if (/^(cms-image:|receiving-bank-qr:|villa-photo:|social-material:)/i.test(name))
+    fail(400, "ชื่อไฟล์สงวนสำหรับระบบ กรุณาเปลี่ยนชื่อไฟล์")
   const match =
     typeof value.data === "string" &&
     value.data.match(
@@ -153,6 +161,8 @@ async function insertDocument(db, owner, file) {
 }
 export function createApp(db, config, transport) {
   const worker = createMailWorker(db, config, transport)
+  const omiseGateway = config.omiseTestEnabled ? (config.omiseGateway || new OmiseTestGateway({secretKey:config.omiseTestSecretKey})) : null
+  const omise = createOmisePayments(db,omiseGateway)
   const attempts = new Map()
   async function rateLimit(req, bucket = "auth") {
     // Vercel overwrites this header. Other hosts use only the direct socket IP.
@@ -161,8 +171,8 @@ export function createApp(db, config, transport) {
         req.headers["x-forwarded-for"] ||
         req.socket.remoteAddress
       : req.socket.remoteAddress
-    const key = hash(String(address) + (bucket === "events" ? ":events" : ""))
-    const limit = bucket === "events" ? 300 : 30
+    const key = hash(/^(checks|omise):/.test(bucket) ? bucket : String(address) + ":" + bucket)
+    const limit = ["events", "public", "webhooks"].includes(bucket) ? 300 : 30
     const now = Date.now()
     if (config.serverless) {
       const entry = await db.transaction(async () => {
@@ -266,6 +276,7 @@ export function createApp(db, config, transport) {
         .get(invoice.proof_id))
     return {
       id: invoice.id,
+      gateway: invoice.external_provider === "OMISE" ? "OMISE" : "MANUAL",
       packageName: (await readContextPlan(db,invoice.package_id || (context?.villas.get(invoice.villa_id) || await db.prepare("SELECT package_id FROM villas WHERE id=?").get(invoice.villa_id)).package_id,context)).name,
       bankQrImage: JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get(`invoice_bank_qr:${invoice.id}`))?.value || '""'),
       paymentQr: await paymentQrDto(db, invoice.id),
@@ -338,6 +349,9 @@ export function createApp(db, config, transport) {
       expires: v.expires || "",
       payments: v.payments,
       paymentPending: invoices.some((i) => i.status !== "paid"),
+      approvalStatus: v.status === "approved" ? "APPROVED" : v.status === "rejected" ? "REJECTED" : "PENDING_APPROVAL",
+      paymentStatus: invoices.some(i=>i.status==="submitted") ? "PENDING_REVIEW" : invoices.some(i=>i.status==="pending") ? "UNPAID" : invoices.some(i=>i.status==="paid") ? "PAID" : "NO_PAYMENT_REQUIRED",
+      subscriptionStatus: v.payments === 0 ? "PROMOTIONAL" : new Date(v.expires)>new Date() ? "ACTIVE" : "EXPIRED",
       document: {
         name: file.name,
         type: file.mime,
@@ -400,7 +414,7 @@ export function createApp(db, config, transport) {
         instructions ||
         "ยังไม่ได้ตั้งค่าบัญชีรับชำระ กรุณาติดต่อทีมงานก่อนโอนเงิน",
       paymentVerificationMode,
-      paymentConfigured: isDemo || Boolean(instructions),
+      paymentConfigured: isDemo || Boolean(bank) || config.omiseTestEnabled === true,
       smtpConfigured: Boolean(transport),
     }
   }
@@ -519,7 +533,7 @@ export function createApp(db, config, transport) {
       if (req.method === "GET" && path === "/api/config")
         return json({
           localAccounts: Boolean(config.seedDemo),
-          paymentConfigured: (await demoMode(db,config)) || Boolean(await cmsPaymentInstructions(db, config.paymentInstructions)),
+          paymentConfigured: (await demoMode(db,config)) || Boolean(await receivingBank(db)) || config.omiseTestEnabled === true,
           oauth: oauthProviders(await cmsLoginConfig(db,config)),
           oauthStatus:{facebook:(await cmsLoginConfig(db,config)).facebookLoginEnabled?"enabled":"pending_approval"},
           otp: otpChannels(await cmsLoginConfig(db,config),transport),
@@ -541,12 +555,20 @@ export function createApp(db, config, transport) {
         }
         if(await createOAuth(db,await cmsLoginConfig(db,config),issueSession,config.oauthFetch||fetch)(req,res,url,linkUser))return
       }
+      if(req.method === "POST" && path === "/api/auth/registration/verify") {
+        checkOrigin(req);await rateLimit(req)
+        const nonce=req.headers.cookie?.match(/(?:^|;\s*)vc_registration=([a-f0-9]{64})(?:;|$)/)?.[1]
+        let user;try{user=await finishPasswordRegistration(db,loginOtp,await body(req),nonce)}catch(error){if(error.status===503)fail(503,error.message);throw error}
+        const issued=await issueSession(req,user)
+        res.setHeader("Set-Cookie",[issued.cookie,`vc_registration=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${config.secureCookies?"; Secure":""}`])
+        return json({user:{id:user.id,email:user.email,name:user.name,role:user.role},csrf:issued.csrf})
+      }
       if(req.method==='POST'&&['/api/auth/otp/request','/api/auth/otp/verify'].includes(path)){
         checkOrigin(req);await rateLimit(req);const data=await body(req)
         if(path.endsWith('/request')){const bindingUser=data.purpose==='link_identity'?await auth(req,'merchant'):null;try{return json(await loginOtp.request(data,bindingUser))}catch(error){if(error.status===503)fail(503,error.message);throw error}}
         const challenge=typeof data.challengeId==='string'?await db.prepare('SELECT binding_user_id FROM login_otps WHERE id=?').get(data.challengeId):null
         const bindingUser=challenge?.binding_user_id?await auth(req,'merchant'):null
-        let user;try{user=await loginOtp.verify(data,bindingUser)}catch(error){if(error.status===503)fail(503,error.message);throw error};const issued=await issueSession(req,user)
+        let user;try{user=await loginOtp.verify(data,bindingUser)}catch(error){if(error.status===503)fail(503,error.message);throw error};await db.prepare("DELETE FROM system_settings WHERE key=?").run("password_registration:"+data.challengeId);const issued=await issueSession(req,user)
         res.setHeader('Set-Cookie',issued.cookie);return json({user:{id:user.id,email:user.email,name:user.name,role:user.role},csrf:issued.csrf})
       }
       if (
@@ -572,18 +594,9 @@ export function createApp(db, config, transport) {
           )
             fail(409, "อีเมลนี้ถูกใช้งานแล้ว")
           if (path === "/api/auth/register") text(data.businessNameEn, "ชื่อ Merchant ภาษาอังกฤษ");
-          user = await createUser(
-            db,
-            address,
-            pass,
-            name,
-            path.endsWith("register-user") ? "user" : "merchant",
-          )
-          if (path === "/api/auth/register") {
-            const businessName = text(data.name, "ชื่อ Merchant ภาษาไทย");
-            const businessNameEn = text(data.businessNameEn, "ชื่อ Merchant ภาษาอังกฤษ");
-            await db.prepare("UPDATE users SET business_name=?,business_name_en=? WHERE id=?").run(businessName,businessNameEn,user.id);
-          }
+          let registration;try{registration=await beginPasswordRegistration(db,loginOtp,{email:address,password:pass,name,businessNameEn:path === "/api/auth/register"?text(data.businessNameEn,"ชื่อ Merchant ภาษาอังกฤษ"):"",role:path.endsWith("register-user")?"user":"merchant"})}catch(error){if(error.status===503)fail(503,error.message);throw error}
+          res.setHeader("Set-Cookie",`vc_registration=${registration.nonce}; HttpOnly; Path=/; SameSite=Lax; Max-Age=300${config.secureCookies?"; Secure":""}`)
+          return json({verificationRequired:true,challengeId:registration.challengeId,expiresAt:registration.expiresAt,resendAfter:registration.resendAfter},202)
         } else {
           const address = email(data.email)
           if (typeof data.password !== "string" || data.password.length > 128)
@@ -594,7 +607,7 @@ export function createApp(db, config, transport) {
           // Equal-cost verification for unknown accounts.
           const fakeHash = config.fakeHash
           if (
-            !verifyPassword(data.password, user?.password_hash || fakeHash) ||
+            !await verifyPasswordAsync(data.password, user?.password_hash || fakeHash) ||
             !user
           )
             fail(401, "อีเมลหรือรหัสผ่านไม่ถูกต้อง")
@@ -643,6 +656,7 @@ export function createApp(db, config, transport) {
         return json({ ok: true })
       }
       if (req.method === "GET" && path === "/api/public/villas") {
+        await rateLimit(req, "public")
         const requestedLimit=url.searchParams.get("limit");
         const limit=requestedLimit===null?null:Number(requestedLimit);
         if(requestedLimit!==null&&(!/^\d+$/.test(requestedLimit)||!Number.isInteger(limit)||limit<1||limit>100))fail(400,"จำนวนที่พักต้องเป็นจำนวนเต็ม 1–100");
@@ -670,6 +684,7 @@ export function createApp(db, config, transport) {
       }
       const adminQrVerification=path.startsWith("/api/admin/qr-verification/")
       if (req.method === "GET" && (path.startsWith("/api/public/qr/") || adminQrVerification)) {
+        if (!adminQrVerification) await rateLimit(req, "public")
         let viewer
         if(adminQrVerification){viewer=await auth(req);if(viewer.role!=="admin")fail(403,"เฉพาะ Admin")}
         const v = await db
@@ -681,7 +696,8 @@ export function createApp(db, config, transport) {
         } catch (error) {
           if (error.status !== 401) throw error
         }
-        const unlocked = viewer?.role === "user" || viewer?.role === "admin"
+        if (!adminQrVerification && v.status !== "approved") {const trust=await trustDto(db,v);return json({qr:v.qr,status:v.status,valid:false,locked:true,premiumBanner:false,qrStatus:trust.qrStatus,verificationLevel:"REGISTERED",verificationStatus:trust.verificationStatus})}
+        const unlocked = adminQrVerification && viewer?.role === "admin"
         return json({
           name: v.name,
           nameEn: v.name_en,
@@ -689,7 +705,7 @@ export function createApp(db, config, transport) {
           propertyDetails: await villaPage(db,v),
           guestCapacity:v.guest_capacity,
           bankName:v.bank_name,
-          accountName:v.account_name,
+          ...(unlocked?{accountName:v.account_name}:{}),
           ownerVerification: await publicOwnerVerification(db,v),
           ownerVerificationRequired: ["starter","pro","premium"].includes(v.package_id),
           basicVerificationNotice: v.package_id === "basic" ? basicVerificationNotice : null,
@@ -712,7 +728,7 @@ export function createApp(db, config, transport) {
             rejected: "REJECTED",
           }[v.status],
           reviewedAt: v.reviewed_at,
-          reviewedByAdminId: v.reviewed_by,
+          ...(adminQrVerification ? { reviewedByAdminId: v.reviewed_by } : {}),
           ...(await trustDto(db, v)),
           ...(unlocked
             ? {
@@ -731,8 +747,15 @@ export function createApp(db, config, transport) {
         await db.prepare("INSERT INTO system_settings(key,value) VALUES ('ops:last_cron',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(new Date().toISOString())
         return json({ok:true})
       }
+      if(path === "/api/webhooks/omise" && req.method === "POST") {
+        await rateLimit(req,"webhooks")
+        await omise.webhook(await body(req))
+        return json({ok:true})
+      }
       if (path.startsWith("/api/")) {
         const user = await auth(req)
+        if (path === "/api/user/checks" && req.method === "POST")
+          await rateLimit(req, "checks:" + user.id)
         if(path==="/api/admin/email-test"&&req.method==="POST"){
           if(user.role!=="admin")fail(403,"เฉพาะ Admin")
           const data=await body(req)
@@ -758,6 +781,11 @@ export function createApp(db, config, transport) {
           await audit(db,user,"smtp.test",data.recipient)
           return json({ok:true,acceptedBySmtp:!data.verifyOnly,verifiedConnection:true,inboxConfirmationRequired:!data.verifyOnly})
         }
+        if(path === "/api/admin/owner-notifications" && req.method === "GET") {
+          if(user.role !== "admin") fail(403,"เฉพาะ Admin")
+          const rows=await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'owner_notification:%'").all()
+          return json({notifications:rows.map(row=>JSON.parse(row.value)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))})
+        }
         if(path==='/api/admin/readiness'&&req.method==='GET'){
           if(user.role!=='admin')fail(403,'เฉพาะ Admin')
           return json(await readiness(db,config,transport))
@@ -771,6 +799,10 @@ export function createApp(db, config, transport) {
         }
         const acceptance=await acceptanceApi(db,user,req,path,body)
         if(acceptance!==undefined)return json(acceptance)
+        const entitlementResult=await packageEntitlementsApi(db,user,req,path,body)
+        if(entitlementResult!==undefined)return json(entitlementResult)
+        const basicPromotion=await basicPromotionApi(db,user,req,path,body)
+        if(basicPromotion!==undefined)return json(basicPromotion)
         const promotions=await promotionsApi(db,user,req,path,body)
         if(promotions!==undefined)return json(promotions)
         const approvalResult=await changeApprovals(db,user,req,path,body,async(kind,payload,validateOnly)=>{
@@ -779,7 +811,7 @@ export function createApp(db, config, transport) {
           fail(410,"ยกเลิกคำขออนุมัติ CMS แล้ว ให้ใช้การเผยแพร่โดยตรง")
         })
         if(approvalResult!==undefined)return json(approvalResult)
-        if(config.requireDualApproval&&req.method==="POST"&&path==="/api/admin/receiving-bank")fail(403,"ต้องเสนอคำขอและให้ Admin อีกบัญชีอนุมัติ")
+
         const bankResult=await adminReceivingBank(db,user,req,path,body,config,transport)
         if(bankResult!==undefined){json(bankResult);if(req.method==="POST")void worker.run();return}
         const cms = await adminCms(db, user, req, path, body)
@@ -911,7 +943,10 @@ export function createApp(db, config, transport) {
             const plan=await getPlan(db,villa.payments === 0 ? "basic" : villa.package_id)
             if(villa.status!=="approved")fail(409,"เอกสารต้องผ่านการอนุมัติก่อน")
             if(!levels.includes(data.verificationLevel) || levels.indexOf(data.verificationLevel)>levels.indexOf(plan.max_level))fail(400,"ระดับเกินสิทธิ์แพ็กเกจ")
+            if(villa.verification_level===data.verificationLevel)fail(409,"ระดับนี้ได้รับการอนุมัติแล้ว")
+            await preserveApprovedVilla(db,villa)
             await db.prepare("UPDATE villas SET verification_level=?,reviewed_at=?,reviewed_by=? WHERE id=?").run(data.verificationLevel,new Date().toISOString(),user.id,villa.id)
+            await rotateApprovedRevision(db,{...villa,verification_level:data.verificationLevel,reviewed_by:user.id},user,"VERIFICATION_LEVEL_APPROVED")
             await audit(db,user,"villa.verification-level",villa.id)
           })
           return json(await state(user))
@@ -1010,11 +1045,20 @@ export function createApp(db, config, transport) {
             const sub=await getSubscription(db,user.id)
             if(["SUSPENDED","CANCELLED"].includes(sub?.lifecycle))fail(409,"บัญชีถูกระงับ กรุณาติดต่อทีมงาน")
             const plan=await getPlan(db,data.packageId)
+            assertNoUnsettledPackageChange(villa,plan.id)
             if(!plan.active || plan.amount<=0) fail(400,"เลือกแพ็กเกจที่เปิดขาย")
+            if(plan.id === "basic") {
+              if(villa.payments > 0) fail(409,"การเปลี่ยนจากแพ็กเกจชำระเงินเป็น Basic รอยืนยันนโยบายรักษาสิทธิ์เดิม")
+              await grantBasicPromotion(db,villa.id,user.id)
+              await audit(db,user,"basic.promotion.claim",villa.id)
+              return
+            }
             if(await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status!='paid'").get(villa.id)) fail(409,"มีใบแจ้งชำระค้างสำหรับที่พักนี้")
+            if(!config.omiseTestEnabled && !await demoMode(db,config) && !await receivingBank(db))fail(503,"ยังไม่ได้ตั้งค่าช่องทางรับชำระ ไม่สามารถสร้างใบแจ้งชำระได้")
             await selectCoupon(db,user.id,plan,data.couponCode)
             const id=await createInvoice(db,{...villa,package_id:plan.id},config.appUrl,config.paymentInstructions)
             await db.prepare("UPDATE invoices SET package_id=? WHERE id=?").run(plan.id,id)
+            if(config.omiseTestEnabled){await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run("invoice_gateway:"+id,"OMISE");await db.prepare("UPDATE invoices SET external_provider='OMISE',verification_mode='AUTO' WHERE id=?").run(id);await db.prepare("UPDATE mails SET status='cancelled',last_error='Omise checkout replaces manual payment instructions' WHERE invoice_id=?").run(id)}
             await generatePaymentQr(db,id,config.appUrl)
             await audit(db,user,"villa.package.request",villa.id)
           })
@@ -1093,6 +1137,7 @@ export function createApp(db, config, transport) {
             await db
               .prepare("UPDATE villas SET photo_url=?,guest_capacity=?,photo_uploaded_at=?,photo_taken_at=? WHERE id=?")
               .run(photoUrl, capacity, photoUrl ? new Date().toISOString() : null, data.photoTakenAt ? mediaDate(data.photoTakenAt) : null, id)
+            await grantBasicPromotion(db,id,user.id)
             await audit(db, user, "villa.create", id)
             return id
           })
@@ -1113,6 +1158,7 @@ export function createApp(db, config, transport) {
                 fail(409,'ข้อมูล Villa เปลี่ยนหลังจากเปิดตรวจ กรุณาโหลดรายการล่าสุดก่อนอนุมัติ')
               if (!["approved", "changes", "rejected"].includes(data.status))
                 fail(400, "สถานะไม่ถูกต้อง")
+              if(data.status === "approved" && await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND external_provider='OMISE' AND status='paid' AND payment_status='FAILED' LIMIT 1").get(id))fail(409,"มีรายการ Omise กลับรายการที่ต้องตรวจสอบและกระทบยอดก่อนอนุมัติ")
               const reason =
                 data.status === "approved"
                   ? ""
@@ -1139,8 +1185,11 @@ export function createApp(db, config, transport) {
               if (data.status === "approved") {
                 const sub = await getSubscription(db, villa.owner_id)
                 if (!sub) fail(409, "Merchant ต้องสมัครแพ็กเกจที่บัญชีก่อน")
-                await activateVilla(db, villa)
+                await db.prepare("UPDATE villas SET qr=? WHERE id=?").run(`VC-${randomUUID()}`,id)
+                await activateVilla(db, {...villa,qr:(await db.prepare("SELECT qr FROM villas WHERE id=?").get(id)).qr})
+                await preserveApprovedVilla(db,await db.prepare("SELECT * FROM villas WHERE id=?").get(id))
               }
+              await approvalHistory(db,villa,user,data.status)
 
               await audit(db, user, `villa.${data.status}`, id)
             } else if (action === "resubmit") {
@@ -1163,11 +1212,15 @@ export function createApp(db, config, transport) {
               const sub=await getSubscription(db,villa.owner_id)
               if(["SUSPENDED","CANCELLED"].includes(sub?.lifecycle))fail(409,"บัญชีถูกระงับ กรุณาติดต่อทีมงาน")
               const target=await getPlan(db,data.packageId||villa.package_id)
+              assertNoUnsettledPackageChange(villa,target.id)
               if(!target.active||target.amount<=0)fail(400,"เลือกแพ็กเกจที่เปิดขาย")
+              if(target.id==="basic")fail(409,"Basic ใช้สิทธิ์โปรโมชั่นเดิม เงื่อนไขการสมัครแบบชำระเงินและต่ออายุรอยืนยัน")
               if(await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status!='paid'").get(villa.id))fail(409,"มีใบแจ้งชำระค้างสำหรับที่พักนี้")
+              if(!config.omiseTestEnabled && !await demoMode(db,config) && !await receivingBank(db))fail(503,"ยังไม่ได้ตั้งค่าช่องทางรับชำระ ไม่สามารถสร้างใบแจ้งชำระได้")
               await selectCoupon(db,user.id,target,data.couponCode)
               const invoiceId=await createInvoice(db,{...villa,package_id:target.id},config.appUrl,config.paymentInstructions)
               await db.prepare("UPDATE invoices SET package_id=? WHERE id=?").run(target.id,invoiceId)
+              if(config.omiseTestEnabled){await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run("invoice_gateway:"+invoiceId,"OMISE");await db.prepare("UPDATE invoices SET external_provider='OMISE',verification_mode='AUTO' WHERE id=?").run(invoiceId);await db.prepare("UPDATE mails SET status='cancelled',last_error='Omise checkout replaces manual payment instructions' WHERE invoice_id=?").run(invoiceId)}
               await generatePaymentQr(db,invoiceId,config.appUrl)
               await audit(db,user,"villa.package.renew",villa.id)
             }
@@ -1176,15 +1229,28 @@ export function createApp(db, config, transport) {
           void worker.run()
           return
         }
+        const omiseAction=path.match(/^\/api\/payments\/([a-f0-9-]+)\/omise$/)
+        if(omiseAction && ["GET","POST"].includes(req.method)) {
+          const {invoice}=await invoiceFor(user,omiseAction[1])
+          if(req.method === "POST") {
+            if(user.role!=="merchant")fail(403,"เฉพาะ Merchant")
+            await rateLimit(req,"omise:"+user.id)
+            const data=await body(req)
+            return json(await omise.create(invoice,user,data.source))
+          }
+          return json(await omise.status(invoice.id))
+        }
         const invoiceAction = path.match(
           /^\/api\/invoices\/([a-f0-9-]+)\/(proof|confirm|reject)$/,
         )
         if (["POST", "PATCH"].includes(req.method) && invoiceAction) {
           const [, id, action] = invoiceAction
+          const gatewayRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get("invoice_gateway:"+id)
+          if(gatewayRow?.value === "OMISE")fail(409,"รายการนี้รับชำระและตรวจสถานะผ่าน Omise เท่านั้น")
           const data = await body(req)
           await transaction(db, async () => {
             const { invoice, villa } = await invoiceFor(user, id)
-            if (villa.status !== "approved") fail(409, "Villa ยังไม่ผ่านการอนุมัติ")
+            if (villa.status !== "approved" && !villa.reviewed_at && !villa.qr) fail(409, "Villa ยังไม่เคยผ่านการอนุมัติ")
             if (action === "proof") {
               if (user.role !== "merchant") fail(403, "เฉพาะ Merchant")
 
@@ -1197,11 +1263,9 @@ export function createApp(db, config, transport) {
                 )
                 .get(reference, id)
               if (duplicate) fail(409, "เลขธุรกรรมนี้ถูกใช้ยืนยันการชำระแล้ว")
-              const docId = await insertDocument(
-                db,
-                user.id,
-                document(data.document),
-              )
+              const proof=document(data.document)
+              await reserveManualProof(db,id,reference,proof.bytes)
+              const docId = await insertDocument(db,user.id,proof)
               await db
                 .prepare(
                   "UPDATE invoices SET status='submitted',payment_status='PENDING_REVIEW',verification_mode=?,updated_at=?,proof_id=?,reference=?,reason='' WHERE id=?",
