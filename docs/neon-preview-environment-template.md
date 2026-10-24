@@ -37,3 +37,8 @@ APP_URL ไม่ได้ derive จาก VERCEL_URL ใน source ถ้า�
 ## ขอบเขตและ deployment เก่า
 
 ถ้าใช้ Preview scope รวม ทุก feature/PR ที่สร้างใหม่อาจใช้ fixed staging-preview ร่วมกัน จึงยังไม่แยกข้อมูลระหว่าง PR แต่ละชุด ให้กำหนดรอบ QA/branch-specific overrides และยอมรับผลกระทบก่อนอนุมัติ C การปรับ env ไม่ทำให้ deployment เก่าที่เก็บ env snapshot เดิมเปลี่ยน target เอง ต้อง inventory Preview เก่าที่อาจยังชี้ main แล้วเสนอจำกัดการเข้าถึง/จัดการตามการอนุมัติแยก ห้ามลบหรือ redeploy ของเก่าโดยเดา
+
+
+## Lifetime ไม่ใช่ app Environment Variable
+
+ก่อน deploy ต้องตรวจ expires_at/Automatically delete branch after และ integration cleanup ของ staging-preview จริง Console อาจเปิด 1-day expiration ตอนสร้าง schema-only การตั้ง PAYMENT_ACCESS_MODE หรือ DEMO_MODE ไม่ควบคุม Neon branch lifetime และไม่มี app flag สำหรับปิด Neon auto-delete ใน source นี้ ดู [runbook ที่เพิ่มจุดตรวจแล้ว](neon-preview-approval-and-release.md)

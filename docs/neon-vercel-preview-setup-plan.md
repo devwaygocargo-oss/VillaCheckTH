@@ -101,3 +101,10 @@ Source: `backend/prisma.service.ts`, `server/index.mjs`, `server/payment-access.
 | F | PR review/คุณเกมส์ UAT แล้วอนุมัติ Merge main และ staging deployment | main และ URL staging หลักเปลี่ยน ไม่เกี่ยวกับ production website ในอนาคต |
 
 ไม่มีชุดใดได้รับอนุมัติหรือดำเนิน mutation แล้วใน session นี้ รายละเอียดคำสั่ง/rollback ใน [Runbook](neon-preview-approval-and-release.md)
+
+
+## ข้อขาดที่พบในการทบทวน Preview readiness
+
+Runbook เดิมยังไม่ได้เน้น default auto-delete ของ Console เพียงพอ เพิ่มการตรวจ Automatically delete branch after/expiry และ integration association แล้ว ทั้ง schema-only root และชื่อ staging-preview ไม่ใช่หลักฐานว่าไม่มีวันหมดอายุหรือไม่มี cleanup ต้องยืนยันบน Dashboard จริงก่อนอนุมัติ deployment ไม่ได้เปลี่ยน Neon/Vercel settings ในรอบทบทวน
+
+ดู [Neon schema-only](https://neon.com/docs/guides/branching-schema-only), [Branch expiration](https://neon.com/docs/guides/branch-expiration) และ [Cleanup](https://neon.com/docs/guides/vercel-branch-cleanup) ผล local QA เดิมยังเป็นหลักฐาน code เท่านั้น ไม่ยืนยัน branch lifetime บน host

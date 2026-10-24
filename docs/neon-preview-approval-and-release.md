@@ -11,6 +11,8 @@
 - [ ] ระบุ DB ของ production hosting จริงแยกจาก staging หากยังไม่ทราบให้บันทึกไม่ยืนยัน ห้ามเปิด villacheckth.com หรือแก้บริการจริงเพื่อหาคำตอบในงานนี้
 - [ ] เจ้าของข้อมูลระบุ main มีข้อมูลผู้ใช้/PII/เอกสาร/การเงิน/queues/secrets ใน schema หรือไม่ เก็บเฉพาะ classification/ผลเทียบไม่ dump ข้อมูล
 - [ ] ตรวจ branch protection, root/compute/storage quota, schema-only option และ role ที่จำเป็น
+- [ ] ตรวจ Branch Overview ของ staging-preview ว่ามีวันหมดอายุ/Automatically delete branch after หรือไม่ และบันทึก expires_at โดยไม่เผย credentials
+- [ ] ยืนยันว่า branch นี้เป็น fixed manual branch หรือ integration-managed preview branch ตรวจ cleanup ของ Neon/Vercel, GitHub Apps/workflows และ Deployment Retention แยกจาก TTL
 
 ผลตรวจที่ต้องบันทึก: □ mapping ยืนยัน □ isolation ยืนยัน □ data policy ยืนยัน / □ Blocked
 ผู้ตรวจ __________ วันที่ __________ Evidence แบบไม่แสดงค่า __________
@@ -20,7 +22,7 @@
 ขอบเขตเสนอ: project ที่ยืนยันจาก A → schema จาก main → **Schema only** → ชื่อ staging-preview → database neondb → QA compute/role ตามที่อนุมัติ คง main เดิม ไม่ copytable data ไม่ reset/deleteexistingbranch
 
 1. Neon Console → Branches → New branch
-2. เลือก schema source main และตัวเลือก Schema only ตรวจ project/ชื่อ/ค่าใช้จ่ายก่อนกด Create
+2. เลือก schema source main และตัวเลือก Schema only ตรวจ project/ชื่อ/ค่าใช้จ่าย **รวม Automatically delete branch after** ก่อนกด Create เอกสาร Neon ปัจจุบันระบุ Console เปิด default 1 day; fixed QA branch ต้องให้ผู้อนุมัติตัดสินใจเอา expiration ออก ไม่สมมติว่า schema-only/root ไม่มี TTL
 3. ถ้าชื่อมีอยู่/option ไม่มี/quota ไม่พอให้หยุด ไม่สร้างชื่ออื่นหรือ full-data child แทน
 4. หลังสร้างเก็บ branch ID/endpoint mapping แบบ private ไม่เก็บ connectionstring ใน repo ยืนยันไม่มี app rows, ตรวจ schema/roles/extensions และ migration history ด้วยงานที่ได้รับอนุญาต
 5. Schema-only เป็น root แยก ไม่ทำ reset-from-parent หรือ restore จาก main เพื่อเติมข้อมูล การทำเช่นนั้นอาจนำข้อมูลเดิมกลับมา
@@ -101,3 +103,14 @@ Pushfeaturebranch โดยปกติได้ Preview เพราะ Product
 3. revert ผ่าน PR/GitHubreview เมื่ออนุมัติ ไม่ reset/forcepushmain ไม่ merge ข้อมูล Preview กลับ main เพื่อแก้ approllback
 4. Previewdbbranch คงไว้ตรวจ QA ได้ตามนโยบายที่อนุมัติ การ Delete/Reset/Restore/เปลี่ยน retention หรือ compute เป็น mutation ใหม่ต้องอนุมัติเอง ไม่ cleanup อัตโนมัติ
 5. ยืนยัน integration ไม่ได้สลับ Production ให้ใช้ Previewbranch โดยไม่ตั้งใจ เก็บ main และ invoice/grant/history เดิมไว้ครบ
+
+
+## จุดตรวจ auto-delete ที่เพิ่มเติมหลังทบทวนเอกสาร provider
+
+- Console default ของ schema-only อาจกำหนดลบหลัง 1 วัน ต้องตรวจค่าจริงของ branch หากมีอยู่แล้วที่ Branches → staging-preview → Branch Overview/Update expiration ไม่มีการแก้ expiration ในงานตรวจนี้
+- Fixed branch ที่ต้องเก็บสำหรับ QA ควรไม่มี expires_at เมื่อได้รับอนุมัติให้ตั้งค่าแล้ว แต่การไม่มี TTL ไม่ปิด integration cleanup อัตโนมัติทุกแบบ
+- Vercel-managed preview branches อาจถูกลบเมื่อ deployment สุดท้ายที่สัมพันธ์ถูกลบ รวม retention cleanup; Neon-managed preview branches อาจ cleanup เมื่อ Git branch หายและมี Preview deployment ถัดไป ต้องรู้ชนิด integration และ association จริง
+- ไม่ใช้ชื่อ staging-preview หรือ schema-only/root เป็นหลักฐานว่าพ้น cleanup; อย่าลบ deployment/Git branch เพื่อทดสอบ เพราะอาจเป็น trigger ที่ลบ DB
+- ไม่พบ workflow ลบ Neon branch ใน source ปัจจุบัน แต่ dashboard/webhooks/automation ภายนอกยังไม่ทราบ ไม่เพิ่ม cleanup workflow หรือตั้งค่า lifetime เอง
+
+แหล่งยืนยัน: [Schema-only](https://neon.com/docs/guides/branching-schema-only), [Branch expiration](https://neon.com/docs/guides/branch-expiration), [Integration cleanup](https://neon.com/docs/guides/vercel-branch-cleanup)
