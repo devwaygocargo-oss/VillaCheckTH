@@ -166,10 +166,8 @@ export function createApp(db, config, transport) {
   const attempts = new Map()
   async function rateLimit(req, bucket = "auth") {
     // Vercel overwrites this header. Other hosts use only the direct socket IP.
-    const address = config.serverless
-      ? req.headers["x-vercel-forwarded-for"] ||
-        req.headers["x-forwarded-for"] ||
-        req.socket.remoteAddress
+    const address = config.trustVercelProxy === true
+      ? req.headers["x-vercel-forwarded-for"] || req.socket.remoteAddress
       : req.socket.remoteAddress
     const key = hash(/^(checks|omise):/.test(bucket) ? bucket : String(address) + ":" + bucket)
     const limit = ["events", "public", "webhooks"].includes(bucket) ? 300 : 30
@@ -224,7 +222,7 @@ export function createApp(db, config, transport) {
   const loginOtp=createLoginOtp(db,config,transport,config.smsFetch||fetch)
   async function session(req) {
     const path=new URL(req.url,"http://localhost").pathname;
-    const adminAsset=/^\/api\/public\/(cms-media|property-media-file)\//.test(path);
+    const adminAsset=/^\/api\/public\/(cms-media|property-media-file|villa-photo)\//.test(path);
     const publicOnly=(!adminAsset && path.startsWith("/api/public/")) || ["/api/auth/me","/api/auth/logout"].includes(path);
     const adminContext=adminAsset || path.startsWith("/api/admin/") || path.startsWith("/api/auth/admin-") || (!publicOnly && req.headers["x-villacheck-portal"] === "admin");
     const names=publicOnly?["vc_session"]:adminContext?["vc_admin_session","vc_session"]:["vc_session","vc_admin_session"];
@@ -315,6 +313,7 @@ export function createApp(db, config, transport) {
       .prepare("SELECT * FROM invoices WHERE villa_id=? ORDER BY created DESC")
       .all(v.id)
     const packagePlan=await readContextPlan(db,v.package_id,context)
+    const ownerLifecycle=context?.subscriptions.get(v.owner_id)?.lifecycle
     return {
       id: v.id,
       name: v.name,
@@ -349,9 +348,9 @@ export function createApp(db, config, transport) {
       expires: v.expires || "",
       payments: v.payments,
       paymentPending: invoices.some((i) => i.status !== "paid"),
-      approvalStatus: v.status === "approved" ? "APPROVED" : v.status === "rejected" ? "REJECTED" : "PENDING_APPROVAL",
-      paymentStatus: invoices.some(i=>i.status==="submitted") ? "PENDING_REVIEW" : invoices.some(i=>i.status==="pending") ? "UNPAID" : invoices.some(i=>i.status==="paid") ? "PAID" : "NO_PAYMENT_REQUIRED",
-      subscriptionStatus: v.payments === 0 ? "PROMOTIONAL" : new Date(v.expires)>new Date() ? "ACTIVE" : "EXPIRED",
+      approvalStatus: v.status === "approved" ? "APPROVED" : v.status === "rejected" ? "REJECTED" : v.status === "changes" ? "CHANGE_REQUESTED" : "PENDING_APPROVAL",
+      paymentStatus: invoices.some(i=>i.status==="paid"&&i.payment_status==="FAILED") ? "RECONCILIATION_REQUIRED" : invoices.some(i=>i.status==="submitted") ? "PENDING_REVIEW" : invoices.some(i=>i.status==="pending"&&i.payment_status==="FAILED") ? "FAILED" : invoices.some(i=>i.status==="pending") ? "UNPAID" : invoices.some(i=>i.status==="paid") ? "PAID" : "NO_PAYMENT_REQUIRED",
+      subscriptionStatus: ["SUSPENDED","CANCELLED"].includes(ownerLifecycle) ? ownerLifecycle : v.payments === 0 ? "PROMOTIONAL" : new Date(v.expires)>new Date() ? "ACTIVE" : "EXPIRED",
       document: {
         name: file.name,
         type: file.mime,
@@ -485,8 +484,13 @@ export function createApp(db, config, transport) {
       if (slipAction) path = `/api/invoices/${slipAction[1]}/proof`
       const publicPhoto=path.match(/^\/api\/public\/villa-photo\/([a-f0-9-]+)$/)
       if(req.method==='GET'&&publicPhoto){
-        const photo=await db.prepare('SELECT d.mime,d.bytes FROM documents d JOIN villas v ON v.photo_url=? AND v.owner_id=d.owner_id WHERE d.id=? AND d.name=?').get(path,publicPhoto[1],'villa-photo')
+        const photo=await db.prepare('SELECT d.mime,d.bytes,v.owner_id,v.status FROM documents d JOIN villas v ON v.photo_url=? AND v.owner_id=d.owner_id WHERE d.id=? AND d.name=?').get(path,publicPhoto[1],'villa-photo')
         if(!photo||!['image/jpeg','image/png'].includes(photo.mime))fail(404,'ไม่พบรูป Villa')
+        if(photo.status!=='approved'){
+          const viewer=await session(req).catch(error=>{if(error.status===401)return null;throw error})
+          if(viewer?.role!=='admin'&&viewer?.id!==photo.owner_id)fail(404,'ไม่พบรูป Villa')
+        }
+        res.setHeader('Cache-Control','private, no-store')
         res.writeHead(200,{'Content-Type':photo.mime});return res.end(Buffer.from(photo.bytes))
       }
       const publicReport=path.match(/^\/api\/public\/reports\/(RPT-[A-Za-z0-9-]{1,64})$/)

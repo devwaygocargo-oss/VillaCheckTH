@@ -66,7 +66,7 @@ export async function operations(db,user,req,path,url,readBody){
    const account=clean(data.account||'','บัญชี',50,false),contact=clean(data.contact||'','ติดต่อ',200,false)
    const trust=villa?await trustDto(db,villa):null
    const normalize=v=>String(v||'').replace(/[\s-]/g,'')
-   const matched=trust?.qrStatus==='ACTIVE'&&(!account||(villa.account_number&&normalize(account)===normalize(villa.account_number)))&&(!contact||(villa.phone&&normalize(contact)===normalize(villa.phone)))
+   const matched=Boolean(normalize(account)||normalize(contact))&&trust?.qrStatus==='ACTIVE'&&(!account||(villa.account_number&&normalize(account)===normalize(villa.account_number)))&&(!contact||(villa.phone&&normalize(contact)===normalize(villa.phone)))
    const status=matched?'MATCHED':'REVIEW_REQUIRED'
    const result=!villa?'ไม่พบที่พักที่ระบุในระบบ':trust.qrStatus!=='ACTIVE'?`QR ไม่พร้อมใช้งาน: ${trust.qrStatus}`:matched?'ข้อมูลตรงกับทะเบียน ณ เวลาตรวจสอบ ไม่ใช่การรับประกันการจอง':'บัญชีหรือช่องทางติดต่อไม่ตรง กรุณาตรวจสอบกับที่พักก่อนโอน'
    const id=randomUUID(),reference=ref('CHK'),created=new Date().toISOString()

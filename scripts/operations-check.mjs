@@ -3,8 +3,8 @@ export async function checkOperations({origin='https://design-villacheck.vercel.
  const target=new URL(origin)
  if(target.protocol!=='https:'&&!(target.protocol==='http:'&&['127.0.0.1','localhost'].includes(target.hostname)))throw Error('Use HTTPS for hosted monitoring')
  const failed=[]
- for(const [path,key]of [['/api/health','ok'],['/api/public/cms','content'],['/api/packages','packages']]){
-  try{const r=await fetchImpl(new URL(path,target),{signal:AbortSignal.timeout(15000)});const d=await r.json();if(!r.ok||!d[key])failed.push(path)}catch{failed.push(path)}
+ for(const [path,key]of [['/api/health','ok'],['/api/public/cms','content'],['/api/packages',null]]){
+  try{const r=await fetchImpl(new URL(path,target),{signal:AbortSignal.timeout(15000)});const d=await r.json();if(key?(!r.ok||!d[key]):(r.status!==401||Object.hasOwn(d,'packages')))failed.push(path)}catch{failed.push(path)}
  }
  let alert='not-needed'
  if(failed.length){

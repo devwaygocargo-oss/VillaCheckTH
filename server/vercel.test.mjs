@@ -42,6 +42,7 @@ test(
   async (t) => {
     const db = await openTestDatabase()
     const env = {
+      VERCEL: "1", // Simulate the trusted platform, including its overwritten IP header.
       VillaCheck_DATABASE_URL: db.testConnectionString,
       APP_URL: "https://design-villacheck.vercel.app",
       ADMIN_EMAIL: "admin-online@example.com",
@@ -74,7 +75,7 @@ test(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-forwarded-for": ip,
+          "x-vercel-forwarded-for": ip,
           Origin: env.APP_URL,
         },
         body: JSON.stringify(data),

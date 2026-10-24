@@ -27,6 +27,8 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
  await t.test('checks compare actual data, deduplicate retries, and survive new sessions',async()=>{
   const input={villa:villa.name,account:'0000000000',contact:'0800000000',requestKey:'same-request'}
   const first=await request('/user/checks',input,u);assert.equal(first.status,200);assert.equal(first.value.status,'MATCHED');assert.equal((await request('/user/checks',input,u)).value.id,first.value.id)
+  const empty=await request('/user/checks',{villa:villa.name,requestKey:'empty-details'},u);assert.equal(empty.value.status,'REVIEW_REQUIRED');
+  const blank=await request('/user/checks',{villa:villa.name,account:' - ',contact:' -- ',requestKey:'blank-details'},u);assert.equal(blank.value.status,'REVIEW_REQUIRED');
   const bad=await request('/user/checks',{...input,account:'9999999999',requestKey:'bad-account'},u);assert.equal(bad.value.status,'REVIEW_REQUIRED');assert.equal((await request('/user/checks',input,m)).status,403)
   assert.equal((await request('/user/checks',undefined,other)).value.checks.length,0);const newSession=await login('demo-user@villacheck.example');assert.ok((await request('/user/checks',undefined,newSession)).value.checks.some(x=>x.id===first.value.id));u.cookie=newSession.cookie;u.csrf=newSession.csrf
  })
@@ -60,7 +62,8 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
   assert.equal((await request(`/merchant/villas/${villa.id}`,{...input,photo:{...image,data:'data:image/jpeg;base64,aGVsbG8='}},m)).status,400);
   assert.equal((await request(`/merchant/villas/${villa.id}`,input,m)).status,200);
   const saved=await db.prepare('SELECT photo_url,qr FROM villas WHERE id=?').get(villa.id);assert.equal(saved.qr,villa.qr);
-  const response=await fetch(base+saved.photo_url);assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/jpeg');assert.deepEqual(Buffer.from(await response.arrayBuffer()),readFileSync('public/demo/villas/villa-1.jpg'));
+  assert.equal((await fetch(base+saved.photo_url)).status,404);
+  const response=await fetch(base+saved.photo_url,{headers:{Cookie:m.cookie}});assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'image/jpeg');assert.deepEqual(Buffer.from(await response.arrayBuffer()),readFileSync('public/demo/villas/villa-1.jpg'));
   assert.equal((await fetch(base+'/api/public/villa-photo/'+villa.document_id)).status,404);
  })
  await t.test('Merchant edits require fresh document review but preserve QR identity',async()=>{

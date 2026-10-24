@@ -23,9 +23,9 @@ export type Invoice = {
 }
 export type VillaReviewRequest = {id:string|null;kind:string;submittedAt:string|null;submittedBy:string|null;summary:string;changes:{field:string;label:string;before:string;after:string}[]}
 export type MerchantVilla = {
-  approvalStatus?: "APPROVED"|"REJECTED"|"PENDING_APPROVAL"
-  paymentStatus?: "PENDING_REVIEW"|"UNPAID"|"PAID"|"NO_PAYMENT_REQUIRED"
-  subscriptionStatus?: "PROMOTIONAL"|"ACTIVE"|"EXPIRED"
+  approvalStatus?: "APPROVED"|"REJECTED"|"CHANGE_REQUESTED"|"PENDING_APPROVAL"
+  paymentStatus?: "PENDING_REVIEW"|"UNPAID"|"PAID"|"NO_PAYMENT_REQUIRED"|"FAILED"|"RECONCILIATION_REQUIRED"
+  subscriptionStatus?: "PROMOTIONAL"|"ACTIVE"|"EXPIRED"|"SUSPENDED"|"CANCELLED"
   reviewRequest?: VillaReviewRequest
   id: string
   name: string

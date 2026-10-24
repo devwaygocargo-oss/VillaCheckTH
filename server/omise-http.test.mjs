@@ -27,6 +27,9 @@ test("Omise HTTP enforces ownership, backend amount, authenticated status and un
  assert.equal((await request(`/invoices/${invoiceId}/proof`,{reference:"fake"},a)).status,409)
  assert.equal((await request("/webhooks/omise",{id:"evnt_test_forged",data:{...charge,status:"successful"}})).status,400)
  assert.equal((await db.prepare("SELECT status FROM invoices WHERE id=?").get(invoiceId)).status,"pending")
+ charge={...charge,status:"failed"}
+ assert.equal((await request(path,undefined,a)).value.status,"failed")
+ assert.equal((await request("/state",undefined,a)).value.villas[0].paymentStatus,"FAILED")
  charge={...charge,status:"successful",paid:true,transaction:"trxn_test_http"}
  assert.equal((await request("/webhooks/omise",{id:"evnt_test_http"})).status,200)
  assert.equal((await request("/webhooks/omise",{id:"evnt_test_http"})).status,200)
@@ -39,5 +42,6 @@ test("Omise HTTP enforces ownership, backend amount, authenticated status and un
  assert.equal((await request(`/invoices/${legacyId}/proof`,proof,a)).status,200)
  charge={...charge,status:"reversed"}
  assert.equal((await request(path,undefined,a)).value.status,"reversed")
+ assert.equal((await request("/state",undefined,a)).value.villas[0].paymentStatus,"RECONCILIATION_REQUIRED")
  assert.equal((await request(`/villas/${villaId}/review`,{status:"approved"},adminSession)).status,409)
 })

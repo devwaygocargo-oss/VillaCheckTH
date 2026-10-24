@@ -95,6 +95,7 @@ export async function startServer(env = process.env, { listen = true, databaseFa
       facebookVersion: env.FACEBOOK_GRAPH_VERSION,
       seedDemo,
       serverless: !listen,
+      trustVercelProxy: env.VERCEL === "1",
       secureCookies: production || env.COOKIE_SECURE === "true",
       allowedOrigins: [
         new URL(appUrl).origin,

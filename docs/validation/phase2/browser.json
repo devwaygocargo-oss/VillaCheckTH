@@ -1,0 +1,230 @@
+{
+  "localSyntheticDataOnly": true,
+  "results": [
+    {
+      "name": "Admin Leads direct link and reload",
+      "passed": true,
+      "count": 10
+    },
+    {
+      "name": "Merchant Basic regular/discount/net pricing",
+      "passed": true
+    },
+    {
+      "name": "Merchant pricing mobile width 390",
+      "passed": true
+    },
+    {
+      "name": "Public QR uses masked data and pre-transfer check guidance",
+      "passed": true
+    },
+    {
+      "name": "Homepage",
+      "width": 1440,
+      "heading": "ค้นหาและตรวจสอบที่พักกับ VillaCheck",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Registration User",
+      "width": 1440,
+      "heading": "สมัครสมาชิก User",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Registration Merchant",
+      "width": 1440,
+      "heading": "สมัครบัญชี Merchant",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Login",
+      "width": 1440,
+      "heading": "เข้าสู่ระบบ VillaCheck",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Villa Listing",
+      "width": 1440,
+      "heading": "ค้นหาวิลล่าที่ไว้ใจได้",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Villa Detail",
+      "width": 1440,
+      "heading": "Sea Sky Demo Villa",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Merchant Dashboard",
+      "width": 1440,
+      "heading": "Member Room",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Pricing",
+      "width": 1440,
+      "heading": "แพ็กเกจและการชำระเงิน",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Invoice Payment",
+      "width": 1440,
+      "heading": "ชำระเงินแพ็กเกจ",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Approval Status",
+      "width": 1440,
+      "heading": "Villa ของคุณ",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Admin Dashboard",
+      "width": 1440,
+      "heading": "Admin Dashboard",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Admin Payments",
+      "width": 1440,
+      "heading": "แพ็กเกจและการชำระเงิน",
+      "scrollWidth": 1440,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Homepage",
+      "width": 390,
+      "heading": "ค้นหาและตรวจสอบที่พักกับ VillaCheck",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Registration User",
+      "width": 390,
+      "heading": "สมัครสมาชิก User",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Registration Merchant",
+      "width": 390,
+      "heading": "สมัครบัญชี Merchant",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Login",
+      "width": 390,
+      "heading": "เข้าสู่ระบบ VillaCheck",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Villa Listing",
+      "width": 390,
+      "heading": "ค้นหาวิลล่าที่ไว้ใจได้",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Villa Detail",
+      "width": 390,
+      "heading": "Sea Sky Demo Villa",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Merchant Dashboard",
+      "width": 390,
+      "heading": "Member Room",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Pricing",
+      "width": 390,
+      "heading": "แพ็กเกจและการชำระเงิน",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Invoice Payment",
+      "width": 390,
+      "heading": "ชำระเงินแพ็กเกจ",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Approval Status",
+      "width": 390,
+      "heading": "Villa ของคุณ",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Admin Dashboard",
+      "width": 390,
+      "heading": "Admin Dashboard",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Admin Payments",
+      "width": 390,
+      "heading": "แพ็กเกจและการชำระเงิน",
+      "scrollWidth": 390,
+      "alerts": [],
+      "passed": true
+    },
+    {
+      "name": "Missing QR error state",
+      "passed": true
+    },
+    {
+      "name": "Leads loading state with delayed real request",
+      "passed": true
+    },
+    {
+      "name": "Leads network error state",
+      "passed": true
+    },
+    {
+      "name": "Merchant empty state",
+      "passed": true
+    }
+  ]
+}
