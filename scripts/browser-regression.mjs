@@ -23,7 +23,7 @@ try {
  const password="LocalBrowserFixture123"
  await seedDemo(db,{password,adminEmail:"browser-admin@example.test",adminPassword:password})
  const expected=Number((await db.prepare("SELECT count(*) AS n FROM leads").get()).n)
- const env={...process.env,NODE_ENV:"test",APP_URL:base,DATABASE_URL:db.testConnectionString,DIRECT_URL:db.testConnectionString,VillaCheck_DATABASE_URL:db.testConnectionString,NEXT_TELEMETRY_DISABLED:"1",SMTP_HOST:"",SMTP_FROM:"",SMTP_USER:"",SMTP_PASSWORD:"",OMISE_TEST_ENABLED:"false",OMISE_TEST_SECRET_KEY:"",SEED_PUBLIC_DEMO_DATA:"false",SEED_DEMO_ACCOUNTS:"false",ADMIN_EMAIL:"",ADMIN_PASSWORD:""}
+ const env={...process.env,NODE_ENV:"test",PAYMENT_ACCESS_MODE:process.env.VILLACHECK_PHASE1_QA==="1"?"DISABLED":"LEGACY_MANUAL",APP_URL:base,DATABASE_URL:db.testConnectionString,DIRECT_URL:db.testConnectionString,VillaCheck_DATABASE_URL:db.testConnectionString,NEXT_TELEMETRY_DISABLED:"1",SMTP_HOST:"",SMTP_FROM:"",SMTP_USER:"",SMTP_PASSWORD:"",OMISE_TEST_ENABLED:"false",OMISE_TEST_SECRET_KEY:"",SEED_PUBLIC_DEMO_DATA:"false",SEED_DEMO_ACCOUNTS:"false",ADMIN_EMAIL:"",ADMIN_PASSWORD:""}
  next=spawn(process.execPath,["node_modules/next/dist/bin/next","start","--port",String(port),"--hostname","127.0.0.1"],{env,stdio:"ignore"})
  await until(async()=>(await fetch(base+"/api/health")).ok,"Local Next did not start")
  chrome=spawn(chromePath,["--headless=new","--disable-gpu","--disable-background-networking","--disable-sync","--no-first-run","--no-default-browser-check",`--user-data-dir=${profile}`,`--remote-debugging-port=${debugPort}`,"about:blank"],{stdio:"ignore"})
@@ -67,7 +67,7 @@ try {
   ["Invoice Payment","/#page=owner-package&item="+invoiceId], ["Approval Status","/#page=owner-pending"],
   ["Admin Dashboard","/admin#page=admin-dashboard"], ["Admin Payments","/admin#page=admin-payments"]
  ]
- for(const width of [1440,390]){
+ for(const width of (process.env.VILLACHECK_PHASE1_QA==="1"?[1440,768,390]:[1440,390])){
   await send("Emulation.setDeviceMetricsOverride",{width,height:900,deviceScaleFactor:1,mobile:width<500})
   for(const [name,path] of routes){
    await send("Page.navigate",{url:base+path})
@@ -128,6 +128,20 @@ try {
   await send("Page.navigate",{url:base+"/#page=verify&item="+previous.qr})
   await until(()=>evaluate("location.hash.includes('VC-business-approved')&&document.querySelector('h1')?.innerText==='Latest Approved QA Villa'"),"Old QR did not canonicalize to approved latest")
   results.push({name:"Old QR browser URL redirects to latest approved QR",passed:true})
+ }
+ if(process.env.VILLACHECK_PHASE1_QA==="1"){
+  await send("Page.navigate",{url:base+"/#page=directory"})
+  await until(()=>evaluate("!!document.querySelector('.filter-panel input')"),"Search input missing")
+  await evaluate("{const input=document.querySelector('.filter-panel input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'NO-SUCH-PHASE1-VILLA');input.dispatchEvent(new Event('input',{bubbles:true}));}")
+  await until(()=>evaluate("document.body.innerText.includes('ไม่พบ Villa ที่ตรงกับการค้นหา')"),"Search empty state missing")
+  await evaluate("[...document.querySelectorAll('button')].find(b=>b.innerText==='ล้างตัวกรอง').click()")
+  await until(()=>evaluate("!!document.querySelector('.directory-grid')"),"Clear filters did not restore Villas")
+  results.push({name:"Public search empty state and clear filters use real listing",passed:true})
+  await send("Page.navigate",{url:base+"/#page=owner-dashboard"});await until(()=>evaluate("document.querySelector('h1')?.innerText==='Member Room'"),"Owner dashboard missing")
+  await send("Page.reload",{ignoreCache:true});await until(()=>evaluate("document.querySelector('h1')?.innerText==='Member Room'"),"Refresh lost owner session")
+  results.push({name:"Owner session survives browser reload",passed:true})
+  const disabled=await evaluate("(async()=>{const me=await(await fetch('/api/auth/me')).json();return (await fetch('/api/payments/"+invoiceId+"/qr',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':me.csrf},body:'{}'})).status})()")
+  assert.equal(disabled,503);results.push({name:"Real backend rejects payment QR with valid owner session in Phase 1",passed:true})
  }
  assert(results.every(result=>result.passed),"Responsive QA has failed cases; inspect evidence")
  writeFileSync(join(evidenceDir,"browser.json"),JSON.stringify({localSyntheticDataOnly:true,results},null,2)+"\n")

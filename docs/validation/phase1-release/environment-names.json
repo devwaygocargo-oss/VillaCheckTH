@@ -1,0 +1,102 @@
+{
+  "environment": [
+    {
+      "name": "APP_ENV",
+      "configured": false
+    },
+    {
+      "name": "APP_URL",
+      "configured": true
+    },
+    {
+      "name": "DATABASE_URL",
+      "configured": true
+    },
+    {
+      "name": "DIRECT_URL",
+      "configured": false
+    },
+    {
+      "name": "OTP_SECRET",
+      "configured": true
+    },
+    {
+      "name": "STAGING_EMAIL_ALLOWLIST",
+      "configured": false
+    },
+    {
+      "name": "SMTP_HOST",
+      "configured": true
+    },
+    {
+      "name": "SMTP_PORT",
+      "configured": true
+    },
+    {
+      "name": "SMTP_SECURE",
+      "configured": true
+    },
+    {
+      "name": "SMTP_USER",
+      "configured": true
+    },
+    {
+      "name": "SMTP_PASSWORD",
+      "configured": false
+    },
+    {
+      "name": "SMTP_FROM",
+      "configured": true
+    },
+    {
+      "name": "PAYMENT_ACCESS_MODE",
+      "configured": false
+    },
+    {
+      "name": "OMISE_TEST_ENABLED",
+      "configured": false
+    },
+    {
+      "name": "OMISE_TEST_PUBLIC_KEY",
+      "configured": false
+    },
+    {
+      "name": "OMISE_TEST_SECRET_KEY",
+      "configured": false
+    },
+    {
+      "name": "OMISE_TEST_METHODS",
+      "configured": false
+    },
+    {
+      "name": "CRON_SECRET",
+      "configured": false
+    },
+    {
+      "name": "BACKUP_DATABASE_URL",
+      "configured": false
+    },
+    {
+      "name": "BACKUP_SECRET",
+      "configured": false
+    },
+    {
+      "name": "BACKUP_DIR",
+      "configured": false
+    },
+    {
+      "name": "BACKUP_RETENTION_DAYS",
+      "configured": false
+    },
+    {
+      "name": "PUBLIC_URL",
+      "configured": false
+    },
+    {
+      "name": "ALERT_WEBHOOK_URL",
+      "configured": false
+    }
+  ],
+  "providerAcceptance": false,
+  "scope": "อ่านเฉพาะชื่อและ configured boolean จาก local environment ไม่ใช่ host inventory และไม่มีการต่อ DB/SMTP/Omise"
+}

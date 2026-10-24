@@ -493,7 +493,7 @@ export function createApp(db, config, transport) {
         if(!photo||!['image/jpeg','image/png'].includes(photo.mime))fail(404,'ไม่พบรูป Villa')
         const villas=await db.prepare("SELECT * FROM villas WHERE owner_id=?").all(photo.owner_id)
         const published=await Promise.all(villas.map(v=>publicRevision(db,v)))
-        if(!published.some(v=>v.status==='approved'&&v.photo_url===path)){
+        if(!(await Promise.all(published.filter(v=>v.status==='approved'&&v.photo_url===path).map(v=>trustDto(db,v)))).some(v=>v.qrStatus==='ACTIVE')){
           const viewer=await session(req).catch(error=>{if(error.status===401)return null;throw error})
           if(viewer?.role!=='admin'&&viewer?.id!==photo.owner_id)fail(404,'ไม่พบรูป Villa')
         }
@@ -675,10 +675,10 @@ export function createApp(db, config, transport) {
         const province=(url.searchParams.get("province")||"").trim();
         if(province.length>100||/[\x00-\x1f]/.test(province))fail(400,"จังหวัดไม่ถูกต้อง");
         const published=(await publishedVillas(db)).filter(v=>!province||v.province===province);
-        const rows=limit?published.slice(0,limit):published;
+        const rows=published;
         const context=await loadTrustContext(db,rows)
         return json({
-          villas: await Promise.all(
+          villas: (await Promise.all(
             rows.map(async (v) => ({
               id: v.id,
               name: v.name,
@@ -692,7 +692,7 @@ export function createApp(db, config, transport) {
               createdAt: v.created,
               ...(await trustDto(db, v, context)),
             })),
-          ),
+          )).filter(v=>v.qrStatus==="ACTIVE").slice(0,limit??undefined),
         })
       }
       const adminQrVerification=path.startsWith("/api/admin/qr-verification/")
@@ -702,14 +702,15 @@ export function createApp(db, config, transport) {
         if(adminQrVerification){viewer=await auth(req);if(viewer.role!=="admin")fail(403,"เฉพาะ Admin")}
         const reference=decodeURIComponent(path.slice(adminQrVerification?"/api/admin/qr-verification/".length:15))
         const v=adminQrVerification?await db.prepare("SELECT * FROM villas WHERE qr=?").get(reference):await resolvePublicQr(db,reference)
-        if(!adminQrVerification&&v?.status==="approved"&&v.qr!==reference){res.writeHead(307,{Location:"/api/public/qr/"+encodeURIComponent(v.qr),"Cache-Control":"no-store"});res.end();return}
+        const publicTrust=!adminQrVerification&&v?await trustDto(db,v):null
+        if(!adminQrVerification&&publicTrust?.qrStatus==="ACTIVE"&&v?.status==="approved"&&v.qr!==reference){res.writeHead(307,{Location:"/api/public/qr/"+encodeURIComponent(v.qr),"Cache-Control":"no-store"});res.end();return}
         if (!v) fail(404, "ไม่พบ QR ในระบบ")
         try {
           if(!viewer)viewer = await session(req)
         } catch (error) {
           if (error.status !== 401) throw error
         }
-        if (!adminQrVerification && v.status !== "approved") {const trust=await trustDto(db,v);return json({qr:v.qr,status:v.status,valid:false,locked:true,premiumBanner:false,qrStatus:trust.qrStatus,verificationLevel:"REGISTERED",verificationStatus:trust.verificationStatus})}
+        if (!adminQrVerification && (v.status !== "approved"||publicTrust.qrStatus!=="ACTIVE")) {const trust=publicTrust;return json({qr:v.qr,status:v.status,ownerVerification:null,valid:false,locked:true,premiumBanner:false,qrStatus:trust.qrStatus,verificationLevel:"REGISTERED",verificationStatus:trust.verificationStatus})}
         const unlocked = adminQrVerification && viewer?.role === "admin"
         return json({
           name: v.name,
@@ -717,8 +718,7 @@ export function createApp(db, config, transport) {
           ...(adminQrVerification?{villaId:v.id}:{}),
           propertyDetails: v._approvedSnapshot?.propertyDetails?.details??await villaPage(db,v),
           guestCapacity:v.guest_capacity,
-          bankName:v.bank_name,
-          ...(unlocked?{accountName:v.account_name}:{}),
+          ...(unlocked?{bankName:v.bank_name,accountName:v.account_name}:{}),
           ownerVerification: await publicOwnerVerification(db,v),
           ownerVerificationRequired: ["starter","pro","premium"].includes(v.package_id),
           basicVerificationNotice: v.package_id === "basic" ? basicVerificationNotice : null,

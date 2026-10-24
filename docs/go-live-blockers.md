@@ -1,5 +1,7 @@
 # ข้อขัดขวาง Go-Live — Phase 2 (24 ตุลาคม 2026)
 
+ขอบเขตเปิดตัวล่าสุดจำกัด 6 ฟังก์ชันและปิดเงินจริง ดู [Phase 1 readiness](phase1-go-live-readiness.md) และ [Phase 1 blockers](phase1-critical-blockers.md) รายการด้านล่างยังใช้กับบริการครบวงจร/Phase 2 จึงไม่ใช้ Omise/settlement ที่ปิดไว้เป็น blocker ของ Phase 1
+
 ปรับสถานะหลัง Phase 3: เตรียม Test checkout, payment gates และ staging email isolation แล้ว แต่ยังไม่ได้ deploy หรือผ่าน provider acceptance จริง ดู [รายงาน Phase 3](phase3-preparation-report.md) และ [คู่มือ staging](staging-deployment-guide.md)
 
 เป้าหมายเปิดระบบ 31 ตุลาคม 2026 · ผลประเมินปัจจุบัน **NOT READY** สำหรับบริการครบวงจร/รับเงินจริง ไม่ใช่ใบอนุมัติ deploy

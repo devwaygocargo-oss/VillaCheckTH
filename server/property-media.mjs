@@ -1,3 +1,5 @@
+import {recordVillaReview} from "./villa-review.mjs"
+import {trustDto} from "./catalog.mjs"
 import {resolvePublicQr,publicRevision} from "./public-revision.mjs"
 import {preserveApprovedVilla,rotateApprovedRevision} from "./approval-history.mjs"
 import { randomUUID } from "node:crypto"
@@ -12,7 +14,7 @@ const list = async (db, id) =>
     await db
       .prepare("SELECT value FROM system_settings WHERE key LIKE ?")
       .all("property_media:" + id + ":%")
-  ).map((r) => JSON.parse(r.value))
+  ).map((r) => JSON.parse(r.value)).filter(m=>!m.removedAt)
 export async function propertyMediaApi(db, user, req, path, url, body) {
   if (
     ![
@@ -25,7 +27,7 @@ export async function propertyMediaApi(db, user, req, path, url, body) {
   let villa
   if (path.startsWith("/api/public/")){
     villa=await resolvePublicQr(db,url.searchParams.get("qr")||"")
-    if(villa?.status!=="approved")villa=null
+    if(villa?.status!=="approved"||(await trustDto(db,villa)).qrStatus!=="ACTIVE")villa=null
   } else {
     if (!user) fail(401, "กรุณาเข้าสู่ระบบ")
     if (user.role !== (path.includes("/admin/") ? "admin" : "merchant"))
@@ -69,6 +71,17 @@ export async function propertyMediaApi(db, user, req, path, url, body) {
       .get(data.villaId)
     if (!villa || (user.role === "merchant" && villa.owner_id !== user.id))
       fail(404, "ไม่พบที่พัก")
+    if(user.role==="merchant"&&data.action==="remove"){
+      const key="property_media:"+villa.id+":"+data.mediaId,row=await db.prepare("SELECT value FROM system_settings WHERE key=?").get(key)
+      if(!row)fail(404,"ไม่พบสื่อ")
+      const media=JSON.parse(row.value);if(media.removedAt)return {ok:true}
+      await recordVillaReview(db,villa,{...villa,_removedMedia:media},"media_removal",user)
+      media.removedAt=new Date().toISOString();media.removedBy=user.id
+      await db.prepare("UPDATE system_settings SET value=? WHERE key=?").run(JSON.stringify(media),key)
+      await db.prepare("UPDATE villas SET status='pending' WHERE id=?").run(villa.id)
+      await audit(db,user,"media.remove_requested",media.id)
+      return {ok:true,approvalRequired:true}
+    }
     if (path.includes("/admin/") && !data.file) {
       const key = "property_media:" + villa.id + ":" + data.mediaId
       if(data.mediaId === "cover" && villa.photo_reviewed_at)fail(409,"สื่อนี้ผ่านการอนุมัติแล้ว")
@@ -82,6 +95,7 @@ export async function propertyMediaApi(db, user, req, path, url, body) {
           .get(key)
         if (!row) fail(404, "ไม่พบสื่อ")
         const m = JSON.parse(row.value)
+        if(m.removedAt)fail(404,"ไม่พบสื่อ")
         if(m.reviewedAt)fail(409,"สื่อนี้ผ่านการอนุมัติแล้ว")
         m.reviewedAt = new Date().toISOString()
         m.reviewedBy = user.id
@@ -167,7 +181,7 @@ export async function propertyMediaFile(db, id, user) {
     .prepare("SELECT * FROM villas WHERE id=?")
     .get(m.villaId)
   const published=await publicRevision(db,v)
-  const visible=published?.status==="approved"&&(published._approvedSnapshot?published._approvedSnapshot.media.some(item=>item.id===id):Boolean(m.reviewedAt))
+  const visible=published?.status==="approved"&&(await trustDto(db,published)).qrStatus==="ACTIVE"&&(published._approvedSnapshot?published._approvedSnapshot.media.some(item=>item.id===id):Boolean(m.reviewedAt&&!m.removedAt))
   if (
     !v ||
     (!visible &&

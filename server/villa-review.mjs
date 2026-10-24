@@ -17,6 +17,7 @@ export async function recordVillaReview(db,villa,next,kind,user){
   const before=pending?pending.before:old
   if(before!==after)changes.push({field,label,before,after})
  }
+ if(kind==='media_removal')changes.push({field:'media',label:'นำสื่อออก',before:next._removedMedia.name,after:'นำออกหลังอนุมัติ'})
  if(kind==='document_resubmission'){
   const old=await db.prepare('SELECT name FROM documents WHERE id=?').get(villa.document_id)
   const file=await db.prepare('SELECT name FROM documents WHERE id=?').get(next.document_id)

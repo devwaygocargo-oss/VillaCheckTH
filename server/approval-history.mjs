@@ -10,7 +10,7 @@ export async function preserveApprovedVilla(db,villa) {
  const details=await db.prepare("SELECT value FROM system_settings WHERE key=?").get("villa_page:"+villa.id)
  const media=await db.prepare("SELECT value FROM system_settings WHERE key LIKE ?").all("property_media:"+villa.id+":%")
  const proof=await db.prepare("SELECT value FROM system_settings WHERE key=?").get("owner_verification:"+villa.id)
- const snapshot={villa,ownerVerification:proof?JSON.parse(proof.value):null,propertyDetails:details?JSON.parse(details.value):null,media:media.map(row=>JSON.parse(row.value)).filter(row=>row.reviewedAt),recordedAt:new Date().toISOString()}
+ const snapshot={villa,ownerVerification:proof?JSON.parse(proof.value):null,propertyDetails:details?JSON.parse(details.value):null,media:media.map(row=>JSON.parse(row.value)).filter(row=>row.reviewedAt&&!row.removedAt),recordedAt:new Date().toISOString()}
  await saveRecord(db,`villa_approved:${villa.id}`,snapshot)
  await saveRecord(db,`villa_approved_history:${randomUUID()}`,snapshot)
 }

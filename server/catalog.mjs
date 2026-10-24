@@ -134,8 +134,10 @@ export async function trustDto(db, villa, context) {
     .prepare("SELECT * FROM subscriptions WHERE owner_id=?")
     .get(villa.owner_id)
   const plan = await readContextPlan(db,villa.payments === 0 ? "basic" : villa.package_id,context)
-  const override = context ? context.settings.get("villa_qr:"+villa.id) : await db.prepare("SELECT value FROM system_settings WHERE key=?").get("villa_qr:"+villa.id)
-  const qrStatus = ["SUSPENDED","INACTIVE"].includes(override?.value) ? override.value : qrState(villa, sub)
+  const settings=context?.settings||new Map((await db.prepare("SELECT key,value FROM system_settings WHERE key IN (?,?)").all("villa_qr:"+villa.id,"account_status:"+villa.owner_id)).map(row=>[row.key,row]))
+  const override=settings.get("villa_qr:"+villa.id),account=settings.get("account_status:"+villa.owner_id)
+  const accountSuspended=account&&JSON.parse(account.value).status==="suspended"
+  const qrStatus = accountSuspended ? "SUSPENDED" : ["SUSPENDED","INACTIVE"].includes(override?.value) ? override.value : qrState(villa, sub)
   const actual = qrStatus === "ACTIVE" ? villa.verification_level : "REGISTERED"
   return {
     qrStatus,

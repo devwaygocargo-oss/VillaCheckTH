@@ -1,0 +1,16 @@
+{
+  "scope": "Tracked source/config patterns only; not full Git history or host secrets. No values included.",
+  "candidates": [
+    {
+      "file": "server/omise.test.mjs",
+      "line": 16,
+      "testFixture": true
+    },
+    {
+      "file": "server/phase3.test.mjs",
+      "line": 44,
+      "testFixture": true
+    }
+  ],
+  "review": "Candidates in tests are synthetic rejection fixtures; no confirmed live credential found by these patterns."
+}

@@ -151,6 +151,11 @@ export default function PropertyMedia({
                 )}
               </p>
             </figcaption>
+            {mode === "merchant" && m.id!=="cover" && <button disabled={busy} onClick={async()=>{
+              setBusy(true);setError("")
+              try{await api("/merchant/property-media",{villaId,mediaId:m.id,action:"remove"});await load();setMessage("ส่งคำขอนำสื่อออกให้ Admin ตรวจแล้ว ข้อมูลสาธารณะเดิมคงอยู่จนอนุมัติ กรุณาโหลดสถานะ Villa ล่าสุด")}
+              catch(e){setError(e instanceof Error?e.message:"นำสื่อออกไม่สำเร็จ")}finally{setBusy(false)}
+            }}>นำสื่อนี้ออกและส่งตรวจ</button>}
             {mode === "admin" && (
               <button
                 disabled={busy || Boolean(m.reviewedAt)}

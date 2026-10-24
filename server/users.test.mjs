@@ -58,7 +58,7 @@ test("user registration and QR contacts are enforced by the API", async (t) => {
   }
   const guest = await request("/api/public/qr/VC-test")
   assert.equal(guest.value.locked, true)
-  assert.equal(guest.value.bankName,"Test Bank")
+  assert.equal(guest.value.bankName,undefined)
   assert.equal(guest.value.accountName,undefined)
   for (const secret of [
     "0812345678",

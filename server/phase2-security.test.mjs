@@ -20,7 +20,7 @@ test("pending cover bytes are private across roles and become public only after 
  const own=await login(owner.email),other=await login("cover-other@example.test"),admin=await login("cover-admin@example.test",true)
  for(const cookie of ["",other])assert.equal((await fetch(base+path,{headers:{cookie}})).status,404)
  for(const cookie of [own,admin]){const r=await fetch(base+path,{headers:{cookie}});assert.equal(r.status,200);assert.equal(r.headers.get("cache-control"),"private, no-store");assert.deepEqual(Buffer.from(await r.arrayBuffer()),bytes)}
- await db.prepare("UPDATE villas SET status='approved' WHERE id=?").run(villaId)
+ await db.prepare("UPDATE villas SET status='approved',qr='VC-cover-fixture' WHERE id=?").run(villaId)
  assert.equal((await fetch(base+path)).status,200)
  await db.prepare("UPDATE villas SET status='rejected' WHERE id=?").run(villaId)
  assert.equal((await fetch(base+path)).status,404)
