@@ -146,3 +146,8 @@ Push branch `fix/autonomous-business-security-20261024` เมื่อ Producti
 ไล่ source และ static env references ไม่ได้อ่าน .env/host secrets ไม่เรียก network/DB/provider มี offline assertions 6 ข้อผ่านสำหรับ payment defaults/guards และ SMTP port/TLS ไม่มีการเปลี่ยน application code ไม่ rerun full QA suite ในรอบเอกสารนี้ ผล local suite ล่าสุดยังเป็นหลักฐาน revision f95e03f (PG262/SQLite254+8skip/Chrome66) ไม่ใช่ผล staging acceptance ใหม่
 
 หมายเหตุ rollout: env flags ใหม่ไม่ทำให้ artifact เก่าที่ไม่อ่านตัวแปรเหล่านี้ปิด payment ได้เอง หาก host ยังเป็น revision เก่า ให้ Operator เตรียม ingress/payment restriction และ hold workers ระหว่าง rollout ที่ได้รับอนุญาต แล้วตรวจ API/artifact ใหม่หลัง deploy การไม่มี field paymentAccessMode บน API เก่าไม่ใช่หลักฐานว่า env ใหม่ตั้งผิด รอบนี้ไม่ทำ rollout หรือเปลี่ยน ingress
+
+
+## แผนแยก Neon Preview ล่าสุด
+
+ผู้ใช้ยืนยันชื่อNeonproject neon-citrine-xylophone/main/neondbแล้ว แต่ยังไม่ได้ตรวจeffectivehostmapping ดู [Neon/Vercel Preview plan](neon-vercel-preview-setup-plan.md) และ [Approval Runbook](neon-preview-approval-and-release.md) สำหรับschema-onlystaging-previewและการอนุมัติแยก ไม่มีการสร้างbranchหรือเปลี่ยนenvแล้วจากรายงานนี้
