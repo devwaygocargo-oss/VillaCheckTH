@@ -1,0 +1,20 @@
+{
+  "บัญชี {v0}": "{v0} account",
+  "ไม่สำเร็จ ({v0})": "Failed ({v0})",
+  "ค่าบริการต่อที่พัก รวมภาษี · ครั้งละ 1 เดือน หลัง Admin ยืนยันสลิป": "Price per property, including tax · One month at a time after Admin confirms the receipt",
+  "อายุสิทธิ์ตามรอบ {v0} หลัง Admin ยืนยันสลิป": "Entitlement validity per {v0} cycle after Admin confirms the receipt",
+  "ไม่มีแบนเนอร์ที่แสดงในตำแหน่งนี้": "No visible banners in this placement",
+  "ปิดแสดงผล": "Hidden",
+  "รอเริ่มแสดง": "Scheduled",
+  "สิ้นสุดแล้ว": "Ended",
+  "ไม่แสดง · สิทธิ์แพ็กเกจไม่พร้อม": "Hidden · Package entitlement unavailable",
+  "ปิดส่วนโฆษณาก่อน Footer": "Advertising before Footer is disabled",
+  "อยู่ในรายการก่อน Footer": "Included before Footer",
+  "ไม่แสดง · เกินจำนวนที่ตั้งไว้": "Hidden · Exceeds the configured limit",
+  "พร้อมสุ่มแสดง": "Eligible for rotation",
+  "รอตรวจสิทธิ์แพ็กเกจ": "Awaiting entitlement check",
+  "ปิด Section หน้าแรก": "Homepage section is disabled",
+  "อยู่ในชุด Carousel": "Included in Carousel",
+  "ไม่แสดง · ใช้สไลด์ CMS ก่อน": "Hidden · CMS slides take priority",
+  "ไม่แสดง · ใช้โฆษณาก่อน": "Hidden · Advertisements take priority"
+}

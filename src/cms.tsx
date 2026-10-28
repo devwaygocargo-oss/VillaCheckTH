@@ -1,3 +1,6 @@
+import {t as translateSystem} from "./locale"
+import {t} from "./locale"
+import {useLocale,tr} from './locale'
 import {cmsPublishStorageKey} from "./cms-publish-sync"
 import {presentationConfig,copyDefaults} from "../server/cms-presentation.mjs"
 import {
@@ -114,7 +117,7 @@ export const defaultContent = cmsDefaults as CmsContent
 const Context = createContext<CmsContent>(defaultContent)
 export const useCms = () => useContext(Context)
 export const usePresentation = () => presentationConfig(useCms().presentation) as CmsPresentation
-export function useCopy(){const p=usePresentation();return (key:string)=>p.copy[key]??copyDefaults[key]??key;}
+export function useCopy(){const p=usePresentation(),{locale}=useLocale();return (key:string)=>{if(!Object.prototype.hasOwnProperty.call(copyDefaults,key)&&!Object.prototype.hasOwnProperty.call(p.copy,key))return tr(locale,key);const value=p.copy[key]??copyDefaults[key]??key;return locale==='en'&&value===copyDefaults[key]?tr(locale,value):value};}
 export function CmsScope({
   content,
   children,
@@ -230,7 +233,7 @@ export function CmsBlocks({ blocks }: { blocks: CmsBlock[] }) {
                   ? { target: "_blank", rel: "noopener noreferrer" }
                   : {})}
               >
-                {b.label || "ดูเพิ่มเติม"}
+                {b.label || translateSystem("ดูเพิ่มเติม")}
               </a>
             )}
           </section>
@@ -269,7 +272,7 @@ export function CmsPublicPage({
         </div>
         <div className="cms-preview-images">
           {content.home.images.map((url, i) => (
-            <img key={`${url}-${i}`} src={url} alt={`ภาพหน้าแรก ${i + 1}`} />
+            <img key={`${url}-${i}`} src={url} alt={translateSystem("ภาพหน้าแรก {v0}", {v0: i + 1})} />
           ))}
         </div>
         <CmsBlocks blocks={content.home.blocks} />
@@ -279,7 +282,7 @@ export function CmsPublicPage({
     return (
       <main className="page-bg public-info-page">
         <div className="page-hero container">
-          <h1>บทความและข่าวสาร</h1>
+          <h1>{translateSystem("บทความและข่าวสาร")}</h1>
         </div>
         <div className="container info-article-list">
           {content.articles
@@ -299,11 +302,10 @@ export function CmsPublicPage({
                   className="text-button"
                   onClick={() => go("article-detail", a.id)}
                 >
-                  อ่านบทความ →
-                </button>
+                  {translateSystem("อ่านบทความ →")}</button>
               </article>
             ))}
-          {!content.articles.some((a) => a.visible) && <p>ยังไม่มีบทความเผยแพร่</p>}
+          {!content.articles.some((a) => a.visible) && <p>{translateSystem("ยังไม่มีบทความเผยแพร่")}</p>}
         </div>
       </main>
     )
@@ -311,7 +313,7 @@ export function CmsPublicPage({
     return (
       <main className="page-bg public-info-page">
         <div className="page-hero container">
-          <h1>{article?.title || "ไม่พบบทความ"}</h1>
+          <h1>{article?.title || translateSystem("ไม่พบบทความ")}</h1>
           <p>{article?.description}</p>
         </div>
         <article className="container info-body news-detail-body">
@@ -325,8 +327,7 @@ export function CmsPublicPage({
           <p className="cms-prose news-introduction">{article?.body}</p>
           <CmsBlocks blocks={article?.blocks||[]}/>
           <button className="outline-button" onClick={() => go("articles")}>
-            กลับไปบทความทั้งหมด
-          </button>
+            {translateSystem("กลับไปบทความทั้งหมด")}</button>
         </article>
       </main>
     )
@@ -334,7 +335,7 @@ export function CmsPublicPage({
     <main className={`page-bg public-info-page${page==="verification-standard"?" status-guide-page":""}`}>
       <div className="page-hero container">
         <span className="kicker">{info?.kicker}</span>
-        <h1>{info?.title || "ไม่พบหน้าเว็บ"}</h1>
+        <h1>{info?.title || translateSystem("ไม่พบหน้าเว็บ")}</h1>
         <p>{page === "contact" ? content.site.hours : info?.description}</p>
       </div>
       <div className="container info-body">
@@ -355,11 +356,11 @@ export function CmsPublicPage({
               {content.site.email} {content.site.phone} · {content.site.hours}
             </p>
             {!preview && <ContactLead />}
-              {!preview && <button className="outline-button" onClick={()=>openSupport("email")}>ส่งอีเมล</button>}
+              {!preview && <button className="outline-button" onClick={()=>openSupport("email")}>{translateSystem("ส่งอีเมล")}</button>}
           </>
         )}
         <button className="outline-button" onClick={() => go(page === "help" ? "contact" : page === "owner-guide" ? "pricing" : "home")}>
-          {page === "help" ? "ติดต่อทีมงาน" : page === "owner-guide" ? "ดูแพ็กเกจ" : "กลับหน้าหลัก"}
+          {page === "help" ? translateSystem("ติดต่อทีมงาน") : page === "owner-guide" ? translateSystem("ดูแพ็กเกจ") : translateSystem("กลับหน้าหลัก")}
         </button>
       </div>
     </main>

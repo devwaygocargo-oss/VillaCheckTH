@@ -1,3 +1,14 @@
+import {t as translateSystem} from "./locale"
+import {localeTag} from "./locale"
+import PackageComingSoon from './PackageComingSoon'
+import DocumentManagement from './DocumentManagement'
+import {t,formatDate,useLocale} from './locale'
+import {onPublicVillaRefresh} from './publicVillaRefresh'
+import StatusCornerRibbon from "./StatusCornerRibbon"
+import DemoPhoto from "./DemoPhoto"
+import {BusinessWriteFieldset} from './BusinessReadiness';
+import OwnershipDocuments from "./OwnershipDocuments";
+import { villaStatusBadge } from "./villaStatus";
 import OmiseCheckout from "./OmiseCheckout"
 import {lastAdminPage} from "./navigation";
 import PropertyDetails,{type Details} from "./PropertyDetails";
@@ -15,24 +26,17 @@ import { PortalShell, type Page } from "./prototype"
 import type { Document, MerchantVilla, Store, Invoice } from "./merchantStore"
 import { api, currentAccount, ApiError } from "./api"
 
-const date = (value: string) =>
-  value
-    ? new Date(value).toLocaleDateString("th-TH", {
-        timeZone: "Asia/Bangkok",
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "ยังไม่เปิดใช้งาน"
+const date=(value:string)=>value?formatDate(value,{day:'numeric',month:'short',year:'numeric'}):translateSystem('ยังไม่เปิดใช้งาน')
 function status(v: MerchantVilla) {
-  if (v.status === "pending") return "รออนุมัติจาก Admin"
-  if (v.status === "changes") return "ต้องแก้ไขเอกสาร"
-  if (v.status === "rejected") return "ไม่ผ่านการอนุมัติ"
+  if (v.qrStatus === "EXPIRED") return "QR หมดอายุ"
+  if (v.status === "pending") return villaStatusBadge(v).label
+  if (v.status === "changes") return villaStatusBadge(v).label
+  if (v.status === "rejected") return villaStatusBadge(v).label
   if (["SUSPENDED","INACTIVE"].includes(v.qrStatus))return "QR ถูกระงับหรือปิดใช้งาน"
-  if (!v.qr) return "อนุมัติแล้ว · รอชำระเงิน"
+  if (!v.qr) return "อนุมัติแล้ว · QR ยังไม่เปิดใช้งาน"
   return v.trialUnlimited ? "QR ใช้งานได้ · Basic Verify · สิทธิ์โปรโมชั่น" : new Date(v.expires) <= new Date() ? "QR หมดอายุ" : "QR ใช้งานได้"
 }
-const approvalStatus = (value: MerchantVilla["status"]) => ({pending:"รออนุมัติ",approved:"อนุมัติแล้ว",changes:"ต้องแก้ไข",rejected:"ไม่อนุมัติ"})[value];
+const approvalStatus = (value: MerchantVilla["status"]) => t(({pending:"รออนุมัติ",approved:"อนุมัติแล้ว",changes:"รอการแก้ไข",rejected:"ไม่อนุมัติ"})[value]);
 export function VillaQr({ villa, admin = false }: { villa: Pick<MerchantVilla,"name"|"qr"|"qrStatus"|"verificationLevel"|"trialUnlimited"|"expires">; admin?: boolean }) {
   const url = `${window.location.origin}/#page=verify&item=${encodeURIComponent(villa.qr)}`
   const qrRef = useRef<HTMLDivElement>(null)
@@ -59,9 +63,9 @@ export function VillaQr({ villa, admin = false }: { villa: Pick<MerchantVilla,"n
     <div className="merchant-qr">
       <div ref={qrRef} />
       <strong>{villa.qr}</strong><p>{villa.qrStatus} · {villa.verificationLevel}</p>
-      <small>{villa.trialUnlimited ? "Basic Verify · สิทธิ์โปรโมชั่นเดิมยังคงอยู่" : `หมดอายุ ${date(villa.expires)}`}</small>
-      <a href={admin?`/admin#${new URLSearchParams({page:"admin-verify",item:villa.qr})}`:url}>เปิดหน้าตรวจสอบ ↗</a>
-      {downloadUrl && <a className="outline-button" href={downloadUrl} download={`VillaCheck-${villa.qr}.svg`}>ดาวน์โหลด QR (SVG)</a>}
+      <small>{villa.expires ? translateSystem("หมดอายุ {v0}", {v0: date(villa.expires)}) : villa.trialUnlimited ? translateSystem("Basic Verify · สิทธิ์โปรโมชั่นเดิมยังคงอยู่") : translateSystem("ยังไม่ได้เปิดสิทธิ์")}</small>
+      <a href={admin?`/admin#${new URLSearchParams({page:"admin-verify",item:villa.qr})}`:url}>{translateSystem("เปิดหน้าตรวจสอบ ↗")}</a>
+      {downloadUrl && <a className="outline-button" href={downloadUrl} download={`VillaCheck-${villa.qr}.svg`}>{translateSystem("ดาวน์โหลด QR (SVG)")}</a>}
     </div>
   )
 }
@@ -69,7 +73,7 @@ export function VillaQr({ villa, admin = false }: { villa: Pick<MerchantVilla,"n
 function VillaPhotoInput({url,photo,onChange}:{url:string;photo:Document|null;onChange:(value:Document|null)=>void}){
  const [error,setError]=useState("");
  const inputRef=useRef<HTMLInputElement>(null);
- return <div><label>อัปโหลด / เปลี่ยนรูป Villa (JPG, PNG ไม่เกิน 2 MB)<input ref={inputRef} style={{display:"none"}} type="file" accept="image/jpeg,image/png" onChange={async e=>{const f=e.target.files?.[0];if(!f)return;setError("");if(!["image/jpeg","image/png"].includes(f.type)||f.size>2*1024*1024){setError("เลือกรูป JPG หรือ PNG ไม่เกิน 2 MB");return;}try{const data=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(f)});onChange({name:f.name,type:f.type,data});}catch{setError("อ่านรูปไม่สำเร็จ")}}}/></label><div className="button-row"><button type="button" className="outline-button" onClick={()=>inputRef.current?.click()}>Browse</button><span>{photo?.name||"JPG / PNG"}</span></div>{(photo?.data||url)&&<img src={photo?.data||url} alt="รูป Villa ที่เลือก" style={{width:"100%",maxHeight:300,objectFit:"cover",borderRadius:12}}/>}{photo&&<button type="button" onClick={()=>onChange(null)}>ยกเลิกรูปที่เลือก</button>}{error&&<p role="alert">{error}</p>}</div>
+ return <div><label>{translateSystem("อัปโหลด / เปลี่ยนรูป Villa (JPG, PNG ไม่เกิน 2 MB)")}<input ref={inputRef} style={{display:"none"}} type="file" accept="image/jpeg,image/png" onChange={async e=>{const f=e.target.files?.[0];if(!f)return;setError("");if(!["image/jpeg","image/png"].includes(f.type)||f.size>2*1024*1024){setError(translateSystem("เลือกรูป JPG หรือ PNG ไม่เกิน 2 MB"));return;}try{const data=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(f)});onChange({name:f.name,type:f.type,data});}catch{setError(translateSystem("อ่านรูปไม่สำเร็จ"))}}}/></label><div className="button-row"><button type="button" className="outline-button" onClick={()=>inputRef.current?.click()}>{translateSystem("เพิ่มรูปปก")}</button><span>{photo?.name||"JPG / PNG"}</span></div>{(photo?.data||url)&&<img src={photo?.data||url} alt={translateSystem("รูป Villa ที่เลือก")} style={{width:"100%",maxHeight:300,objectFit:"cover",borderRadius:12}}/>}{photo&&<button type="button" onClick={()=>onChange(null)}>{translateSystem("ยกเลิกรูปที่เลือก")}</button>}{error&&<p role="alert">{error}</p>}</div>
 }
 
 export default function Backoffice({
@@ -83,12 +87,14 @@ export default function Backoffice({
   initialItem?: string
   initialPackage?: string
 }) {
+  useLocale()
   const admin = page.startsWith("admin-")
   const [store, setStore] = useState<Store | null>(null)
   const [displayName, setDisplayName] = useState("")
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
+  const createAttempt=useRef<{payload:string;requestKey:string}|null>(null)
   const [selected, setSelected] = useState(initialItem)
   const [message, setMessage] = useState("")
   const [search, setSearch] = useState("")
@@ -96,6 +102,7 @@ export default function Backoffice({
   const [upload, setUpload] = useState<Document | null>(null)
   const [uploading, setUploading] = useState(false)
   const [mailOpen, setMailOpen] = useState("")
+  const [extraTools,setExtraTools]=useState(false)
   const [form, setForm] = useState({
     name: "", nameEn: "", photoTakenAt: "",
     province: "",
@@ -139,7 +146,7 @@ export default function Backoffice({
         const attempt=new URLSearchParams(window.location.search).get("paymentAttempt")
         if(attempt && !admin) {
           try { await api(`/payments/attempt?id=${encodeURIComponent(attempt)}`) }
-          catch(e) { if(!cancelled)setMessage(e instanceof Error ? e.message : "Payment QR ไม่พร้อมใช้งาน") }
+          catch(e) { if(!cancelled)setMessage(e instanceof Error ? e.message : translateSystem("Payment QR ไม่พร้อมใช้งาน")) }
         }
         if (!cancelled && !busyRef.current) setStore(next)
       } catch (error) {
@@ -147,7 +154,7 @@ export default function Backoffice({
           if (error instanceof ApiError && error.status === 401) { if(page === "owner-package")sessionStorage.setItem("villacheck-merchant-return","owner-package"); go(admin ? "admin-login" : "owner-auth"); }
           else
             setMessage(
-              error instanceof Error ? error.message : "โหลดข้อมูลไม่สำเร็จ",
+              error instanceof Error ? error.message : translateSystem("โหลดข้อมูลไม่สำเร็จ"),
             )
         }
       } finally {
@@ -173,7 +180,7 @@ export default function Backoffice({
       return next
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) { if(page === "owner-package")sessionStorage.setItem("villacheck-merchant-return","owner-package"); go(admin ? "admin-login" : "owner-auth"); }
-      setMessage(error instanceof Error ? error.message : "ดำเนินการไม่สำเร็จ")
+      setMessage(error instanceof Error ? error.message : translateSystem("ดำเนินการไม่สำเร็จ"))
       return null
     } finally {
       busyRef.current = false
@@ -187,7 +194,7 @@ export default function Backoffice({
       !["application/pdf", "image/jpeg", "image/png"].includes(file.type) ||
       file.size > 2 * 1024 * 1024
     ) {
-      setMessage("กรุณาเลือก PDF, JPG หรือ PNG ขนาดไม่เกิน 2 MB")
+      setMessage(translateSystem("กรุณาเลือก PDF, JPG หรือ PNG ขนาดไม่เกิน 2 MB"))
       return
     }
     setUploading(true)
@@ -201,14 +208,26 @@ export default function Backoffice({
       setUpload({ name: file.name, data, type: file.type })
       setMessage("")
     } catch {
-      setMessage("อ่านไฟล์ไม่สำเร็จ กรุณาลองใหม่")
+      setMessage(translateSystem("อ่านไฟล์ไม่สำเร็จ กรุณาลองใหม่"))
     } finally {
       setUploading(false)
     }
   }
   const [photo,setPhoto]=useState<Document|null>(null);
   useEffect(()=>setPhoto(null),[selected,page]);
+  const [draftRevision,setDraftRevision]=useState(0);
+  const [draftBusy,setDraftBusy]=useState(false);
+  const [draftLoading,setDraftLoading]=useState(false);
   const initializedEdit = useRef("");
+  useEffect(()=>{
+    if(!store?.user.id||!["owner-add-villa","owner-onboarding-villa"].includes(page))return;
+    setSelected("");setUpload(null);setPhoto(null);
+    const initial={name:"",nameEn:"",province:"",merchant:store?.user.name||"",email:store?.user.email||"",guestCapacity:"",photoUrl:"",photoTakenAt:"",phone:"",bankName:"",accountName:"",accountNumber:""};
+    setForm(current=>({...current,...initial}));setDraftRevision(0);
+    let active=true;setDraftLoading(true);
+    void api<{draft:{fields:Partial<typeof form>;revision:number}|null}>("/merchant/villa-draft").then(data=>{if(!active)return;setDraftRevision(data.draft?.revision??0);if(data.draft)setForm(current=>Object.entries(initial).every(([key,value])=>current[key as keyof typeof current]===value)?{...current,...data.draft!.fields}:current)}).catch(error=>{if(active)setMessage(error instanceof Error?error.message:translateSystem("โหลดฉบับร่างไม่สำเร็จ"))}).finally(()=>{if(active)setDraftLoading(false)});
+    return()=>{active=false};
+  },[page,store?.user.id]);
   useEffect(()=>{
     if(page !== "owner-villa-edit") initializedEdit.current = "";
     const v=store?.villas.find(v=>v.id===initialItem);
@@ -218,25 +237,24 @@ export default function Backoffice({
     setSelected(v.id);
     setForm(current=>({...current,name:v.name,nameEn:v.nameEn || "",photoTakenAt:v.photoTakenAt || "",province:v.province,merchant:v.merchant,email:v.email,guestCapacity:v.guestCapacity == null ? "" : String(v.guestCapacity),photoUrl:v.photoUrl||"",phone:v.phone,bankName:v.bankName,accountName:v.accountName,accountNumber:v.accountNumber,package:v.packageId}));
   },[initialItem,store,page]);
-  useEffect(()=>{if(!admin&&store?.villas.length&&["owner-add-villa","owner-onboarding-villa"].includes(page)){const existing=store.villas.find(v=>v.id===initialItem)||store.villas[0];go("owner-villa-edit",existing.id);}},[page,store,admin,initialItem]);
+  useEffect(()=>{if(!admin&&!store?.freePeriod&&store?.villas.length&&["owner-add-villa","owner-onboarding-villa"].includes(page)){const existing=store.villas.find(v=>v.id===initialItem)||store.villas[0];go("owner-villa-edit",existing.id);}},[page,store,admin,initialItem]);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if(store?.villas.length){go("owner-villa-edit",store.villas[0].id);return;}
+    if(!store?.freePeriod&&store?.villas.length){go("owner-villa-edit",store.villas[0].id);return;}
     if (!upload) {
-      setMessage("กรุณาแนบเอกสารแสดงกรรมสิทธิ์ Villa ก่อนส่งตรวจสอบ")
+      setMessage(translateSystem("กรุณาแนบเอกสารแสดงกรรมสิทธิ์ Villa ก่อนส่งตรวจสอบ"))
       return
     }
+    const payload={...form,draftRevision,packageId:store?.subscription?.packageId,document:upload,photo};
+    const encoded=JSON.stringify(payload);
+    if(createAttempt.current?.payload!==encoded)createAttempt.current={payload:encoded,requestKey:crypto.randomUUID()};
     const next = await perform(
       "/villas",
-      {
-        ...form,
-        packageId: store?.subscription?.packageId,
-        document: upload,
-        photo,
-      },
+      {...payload,requestKey:createAttempt.current.requestKey},
       "ส่ง Villa ให้ Admin ตรวจสอบแล้ว",
     )
     if (next) {
+      createAttempt.current=null;
       setSelected(next.createdId || "")
       setPhoto(null)
       setUpload(null)
@@ -254,16 +272,16 @@ export default function Backoffice({
   if (loading || !store)
     return (
       <PortalShell role={admin ? "Admin" : "Merchant"} page={page} go={go}>
-        <h1>{loading ? "กำลังโหลดข้อมูล" : "โหลดข้อมูลไม่สำเร็จ"}</h1>
+        <h1>{loading ? translateSystem("กำลังโหลดข้อมูล") : translateSystem("โหลดข้อมูลไม่สำเร็จ")}</h1>
         <p role="alert">{message}</p>
         <button
           className="outline-button"
           onClick={() => window.location.reload()}
         >
-          ลองใหม่
-        </button>
+          {translateSystem("ลองใหม่")}</button>
       </PortalShell>
     )
+  const phase1=["PRELAUNCH","PHASE1","STAGING_INTERACTIVE","MEMBER_PREVIEW"].includes(store.releaseMode||"")
   const active = store.villas.find((v) => v.id === selected)
   const adding = page === "owner-add-villa" || page === "owner-onboarding-villa"
   const billing = page === "owner-package" || page === "admin-payments"
@@ -283,66 +301,68 @@ export default function Backoffice({
     setUpload(null)
     go(edit ? "owner-villa-edit" : "owner-villa-detail",v.id)
   }
+  // Package availability is a page presentation decision; billing data/APIs remain intact.
+  if(!admin&&page==='owner-package')return <PortalShell phase1={phase1} role="Merchant" page={page} go={go}><PackageComingSoon/></PortalShell>
+  if(!admin&&page==='owner-pending')return <PortalShell phase1={phase1} role="Merchant" page={page} go={go}><DocumentManagement villas={store.villas}/></PortalShell>
   const paymentVilla = page === "owner-package" && initialItem ? store.villas.find(v=>v.invoices.some(i=>i.id===initialItem)) : undefined
   const paymentInvoice = paymentVilla?.invoices.find(i=>i.id===initialItem)
-  if (paymentInvoice && paymentVilla) return <PortalShell role="Merchant" page={page} go={go}>
-    <button type="button" className="text-button" onClick={()=>go("owner-package")}>← กลับไปเลือกแพ็กเกจ</button>
-    <h1>ชำระเงินแพ็กเกจ</h1><p>{paymentVilla.name} · {paymentInvoice.packageName} · รวมภาษี</p>
+  if (!phase1 && paymentInvoice && paymentVilla) return <PortalShell role="Merchant" page={page} go={go}>
+    <button type="button" className="text-button" onClick={()=>go("owner-package")}>{translateSystem("← กลับไปเลือกแพ็กเกจ")}</button>
+    <h1>{translateSystem("ชำระเงินแพ็กเกจ")}</h1><p>{paymentVilla.name} · {paymentInvoice.packageName} {" "}{translateSystem("· รวมภาษี")}</p>
     {message&&<p role="status">{message}</p>}
     <PaymentPanel key={paymentInvoice.id} invoice={paymentInvoice} admin={false} instructions={paymentInvoice.paymentInstructions ?? store.paymentInstructions} configured={store.paymentConfigured} demo={store.demoMode} busy={busy} perform={perform}/>
   </PortalShell>
   return (
-    <PortalShell role={admin ? "Admin" : "Merchant"} page={page} go={go}>
-      {page === "owner-dashboard" && displayName && <p className="user-greeting">สวัสดีคุณ {displayName}</p>}
+    <PortalShell phase1={phase1} role={admin ? "Admin" : "Merchant"} page={page} go={go}>
+      {page === "owner-dashboard" && displayName && <p className="user-greeting">{translateSystem("สวัสดี")}{" "}{displayName}</p>}
+      {!admin&&store.freePeriod&&<p className="free-period-banner" role="status">{store.freePeriod.state==="ACTIVE"?translateSystem("ใช้งานฟรี สิ้นสุดวันที่ {v0}", {v0: date(store.freePeriod.endsAt)}):translateSystem("ช่วงใช้ฟรีสิ้นสุดแล้ว")} {" "}{translateSystem("· เพิ่มที่พักได้ไม่จำกัดระหว่างช่วงใช้ฟรี")}</p>}
       <div className="portal-head">
         <div>
           <span className="kicker">
-            {admin ? "OPERATIONS / VILLACHECK" : "YOUR PROPERTY, VERIFIED"}
+            {admin ? "OPERATIONS / VILLACHECK" : translateSystem("ดูแลที่พักของคุณ")}
           </span>
           <h1>
             {adding
-              ? "เพิ่ม Villa"
+              ? translateSystem("เพิ่มที่พัก")
               : billing
-                  ? "แพ็กเกจและการชำระเงิน"
+                  ? phase1 ? translateSystem("ข้อมูลแพ็กเกจและโปรโมชั่น") : translateSystem("แพ็กเกจและการชำระเงิน")
                   : page === "admin-owners"
                     ? "Merchants"
                     : page === "admin-qr"
-                      ? "ทะเบียน QR"
+                      ? translateSystem("ทะเบียน QR")
                       : dashboard
-                        ? admin ? "Admin Dashboard" : "Member Room"
-                        : "Villa ของคุณ"}
+                        ? admin ? translateSystem("ภาพรวมผู้ดูแลระบบ") : translateSystem("ภาพรวมที่พัก")
+                        : translateSystem("ที่พักของคุณ")}
           </h1>
-          <p>1 Villa = 1 QR · อายุใช้งานตามแพ็กเกจและใบแจ้งชำระ · ต่ออายุใช้ QR เดิม</p>
+          <p>{!admin ? translateSystem("จัดการข้อมูลที่พักและติดตามผลการตรวจสอบ") : phase1 ? translateSystem("ข้อมูลที่พักและ QR ที่ผ่านการอนุมัติ · ยังไม่เปิดสิทธิ์ใหม่หรือการต่ออายุ") : translateSystem("ข้อมูลที่พักและ QR ในระบบ")}</p>
         </div>
-        {!admin && !adding && (
+        {!admin && !adding && page!=="owner-package" && page!=="owner-pending" && (
           <button
             className="primary-button"
-            disabled={false}
+            disabled={Boolean(store.freePeriod&&store.freePeriod.state!=="ACTIVE")}
             onClick={() => go("owner-add-villa")}
           >
-            + เพิ่ม Villa
-          </button>
+            {translateSystem("+ เพิ่มที่พัก")}</button>
         )}
       </div>
       <div className="merchant-demo">
-        แพ็กเกจคิดต่อที่พัก ต่อเดือน รวมภาษี · แต่ละที่พักต้องผ่าน Admin อนุมัติ
-        · Basic Verify ราคาปกติ 990 บาท ช่วงโปรโมชั่นลด 100%
+        {!admin&&store.freePeriod ? translateSystem("ช่วงใช้ฟรีรับสิทธิ์ Online Verify เพิ่มที่พักได้ไม่จำกัด โดยแต่ละที่พักต้องผ่านการตรวจสอบก่อนเผยแพร่") : !admin&&dashboard ? translateSystem("เพิ่มที่พัก แนบเอกสาร และติดตามผลการตรวจสอบได้ในที่เดียว") : phase1 ? translateSystem("การส่งข้อมูลไม่ใช่การเปิดสิทธิ์ใหม่ · แสดงราคาและส่วนลดที่ยืนยันแล้ว โดยยังไม่กำหนดรอบบิลหรือเงื่อนไขต่ออายุ") : translateSystem("แพ็กเกจคิดต่อที่พัก ต่อเดือน รวมภาษี · แต่ละที่พักต้องผ่าน Admin อนุมัติ · Basic Verify ราคาปกติ 990 บาท ช่วงโปรโมชั่นลด 100%")}
       </div>
 
-      {!admin && (billing || dashboard || (adding && !store.subscription)) && <VillaPackagePanel store={store} busy={busy} perform={perform} onAdd={()=>go("owner-add-villa")} onPayment={invoiceId=>go("owner-package",invoiceId)}/>}
-      {billing && <section className="merchant-panel" id="package-payments"><h2>{admin ? "ตรวจสอบการชำระเงิน" : "การชำระแพ็กเกจต่อที่พัก"}</h2><p>แต่ละใบแจ้งชำระระบุที่พักและแพ็กเกจของตัวเอง ราคาต่อเดือนรวมภาษี</p>{!store.villas.some(v => v.invoices.length > 0) && <p>ยังไม่มีใบแจ้งชำระ</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.demoMode ? store.paymentInstructions : (invoice.paymentInstructions ?? store.paymentInstructions)} configured={store.paymentConfigured}
+      {!admin && (billing || (adding && !store.subscription)) && <VillaPackagePanel store={store} busy={busy} perform={perform} onAdd={()=>go("owner-add-villa")} onPayment={invoiceId=>go("owner-package",invoiceId)}/>}
+      {!phase1 && !store.freePeriod && billing && <section className="merchant-panel" id="package-payments"><h2>{admin ? translateSystem("ตรวจสอบการชำระเงิน") : translateSystem("การชำระแพ็กเกจต่อที่พัก")}</h2><p>{translateSystem("แต่ละใบแจ้งชำระระบุที่พักและแพ็กเกจของตัวเอง ราคาต่อเดือนรวมภาษี")}</p>{!store.villas.some(v => v.invoices.length > 0) && <p>{translateSystem("ยังไม่มีใบแจ้งชำระ")}</p>}{[...new Map(store.villas.flatMap(v => v.invoices).map(invoice => [invoice.id, invoice])).values()].map(invoice => <PaymentPanel key={invoice.id} invoice={invoice} admin={admin} instructions={store.demoMode ? store.paymentInstructions : (invoice.paymentInstructions ?? store.paymentInstructions)} configured={store.paymentConfigured}
                       demo={store.demoMode} busy={busy} perform={perform} />)}</section>}
       {message && (
         <div className="form-message" role="status">
           {message}
         </div>
       )}
-      {!admin && dashboard && <><OwnerVerification/><Reviews mode="merchant"/><Advertising merchant/></>}
+      {!phase1 && !admin && dashboard && <details className="merchant-panel" onToggle={e=>setExtraTools(e.currentTarget.open)}><summary>{translateSystem("เครื่องมือเพิ่มเติม")}</summary>{extraTools&&<><OwnerVerification/><Reviews mode="merchant"/><Advertising merchant/></>}</details>}
       {dashboard && (
         <>
           <div className="metric-grid">
             {[
-              ["Villa ทั้งหมด", store.villas.length],
+              ["ที่พักทั้งหมด", store.villas.length],
               [
                 "รอตรวจเอกสาร",
                 store.villas.filter((v) => v.status === "pending").length,
@@ -354,24 +374,24 @@ export default function Backoffice({
                 ).length,
               ],
               [
-                "รอชำระเงิน",
-                store.villas.filter((v) => v.paymentPending).length,
+                admin ? translateSystem("รอชำระเงิน") : translateSystem("ต้องแก้ไข"),
+                store.villas.filter((v) => admin ? v.paymentPending : v.status==="changes").length,
               ],
             ].map(([label, count]) => (
               <div className="metric-card" key={label}>
                 <span>{label}</span>
                 <strong>{count}</strong>
-                <small>อัปเดตจากรายการในระบบ</small>
+                <small>{translateSystem("อัปเดตจากรายการในระบบ")}</small>
               </div>
             ))}
           </div>
-          {admin&&<section className="merchant-panel"><h2>งานดูแลหน้าบ้าน</h2><p>ตรวจข้อมูลและสิทธิ์ให้ครบก่อนแสดงต่อผู้ค้นหาที่พัก</p><div className="button-row">{([["admin-cms","เนื้อหาเว็บไซต์ / ข่าวสาร"],["admin-pending-villas","ตรวจที่พัก"],["admin-owner-verification","ยืนยันเจ้าของบ้าน"],["admin-reviews","กลั่นกรองรีวิว"],["admin-advertising","โฆษณา / ไฟล์ Social"],["admin-subscriptions","สิทธิ์รายที่พัก"],["admin-users","บัญชี User"],["admin-owners","บัญชี Merchant"]] as [Page,string][]).map(([target,label])=><button key={target} onClick={()=>go(target)}>{label}</button>)}</div></section>}
+          {!phase1&&admin&&<section className="merchant-panel"><h2>{translateSystem("งานดูแลหน้าบ้าน")}</h2><p>{translateSystem("ตรวจข้อมูลและสิทธิ์ให้ครบก่อนแสดงต่อผู้ค้นหาที่พัก")}</p><div className="button-row">{([["admin-cms","เนื้อหาเว็บไซต์ / ข่าวสาร"],["admin-pending-villas","ตรวจที่พัก"],["admin-owner-verification","ยืนยันเจ้าของบ้าน"],["admin-reviews","กลั่นกรองรีวิว"],["admin-advertising","โฆษณา / ไฟล์ Social"],["admin-subscriptions","สิทธิ์รายที่พัก"],["admin-users","บัญชี User"],["admin-owners","บัญชี Merchant"]] as [Page,string][]).map(([target,label])=><button key={target} onClick={()=>go(target)}>{label}</button>)}</div></section>}
           <div className="merchant-steps">
             {[
-              "01 สมัคร Merchant และเพิ่มที่พักฟรี",
+              phase1 ? translateSystem("01 ส่งข้อมูลที่พักเพื่อรอตรวจสอบ") : translateSystem("01 สมัครและเพิ่มที่พัก"),
               "02 ส่งเอกสารให้ทีมตรวจสอบ",
               "03 ทีมอนุมัติตามเกณฑ์",
-              "04 1 Villa ได้ 1 QR แยกกัน",
+              phase1 ? translateSystem("04 เปิดสิทธิ์ใหม่เมื่อเงื่อนไขได้รับการยืนยัน") : translateSystem("04 แต่ละที่พักมี QR แยกกัน"),
             ].map((step) => (
               <span key={step}>{step}</span>
             ))}
@@ -379,92 +399,90 @@ export default function Backoffice({
         </>
       )}
       {adding ? (
-        <form className="portal-form merchant-panel" onSubmit={submit}>
-          <h2>ข้อมูลที่พักและ Merchant</h2>
-          <p>กรอกชื่อที่พักทั้งภาษาไทยและภาษาอังกฤษ เพื่อให้ลูกค้าค้นหาได้จากทั้งสองชื่อ ใช้ชื่อเดียวกับป้ายที่พักและช่องทางทางการ</p>
+        <BusinessWriteFieldset><form className="portal-form merchant-panel" onSubmit={submit}>
+          <h2>{translateSystem("ข้อมูลที่พักและผู้ประกอบการ")}</h2>
+          <p>{translateSystem("กรอกชื่อที่พักทั้งภาษาไทยและภาษาอังกฤษ เพื่อให้ลูกค้าค้นหาได้จากทั้งสองชื่อ ใช้ชื่อเดียวกับป้ายที่พักและช่องทางทางการ")}</p>
           <div className="merchant-form-grid">
             {([
               ["name", "ชื่อที่พักภาษาไทย"],
               ["nameEn", "ชื่อที่พักภาษาอังกฤษ"],
               ["province", "จังหวัด"],
-              ["merchant", "ชื่อ Merchant / บริษัท"],
-              ["email", "อีเมลรับแจ้งชำระเงิน"],
-              ["photoUrl", "URL รูป Villa (HTTPS)"],
-              ["phone", "เบอร์โทรทางการของ Villa"],
+              ["merchant", "ชื่อผู้ประกอบการ / บริษัท"],
+              ["email", "อีเมลติดต่อ"],
+              ["phone", "เบอร์ติดต่อที่พัก"],
               ["bankName", "ธนาคารรับเงิน"],
               ["accountName", "ชื่อบัญชีรับเงิน"],
               ["accountNumber", "เลขที่บัญชีรับเงิน"],
             ] as const).map(([key, label]) => (
               <label key={key}>
-                <span>{label} *</span>
+                <span>{label}{["name","nameEn","province","merchant","email"].includes(key)?" *":""}</span>
                 <input
-                  required={key !== "photoUrl"}
+                  required={["name","nameEn","province","merchant","email"].includes(key)}
                   type={key === "email" ? "email" : "text"}
-                  placeholder={key === "name" ? "เช่น บ้านริมทะเล พัทยา" : key === "nameEn" ? "เช่น Seaside Pattaya Villa" : undefined}
+                  placeholder={key === "name" ? translateSystem("เช่น บ้านริมทะเล พัทยา") : key === "nameEn" ? translateSystem("เช่น Seaside Pattaya Villa") : undefined}
                   value={form[key]}
                   onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                 />
               </label>
             ))}
           </div>
-          <label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/>{(form.photoUrl||photo)&&<button type="button" className="outline-button" onClick={()=>{setPhoto(null);setForm(current=>({...current,photoUrl:""}))}}>นำรูปปกออกจากข้อมูลที่ส่งตรวจ</button>}<label>วันที่ถ่ายภาพ (หากทราบ)<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label>
+          <label><span>{translateSystem("จำนวนผู้พักสูงสุด")}</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/>{(form.photoUrl||photo)&&<button type="button" className="outline-button" onClick={()=>{setPhoto(null);setForm(current=>({...current,photoUrl:""}))}}>{translateSystem("นำรูปปกออกจากข้อมูลที่ส่งตรวจ")}</button>}<label>{translateSystem("วันที่ถ่ายภาพ (หากทราบ)")}<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label>
           <label className="merchant-upload">
-            <strong>แนบหลักฐานการเป็นเจ้าของ Villa *</strong>
+            <strong>{translateSystem("แนบหลักฐานการเป็นเจ้าของ Villa *")}</strong>
             <span>
-              เช่น โฉนด หรือเอกสารแสดงกรรมสิทธิ์ · PDF, JPG, PNG ไม่เกิน 2 MB
-            </span>
+              {translateSystem("เช่น โฉนด หรือเอกสารแสดงกรรมสิทธิ์ · PDF, JPG, PNG ไม่เกิน 2 MB")}</span>
             <input
               type="file"
               accept="application/pdf,image/jpeg,image/png"
               onChange={(e) => void readFile(e.target.files?.[0])}
             />
             <small>
-              {uploading ? "กำลังอ่านเอกสาร…" : upload?.name || "ยังไม่ได้แนบเอกสาร"}
+              {uploading ? translateSystem("กำลังอ่านเอกสาร…") : upload?.name || translateSystem("ยังไม่ได้แนบเอกสาร")}
             </small>
           </label>
-          <p>Admin จะตรวจเอกสารก่อนอนุมัติ จากนั้นแจ้งให้ชำระแพ็กเกจทางอีเมล</p>
+          <p>{phase1 ? translateSystem("ข้อมูลจะเข้าคิวรอตรวจสอบ ยังไม่เปิดสิทธิ์ใหม่หรือส่งอีเมลเรียกเก็บเงิน") : store.paymentAccessMode==="DISABLED"?translateSystem("Admin จะตรวจเอกสารก่อนอนุมัติ · ช่วงนี้ยังไม่มีการเรียกเก็บเงิน"):translateSystem("Admin จะตรวจเอกสารก่อนอนุมัติ จากนั้นแจ้งให้ชำระแพ็กเกจทางอีเมล")}</p>
+          <button type="button" className="outline-button" disabled={draftLoading||draftBusy||busy} onClick={async()=>{setDraftBusy(true);try{const fields={name:form.name,nameEn:form.nameEn,province:form.province,merchant:form.merchant,email:form.email,phone:form.phone,guestCapacity:form.guestCapacity};const saved=await api<{draft:{revision:number}}>("/merchant/villa-draft",{fields,expectedRevision:draftRevision});setDraftRevision(saved.draft.revision);setMessage(translateSystem("บันทึกฉบับร่างส่วนตัวแล้ว ยังไม่ส่งให้ Admin ตรวจสอบ · รูปภาพและเอกสารต้องเลือกใหม่ก่อนส่งจริง"))}catch(error){setMessage(error instanceof Error?error.message:translateSystem("บันทึกฉบับร่างไม่สำเร็จ"))}finally{setDraftBusy(false)}}}>{translateSystem("บันทึกฉบับร่าง")}</button>
           <button
             type="submit"
             className="primary-button"
-            disabled={uploading || busy}
+            disabled={uploading || busy || draftLoading || draftBusy || Boolean(store.freePeriod&&store.freePeriod.state!=="ACTIVE")}
           >
-            ส่งให้ Admin ตรวจสอบ →
-          </button>
-        </form>
+            {translateSystem("ส่งตรวจสอบ")}</button>
+        </form></BusinessWriteFieldset>
       ) : (
         <>
           {!billing && !editing && !detailPage && <>
-          {page === "owner-villas" && <p role="status">Villa ของคุณทั้งหมด {store.villas.length} รายการ · แสดง {list.length} รายการ</p>}
+          {page === "owner-villas" && <p role="status">{translateSystem("ที่พักของคุณทั้งหมด")}{" "}{store.villas.length} {" "}{translateSystem("รายการ · แสดง")}{" "}{list.length} {" "}{translateSystem("รายการ")}</p>}
           <div className="merchant-toolbar">
             <input
-              aria-label="ค้นหา Villa หรือ Merchant"
-              placeholder="ค้นหา Villa หรือ Merchant…"
+              aria-label={translateSystem("ค้นหาที่พักหรือผู้ประกอบการ")}
+              placeholder={translateSystem("ค้นหาชื่อที่พักหรือผู้ประกอบการ…")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             <select
-              aria-label="กรองสถานะ"
+              aria-label={translateSystem("กรองสถานะ")}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
-              <option value="all">ทุกสถานะ</option>
+              <option value="all">{translateSystem("ทุกสถานะ")}</option>
               {billing && ["WAITING_FOR_SLIP","PENDING_REVIEW","VERIFIED","REJECTED"].map(s=><option key={s} value={s}>{s}</option>)}
-              {!billing&&<option value="pending">รอตรวจสอบ</option>}
-              {!billing&&<option value="approved">อนุมัติแล้ว</option>}
-              {!billing&&<option value="changes">ต้องแก้ไข</option>}
-              {!billing&&<option value="rejected">ไม่อนุมัติ</option>}
+              {!billing&&<option value="pending">{translateSystem("รอตรวจสอบ")}</option>}
+              {!billing&&<option value="approved">{translateSystem("อนุมัติแล้ว")}</option>}
+              {!billing&&<option value="changes">{translateSystem("ต้องแก้ไข")}</option>}
+              {!billing&&<option value="rejected">{translateSystem("ไม่อนุมัติ")}</option>}
             </select>
           </div>
           {!list.length && (
             <div className="merchant-empty">
               <span>◇</span>
               <h2>
-                {store.villas.length ? "ไม่พบรายการที่ค้นหา" : "เริ่มต้นจาก Villa แรก"}
+                {store.villas.length ? translateSystem("ไม่พบรายการที่ค้นหา") : translateSystem("เริ่มต้นจาก Villa แรก")}
               </h2>
               <p>
                 {admin
-                  ? "รายการที่ Merchant ส่งพร้อมเอกสารจะปรากฏที่นี่"
-                  : "เพิ่มที่พักและแนบหลักฐานกรรมสิทธิ์เพื่อเริ่มรับการตรวจสอบ"}
+                  ? translateSystem("รายการที่ Merchant ส่งพร้อมเอกสารจะปรากฏที่นี่")
+                  : translateSystem("เพิ่มที่พักและแนบหลักฐานกรรมสิทธิ์เพื่อเริ่มรับการตรวจสอบ")}
               </p>
               {!admin && (
           <button
@@ -472,52 +490,48 @@ export default function Backoffice({
             disabled={false}
             onClick={() => go("owner-add-villa")}
                 >
-                  + เพิ่ม Villa
-                </button>
+                  {translateSystem("+ เพิ่มที่พัก")}</button>
               )}
             </div>
           )}
           <div className="merchant-list">
             {list.map((v) => (
-              <article className="merchant-panel merchant-villa" key={v.id}>
-                {v.photoUrl&&<img src={v.photoUrl} alt={v.name} style={{width:"100%",height:220,objectFit:"cover",borderRadius:12,marginBottom:16}}/>}
+              <article className="merchant-panel merchant-villa" key={v.id} onClick={e=>{if(!(e.target as HTMLElement).closest("button,a,input,select,textarea,label"))showDetails(v);}}>
+                <div className="merchant-cover"><button type="button" className="merchant-cover-link" aria-label={translateSystem("ดูรายละเอียดที่พัก {v0}", {v0: v.name})} onClick={()=>showDetails(v)}><DemoPhoto demo={v.demoImage} src={v.photoUrl} alt={v.name} loading="lazy" /></button><StatusCornerRibbon villa={v}/></div>
                 <div className="merchant-villa-top">
                   <div>
                     <small>
-                      {v.province} · MERCHANT {v.merchant}
+                      {v.province} {" "}{translateSystem("· ผู้ประกอบการ")}{" "}{v.merchant}
                     </small>
-                    <h2>{v.name}</h2>
+                    <h2><button className="villa-title-link" onClick={()=>showDetails(v)}>{v.name}</button></h2>
                     <p>{v.email}</p>
                   </div>
                   {v.premiumBanner&&<span className="merchant-status">Premium Verified</span>}
-                  <span className={`merchant-status ${v.status}`}>
-                    {approvalStatus(v.status)}
-                  </span>
+                  {admin&&<span className={`merchant-status ${v.status}`}>{villaStatusBadge(v).label}</span>}
                 </div>
                 <div className="merchant-villa-meta">
                   <span>
-                    แพ็กเกจ<strong>{v.package}</strong>
+                    {translateSystem("แพ็กเกจ")}<strong>{v.package}</strong>
                   </span>
-                  <span>จำนวนผู้เข้าพักสูงสุด<strong>{v.guestCapacity == null ? "ไม่ได้ระบุ" : `${v.guestCapacity} คน`}</strong></span>
+                  <span>{translateSystem("จำนวนผู้เข้าพักสูงสุด")}<strong>{v.guestCapacity == null ? translateSystem("ไม่ได้ระบุ") : translateSystem("{v0} คน", {v0: v.guestCapacity})}</strong></span>
                   <span>
-                    วันหมดอายุ<strong>{date(v.expires)}</strong>
+                    {translateSystem("วันหมดอายุ")}<strong>{date(v.expires)}</strong>
                   </span>
                 </div>
                 {v.reason && (
-                  <p className="merchant-reason">เหตุผลจาก Admin: {v.reason}</p>
+                  <p className="merchant-reason">{translateSystem("เหตุผลจาก Admin:")}{" "}{v.reason}</p>
                 )}
                 <div className="button-row">
                   {admin ? <>
-                    <a className="outline-button" href={`${v.document.data}?preview=1`} target="_blank" rel="noreferrer">เปิดเอกสารที่แนบ</a>
-                    {v.status === "pending" && <button className="primary-button" onClick={()=>go("admin-pending-villas")}>เปิดคิว Villa รออนุมัติ</button>}
-                    {v.status === "approved" && <button className="primary-button" onClick={()=>go("admin-approved-villas")}>ดู Villa ที่อนุมัติแล้ว</button>}
+                    <a className="outline-button" href={`${v.document.data}?preview=1`} target="_blank" rel="noreferrer">{translateSystem("เปิดเอกสารที่แนบ")}</a>
+                    {v.status === "pending" && <button className="primary-button" onClick={()=>go("admin-pending-villas")}>{translateSystem("เปิดคิว Villa รออนุมัติ")}</button>}
+                    {v.status === "approved" && <button className="primary-button" onClick={()=>go("admin-approved-villas")}>{translateSystem("ดู Villa ที่อนุมัติแล้ว")}</button>}
                   </> : <button
                     className="outline-button"
                     onClick={() => showDetails(v)}
                   >
-                    ดูรายละเอียด Villa
-                  </button>}
-                  {!admin&&<button className="primary-button" onClick={()=>showDetails(v,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}
+                    {translateSystem("ดูรายละเอียดที่พัก")}</button>}
+                  {!admin&&<button className="primary-button" onClick={()=>showDetails(v,true)}>{translateSystem("แก้ไขที่พัก")}</button>}
                 </div>
                 {admin && v.status === "approved" &&
                   v.invoices.map((invoice) => (
@@ -539,56 +553,55 @@ export default function Backoffice({
           {active &&
             (page === "owner-villa-detail" ||
               page === "owner-villa-edit") && (
-              <section className="merchant-panel merchant-detail">
-                {!admin&&<div className="button-row"><button className="outline-button" onClick={()=>go("owner-villas")}>กลับรายการ Villa</button>{!editing&&<button className="primary-button" onClick={()=>showDetails(active,true)}>แก้ไขข้อมูล Villa / เปลี่ยนรูป</button>}</div>}
-                {!admin&&editing&&<form className="portal-form" onSubmit={async e=>{
+              <section className="merchant-panel merchant-detail">{!admin&&active.reason&&<p className="merchant-reason" role="alert">{translateSystem("เหตุผลจาก Admin:")}{" "}{active.reason}</p>}
+                {!admin&&<div className="button-row"><button className="outline-button" onClick={()=>go("owner-villas")}>{translateSystem("กลับรายการที่พัก")}</button>{!editing&&<button className="primary-button" onClick={()=>showDetails(active,true)}>{translateSystem("แก้ไขที่พัก")}</button>}</div>}
+                {!admin&&editing&&<BusinessWriteFieldset><form className="portal-form" onSubmit={async e=>{
                   e.preventDefault();
                   if(busyRef.current)return;
                   busyRef.current=true;setBusy(true);setMessage("");
                   try{
                     await api(`/merchant/villas/${active.id}`,{...form,photo});
                     setPhoto(null);
-                    setMessage("บันทึกสำเร็จ · รออนุมัติจาก Admin โดยคง QR เดิม");
+                    setMessage(translateSystem("บันทึกสำเร็จ · รออนุมัติจาก Admin โดยคง QR เดิม"));
                     try{
                       const next=await api<Store>("/state");
                       setStore(next);
                       const saved=next.villas.find(v=>v.id===active.id);
                       if(saved)setForm(current=>({...current,photoUrl:saved.photoUrl||""}));
                     }
-                    catch{setMessage("บันทึกและส่งตรวจใหม่สำเร็จแล้ว แต่โหลดสถานะล่าสุดไม่สำเร็จ กรุณารีเฟรชหน้า");}
+                    catch{setMessage(translateSystem("บันทึกและส่งตรวจใหม่สำเร็จแล้ว แต่โหลดสถานะล่าสุดไม่สำเร็จ กรุณารีเฟรชหน้า"));}
                   }catch(error){
                     if(error instanceof ApiError && error.status===401)go(admin ? "admin-login" : "owner-auth");
-                    setMessage(error instanceof Error?error.message:"บันทึกไม่สำเร็จ กรุณาลองใหม่");
+                    setMessage(error instanceof Error?error.message:translateSystem("บันทึกไม่สำเร็จ กรุณาลองใหม่"));
                   }finally{busyRef.current=false;setBusy(false);}
-                }}><h2>แก้ไขข้อมูล Villa</h2><p role="status" className="merchant-status">สถานะ: {status(active)}</p><label><span>จำนวนผู้พักสูงสุด</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/>{(form.photoUrl||photo)&&<button type="button" className="outline-button" onClick={()=>{setPhoto(null);setForm(current=>({...current,photoUrl:""}))}}>นำรูปปกออกจากข้อมูลที่ส่งตรวจ</button>}<label>วันที่ถ่ายภาพ (หากทราบ)<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label><p>การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ และออก QR ใหม่หลังอนุมัติ</p>{(["name","nameEn","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{({name:"ชื่อที่พักภาษาไทย",nameEn:"ชื่อที่พักภาษาอังกฤษ"} as Record<string,string>)[k] || k}<input required={["name","nameEn","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?"กำลังบันทึกและส่งตรวจ…":"บันทึกและส่งตรวจใหม่"}</button></form>}
-                {!editing&&active.photoUrl&&<img src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/>}
-                <PropertyMedia villaId={active.id} mode={admin?"admin":"merchant"}/>
-                {!admin&&!editing&&<><OwnerVerification villaId={active.id}/><SocialMaterials villaId={active.id}/></>}
-                <h2>เอกสารกรรมสิทธิ์ · {active.name}</h2>
+                }}><h2>{translateSystem("แก้ไขข้อมูล Villa")}</h2><p role="status" className="merchant-status">{translateSystem("สถานะ:")}{" "}{status(active)}</p><label><span>{translateSystem("จำนวนผู้พักสูงสุด")}</span><input type="number" min="1" max="1000" step="1" value={form.guestCapacity} onChange={e=>setForm({...form,guestCapacity:e.target.value})}/></label><VillaPhotoInput url={form.photoUrl} photo={photo} onChange={setPhoto}/>{(form.photoUrl||photo)&&<button type="button" className="outline-button" onClick={()=>{setPhoto(null);setForm(current=>({...current,photoUrl:""}))}}>{translateSystem("นำรูปปกออกจากข้อมูลที่ส่งตรวจ")}</button>}<label>{translateSystem("วันที่ถ่ายภาพ (หากทราบ)")}<input type="date" value={form.photoTakenAt} onChange={e=>setForm({...form,photoTakenAt:e.target.value})}/></label><p>{translateSystem("การแก้ข้อมูลจะส่งให้ Admin ตรวจใหม่ และออก QR ใหม่หลังอนุมัติ")}</p>{(["name","nameEn","province","merchant","phone","bankName","accountName","accountNumber"] as const).map(k=><label key={k}>{({name:"ชื่อที่พักภาษาไทย",nameEn:"ชื่อที่พักภาษาอังกฤษ",province:"จังหวัด",merchant:"ชื่อผู้ประกอบการ",phone:"เบอร์ติดต่อ",bankName:"ธนาคาร",accountName:"ชื่อบัญชี",accountNumber:"เลขบัญชี"} as Record<string,string>)[k] || k}<input required={["name","nameEn","province","merchant"].includes(k)} value={form[k]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}{message&&<p role="status" aria-live="polite">{message}</p>}<button type="submit" disabled={busy} className="primary-button">{busy?translateSystem("กำลังบันทึกและส่งตรวจ…"):translateSystem("บันทึกและส่งตรวจใหม่")}</button></form></BusinessWriteFieldset>}
+                {!editing&&<div className="villa-image"><DemoPhoto demo={active.demoImage} src={active.photoUrl} alt={active.name} style={{width:"100%",maxHeight:360,objectFit:"cover",borderRadius:12}}/><StatusCornerRibbon villa={active}/></div>}
+                <OwnershipDocuments key={`ownership-${active.id}`} villaId={active.id} admin={admin} onChanged={()=>{void api<Store>("/state").then(setStore).catch(e=>setMessage(e.message));}}/><PropertyMedia key={`media-${active.id}`} villaId={active.id} mode={admin?"admin":"merchant"} onChanged={()=>{void api<Store>("/state").then(setStore).catch(e=>setMessage(e.message));}}/>
+                {!phase1&&!admin&&!editing&&<><OwnerVerification key={`owner-${active.id}`} villaId={active.id}/><SocialMaterials key={`social-${active.id}`} villaId={active.id}/></>}
+                <h2>{translateSystem("เอกสารกรรมสิทธิ์ ·")}{" "}{active.name}</h2>
                 <p>{active.document.name}</p>
                 <div className="merchant-villa-meta">
-                  <span>เบอร์โทรทางการ<strong>{active.phone || "ยังไม่ได้ระบุ"}</strong></span>
-                  <span>บัญชีรับเงิน<strong>{active.bankName || "ยังไม่ได้ระบุ"} · {active.accountNumber || "—"}</strong></span>
-                  <span>ชื่อบัญชี<strong>{active.accountName || "ยังไม่ได้ระบุ"}</strong></span>
+                  <span>{translateSystem("เบอร์โทรทางการ")}<strong>{active.phone || translateSystem("ยังไม่ได้ระบุ")}</strong></span>
+                  <span>{translateSystem("บัญชีรับเงิน")}<strong>{active.bankName || translateSystem("ยังไม่ได้ระบุ")} · {active.accountNumber || "—"}</strong></span>
+                  <span>{translateSystem("ชื่อบัญชี")}<strong>{active.accountName || translateSystem("ยังไม่ได้ระบุ")}</strong></span>
                 </div>
                 <a
                   className="outline-button"
                   href={active.document.data}
                   download={active.document.name}
                 >
-                  ดาวน์โหลดเอกสาร
-                </a>
+                  {translateSystem("ดาวน์โหลดเอกสาร")}</a>
                 {active.document.type.startsWith("image/") && (
                   <img
                     className="merchant-document"
                     src={active.document.data}
-                    alt="เอกสารกรรมสิทธิ์ Villa"
+                    alt={translateSystem("เอกสารกรรมสิทธิ์ Villa")}
                   />
                 )}
                 {!admin && ["changes", "rejected"].includes(active.status) && (
                   <div className="portal-form">
                     <label>
-                      <span>แนบเอกสารใหม่เพื่อส่งตรวจอีกครั้ง</span>
+                      <span>{translateSystem("แนบเอกสารใหม่เพื่อส่งตรวจอีกครั้ง")}</span>
                       <input
                         type="file"
                         accept="application/pdf,image/jpeg,image/png"
@@ -611,24 +624,23 @@ export default function Backoffice({
       setUpload(null)
                       }}
                     >
-                      ส่งตรวจสอบอีกครั้ง
-                    </button>
+                      {translateSystem("ส่งตรวจสอบอีกครั้ง")}</button>
                   </div>
                 )}
                 {!editing && active.qr && <VillaQr villa={active} admin={admin} />}
               </section>
             )}
-          {(admin || billing) && (
+          {!phase1 && (admin || billing) && (
             <section className="merchant-panel merchant-mail">
               <h2>
-                ประวัติการส่งอีเมล <small>{store.mails.length} รายการ</small>
+                {translateSystem("ประวัติการส่งอีเมล")}{" "}<small>{store.mails.length} {" "}{translateSystem("รายการ")}</small>
               </h2>
               <p>
-                {store.demoMode ? "DEMO · อีเมลถูกบันทึกให้ตรวจดูในระบบ ไม่ส่งผ่าน SMTP จริง" : store.smtpConfigured
-                  ? "ส่งผ่าน SMTP อัตโนมัติ มีการลองใหม่เมื่อส่งไม่สำเร็จ"
-                  : "ยังไม่ได้ตั้งค่า SMTP · อีเมลเก็บในคิวและจะส่งเมื่อเชื่อมบริการแล้ว"}
+                {store.demoMode ? translateSystem("DEMO · อีเมลถูกบันทึกให้ตรวจดูในระบบ ไม่ส่งผ่าน SMTP จริง") : store.smtpConfigured
+                  ? translateSystem("ส่งผ่าน SMTP อัตโนมัติ มีการลองใหม่เมื่อส่งไม่สำเร็จ")
+                  : translateSystem("ยังไม่ได้ตั้งค่า SMTP · อีเมลเก็บในคิวและจะส่งเมื่อเชื่อมบริการแล้ว")}
               </p>
-              {!store.mails.length && <p>ยังไม่มีอีเมลแจ้งชำระเงิน</p>}
+              {!store.mails.length && <p>{translateSystem("ยังไม่มีอีเมลแจ้งชำระเงิน")}</p>}
               {store.mails.map((mail) => (
                 <div key={mail.id}>
                   <button
@@ -640,18 +652,18 @@ export default function Backoffice({
                     <span>
                       <strong>{mail.subject}</strong>
                       <small>
-                        ถึง {mail.to} · {date(mail.created)} ·{" "}
+                        {translateSystem("ถึง")}{" "}{mail.to} · {date(mail.created)} ·{" "}
                         {mail.status === "sent"
-                          ? "ส่งแล้ว"
-                          : mail.status === "demo" ? "DEMO · เก็บอีเมล ไม่ส่งจริง"
+                          ? translateSystem("ส่งแล้ว")
+                          : mail.status === "demo" ? translateSystem("DEMO · เก็บอีเมล ไม่ส่งจริง")
                           : mail.status === "waiting_config"
-                            ? "รอตั้งค่า SMTP"
+                            ? translateSystem("รอตั้งค่า SMTP")
                             : mail.status === "failed"
-                              ? "ส่งไม่สำเร็จ"
-                              : "กำลังรอส่ง"}
+                              ? translateSystem("ส่งไม่สำเร็จ")
+                              : translateSystem("กำลังรอส่ง")}
                       </small>
                     </span>
-                    <span>ดูอีเมล ↗</span>
+                    <span>{translateSystem("ดูอีเมล ↗")}</span>
                   </button>
                   {mailOpen === mail.id && (
                     <div>
@@ -669,8 +681,7 @@ export default function Backoffice({
                             )
                           }
                         >
-                          ลองส่งอีกครั้ง
-                        </button>
+                          {translateSystem("ลองส่งอีกครั้ง")}</button>
                       )}
                     </div>
                   )}
@@ -708,6 +719,7 @@ export function MerchantVerification({
     photoTakenAt?: string | null
     photoReviewedAt?: string | null
     province: string
+    demoImage?:boolean
     photoUrl: string
     verificationLevel: string
     premiumBanner: boolean
@@ -722,6 +734,8 @@ export function MerchantVerification({
     accountName?: string
     accountNumber?: string
   } | null>(null)
+  const [publicRevision,setPublicRevision]=useState(0)
+  useEffect(()=>adminView?undefined:onPublicVillaRefresh(()=>setPublicRevision(value=>value+1)),[adminView])
   const activityLogged = useRef("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -730,7 +744,7 @@ export function MerchantVerification({
     setLoading(true)
     setVilla(null)
     setError("")
-    void api<{ villaId?:string; propertyDetails?:Details|null; nameEn?: string; basicVerificationNotice?: string | null; ownerVerificationRequired?: boolean; ownerVerification?: {status:string;reviewedAt:string;method:string} | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; qr?:string; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
+    void api<{ villaId?:string; propertyDetails?:Details|null; nameEn?: string; basicVerificationNotice?: string | null; ownerVerificationRequired?: boolean; ownerVerification?: {status:string;reviewedAt:string;method:string} | null; trialUnlimited?: boolean; photoUploadedAt?: string | null; photoTakenAt?: string | null; photoReviewedAt?: string | null; qr?:string; demoImage?:boolean; photoUrl: string; verificationLevel: string; premiumBanner: boolean; qrStatus: string; merchantName: string; name: string; province: string; expires: string; valid: boolean; locked: boolean; viewerRole?: string; phone?: string; bankName?: string; accountName?: string; accountNumber?: string }>(
       `${adminView?"/admin/qr-verification":"/public/qr"}/${encodeURIComponent(reference)}`,
     )
       .then((value) => {
@@ -743,12 +757,7 @@ export function MerchantVerification({
           const activityKey=reference+":"+value.locked
           if(activityLogged.current===activityKey)return
           activityLogged.current=activityKey
-          void api("/public/events",{qr:reference,kind:"PROFILE_VIEW"}).catch(()=>{})
-          if(sessionStorage.getItem("villacheck-scan-reference")===reference){sessionStorage.removeItem("villacheck-scan-reference");void api("/public/events",{qr:reference,kind:"QR_SCAN"}).catch(()=>{})}
-          if(!value.locked){
-            void api("/public/events",{qr:reference,kind:"CONTACT_VIEW"}).catch(()=>{})
-            void currentAccount().then(()=>api("/user/checks",{qr:reference,requestKey:crypto.randomUUID()})).catch(()=>{})
-          }
+          // Protected Stage: no public analytics writes.
         }
       })
       .catch((error) => {
@@ -763,7 +772,7 @@ export function MerchantVerification({
     return () => {
       cancelled = true
     }
-  }, [reference,adminView])
+  }, [reference,adminView,publicRevision])
   const isAdmin = adminView || villa?.viewerRole === "admin";
   const [returning,setReturning]=useState(false);
   const backToAccount=async()=>{
@@ -775,7 +784,7 @@ export function MerchantVerification({
       else go(account.role==="merchant"?"owner-dashboard":"user-dashboard");
     }catch(error){
       if(error instanceof ApiError&&error.status===401)go("home");
-      else setError(error instanceof Error?error.message:"กลับหน้าบัญชีไม่สำเร็จ กรุณาลองใหม่");
+      else setError(error instanceof Error?error.message:translateSystem("กลับหน้าบัญชีไม่สำเร็จ กรุณาลองใหม่"));
     }finally{setReturning(false);}
   };
   return (
@@ -784,41 +793,41 @@ export function MerchantVerification({
       <div className="container merchant-verification merchant-panel">
         <span className="kicker">{isAdmin?"VILLACHECK / ADMIN PROPERTY DETAILS":"VILLACHECK / PROPERTY DETAILS"}</span>
         <h1>
-          {loading ? "กำลังโหลดรายละเอียดที่พัก…" : villa?.name || (villa?"ข้อมูลที่พักอยู่ระหว่างตรวจสอบ":"ไม่พบรายละเอียดที่พัก")}
+          {loading ? translateSystem("กำลังโหลดรายละเอียดที่พัก…") : villa?.name || (villa?translateSystem("ข้อมูลที่พักอยู่ระหว่างตรวจสอบ"):translateSystem("ไม่พบรายละเอียดที่พัก"))}
         </h1>
         {error && <p role="alert">{error}</p>}
         {villa && (
           <>
-            <div className="property-detail-intro"><p>{villa.nameEn}</p><p>{villa.province} · {villa.merchantName}</p>{villa.photoUrl&&<img className="property-detail-cover" src={villa.photoUrl} alt={villa.name}/>}{villa.propertyDetails&&<PropertyDetails details={villa.propertyDetails}/>}<h2>ข้อมูลและสถานะของที่พัก</h2></div>
+            <div className="property-detail-intro"><p>{villa.nameEn}</p><p>{villa.province} · {villa.merchantName}</p><DemoPhoto className="property-detail-cover" demo={villa.demoImage} src={villa.photoUrl} alt={villa.name}/>{villa.propertyDetails?<PropertyDetails details={villa.propertyDetails}/>:<p role="status">{translateSystem("ยังไม่มีข้อมูลรายละเอียดที่พัก")}</p>}<h2>{translateSystem("ข้อมูลและสถานะของที่พัก")}</h2></div>
             <span className="merchant-status">
               {villa.valid
-                ? "QR ใช้งานได้ · Admin อนุมัติแล้ว"
-                : ({EXPIRED:"QR หมดอายุ",SUSPENDED:"QR ถูกระงับ",INACTIVE:"QR ปิดใช้งาน",PENDING:"QR อยู่ระหว่างรออนุมัติ"} as Record<string,string>)[villa.qrStatus] || "QR ไม่พร้อมใช้งาน"}
+                ? translateSystem("QR ใช้งานได้ · Admin อนุมัติแล้ว")
+                : ({EXPIRED:"QR หมดอายุ",SUSPENDED:"QR ถูกระงับ",INACTIVE:"QR ปิดใช้งาน",PENDING:"QR อยู่ระหว่างรออนุมัติ"} as Record<string,string>)[villa.qrStatus] || translateSystem("QR ไม่พร้อมใช้งาน")}
             </span>
-            {villa.ownerVerificationRequired && !villa.ownerVerification && <p className="verification-reminder">ยังไม่ผ่านการยืนยันเจ้าของบ้านด้วยใบหน้าและทะเบียนบ้าน</p>}
-            {villa.ownerVerification && <p className="merchant-status">ยืนยันเจ้าของบ้านแล้ว · {villa.ownerVerification.method} · {date(villa.ownerVerification.reviewedAt)}</p>}
+            {villa.ownerVerificationRequired && !villa.ownerVerification && <p className="verification-reminder">{translateSystem("ยังไม่ผ่านการยืนยันเจ้าของบ้านด้วยใบหน้าและทะเบียนบ้าน")}</p>}
+            {villa.ownerVerification && <p className="merchant-status">{translateSystem("ยืนยันเจ้าของบ้านแล้ว ·")}{" "}{villa.ownerVerification.method} · {date(villa.ownerVerification.reviewedAt)}</p>}
             {villa.basicVerificationNotice && <p className="verification-reminder">{villa.basicVerificationNotice}</p>}
-            <p>{villa.nameEn}</p><p>อัปเดตรูปภาพล่าสุดเมื่อ {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"}</p>{villa.photoUrl && <p>วันที่อัปโหลด: {villa.photoUploadedAt ? date(villa.photoUploadedAt) : "ไม่ระบุ"} · วันที่ถ่าย: {villa.photoTakenAt ? date(villa.photoTakenAt) : "ไม่ระบุ"}{villa.photoReviewedAt && <> · วันที่ทีมตรวจสื่อ: {date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
-            {villa.premiumBanner && <p className="merchant-status">✦ Premium Verified · เอกสารผ่านและ Subscription ใช้งานได้</p>}
+            <p>{villa.nameEn}</p><p>{translateSystem("อัปเดตรูปภาพล่าสุดเมื่อ")}{" "}{villa.photoUploadedAt ? date(villa.photoUploadedAt) : translateSystem("ไม่ระบุ")}</p>{villa.photoUrl && <p>{translateSystem("วันที่อัปโหลด:")}{" "}{villa.photoUploadedAt ? date(villa.photoUploadedAt) : translateSystem("ไม่ระบุ")} {" "}{translateSystem("· วันที่ถ่าย:")}{" "}{villa.photoTakenAt ? date(villa.photoTakenAt) : translateSystem("ไม่ระบุ")}{villa.photoReviewedAt && <> {" "}{translateSystem("· วันที่ทีมตรวจสื่อ:")}{" "}{date(villa.photoReviewedAt)}</>}</p>}<p>{villa.province} · {villa.merchantName} · {villa.verificationLevel} · {villa.qrStatus}</p>
+            {villa.premiumBanner && <p className="merchant-status">{translateSystem("✦ Premium Verified · เอกสารผ่านและ Subscription ใช้งานได้")}</p>}
             {villa.name&&<a href={`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:`${villa.name} ${villa.province}`})}`} target="_blank" rel="noopener noreferrer">{t("profile.map")}</a>}
-            <p>วันหมดอายุ: {villa.trialUnlimited ? "ยังไม่มีวันสิ้นสุดที่ยืนยัน · Basic โปรโมชั่น" : date(villa.expires)}</p>
+            <p>{translateSystem("วันหมดอายุ:")}{" "}{villa.expires ? date(villa.expires) : villa.trialUnlimited ? translateSystem("ยังไม่มีวันสิ้นสุดที่ยืนยัน · Basic โปรโมชั่น") : date(villa.expires)}</p>
             {!isAdmin&&<button onClick={()=>go("villa-report",reference)}>{t("profile.report")}</button>}
             <section className={`verification-contact ${villa.locked ? "locked" : ""}`}>
-              <div className="verification-contact-head"><h2>{t("profile.contacts")}</h2><span>{isAdmin?"ข้อมูลเต็มสำหรับ Admin":villa.locked ? "ข้อมูลส่วนบุคคลถูกปกปิด" : "ข้อมูลทะเบียน"}</span></div>
+              <div className="verification-contact-head"><h2>{t("profile.contacts")}</h2><span>{isAdmin?translateSystem("ข้อมูลเต็มสำหรับ Admin"):villa.locked ? translateSystem("ข้อมูลส่วนบุคคลถูกปกปิด") : translateSystem("ข้อมูลทะเบียน")}</span></div>
               <dl>
-                <div><dt>{t("profile.phone")}</dt><dd>{villa.locked ? "•••-•••-••••" : villa.phone || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>{t("profile.bank")}</dt><dd>{villa.bankName || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>{t("profile.bankName")}</dt><dd>{villa.locked ? "ข้อมูลถูกปกปิด" : villa.accountName || "ยังไม่ได้ระบุ"}</dd></div>
-                <div><dt>{t("profile.bankNumber")}</dt><dd>{villa.locked ? "•••-•-•••••-•" : villa.accountNumber || "ยังไม่ได้ระบุ"}</dd></div>
+                <div><dt>{t("profile.phone")}</dt><dd>{villa.locked ? "•••-•••-••••" : villa.phone || translateSystem("ยังไม่ได้ระบุ")}</dd></div>
+                <div><dt>{t("profile.bank")}</dt><dd>{villa.bankName || translateSystem("ยังไม่ได้ระบุ")}</dd></div>
+                <div><dt>{t("profile.bankName")}</dt><dd>{villa.locked ? translateSystem("ข้อมูลถูกปกปิด") : villa.accountName || translateSystem("ยังไม่ได้ระบุ")}</dd></div>
+                <div><dt>{t("profile.bankNumber")}</dt><dd>{villa.locked ? "•••-•-•••••-•" : villa.accountNumber || translateSystem("ยังไม่ได้ระบุ")}</dd></div>
               </dl>
-              {villa.locked && !isAdmin ? <div className="verification-login"><p>กรอกเลขบัญชีหรือเบอร์ที่ได้รับในหน้าตรวจข้อมูลก่อนโอน ระบบจะแจ้งว่าตรงกับทะเบียนหรือไม่ โดยไม่เปิดเผยข้อมูลเต็ม</p><div className="button-row"><button className="primary-button" onClick={() => go(villa.viewerRole === "user"?"user-precheck":"login", reference)}>{villa.viewerRole === "user"?"ตรวจข้อมูลก่อนโอน":"เข้าสู่ระบบเพื่อตรวจข้อมูล"}</button><button className="outline-button" onClick={() => go("user-registration", reference)}>สมัครสมาชิก User</button></div></div> : <p className="verification-reminder">{isAdmin?"ข้อมูลทะเบียนสำหรับผู้ดูแลระบบ":t("profile.contactReminder")}</p>}
+              {villa.locked && !isAdmin ? <div className="verification-login"><p>{translateSystem("กรอกเลขบัญชีหรือเบอร์ที่ได้รับในหน้าตรวจข้อมูลก่อนโอน ระบบจะแจ้งว่าตรงกับทะเบียนหรือไม่ โดยไม่เปิดเผยข้อมูลเต็ม")}</p><div className="button-row"><button className="primary-button" onClick={() => go(villa.viewerRole === "user"?"user-precheck":"login", reference)}>{villa.viewerRole === "user"?translateSystem("ตรวจข้อมูลก่อนโอน"):translateSystem("เข้าสู่ระบบเพื่อตรวจข้อมูล")}</button><button className="outline-button" onClick={() => go("user-registration", reference)}>{translateSystem("สมัครสมาชิก User")}</button></div></div> : <p className="verification-reminder">{isAdmin?translateSystem("ข้อมูลทะเบียนสำหรับผู้ดูแลระบบ"):t("profile.contactReminder")}</p>}
             </section>
           </>
         )}
         {villa?.name && <>{isAdmin&&villa.villaId&&villa.ownerVerificationRequired&&<OwnerVerification admin villaId={villa.villaId}/>}<PropertyMedia key={`media-${reference}`} qr={reference} villaId={villa.villaId} mode={isAdmin?"admin":"public"}/><Reviews qr={reference} mode={isAdmin?"admin":"public"}/></>}
         <p>QR Reference: {reference}</p>
         <button className="outline-button" disabled={returning} onClick={()=>void backToAccount()}>
-          {returning?"กำลังกลับหน้าบัญชี…":isAdmin?"กลับหน้าก่อนหน้า Admin":villa?.viewerRole==="merchant"?"กลับหน้าหลัก Merchant":villa?.viewerRole==="user"?"กลับหน้าหลัก User":"กลับหน้าหลัก"}
+          {returning?translateSystem("กำลังกลับหน้าบัญชี…"):isAdmin?translateSystem("กลับหน้าก่อนหน้า Admin"):villa?.viewerRole==="merchant"?translateSystem("กลับหน้าหลัก Merchant"):villa?.viewerRole==="user"?translateSystem("กลับหน้าหลัก User"):translateSystem("กลับหน้าหลัก")}
         </button>
       </div>
     </main>
@@ -854,7 +863,7 @@ function PaymentPanel({
   const [error, setError] = useState("")
   const [reading, setReading] = useState(false)
   if(invoice.gateway === "OMISE")return <OmiseCheckout key={invoice.id} invoice={invoice} admin={admin}/>
-  if(invoice.paymentAccessMode==="DISABLED"||invoice.paymentAccessMode==="OMISE_TEST")return <section className="payment-panel"><strong>ประวัติใบแจ้งชำระ ฿{invoice.amount.toLocaleString("th-TH")}</strong><p>ปิดรับชำระ manual รายการเดิมเก็บไว้สำหรับตรวจสอบ กรุณาติดต่อผู้ดูแลหากเคยโอนแล้ว</p></section>
+  if(invoice.paymentAccessMode==="DISABLED"||invoice.paymentAccessMode==="OMISE_TEST")return <section className="payment-panel"><strong>{translateSystem("ประวัติใบแจ้งชำระ ฿")}{invoice.amount.toLocaleString(localeTag())}</strong><p>{translateSystem("ปิดรับชำระ manual รายการเดิมเก็บไว้สำหรับตรวจสอบ กรุณาติดต่อผู้ดูแลหากเคยโอนแล้ว")}</p></section>
   const selectProof = (selected?: File) => {
     setFile(null)
     setError("")
@@ -863,7 +872,7 @@ function PaymentPanel({
       !["application/pdf", "image/jpeg", "image/png"].includes(selected.type) ||
       selected.size > 2 * 1024 * 1024
     ) {
-      setError("ใช้ PDF, JPG, PNG ไม่เกิน 2 MB")
+      setError(translateSystem("ใช้ PDF, JPG, PNG ไม่เกิน 2 MB"))
       return
     }
     setReading(true)
@@ -877,7 +886,7 @@ function PaymentPanel({
       setReading(false)
     }
     reader.onerror = () => {
-      setError("อ่านไฟล์ไม่สำเร็จ")
+      setError(translateSystem("อ่านไฟล์ไม่สำเร็จ"))
       setReading(false)
     }
     reader.readAsDataURL(selected)
@@ -885,41 +894,40 @@ function PaymentPanel({
   return (
     <div className="payment-panel">
       <strong>
-        ใบแจ้งชำระ{invoice.scope === "merchant" ? "แพ็กเกจ Merchant" : " Villa"} ฿{invoice.amount.toLocaleString("th-TH")} · อายุ QR{" "}
-        {invoice.months} เดือน
-      </strong>
-      <small>{invoice.id} · {invoice.packageName} · สร้าง {date(invoice.created)}</small>
-      <p>Payment: {invoice.paymentStatus} · QR: {invoice.paymentQr?.status||"ไม่มี QR"} · หมดอายุ {date(invoice.paymentQr?.expiresAt||"")}</p>
-      {invoice.proof&&<p>อัปเดตหลักฐาน {new Date(invoice.updatedAt).toLocaleString("th-TH")}</p>}
-          <h3>บัญชีธนาคารรับชำระที่ Admin ตั้งไว้</h3><p className="payment-instructions">{instructions}</p>
-          <a href={`data:text/plain;charset=utf-8,${encodeURIComponent(`VillaCheck · ${invoice.id}\n${invoice.packageName} · THB ${invoice.amount}\n${instructions}`)}`} download={`payment-${invoice.id}.txt`}>ดาวน์โหลดรายละเอียดบัญชีและยอดชำระ</a>
-          {!demo && invoice.bankQrImage && <section className="bank-payment-details"><h3>QR โอนเงินเข้าบัญชีรับชำระ</h3><img src={invoice.bankQrImage} alt="QR บัญชีรับชำระของ VillaCheck" style={{width:240,maxWidth:"100%",objectFit:"contain"}}/><p>ตรวจชื่อผู้รับและยอดตามใบแจ้งชำระก่อนยืนยันโอน จากนั้นแนบสลิปเพื่อให้ Admin ตรวจ</p><a href={invoice.bankQrImage} target="_blank" rel="noopener noreferrer" download>เปิด / ดาวน์โหลด QR รับชำระ</a></section>}
+        {translateSystem("ใบแจ้งชำระ")}{invoice.scope === "merchant" ? translateSystem("แพ็กเกจ Merchant") : " Villa"} {" "}{translateSystem("฿")}{invoice.amount.toLocaleString(localeTag())} {" "}{translateSystem("· อายุ QR")}{" "}
+        {invoice.months} {" "}{translateSystem("เดือน")}</strong>
+      <small>{invoice.id} · {invoice.packageName} {" "}{translateSystem("· สร้าง")}{" "}{date(invoice.created)}</small>
+      <p>Payment: {invoice.paymentStatus} · QR: {invoice.paymentQr?.status||translateSystem("ไม่มี QR")} {" "}{translateSystem("· หมดอายุ")}{" "}{date(invoice.paymentQr?.expiresAt||"")}</p>
+      {invoice.proof&&<p>{translateSystem("อัปเดตหลักฐาน")}{" "}{new Date(invoice.updatedAt).toLocaleString(localeTag())}</p>}
+          <h3>{translateSystem("บัญชีธนาคารรับชำระที่ Admin ตั้งไว้")}</h3><p className="payment-instructions">{instructions}</p>
+          <a href={`data:text/plain;charset=utf-8,${encodeURIComponent(`VillaCheck · ${invoice.id}\n${invoice.packageName} · THB ${invoice.amount}\n${instructions}`)}`} download={`payment-${invoice.id}.txt`}>{translateSystem("ดาวน์โหลดรายละเอียดบัญชีและยอดชำระ")}</a>
+          {!demo && invoice.bankQrImage && <section className="bank-payment-details"><h3>{translateSystem("QR โอนเงินเข้าบัญชีรับชำระ")}</h3><img src={invoice.bankQrImage} alt={translateSystem("QR บัญชีรับชำระของ VillaCheck")} style={{width:240,maxWidth:"100%",objectFit:"contain"}}/><p>{translateSystem("ตรวจชื่อผู้รับและยอดตามใบแจ้งชำระก่อนยืนยันโอน จากนั้นแนบสลิปเพื่อให้ Admin ตรวจ")}</p><a href={invoice.bankQrImage} target="_blank" rel="noopener noreferrer" download>{translateSystem("เปิด / ดาวน์โหลด QR รับชำระ")}</a></section>}
       {!admin && invoice.status === "pending" && <PaymentQr paymentId={invoice.id} initial={invoice.paymentQr} />}
       <p>
         {invoice.status === "paid"
-          ? `ยืนยันชำระแล้ว ${date(invoice.paidAt || "")}`
-          : invoice.paymentStatus === "REJECTED" ? "สลิปถูกปฏิเสธ กรุณาแนบใหม่"
+          ? translateSystem("ยืนยันชำระแล้ว {v0}", {v0: date(invoice.paidAt || "")})
+          : invoice.paymentStatus === "REJECTED" ? translateSystem("สลิปถูกปฏิเสธ กรุณาแนบใหม่")
           : invoice.status === "submitted"
-            ? "แนบสลิปแล้ว รอ Admin ตรวจยืนยัน"
-            : "รอชำระเงินและแนบสลิป"}
+            ? translateSystem("แนบสลิปแล้ว รอ Admin ตรวจยืนยัน")
+            : translateSystem("รอชำระเงินและแนบสลิป")}
       </p>
-      {invoice.reason && <p>เหตุผลจาก Admin: {invoice.reason}</p>}
-      {demo && invoice.status === "pending" && !admin && <div className="merchant-panel"><strong>DEMO · ไม่มีการโอนเงินจริง</strong><p>สร้างสลิปและส่งเข้าคิวให้ Admin ตรวจ Manual</p><button disabled={busy} onClick={async()=>{try{const slip=await api<{reference:string;document:Document}>(`/payments/${invoice.id}/demo-slip`,{});await perform(`/invoices/${invoice.id}/proof`,slip,"ส่งสลิป dummy ให้ Admin ตรวจแล้ว");}catch(e){setError(e instanceof Error?e.message:"สร้างสลิปไม่สำเร็จ")}}}>สร้างและแนบสลิป dummy</button>{error&&<p role="alert">{error}</p>}</div>}
+      {invoice.reason && <p>{translateSystem("เหตุผลจาก Admin:")}{" "}{invoice.reason}</p>}
+      {demo && invoice.status === "pending" && !admin && <div className="merchant-panel"><strong>{translateSystem("DEMO · ไม่มีการโอนเงินจริง")}</strong><p>{translateSystem("สร้างสลิปและส่งเข้าคิวให้ Admin ตรวจ Manual")}</p><button disabled={busy} onClick={async()=>{try{const slip=await api<{reference:string;document:Document}>(`/payments/${invoice.id}/demo-slip`,{});await perform(`/invoices/${invoice.id}/proof`,slip,"ส่งสลิป dummy ให้ Admin ตรวจแล้ว");}catch(e){setError(e instanceof Error?e.message:translateSystem("สร้างสลิปไม่สำเร็จ"))}}}>{translateSystem("สร้างและแนบสลิป dummy")}</button>{error&&<p role="alert">{error}</p>}</div>}
       {invoice.status === "pending" && !admin && (
         <div className="portal-form">
 
-          {!demo&&invoice.paymentInstructions===null&&<p className="form-message">ใบแจ้งชำระนี้สร้างก่อนระบบบันทึกข้อมูลบัญชี ณ ตอนสร้าง โปรดยืนยันข้อมูลรับชำระกับทีมงานก่อนโอน</p>}
+          {!demo&&invoice.paymentInstructions===null&&<p className="form-message">{translateSystem("ใบแจ้งชำระนี้สร้างก่อนระบบบันทึกข้อมูลบัญชี ณ ตอนสร้าง โปรดยืนยันข้อมูลรับชำระกับทีมงานก่อนโอน")}</p>}
           {(
             <>
               <label>
-                <span>เลขอ้างอิงการโอน</span>
+                <span>{translateSystem("เลขอ้างอิงการโอน")}</span>
                 <input
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
                 />
               </label>
               <label>
-                <span>หลักฐานการชำระเงิน (ไม่เกิน 2 MB)</span>
+                <span>{translateSystem("หลักฐานการชำระเงิน (ไม่เกิน 2 MB)")}</span>
                 <input
                   type="file"
                   accept="application/pdf,image/jpeg,image/png"
@@ -937,8 +945,7 @@ function PaymentPanel({
                   )
                 }
               >
-                ส่งหลักฐานการชำระ
-              </button>
+                {translateSystem("ส่งหลักฐานการชำระ")}</button>
             </>
           )}
           {error && <p role="alert">{error}</p>}
@@ -946,15 +953,15 @@ function PaymentPanel({
       )}
       {invoice.proof && admin && (
         <a href={invoice.proof.data} className="outline-button" download>
-          ดาวน์โหลดสลิป · {invoice.proof.name}
+          {translateSystem("ดาวน์โหลดสลิป ·")}{" "}{invoice.proof.name}
         </a>
       )}
       {invoice.status === "submitted" && admin && (
         <div className="portal-form">
-          <p>เลขอ้างอิง: {invoice.reference} · ตรวจยอดเข้าบัญชีก่อนยืนยัน</p>
-          <label><span>เลขธุรกรรมธนาคารที่ตรวจสอบแล้ว</span><input value={bankTransaction} onChange={e => setBankTransaction(e.target.value)} /></label>
+          <p>{translateSystem("เลขอ้างอิง:")}{" "}{invoice.reference} {" "}{translateSystem("· ตรวจยอดเข้าบัญชีก่อนยืนยัน")}</p>
+          <label><span>{translateSystem("เลขธุรกรรมธนาคารที่ตรวจสอบแล้ว")}</span><input value={bankTransaction} onChange={e => setBankTransaction(e.target.value)} /></label>
           <label>
-            <span>เหตุผลหากไม่ผ่าน</span>
+            <span>{translateSystem("เหตุผลหากไม่ผ่าน")}</span>
             <input value={reason} onChange={(e) => setReason(e.target.value)} />
           </label>
           <div className="button-row">
@@ -969,8 +976,7 @@ function PaymentPanel({
                 )
               }
             >
-              ยืนยันได้รับชำระ (รออนุมัติ Villa)
-            </button>
+              {translateSystem("ยืนยันได้รับชำระ (รออนุมัติ Villa)")}</button>
             <button
               disabled={busy || !reason.trim()}
               className="outline-button"
@@ -982,8 +988,7 @@ function PaymentPanel({
                 )
               }
             >
-              ไม่ผ่าน / แนบสลิปใหม่
-            </button>
+              {translateSystem("ไม่ผ่าน / แนบสลิปใหม่")}</button>
           </div>
         </div>
       )}

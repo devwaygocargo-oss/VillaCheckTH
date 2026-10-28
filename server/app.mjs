@@ -1,3 +1,20 @@
+import {merchantReceivingBankApi} from "./merchant-receiving-bank.mjs";
+import {mediaRange} from "./media-range.mjs";
+import {villaDraft,markVillaDraftSubmitted} from './villa-drafts.mjs'
+import {assertWriteSession} from './write-session.mjs'
+import {publicError} from './public-error.mjs'
+import {customerOAuthStatus} from "./customer-oauth-security.mjs";
+import {privacyNoticeVersion,privacyRequests,adminPrivacyRequests} from "./privacy-requests.mjs"
+import {secureAccountOperation} from './account-security.mjs'
+import {beginPasswordRecovery,finishPasswordRecovery} from './password-recovery.mjs'
+import {securityEvent} from './security-events.mjs'
+import {reserveVillaCreate,completeVillaCreate} from './villa-create-request.mjs';
+import {ownershipDocuments,assertOwnershipDocumentsReviewed} from './ownership-documents.mjs'
+import {assertVillaCoverLimit} from './villa-media-limits.mjs'
+import {merchantFreePeriod,assertVillaCreation,blockFreePackageSelection} from './merchant-free-period.mjs'
+import {initialGrantForReview,membershipNotices} from './membership-lifecycle.mjs'
+import {verifyProductionDemoGate} from './production-demo-gate.mjs'
+import {productionRequestAllowed,phase1PackageDisplay} from "./production-runtime.mjs"
 import {isDemoVilla} from "./demo-villa-visibility.mjs"
 import {resolvePublicQr,publicRevision,rememberQr,publishedVillas} from "./public-revision.mjs"
 import {savePackagePromotion} from "./package-promotions.mjs"
@@ -29,6 +46,7 @@ import {promotionsApi,selectCoupon} from "./promotions.mjs"
 import { changeApprovals } from "./change-approvals.mjs"
 import { receivingBank,bankInstructions } from "./payment-account.mjs"
 import { adminReceivingBank } from "./bank-receiving.mjs"
+import {scope,actorAllowed,beforeRequest,authorizeRequest} from './staging-interactive-policy.mjs';
 import {villaReview,recordVillaReview} from './villa-review.mjs'
 import {dummyPdf} from './demo-seed.mjs'
 import { cmsLoginConfig } from "./cms-business.mjs"
@@ -44,7 +62,7 @@ import { generatePaymentQr, paymentQrDto } from "./payment-qr.mjs"
 import {
   getPlan,
   listPlans,
-  trustDto,
+  trustDto as catalogTrustDto,
   getVerificationMode,
   levels,
 } from "./catalog.mjs"
@@ -72,8 +90,8 @@ class ApiError extends Error {
     this.status = status
   }
 }
-const fail = (status, message) => {
-  throw new ApiError(status, message)
+const fail = (status, message, code) => {
+  const error=new ApiError(status,message);if(code)error.code=code;throw error
 }
 const hash = (value) => createHash("sha256").update(value).digest("hex")
 const text = (value, label, max = 200) => {
@@ -133,7 +151,7 @@ async function body(req) {
 function document(value) {
   if (!value || typeof value !== "object") fail(400, "ต้องแนบเอกสาร")
   const name = text(value.name, "ชื่อไฟล์", 180).replace(/[\\/]/g, "_")
-  if (/^(cms-image:|receiving-bank-qr:|villa-photo:|social-material:)/i.test(name))
+  if (/^(cms-image:|receiving-bank-qr:|villa-photo(?::|$)|property-media$|social-material:)/i.test(name))
     fail(400, "ชื่อไฟล์สงวนสำหรับระบบ กรุณาเปลี่ยนชื่อไฟล์")
   const match =
     typeof value.data === "string" &&
@@ -164,6 +182,13 @@ async function insertDocument(db, owner, file) {
   return id
 }
 export function createApp(db, config, transport) {
+  const releaseMode=config.productionReleaseMode||(config.productionPrelaunch?'PRELAUNCH':null)
+  const phase1=releaseMode==='PHASE1'
+  const membershipTrustOptions={demoImages:config.appEnvironment==='staging',requireFiniteExpiry:config.appEnvironment==='production'||phase1}
+  const trustDto=(database,villa,context)=>catalogTrustDto(database,villa,context,membershipTrustOptions)
+  if((config.productionRuntime||releaseMode)&&(!['PRELAUNCH','PHASE1','MEMBER_PREVIEW'].includes(releaseMode)||config.paymentAccessMode!=='DISABLED'||config.demoMode||config.seedDemo||config.omiseTestEnabled))throw Error('Unsafe production application configuration')
+  if(phase1&&((config.otpSecret||'').length<32||!config.phase1RequirementsRevision||!(config.phase1ActivationMode==='BLOCKED'||(config.phase1ActivationMode==='APPROVED_EXPLICIT_GRANTS'&&/^[a-zA-Z0-9_.:-]{3,120}$/.test(config.phase1InitialGrantPolicy||'')))||!['DISABLED','SMTP'].includes(config.phase1EmailOtpDelivery)||(transport&&!(config.phase1EmailOtpDelivery==='SMTP'&&config.phase1EmailOtpApproval))||config.thaiBulkSmsApiKey||config.thaiBulkSmsOtpKey||config.lineClientSecret||config.googleClientSecret||config.facebookClientSecret))throw Error('Unsafe production application configuration')
+  if(config.productionPrelaunch && (config.paymentAccessMode!=="DISABLED"||config.demoMode||config.seedDemo||config.omiseTestEnabled||transport))throw Error("Unsafe production application configuration")
   const worker = createMailWorker(db, config, transport)
   const omiseGateway = config.omiseTestEnabled ? (config.omiseGateway || new OmiseTestGateway({secretKey:config.omiseTestSecretKey})) : null
   const omise = createOmisePayments(db,omiseGateway,{appUrl:config.appUrl,methods:config.omiseTestMethods})
@@ -178,12 +203,12 @@ export function createApp(db, config, transport) {
     const now = Date.now()
     if (config.serverless) {
       const entry = await db.transaction(async () => {
-        await db.prepare("DELETE FROM rate_limits WHERE expires<=?").run(now)
+        // No shared cleanup
         return db
           .prepare(
-            "INSERT INTO rate_limits(key,count,expires) VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET count=rate_limits.count+1 RETURNING count",
+            "INSERT INTO rate_limits(key,count,expires) VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN rate_limits.expires<=? THEN 1 ELSE rate_limits.count+1 END,expires=CASE WHEN rate_limits.expires<=? THEN excluded.expires ELSE rate_limits.expires END RETURNING count",
           )
-          .get(key, now + 15 * 60000)
+          .get(key, now + 15 * 60000, now, now)
       })
       if (entry.count > limit) fail(429, "คำขอถี่เกินไป กรุณารอ 15 นาที")
       return
@@ -204,15 +229,20 @@ export function createApp(db, config, transport) {
     `${admin ? "vc_admin_session" : "vc_session"}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${age}${
       config.secureCookies ? "; Secure" : ""
     }`
-  async function issueSession(req, user) {
+  async function issueSession(req, user, options={}) {
+    const issued=await db.transaction(async()=>{
+    const current=await db.prepare("SELECT id,email,role,password_hash FROM users WHERE id=?").get(user.id)
+    if(!current||current.role!==user.role||current.email!==user.email)fail(401,"ข้อมูลบัญชีเปลี่ยนแล้ว กรุณาเข้าสู่ระบบใหม่")
+    if(options.expectedPasswordHash&&current.password_hash!==options.expectedPasswordHash)fail(401,"ข้อมูลเข้าสู่ระบบเปลี่ยนแล้ว กรุณาเข้าสู่ระบบใหม่")
+    if(options.expectedOAuthIdentity){const identity=await db.prepare("SELECT user_id FROM oauth_identities WHERE provider=? AND subject=?").get(options.expectedOAuthIdentity.provider,options.expectedOAuthIdentity.subject);if(identity?.user_id!==user.id)fail(401,"ช่องทางเข้าสู่ระบบเปลี่ยนแล้ว กรุณาเข้าสู่ระบบใหม่")}
     const admin=user.role === "admin";
     if(admin && new URL(req.url,"http://localhost").pathname !== "/api/auth/admin-login")fail(403,"บัญชี Admin ต้องเข้าสู่ระบบที่ /admin/login เท่านั้น");
     const access=await db.prepare("SELECT value FROM system_settings WHERE key=?").get("account_status:"+user.id);
     if(access && JSON.parse(access.value).status === "suspended")fail(403,"บัญชีถูกระงับการเข้าสู่ระบบ กรุณาติดต่อผู้ดูแล");
     const old = req.headers.cookie?.match(new RegExp("(?:^|;\\s*)"+(admin?"vc_admin_session":"vc_session")+"=([a-f0-9]{64})(?:;|$)"))?.[1]
     if (old)
-      await db.prepare("DELETE FROM sessions WHERE token_hash=?").run(hash(old))
-    await db.prepare("DELETE FROM sessions WHERE expires<=?").run(Date.now())
+      await db.prepare("UPDATE sessions SET expires=0 WHERE token_hash=?").run(hash(old))
+    // No global session cleanup during authentication.
     const token = randomBytes(32).toString("hex"),
       csrf = randomBytes(24).toString("hex")
     await db
@@ -221,7 +251,10 @@ export function createApp(db, config, transport) {
     await db
       .prepare("UPDATE users SET last_login=? WHERE id=?")
       .run(new Date().toISOString(), user.id)
+    securityEvent('authentication.succeeded',{actorId:user.id})
     return { csrf, cookie: cookie(token,28800,admin) }
+    })
+    return issued
   }
   const loginOtp=createLoginOtp(db,config,transport,config.smsFetch||fetch)
   async function session(req) {
@@ -237,6 +270,7 @@ export function createApp(db, config, transport) {
     if(!row || (row.role === "admin" && name !== "vc_admin_session") || (name === "vc_admin_session" && row.role !== "admin"))fail(401,"Session หมดอายุ กรุณาเข้าสู่ระบบใหม่");
     if(row.account_access && JSON.parse(row.account_access).status === "suspended")fail(403,"บัญชีถูกระงับการเข้าสู่ระบบ กรุณาติดต่อผู้ดูแล");
     if(path.startsWith("/api/auth/admin-") && row.role !== "admin")fail(403,"เฉพาะ Admin");
+    if(config.interactiveDemo)actorAllowed(row);
     return row;
   }
   function checkOrigin(req) {
@@ -254,6 +288,7 @@ export function createApp(db, config, transport) {
       if (req.headers["x-csrf-token"] !== user.csrf)
         fail(403, "CSRF token ไม่ถูกต้อง กรุณาโหลดหน้าใหม่")
     }
+    if(config.interactiveDemo)await authorizeRequest(db,user,req,new URL(req.url,"http://localhost").pathname,new URL(req.url,"http://localhost"),body);
     return user
   }
   async function villaFor(user, id) {
@@ -317,22 +352,25 @@ export function createApp(db, config, transport) {
     const invoices = context ? (context.invoices.get(v.id)||[]) : await db
       .prepare("SELECT * FROM invoices WHERE villa_id=? ORDER BY created DESC")
       .all(v.id)
+    const freePeriod=await merchantFreePeriod(db,v.owner_id,Date.now(),context)
     const packagePlan=await readContextPlan(db,v.package_id,context)
     const ownerLifecycle=context?.subscriptions.get(v.owner_id)?.lifecycle
+    const trust=await trustDto(db,v,context)
     return {
       id: v.id,
       name: v.name,
       nameEn: v.name_en,
-      trialUnlimited: v.payments === 0,
+      trialUnlimited: phase1||freePeriod ? false : v.payments === 0,
       createdAt: v.created,
       photoUrl: v.photo_url,
+      demoImage: config.appEnvironment==='staging'&&isDemoVilla(v),
       photoUploadedAt: v.photo_uploaded_at, photoTakenAt: v.photo_taken_at, photoReviewedAt: v.photo_reviewed_at,
       guestCapacity: v.guest_capacity,
       reviewRequest: await villaReview(db,v,context ? context.settings.get("villa_review:"+v.id) ?? null : undefined),
       province: v.province,
       merchant: v.merchant,
       email: v.email,
-      package: `${packagePlan.name} · ฿${packagePlan.amount / 100} / เดือน`,
+      package: freePeriod ? `${packagePlan.name} · ใช้งานฟรี` : phase1 ? packagePlan.name : `${packagePlan.name} · ฿${packagePlan.amount / 100} / เดือน`,
       documentReviewStatus: {
         pending: "PENDING_REVIEW",
         approved: "APPROVED",
@@ -341,7 +379,7 @@ export function createApp(db, config, transport) {
       }[v.status],
       reviewedAt: v.reviewed_at,
       reviewedByAdminId: v.reviewed_by,
-      ...(await trustDto(db, v, context)),
+      ...trust,
       packageId: v.package_id,
       phone: v.phone,
       bankName: v.bank_name,
@@ -355,7 +393,7 @@ export function createApp(db, config, transport) {
       paymentPending: invoices.some((i) => i.status !== "paid"),
       approvalStatus: v.status === "approved" ? "APPROVED" : v.status === "rejected" ? "REJECTED" : v.status === "changes" ? "CHANGE_REQUESTED" : "PENDING_APPROVAL",
       paymentStatus: invoices.some(i=>i.status==="paid"&&i.payment_status==="FAILED") ? "RECONCILIATION_REQUIRED" : invoices.some(i=>i.status==="submitted") ? "PENDING_REVIEW" : invoices.some(i=>i.status==="pending"&&i.payment_status==="FAILED") ? "FAILED" : invoices.some(i=>i.status==="pending") ? "UNPAID" : invoices.some(i=>i.status==="paid") ? "PAID" : "NO_PAYMENT_REQUIRED",
-      subscriptionStatus: ["SUSPENDED","CANCELLED"].includes(ownerLifecycle) ? ownerLifecycle : v.payments === 0 ? "PROMOTIONAL" : new Date(v.expires)>new Date() ? "ACTIVE" : "EXPIRED",
+      subscriptionStatus: trust.membershipState==="GRACE_PERIOD"?"GRACE_PERIOD":["SUSPENDED","CANCELLED"].includes(ownerLifecycle) ? ownerLifecycle : v.expires ? new Date(v.expires)>new Date() ? "ACTIVE" : "EXPIRED" : v.payments===0 ? "PROMOTIONAL" : "EXPIRED",
       document: {
         name: file.name,
         type: file.mime,
@@ -365,33 +403,35 @@ export function createApp(db, config, transport) {
     }
   }
   async function state(user) {
-    const [villas,mails,isDemo,subscription,paymentVerificationMode] = await Promise.all([
+    const freePeriodRead=merchantFreePeriod(db,user.id)
+    const [villas,mails,isDemo,subscription,paymentVerificationMode,freePeriod] = await Promise.all([
       user.role === "admin"
-        ? db.prepare("SELECT * FROM villas ORDER BY created DESC").all()
+        ? config.interactiveDemo?db.prepare("SELECT * FROM villas WHERE owner_id IN ("+scope.merchants.map(()=>"?").join(",")+") ORDER BY created DESC").all(...scope.merchants.map(a=>a.id)):db.prepare("SELECT * FROM villas ORDER BY created DESC").all()
         : db
             .prepare(
               "SELECT * FROM villas WHERE owner_id=? ORDER BY created DESC",
             )
             .all(user.id),
       user.role === "admin"
-        ? db.prepare("SELECT * FROM mails ORDER BY created DESC").all()
+        ? []
         : db.prepare("SELECT m.* FROM mails m JOIN villas v ON v.id=m.villa_id WHERE v.owner_id=? ORDER BY m.created DESC").all(user.id),
       demoMode(db,config),
-      subscriptionDto(db,user.id),
+      subscriptionDto(db,user.id,freePeriodRead),
       getVerificationMode(db,config.paymentVerificationMode||"MANUAL"),
+      freePeriodRead,
     ])
     const [context,invoiceRows,bank,cms]=await Promise.all([
       loadTrustContext(db,villas,{reviews:true}),
       selectByIds(db,"SELECT * FROM invoices WHERE villa_id",villas.map(v=>v.id)," ORDER BY created DESC"),
-      isDemo?null:receivingBank(db),
-      isDemo?null:publishedCms(db),
+      isDemo||paymentAccess(config)==="DISABLED"?null:receivingBank(db),
+      isDemo||paymentAccess(config)==="DISABLED"?null:publishedCms(db),
     ]);
     const documents=await selectByIds(db,"SELECT id,name,mime FROM documents WHERE id",[...villas.map(v=>v.document_id),...invoiceRows.map(i=>i.proof_id)]);
     context.documents=new Map(documents.map(row=>[row.id,row]));
     context.villas=new Map(villas.map(v=>[v.id,v]));
     context.invoices=new Map();
     for(const invoice of invoiceRows){const rows=context.invoices.get(invoice.villa_id)||[];rows.push(invoice);context.invoices.set(invoice.villa_id,rows);}
-    const instructions=isDemo ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : bank?bankInstructions(bank):cms.content.site.paymentInstructions||config.paymentInstructions;
+    const instructions=paymentAccess(config)==="DISABLED"?"ปิดรับชำระชั่วคราว":isDemo ? "DEMO: test payment only. Do not transfer real money. Generate a dummy slip for Admin manual review." : bank?bankInstructions(bank):cms.content.site.paymentInstructions||config.paymentInstructions;
     return {
       villas: await Promise.all(villas.map(v=>villaDto(v,context))),
       mails: mails.map((m) => ({
@@ -410,7 +450,9 @@ export function createApp(db, config, transport) {
         email: user.email,
         role: user.role,
       },
-      subscription,
+      freePeriod,
+      subscription:phase1&&subscription?{...subscription,billingCycle:null,billingMonths:null,renewalDate:null}:subscription,
+      releaseMode:config.productionReleaseMode||(config.interactiveDemo?"STAGING_INTERACTIVE":"STAGING"),
       packageModel: "PER_VILLA",
       demoMode:isDemo,
       paymentBankQrImage: ["DISABLED","OMISE_TEST"].includes(paymentAccess(config))||isDemo ? "" : (bank?.qrImage || cms.content.site.paymentQrImage || ""),
@@ -428,6 +470,7 @@ export function createApp(db, config, transport) {
     res.setHeader("Referrer-Policy", "same-origin")
     res.setHeader("Cache-Control", "no-store")
     const json = (value, status = 200) => {
+      res.setHeader("Content-Language",/^en(?:-|,|;|$)/i.test(String(req.headers["accept-language"]||""))?"en":"th");
       res.writeHead(status, {
         "Content-Type": "application/json; charset=utf-8",
       })
@@ -436,6 +479,11 @@ export function createApp(db, config, transport) {
     try {
       const url = new URL(req.url, "http://localhost")
       let path = url.pathname
+      if(config.interactiveDemo)await beforeRequest(req,path,body,config,db)
+      if(releaseMode && path.startsWith('/api/') && !productionRequestAllowed(req.method,path,releaseMode,{businessInitializationDisabled:config.businessInitializationDisabled===true,otpLoginEnabled:config.otpLoginEnabled===true}))fail(503,'Production '+(phase1?'Phase1':'prelaunch')+': action disabled')
+      if(config.appEnvironment==='production'&&path.startsWith('/api/')){try{await verifyProductionDemoGate(db)}catch{fail(503,'Production demo data is not authorized; access is blocked')}}
+      if(phase1&&config.phase1EmailOtpDelivery==='DISABLED'&&['/api/auth/register','/api/auth/register-user','/api/auth/registration/verify'].includes(path))fail(503,'Phase1 registration email delivery is not approved')
+      if(path==="/api/public/privacy-notice"&&req.method==="GET")return json(await privacyNoticeVersion(db))
       if (path === "/api/public/cms" && req.method === "GET") {
         const release = await publishedCms(db)
         const content = structuredClone(release.content)
@@ -450,15 +498,19 @@ export function createApp(db, config, transport) {
         content.pages = content.pages.map(p => ({...p, blocks:p.blocks.filter(x => x.visible)}))
         return json({revision:release.revision, content})
       }
-      if(path === "/api/public/property-media" && req.method === "GET") return json(await propertyMediaApi(db,null,req,path,url,body));
+      if(path === "/api/public/property-media" && req.method === "GET") return json(await propertyMediaApi(db,null,req,path,url,body,membershipTrustOptions));
       const mediaFile=path.match(/^\/api\/public\/property-media-file\/([a-f0-9-]{36})$/)
       if(mediaFile && req.method === "GET") {
         const viewer=await session(req).catch(e=>{if(e.status===401)return null;throw e})
-        const file=await propertyMediaFile(db,mediaFile[1],viewer)
-        res.writeHead(200,{"Content-Type":file.mime,"Cache-Control":"private, no-store","Content-Length":Buffer.byteLength(file.bytes),"X-Content-Type-Options":"nosniff"});return res.end(Buffer.from(file.bytes))
+        const file=await propertyMediaFile(db,mediaFile[1],viewer,membershipTrustOptions)
+        const bytes=Buffer.from(file.bytes),range=mediaRange(req.headers.range,bytes.length)
+        const headers={"Content-Type":file.mime,"Cache-Control":"private, no-store","Accept-Ranges":"bytes","X-Content-Type-Options":"nosniff"}
+        if(range?.invalid){res.writeHead(416,{...headers,"Content-Range":`bytes */${bytes.length}`});return res.end()}
+        const data=range?bytes.subarray(range.start,range.end+1):bytes
+        res.writeHead(range?206:200,{...headers,"Content-Length":data.length,...(range?{"Content-Range":`bytes ${range.start}-${range.end}/${bytes.length}`}:{})});return res.end(data)
       }
-      if(path === "/api/public/advertisements" && req.method === "GET") return json(await advertisingApi(db,null,req,path,url,body));
-      if(path === "/api/public/reviews" && req.method === "GET") return json(await reviewsApi(db,null,req,path,url,body));
+      if(path === "/api/public/advertisements" && req.method === "GET") return json(phase1?{advertisements:[],deferred:true}:await advertisingApi(db,null,req,path,url,body));
+      if(path === "/api/public/reviews" && req.method === "GET") return json(phase1?{reviews:[],policy:'Phase 2 ยังไม่เปิดใช้',moderationRequired:false,deferred:true}:await reviewsApi(db,null,req,path,url,body,config));
       const cmsMedia = path.match(/^\/api\/public\/cms-media\/([a-f0-9-]+)$/)
       if (cmsMedia && req.method === "GET") {
         const release = await publishedCms(db)
@@ -490,7 +542,7 @@ export function createApp(db, config, transport) {
       if (slipAction) path = `/api/invoices/${slipAction[1]}/proof`
       const publicPhoto=path.match(/^\/api\/public\/villa-photo\/([a-f0-9-]+)$/)
       if(req.method==='GET'&&publicPhoto){
-        const photo=await db.prepare("SELECT mime,bytes,owner_id FROM documents WHERE id=? AND name='villa-photo'").get(publicPhoto[1])
+        const photo=await db.prepare("SELECT d.mime,d.bytes,d.owner_id FROM documents d WHERE d.id=? AND d.name='villa-photo' AND NOT EXISTS(SELECT 1 FROM villas v WHERE v.document_id=d.id) AND NOT EXISTS(SELECT 1 FROM system_settings p WHERE p.key='private_document:'||d.id)").get(publicPhoto[1])
         if(!photo||!['image/jpeg','image/png'].includes(photo.mime))fail(404,'ไม่พบรูป Villa')
         const villas=await db.prepare("SELECT * FROM villas WHERE owner_id=?").all(photo.owner_id)
         const published=await Promise.all(villas.map(v=>publicRevision(db,v)))
@@ -515,6 +567,7 @@ export function createApp(db, config, transport) {
         let viewer
         try {viewer=await session(req)} catch(error){if(error.status!==401)throw error}
         if(viewer && req.headers["x-csrf-token"]!==viewer.csrf)fail(403,"CSRF token ไม่ถูกต้อง")
+        req.body=data;if(config.interactiveDemo)await authorizeRequest(db,viewer,req,'/api/user/scoped-report',url,body);
         return json(await createReport(db,data,viewer))
       }
       if (req.method === "POST" && path === "/api/leads") {
@@ -528,45 +581,56 @@ export function createApp(db, config, transport) {
           phone = typeof data.phone === "string" ? data.phone.trim() : ""
         if (phone.length > 30) fail(400, "เบอร์โทรไม่ถูกต้อง")
         const now = new Date().toISOString()
-        await db
-          .prepare(
-            "INSERT INTO leads(id,type,name,email,phone,source,created,updated) VALUES (?,?,?,?,?,'CONTACT',?,?)",
-          )
-          .run(randomUUID(), data.type, name, address, phone, now, now)
+        const inserted=await db.prepare("INSERT INTO leads(id,type,name,email,phone,source,created,updated) VALUES (?,?,?,?,?,'CONTACT',?,?) ON CONFLICT(id) DO NOTHING RETURNING id").get(config.interactiveDemo?(scope.leadIds?.[data.email]||scope.leadId):randomUUID(),data.type,name,address,phone,now,now);if(!inserted)fail(409,'บันทึกข้อมูลติดต่อ E2E นี้แล้ว')
         return json({ ok: true })
       }
       if (req.method === "GET" && path === "/api/packages") {
         const viewer=await auth(req)
         if(!["merchant","admin"].includes(viewer.role))fail(403,"แพ็กเกจสำหรับ Merchant ใน Member Room")
-        return json({ packages: await listPlans(db) })
+        return json({ packages: (await listPlans(db)).map(p=>(phase1||config.interactiveDemo)?phase1PackageDisplay(p):p) })
       }
       if (req.method === "GET" && path === "/api/health")
         return json({ ok: true })
-      if (req.method === "GET" && path === "/api/config")
+      if (req.method === "GET" && path === "/api/config") {
+        const [loginConfig,isDemo]=await Promise.all([cmsLoginConfig(db,config),demoMode(db,config)])
         return json({
+          accountSecurityAvailable:true,
+          passwordRecoveryAvailable:Boolean(otpChannels(config,transport).email&&(!releaseMode||config.currentPhaseFeaturesEnabled===true)),
           localAccounts: Boolean(config.seedDemo),
           paymentAccessMode:paymentAccess(config),
-          paymentConfigured: paymentAccess(config)!=="DISABLED" && ((await demoMode(db,config)) || Boolean(await receivingBank(db)) || config.omiseTestEnabled === true),
-          oauth: oauthProviders(await cmsLoginConfig(db,config)),
-          oauthStatus:{facebook:(await cmsLoginConfig(db,config)).facebookLoginEnabled?"enabled":"pending_approval"},
-          otp: otpChannels(await cmsLoginConfig(db,config),transport),
-          demoMode: await demoMode(db,config),
+          paymentConfigured: paymentAccess(config)!=="DISABLED" && ((isDemo) || Boolean(await receivingBank(db)) || config.omiseTestEnabled === true),
+          productionDemoDataApproval:config.appEnvironment==='production'?'ZERO_DEMO_DATA':undefined,
+          releaseMode:config.productionReleaseMode||(config.interactiveDemo?'STAGING_INTERACTIVE':'STAGING'),
+          phoneRegistrationEnabled:config.interactiveDemo?config.phoneRegistrationEnabled===true:!releaseMode&&!config.businessInitializationDisabled,
+          scopedPhoneRegistration:config.interactiveDemo&&config.phoneRegistrationEnabled===true,
+          businessFeaturesEnabled:!config.businessInitializationDisabled,
+          activationBlocked:phase1||config.businessInitializationDisabled===true,
+          oauth: phase1?{google:false,line:false,facebook:false}:oauthProviders(loginConfig),
+          oauthExistingAccountsOnly:config.oauthExistingAccountsOnly===true,
+          oauthStatus:{facebook:(loginConfig).facebookLoginEnabled?"enabled":"pending_approval"},
+          otpLoginEnabled:config.otpLoginEnabled===true,
+          otp: (config.interactiveDemo||releaseMode)?config.otpLoginEnabled===true?otpChannels(loginConfig,transport):{email:false,sms:false}:otpChannels(loginConfig,transport),
+          demoMode: isDemo,
         })
+      }
       if (
         req.method === "GET" &&
         /^\/api\/auth\/oauth\/(google|facebook|line)\/start$/.test(path)
       )
         await rateLimit(req)
       if (/^\/api\/auth\/oauth\/facebook\/(start|callback)$/.test(path) && !(await cmsLoginConfig(db,config)).facebookLoginEnabled){res.writeHead(302,{Location:`${config.appUrl}/#page=login&oauth_error=pending_approval`});res.end();return}
+      if(req.method==='GET'&&path==='/api/auth/oauth/status'){const actor=await auth(req);if(!['user','merchant'].includes(actor.role))fail(403,'เฉพาะ User หรือ Merchant');return json(await db.transaction(()=>customerOAuthStatus(db,actor)))}
       if (path.startsWith("/api/auth/oauth/")) {
         const linking=req.method==='POST'&&/^\/api\/auth\/oauth\/(google|facebook|line)\/link$/.test(path)
-        let linkUser=linking?await auth(req,'merchant'):null
+        const reauthenticating=req.method==='POST'&&/^\/api\/auth\/oauth\/(google|line)\/reauth$/.test(path)
+        let linkUser=linking||reauthenticating?await auth(req):null
+        if(linking||reauthenticating){if(!['user','merchant'].includes(linkUser.role))fail(403,'บัญชีนี้ไม่สามารถเชื่อม OAuth');await rateLimit(req);const data=await body(req);if(reauthenticating){const purpose=data.purpose===undefined?'link-provider':data.purpose;if(!['link-provider','password','logout-all'].includes(purpose))fail(400,'รายการยืนยันบัญชีไม่ถูกต้อง');linkUser={...linkUser,oauthReauthPurpose:purpose}}if(linking&&typeof data.currentPassword==='string'&&data.currentPassword.length){const credential=await db.prepare('SELECT password_hash FROM users WHERE id=?').get(linkUser.id);if(data.currentPassword.length>128||!credential||!await verifyPasswordAsync(data.currentPassword,credential.password_hash))fail(403,'กรุณายืนยันรหัสผ่านปัจจุบัน');linkUser={...linkUser,oauthCredentialHash:credential.password_hash}}}
         if(req.method==='GET'&&path.endsWith('/callback')&&/^[a-f0-9]{64}$/.test(url.searchParams.get('state')||'')){
           const pending=await db.prepare('SELECT return_to FROM oauth_states WHERE state_hash=?').get(hash(url.searchParams.get('state')))
-          const bindingId=pending?new URLSearchParams(pending.return_to.slice(1)).get('linkAccount'):null
-          if(bindingId){linkUser=await auth(req,'merchant');if(linkUser.id!==bindingId)fail(403,'ใช้บัญชี Merchant ที่เริ่มเชื่อมช่องทางนี้')}
+          const bindingId=pending?new URLSearchParams(pending.return_to.slice(1)).get('linkAccount')||new URLSearchParams(pending.return_to.slice(1)).get('reauthAccount'):null
+          if(bindingId){linkUser=await auth(req);if(linkUser.id!==bindingId||!['user','merchant'].includes(linkUser.role))fail(403,'ใช้บัญชีที่เริ่มยืนยันช่องทางนี้')}
         }
-        if(await createOAuth(db,await cmsLoginConfig(db,config),issueSession,config.oauthFetch||fetch)(req,res,url,linkUser))return
+        if(await createOAuth(db,{...await cmsLoginConfig(db,config),oauthAccountAllowed:config.interactiveDemo?actorAllowed:undefined},issueSession,config.oauthFetch||fetch)(req,res,url,linkUser))return
       }
       if(req.method === "POST" && path === "/api/auth/registration/verify") {
         checkOrigin(req);await rateLimit(req)
@@ -576,12 +640,30 @@ export function createApp(db, config, transport) {
         res.setHeader("Set-Cookie",[issued.cookie,`vc_registration=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${config.secureCookies?"; Secure":""}`])
         return json({user:{id:user.id,email:user.email,name:user.name,role:user.role},csrf:issued.csrf})
       }
+      if(req.method==='POST'&&['/api/auth/recovery/request','/api/auth/recovery/verify'].includes(path)){
+        checkOrigin(req);await rateLimit(req)
+        const data=await body(req)
+        if(path.endsWith('/request')){
+          const pending=await beginPasswordRecovery(db,loginOtp,data.email)
+          res.setHeader('Set-Cookie',`vc_recovery=${pending.nonce}; HttpOnly; Path=/; SameSite=Lax; Max-Age=300${config.secureCookies?'; Secure':''}`)
+          const {nonce:_,...publicResult}=pending
+          void _
+          return json(publicResult,202)
+        }
+        const nonce=req.headers.cookie?.match(/(?:^|;\s*)vc_recovery=([a-f0-9]{64})(?:;|$)/)?.[1]
+        const result=await finishPasswordRecovery(db,loginOtp,data,nonce)
+        res.setHeader('Set-Cookie',[`vc_recovery=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${config.secureCookies?'; Secure':''}`,cookie('',0,false)])
+        return json(result)
+      }
       if(req.method==='POST'&&['/api/auth/otp/request','/api/auth/otp/verify'].includes(path)){
         checkOrigin(req);await rateLimit(req);const data=await body(req)
-        if(path.endsWith('/request')){const bindingUser=data.purpose==='link_identity'?await auth(req,'merchant'):null;try{return json(await loginOtp.request(data,bindingUser))}catch(error){if(error.status===503)fail(503,error.message);throw error}}
-        const challenge=typeof data.challengeId==='string'?await db.prepare('SELECT binding_user_id FROM login_otps WHERE id=?').get(data.challengeId):null
-        const bindingUser=challenge?.binding_user_id?await auth(req,'merchant'):null
-        let user;try{user=await loginOtp.verify(data,bindingUser)}catch(error){if(error.status===503)fail(503,error.message);throw error};await db.prepare("DELETE FROM system_settings WHERE key=?").run("password_registration:"+data.challengeId);const issued=await issueSession(req,user)
+        if(path.endsWith('/request')){const bindingUser=data.purpose==='link_identity'?await auth(req,'merchant'):null;const loginOnly=config.otpLoginEnabled===true;try{return json(await loginOtp.request(data,bindingUser,loginOnly?{existingAccountLogin:true}:{}))}catch(error){if(error.status===503)fail(503,error.message);throw error}}
+        const loginMarker=typeof data.challengeId==='string'?await db.prepare('SELECT key FROM system_settings WHERE key=?').get('otp_login_identity:'+data.challengeId):null
+        if(loginMarker&&config.otpLoginEnabled!==true)fail(503,'บริการ OTP ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ')
+        const challenge=typeof data.challengeId==='string'?await db.prepare('SELECT binding_user_id,purpose FROM login_otps WHERE id=?').get(data.challengeId):null
+        if(config.otpLoginEnabled===true&&!loginMarker)fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
+        const bindingUser=!loginMarker&&challenge?.binding_user_id?await auth(req,'merchant'):null
+        let user;try{user=await loginOtp.verify(data,bindingUser,loginMarker?{existingAccountLogin:true}:{})}catch(error){if(error.status===503)fail(503,error.message);throw error};await db.prepare("DELETE FROM system_settings WHERE key=?").run("password_registration:"+data.challengeId);const issued=await issueSession(req,user)
         res.setHeader('Set-Cookie',issued.cookie);return json({user:{id:user.id,email:user.email,name:user.name,role:user.role},csrf:issued.csrf})
       }
       if (
@@ -591,6 +673,8 @@ export function createApp(db, config, transport) {
           "/api/auth/admin-login",
           "/api/auth/register",
           "/api/auth/register-user",
+          "/api/auth/register-phone",
+          "/api/auth/register-user-phone",
         ].includes(path)
       ) {
         checkOrigin(req)
@@ -598,7 +682,7 @@ export function createApp(db, config, transport) {
         if(path === "/api/auth/admin-login" && config.trustVercelProxy === true && req.headers.host !== new URL(config.appUrl).host)fail(403,"เข้าสู่ระบบ Admin ผ่าน origin ที่กำหนดใน APP_URL เท่านั้น");
         const data = await body(req)
         let user
-        if (path.endsWith("register") || path.endsWith("register-user")) {
+        if (["/api/auth/register","/api/auth/register-user","/api/auth/register-phone","/api/auth/register-user-phone"].includes(path)) {
           const address = email(data.email)
           const pass = password(data.password)
           const name = text(data.name, "ชื่อผู้สมัคร")
@@ -606,8 +690,8 @@ export function createApp(db, config, transport) {
             await db.prepare("SELECT id FROM users WHERE email=?").get(address)
           )
             fail(409, "อีเมลนี้ถูกใช้งานแล้ว")
-          if (path === "/api/auth/register") text(data.businessNameEn, "ชื่อ Merchant ภาษาอังกฤษ");
-          let registration;try{registration=await beginPasswordRegistration(db,loginOtp,{email:address,password:pass,name,businessNameEn:path === "/api/auth/register"?text(data.businessNameEn,"ชื่อ Merchant ภาษาอังกฤษ"):"",role:path.endsWith("register-user")?"user":"merchant"})}catch(error){if(error.status===503)fail(503,error.message);throw error}
+          if (["/api/auth/register","/api/auth/register-phone"].includes(path)) text(data.businessNameEn, "ชื่อ Merchant ภาษาอังกฤษ");
+          let registration;try{registration=await beginPasswordRegistration(db,loginOtp,{email:address,password:pass,name,...(config.interactiveDemo&&path.endsWith("-phone")?{allocatedUserId:[...scope.users,...scope.merchants].find(a=>a.pendingRegistration&&a.email===address&&a.role===(path.includes("register-user")?"user":"merchant"))?.id}:{}),...(path.endsWith("-phone")?{phone:text(data.phone,"หมายเลขโทรศัพท์",30)}:{}),businessNameEn:["/api/auth/register","/api/auth/register-phone"].includes(path)?text(data.businessNameEn,"ชื่อ Merchant ภาษาอังกฤษ"):"",role:path.includes("register-user")?"user":"merchant"})}catch(error){if(error.status===503)fail(503,error.message);throw error}
           res.setHeader("Set-Cookie",`vc_registration=${registration.nonce}; HttpOnly; Path=/; SameSite=Lax; Max-Age=300${config.secureCookies?"; Secure":""}`)
           return json({verificationRequired:true,challengeId:registration.challengeId,expiresAt:registration.expiresAt,resendAfter:registration.resendAfter},202)
         } else {
@@ -622,11 +706,12 @@ export function createApp(db, config, transport) {
           if (
             !await verifyPasswordAsync(data.password, user?.password_hash || fakeHash) ||
             !user
-          )
+          ){
             fail(401, "อีเมลหรือรหัสผ่านไม่ถูกต้อง")
+          }
         }
         if(path === "/api/auth/admin-login" && user.role !== "admin")fail(403,"เฉพาะบัญชี Admin เท่านั้น");
-        const { csrf, cookie: sessionCookie } = await issueSession(req, user)
+        const { csrf, cookie: sessionCookie } = await issueSession(req, user,{expectedPasswordHash:user.password_hash})
         res.setHeader("Set-Cookie", sessionCookie)
         return json({
           user: {
@@ -650,6 +735,13 @@ export function createApp(db, config, transport) {
           csrf: user.csrf,
         })
       }
+      if(req.method==='POST'&&['/api/auth/password','/api/auth/logout-all'].includes(path)){
+        const actor=await auth(req)
+        await rateLimit(req)
+        const result=await secureAccountOperation(db,actor,path.endsWith('/password')?'password':'logout-all',await body(req))
+        res.setHeader('Set-Cookie',[cookie('',0,false),cookie('',0,true)])
+        return json(result)
+      }
       if (req.method === "POST" && ["/api/auth/logout","/api/auth/admin-logout"].includes(path)) {
         const user = await auth(req)
         const managed = await adminBusiness(
@@ -661,9 +753,9 @@ export function createApp(db, config, transport) {
           body,
           config,
         )
-        if (managed !== undefined) return json(managed)
+        if (managed !== undefined) return json((phase1||config.interactiveDemo)&&path==="/api/admin/packages"?{...managed,packages:managed.packages.map(phase1PackageDisplay)}:managed)
         await db
-          .prepare("DELETE FROM sessions WHERE token_hash=?")
+          .prepare("UPDATE sessions SET expires=0 WHERE token_hash=?")
           .run(user.token_hash)
         res.setHeader("Set-Cookie", cookie("", 0,user.role === "admin"))
         return json({ ok: true })
@@ -688,6 +780,7 @@ export function createApp(db, config, transport) {
               province: v.province,
               qr: v.qr,
               photoUrl: v.photo_url,
+      demoImage: config.appEnvironment==='staging'&&isDemoVilla(v),
       photoUploadedAt: v.photo_uploaded_at, photoTakenAt: v.photo_taken_at, photoReviewedAt: v.photo_reviewed_at,
               guestCapacity: v.guest_capacity,
               updated: v.reviewed_at || null,
@@ -704,7 +797,10 @@ export function createApp(db, config, transport) {
         if(adminQrVerification){viewer=await auth(req);if(viewer.role!=="admin")fail(403,"เฉพาะ Admin")}
         const reference=decodeURIComponent(path.slice(adminQrVerification?"/api/admin/qr-verification/".length:15))
         const v=adminQrVerification?await db.prepare("SELECT * FROM villas WHERE qr=?").get(reference):await resolvePublicQr(db,reference)
-        const publicTrust=!adminQrVerification&&v?await trustDto(db,v):null
+        const qrContext=v?await loadTrustContext(db,[v]):null
+        const qrTrust=v?await trustDto(db,v,qrContext):null
+        const qrFreePeriod=v?await merchantFreePeriod(db,v.owner_id,Date.now(),qrContext):null
+        const publicTrust=!adminQrVerification?qrTrust:null
         if(!adminQrVerification&&publicTrust?.qrStatus==="ACTIVE"&&v?.status==="approved"&&v.qr!==reference){res.writeHead(307,{Location:"/api/public/qr/"+encodeURIComponent(v.qr),"Cache-Control":"no-store"});res.end();return}
         if (!v) fail(404, "ไม่พบ QR ในระบบ")
         try {
@@ -724,14 +820,15 @@ export function createApp(db, config, transport) {
           ownerVerification: await publicOwnerVerification(db,v),
           ownerVerificationRequired: ["starter","pro","premium"].includes(v.package_id),
           basicVerificationNotice: v.package_id === "basic" ? basicVerificationNotice : null,
-          trialUnlimited: v.payments === 0,
+          trialUnlimited: phase1||qrFreePeriod ? false : v.payments === 0,
           photoUrl: v.photo_url,
+      demoImage: config.appEnvironment==='staging'&&isDemoVilla(v),
       photoUploadedAt: v.photo_uploaded_at, photoTakenAt: v.photo_taken_at, photoReviewedAt: v.photo_reviewed_at,
           province: v.province,
           status: v.status,
           qr: v.qr,
           expires: v.expires,
-          valid: (await trustDto(db, v)).qrStatus === "ACTIVE",
+          valid: qrTrust.qrStatus === "ACTIVE",
           locked: !unlocked,
           viewerRole: viewer?.role || "guest",
           maskedPhone: "08X-XXX-XXXX",
@@ -744,7 +841,7 @@ export function createApp(db, config, transport) {
           }[v.status],
           reviewedAt: v.reviewed_at,
           ...(adminQrVerification ? { reviewedByAdminId: v.reviewed_by } : {}),
-          ...(await trustDto(db, v)),
+          ...qrTrust,
           ...(unlocked
             ? {
                 phone: v.phone,
@@ -769,6 +866,11 @@ export function createApp(db, config, transport) {
       }
       if (path.startsWith("/api/")) {
         const user = await auth(req)
+        if(path==='/api/account/privacy-requests'){
+          if(req.method==='POST')await rateLimit(req)
+          return json(await privacyRequests(db,user,req.method,req.method==='GET'?{}:await body(req)))
+        }
+        if(path==='/api/admin/privacy-requests'&&req.method==='GET')return json(await adminPrivacyRequests(db,user))
         if (path === "/api/user/checks" && req.method === "POST")
           await rateLimit(req, "checks:" + user.id)
         if(path==="/api/admin/email-test"&&req.method==="POST"){
@@ -833,7 +935,7 @@ export function createApp(db, config, transport) {
         if(path==="/api/admin/receiving-bank/email"&&req.method==="POST")requireManualPayment(config)
         const bankResult=await adminReceivingBank(db,user,req,path,body,config,transport)
         if(bankResult!==undefined){json(bankResult);if(req.method==="POST")void worker.run();return}
-        const cms = await adminCms(db, user, req, path, body)
+        const cms = await adminCms(db, user, req, path, body, config)
         if (cms !== undefined) return json(cms)
         if(req.method==='GET'&&path==='/api/admin/otp/status'){
           if(user.role!=='admin')fail(403,'เฉพาะ Admin')
@@ -855,19 +957,24 @@ export function createApp(db, config, transport) {
         }
         const accounts=await accountManagement(db,user,req,path,url,body)
         if(accounts!==undefined)return json(accounts)
+        const ownership=await ownershipDocuments(db,user,req,path,url,body,document)
+        if(ownership!==undefined)return json(ownership)
         const ownerVerification=await ownerVerificationApi(db,user,req,path,url,body)
         if(ownerVerification!==undefined)return json(ownerVerification)
         const materials=await socialMaterialsApi(db,user,req,path,url,body)
         if(materials!==undefined)return json(materials)
-        const propertyMedia=await propertyMediaApi(db,user,req,path,url,body)
+        const propertyMedia=await propertyMediaApi(db,user,req,path,url,body,membershipTrustOptions)
         if(propertyMedia!==undefined)return json(propertyMedia)
         const villaPages=await villaPagesApi(db,user,req,path,url,body)
         if(villaPages!==undefined)return json(villaPages)
         const advertising=await advertisingApi(db,user,req,path,url,body)
         if(advertising!==undefined)return json(advertising)
-        const reviews=await reviewsApi(db,user,req,path,url,body)
+        const reviews=await reviewsApi(db,user,req,path,url,body,config)
         if(reviews!==undefined)return json(reviews)
-        const operation=await operations(db,user,req,path,url,body)
+        if(path==="/api/merchant/villa-draft")return json(await villaDraft(db,user,req,body))
+        const receivingBank=await merchantReceivingBankApi(db,user,req,path,url,body);
+        if(receivingBank!==undefined)return json(receivingBank);
+        const operation=await operations(db,user,req,path,url,body,config)
         if(operation!==undefined)return json(operation)
         if (path === "/api/merchant/profile") {
           if (user.role !== "merchant") fail(403, "เฉพาะ Merchant")
@@ -875,6 +982,7 @@ export function createApp(db, config, transport) {
             if(user.email.endsWith('@phone.villacheck.invalid'))fail(409,'กรุณายืนยันอีเมลบัญชี Merchant ก่อนบันทึกข้อมูล')
             const data = await body(req)
             await db.transaction(async () => {
+              await assertWriteSession(db,user);
               await db
                 .prepare(
                   "UPDATE users SET name=?,business_name=?,business_name_en=?,phone=?,address=? WHERE id=?",
@@ -905,6 +1013,8 @@ export function createApp(db, config, transport) {
             )
             .get(user.id)
           return json({
+            membershipNotifications:await membershipNotices(db,user.id),
+            readOnly:config.businessInitializationDisabled||(config.interactiveDemo&&!(scope.businessWriteMerchantIds||[scope.businessWriteMerchantId]).includes(user.id)),
             contactName: profile.name,
             businessName: profile.business_name,
             businessNameEn: profile.business_name_en,
@@ -923,7 +1033,7 @@ export function createApp(db, config, transport) {
           body,
           config,
         )
-        if (managed !== undefined) return json(managed)
+        if (managed !== undefined) return json((phase1||config.interactiveDemo)&&path==="/api/admin/packages"?{...managed,packages:managed.packages.map(phase1PackageDisplay)}:managed)
         if (req.method === "GET" && path === "/api/admin/users") {
           if (user.role !== "admin") fail(403, "เฉพาะ Admin")
           const users = await db
@@ -959,7 +1069,9 @@ export function createApp(db, config, transport) {
           await db.transaction(async()=>{
             const villa=await villaFor(user,assignLevel[1])
             const sub=await getSubscription(db,villa.owner_id)
-            const plan=await getPlan(db,villa.payments === 0 ? "basic" : villa.package_id)
+            const period=await merchantFreePeriod(db,villa.owner_id)
+            if(period&&(period.state!=="ACTIVE"||["SUSPENDED","CANCELLED"].includes(sub?.lifecycle)))fail(409,"สิทธิ์บัญชีไม่พร้อมใช้งาน")
+            const plan=await getPlan(db,period?"starter":villa.payments === 0 ? "basic" : villa.package_id)
             if(villa.status!=="approved")fail(409,"เอกสารต้องผ่านการอนุมัติก่อน")
             if(!levels.includes(data.verificationLevel) || levels.indexOf(data.verificationLevel)>levels.indexOf(plan.max_level))fail(400,"ระดับเกินสิทธิ์แพ็กเกจ")
             if(villa.verification_level===data.verificationLevel)fail(409,"ระดับนี้ได้รับการอนุมัติแล้ว")
@@ -1049,15 +1161,18 @@ export function createApp(db, config, transport) {
             .get(docMatch[2])
           if (!file || (user.role !== "admin" && file.owner_id !== user.id))
             fail(404, "ไม่พบเอกสาร")
+          await audit(db,user,'document.access',file.id)
+          securityEvent('document.accessed',{actorId:user.id,targetId:file.id})
           res.writeHead(200, {
             "Content-Type": file.mime,
-            "Content-Disposition": `${user.role === "admin" && url.searchParams.get("preview") === "1" ? "inline" : "attachment"}; filename="document"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+            "Content-Disposition": `${url.searchParams.get("preview") === "1" && (user.role === "admin" || file.mime === "application/pdf") ? "inline" : "attachment"}; filename="document"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
             "Content-Security-Policy": "default-src 'none'; sandbox",
             "Cache-Control": "private, no-store",
           })
           return res.end(Buffer.from(file.bytes))
         }
         if (req.method === "POST" && path === "/api/merchant/villa-package") {
+          await blockFreePackageSelection(db,user)
           if(user.role !== "merchant") fail(403,"เฉพาะ Merchant")
           const data=await body(req)
           await transaction(db,async()=>{
@@ -1091,6 +1206,7 @@ export function createApp(db, config, transport) {
         }
         if(req.method==='POST'&&path==='/api/subscription/upgrade')fail(409,"กรุณาเลือกซื้อแพ็กเกจแยกตามที่พักใน Member Room")
         if(path==="/api/subscription/coupon"&&req.method==="POST"){
+          await blockFreePackageSelection(db,user)
           if(user.role!=="merchant")fail(403,"เฉพาะ Merchant")
           const data=await body(req),sub=await getSubscription(db,user.id);if(!sub)fail(409,"ยังไม่มีแพ็กเกจ")
           await transaction(db,async()=>{if(await db.prepare("SELECT id FROM invoices WHERE subscription_owner=? AND status!='paid'").get(user.id))fail(409,"ใบแจ้งชำระสร้างแล้ว ไม่แก้ส่วนลดย้อนหลัง");await selectCoupon(db,user.id,await getPlan(db,sub.package_id),data.couponCode)})
@@ -1125,11 +1241,13 @@ export function createApp(db, config, transport) {
           const capacity = guestCapacity(data.guestCapacity)
           const file = document(data.document)
           const id = await transaction(db, async () => {
-            if(await db.prepare("SELECT id FROM villas WHERE owner_id=? LIMIT 1").get(user.id))fail(409,"บัญชีนี้มี Villa แล้ว กรุณาแก้ไขข้อมูล Villa เดิม ไม่สามารถเพิ่ม Villa ใหม่ได้")
+            await assertWriteSession(db,user);
+            const request=await reserveVillaCreate(db,user,data);if(request.replayId)return request.replayId;
+            const freePeriod=await assertVillaCreation(db,user.id)
             await db.prepare("INSERT INTO subscriptions(owner_id,package_id,created) VALUES (?,?,?) ON CONFLICT(owner_id) DO NOTHING").run(user.id,"basic",new Date().toISOString())
 
             const docId = await insertDocument(db, user.id, file)
-            const id = randomUUID()
+            const id = config.interactiveDemo?req.stagingVillaId:randomUUID(); if(!id)fail(403,"Staging Villa allocation required")
             await db
               .prepare(
                 "INSERT INTO villas(id,owner_id,name,name_en,province,merchant,email,package_id,document_id,created) VALUES (?,?,?,?,?,?,?,?,?,?)",
@@ -1142,7 +1260,7 @@ export function createApp(db, config, transport) {
                 province,
                 merchant,
                 address,
-                "basic",
+                freePeriod?"starter":"basic",
                 docId,
                 new Date().toISOString(),
               )
@@ -1152,6 +1270,7 @@ export function createApp(db, config, transport) {
               )
               .run(...contacts, id)
             const photoUrl = data.photo ? await saveVillaPhoto(db,user.id,data.photo) : data.photoUrl || ""
+            await assertVillaCoverLimit(db,{id,photo_url:""},photoUrl)
             if (
               photoUrl &&
               (typeof photoUrl !== "string" ||
@@ -1162,8 +1281,10 @@ export function createApp(db, config, transport) {
             await db
               .prepare("UPDATE villas SET photo_url=?,guest_capacity=?,photo_uploaded_at=?,photo_taken_at=? WHERE id=?")
               .run(photoUrl, capacity, photoUrl ? new Date().toISOString() : null, data.photoTakenAt ? mediaDate(data.photoTakenAt) : null, id)
-            await grantBasicPromotion(db,id,user.id)
+            if(!phase1&&!freePeriod)await grantBasicPromotion(db,id,user.id)
             await audit(db, user, "villa.create", id)
+            await markVillaDraftSubmitted(db,user,data,id)
+            await completeVillaCreate(db,request.token,id)
             return id
           })
           return json({ ...(await state(user)), createdId: id }, 201)
@@ -1175,12 +1296,18 @@ export function createApp(db, config, transport) {
           const [, id, action] = villaAction
           const data = await body(req)
           await transaction(db, async () => {
+            await assertWriteSession(db,user);
             const villa = await villaFor(user, id)
             if (action === "review") {
               if (user.role !== "admin") fail(403, "เฉพาะ Admin")
               if (villa.status !== "pending") fail(409, "Villa นี้ถูกตรวจสอบแล้ว")
               if(Object.hasOwn(data,'expectedReviewId')&&(await villaReview(db,villa)).id!==data.expectedReviewId)
                 fail(409,'ข้อมูล Villa เปลี่ยนหลังจากเปิดตรวจ กรุณาโหลดรายการล่าสุดก่อนอนุมัติ')
+              if(data.status==='begin'){
+                const current=await villaReview(db,villa);
+                if(!current.startedAt){await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('villa_review:'+id,JSON.stringify({...current,id:current.id||randomUUID(),startedAt:new Date().toISOString(),startedBy:user.id}));await audit(db,user,'villa.review_started',id)}
+                return;
+              }
               if (!["approved", "changes", "rejected"].includes(data.status))
                 fail(400, "สถานะไม่ถูกต้อง")
               if(data.status === "approved" && await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND external_provider='OMISE' AND status='paid' AND payment_status='FAILED' LIMIT 1").get(id))fail(409,"มีรายการ Omise กลับรายการที่ต้องตรวจสอบและกระทบยอดก่อนอนุมัติ")
@@ -1188,8 +1315,19 @@ export function createApp(db, config, transport) {
                 data.status === "approved"
                   ? ""
                   : text(data.reason, "เหตุผล", 2000)
+              const hasApprovedSnapshot=Boolean(await db.prepare('SELECT key FROM system_settings WHERE key=?').get('villa_approved:'+id))
+              if(data.status==='approved'&&!villa.photo_url)fail(409,'กรุณาแนบรูปหน้าปกที่พักก่อนอนุมัติ')
+              if(data.status==='approved')await assertOwnershipDocumentsReviewed(db,id)
+              const reviewedAt=new Date().toISOString()
+              let approvedInitialGrant
+              if(phase1&&data.status==='approved'&&!hasApprovedSnapshot){
+                if(config.phase1ActivationMode!=='APPROVED_EXPLICIT_GRANTS')fail(409,'Phase1 initial activation terms are not approved')
+                approvedInitialGrant=await initialGrantForReview(db,villa,config.phase1InitialGrantPolicy,Date.parse(reviewedAt),user,config.qaGrantContext)
+              }
               const level = data.verificationLevel || (villa.payments === 0 ? "BASIC_CHECKED" : "VERIFIED")
-              const entitled = await getPlan(db, villa.payments === 0 ? "basic" : villa.package_id)
+              const freePeriod=await merchantFreePeriod(db,villa.owner_id)
+              if(data.status==='approved'&&freePeriod&&freePeriod.state!=='ACTIVE')fail(409,'ช่วงใช้ฟรีสิ้นสุดแล้ว รอประกาศสิทธิ์การใช้งานต่อ')
+              const entitled = await getPlan(db, freePeriod?'starter':approvedInitialGrant?villa.package_id:villa.payments === 0 ? "basic" : villa.package_id)
               if (
                 !levels.includes(level) ||
                 levels.indexOf(level) > levels.indexOf(entitled.max_level)
@@ -1203,16 +1341,22 @@ export function createApp(db, config, transport) {
                   data.status,
                   reason,
                   level,
-                  new Date().toISOString(),
+                  reviewedAt,
                   user.id,
                   id,
                 )
-              if (data.status === "approved") {
+              if (data.status === 'approved') {
+                if(phase1&&!hasApprovedSnapshot&&!approvedInitialGrant)fail(409,'Phase1 initial activation terms are not approved')
+                if(phase1&&!approvedInitialGrant){
+                  // Internal entitlement check only. Never publish this historical revision.
+                  const prior=JSON.parse((await db.prepare('SELECT value FROM system_settings WHERE key=?').get('villa_approved:'+id))?.value||'null');
+                  if(!prior?.villa||prior.villa.status!=='approved'||(await trustDto(db,{...prior.villa,expires:villa.expires,payments:villa.payments})).qrStatus!=='ACTIVE')fail(409,'สิทธิ์ที่พักที่อนุมัติเดิมไม่พร้อมใช้งาน กรุณาตรวจสอบสิทธิ์ก่อนอนุมัติใหม่','ENTITLEMENT_INACTIVE');
+                }
                 const sub = await getSubscription(db, villa.owner_id)
                 if (!sub) fail(409, "Merchant ต้องสมัครแพ็กเกจที่บัญชีก่อน")
                 await rememberQr(db,villa)
                 await db.prepare("UPDATE villas SET qr=? WHERE id=?").run(`VC-${randomUUID()}`,id)
-                await activateVilla(db, {...villa,qr:(await db.prepare("SELECT qr FROM villas WHERE id=?").get(id)).qr})
+                if(!phase1)await activateVilla(db, {...villa,qr:(await db.prepare("SELECT qr FROM villas WHERE id=?").get(id)).qr})
                 await preserveApprovedVilla(db,await db.prepare("SELECT * FROM villas WHERE id=?").get(id))
               }
               await approvalHistory(db,villa,user,data.status)
@@ -1415,17 +1559,12 @@ export function createApp(db, config, transport) {
       }
       fail(404, "ไม่พบหน้า")
     } catch (error) {
-      if (!res.headersSent)
-        json(
-          {
-            error:
-              error instanceof ApiError ||
-              (error.status >= 400 && error.status < 500)
-                ? error.message
-                : "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์",
-          },
-          error.status || 500,
-        )
+      // Structured security telemetry contains no attacker-controlled payload.
+      // Alert routing/retention is configured separately, never by this handler.
+      const endpoint=new URL(req.url||'/', 'http://localhost').pathname
+      if(req.method==='POST'&&endpoint.startsWith('/api/auth/')&&[401,403,429].includes(error.status))
+        securityEvent(endpoint.includes('/otp/')?'otp.rejected':'authentication.failed')
+      if (!res.headersSent) {const result=publicError(error,{allowServiceMessage:error instanceof ApiError,locale:req.headers["accept-language"]});json(result.body,result.status)}
       else res.end()
       if (
         !(error instanceof ApiError) &&

@@ -1,3 +1,4 @@
+import {fixtureCover} from './master-test-fixtures.mjs';
 import {legacyVilla} from "./test-legacy-villa.mjs";
 import {readFileSync} from 'node:fs'
 import test from 'node:test'
@@ -48,7 +49,7 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
   assert.equal((await request(`/invoices/${invoice.id}/proof`,slip.value,payer)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].invoices[0].paymentStatus,'PENDING_REVIEW');assert.ok(state.villas[0].qr)
   assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},payer)).status,403)
   assert.equal((await request(`/invoices/${invoice.id}/confirm`,{externalTransactionId:slip.value.reference},a)).status,200);state=(await request('/state',undefined,payer)).value;assert.equal(state.villas[0].qrStatus,'PENDING');assert.equal((await request(`/villas/${v.id}/review`,{status:'approved'},a)).status,200)
-  await app.runMail();assert.equal(sends,0);assert.equal((await db.prepare('SELECT status FROM mails WHERE invoice_id=?').get(invoice.id)).status,'demo')
+  await app.runMail();assert.equal(sends,0);assert.equal((await db.prepare('SELECT status FROM mails WHERE invoice_id=?').get(invoice.id)).status,'queued') // Preserved preview runtime holds mail; it does not run the demo delivery worker.
   await request('/admin/settings',{paymentVerificationMode:'MANUAL',demoMode:false},a);assert.equal((await request(`/payments/${invoice.id}/demo-slip`,{},payer)).status,403);await request('/admin/settings',{paymentVerificationMode:'MANUAL',demoMode:true},a)
  })
  await t.test('browsing telemetry does not consume the sign-in rate limit',async()=>{
@@ -69,7 +70,7 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
  await t.test('Merchant edits require fresh document review but preserve QR identity',async()=>{
   assert.equal((await request(`/merchant/villas/${villa.id}`,{name:'Bad'},outsider)).status,404)
   assert.equal((await request(`/merchant/villas/${villa.id}`,{name:villa.name,nameEn:villa.name,province:villa.province,merchant:villa.merchant,phone:villa.phone,bankName:villa.bank_name,accountName:villa.account_name,accountNumber:villa.account_number,photoUrl:villa.photo_url},m)).status,200)
-  const result=(await request('/public/qr/'+villa.qr)).value;assert.equal(result.valid,true);assert.equal(result.qrStatus,'ACTIVE');assert.equal(result.premiumBanner,true);assert.equal((await db.prepare('SELECT qr FROM villas WHERE id=?').get(villa.id)).qr,villa.qr);assert.equal((await request(`/villas/${villa.id}/review`,{status:'changes',reason:'Line one\nLine two'},a)).status,200)
+  const result=(await request('/public/qr/'+villa.qr)).value;assert.equal((await request('/public/qr/'+villa.qr)).status,404);assert.equal(result.name,undefined);assert.equal((await db.prepare('SELECT qr FROM villas WHERE id=?').get(villa.id)).qr,villa.qr);assert.equal((await request(`/villas/${villa.id}/review`,{status:'changes',reason:'Line one\nLine two'},a)).status,200)
  })
  await t.test('free trial bypasses invoice and quarterly catalog changes actually affect payment period',async()=>{
   const v=await db.prepare("SELECT * FROM villas WHERE name='Free Trial Demo Villa'").get();await request(`/villas/${v.id}/review`,{status:'approved',verificationLevel:'BASIC_CHECKED'},a);const state=(await request('/state',undefined,trial)).value;assert.equal(state.villas[0].qrStatus,'ACTIVE');assert.equal(state.villas[0].invoices.length,0)
@@ -79,7 +80,7 @@ test('persistent reports/checks, scoped analytics, QR controls and dummy payment
  await t.test('new second property is blocked; legacy free property remains independent',async()=>{
   const input={name:'บ้านทดสอบ',nameEn:'Upgrade Dummy Villa',province:'ชลบุรี',merchant:'Dummy Upgrade',email:'other-merchant@test.com',document:{name:'ownership.pdf',type:'application/pdf',data:'data:application/pdf;base64,'+Buffer.from('%PDF-1.4 dummy').toString('base64')}};
   const first=await request('/villas',input,outsider);assert.equal(first.status,201);const id=first.value.createdId;
-  assert.equal((await request('/villas',{...input,name:'Second free property'},outsider)).status,409);await legacyVilla(db,id,'Legacy free property');
+  assert.equal((await request('/villas',{...input,name:'Second free property'},outsider)).status,409);await legacyVilla(db,id,'Legacy free property');await fixtureCover(db,id,(await db.prepare('SELECT owner_id FROM villas WHERE id=?').get(id)).owner_id);
   assert.equal((await request(`/villas/${id}/review`,{status:'approved'},a)).status,200);
   assert.equal((await request('/merchant/villa-package',{villaId:id,packageId:'pro'},outsider)).status,200);
   let state=(await request('/state',undefined,outsider)).value,invoice=state.villas.find(v=>v.id===id).invoices[0],qr=state.villas.find(v=>v.id===id).qr;

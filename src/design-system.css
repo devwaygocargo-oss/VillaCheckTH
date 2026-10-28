@@ -1,0 +1,142 @@
+/* Shared visual tokens. Brand blue/cyan and semantic status colors are intentional. */
+:root {
+  --font-ui: var(--font-line-seed), Tahoma, Arial, sans-serif;
+  --action: #111111;
+  --action-hover: #262626;
+  --text-primary: #171717;
+  --text-secondary: #525252;
+  --surface: #ffffff;
+  --surface-secondary: #f5f5f5;
+  --border-neutral: #e5e5e5;
+  --focus-ring: #111111;
+  --on-action: #ffffff;
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --line: var(--border-neutral);
+  --pale: var(--surface-secondary);
+  --white: var(--surface);
+}
+body { font-family: var(--font-ui); font-size: 16px; line-height: 1.65; color: var(--text-primary); }
+button, input, select, textarea, dialog { font-family: var(--font-ui); }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-ui); font-weight: 700; line-height: 1.45; }
+button, input, select, textarea { line-height: 1.5; }
+textarea { font-size: inherit; }
+.portal-content h1 { font-size: clamp(26px, 3vw, 36px); }
+.portal-content h2 { line-height: 1.5; }
+.portal-side nav button, .portal-side > button { line-height: 1.6; }
+.portal-form input, .portal-form select, .portal-form textarea,
+.merchant-panel input, .merchant-panel select, .merchant-panel textarea { font-size: 16px; }
+:where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus-ring); outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.app .primary-button, .primary-button, .login-submit,
+.shortcut-search button, .villa-discovery-message button {
+  background: var(--action); color: var(--on-action); border-color: var(--action);
+}
+.app .primary-button:hover:not(:disabled), .primary-button:hover:not(:disabled),
+.login-submit:hover:not(:disabled), .shortcut-search button:hover:not(:disabled),
+.villa-discovery-message button:hover:not(:disabled) {
+  background: var(--action-hover); border-color: var(--action-hover); color: var(--on-action);
+}
+.primary-button:disabled, .login-submit:disabled { opacity: .55; cursor: not-allowed; }
+.shortcut-search button span { color: inherit; }
+.portal-side nav button.active { background: var(--action); color: var(--on-action); }
+.portal-merchant, .portal-main, .portal-content { background: var(--surface-secondary); }
+.portal-merchant .portal-content, .merchant-panel, .portal-merchant .merchant-panel,
+.cms-editor, .cms-toolbar, .cms-block-editor { background: var(--surface); border-color: var(--border-neutral); }
+.merchant-steps span, .free-period-banner, .subscription-selection,
+.approved-villa-social, .villa-entitlements, .cms-banner-table .is-selected,
+.account-dropdown button:hover, .account-dropdown button:focus-visible,
+.gallery-picker:hover, .home-feature-merchant, .home-news-art,
+.home-newsletter, .home-villa-discovery, .villa-discovery-message {
+  background: var(--surface-secondary); color: var(--text-primary); border-color: var(--border-neutral);
+}
+.hero, .destination-map, .province-map, .premium-pricing { background: var(--surface-secondary); }
+.home-feature-copy h2, .home-feature-copy ul, .home-merchant-tools span,
+.home-feature-copy li > svg, .home-news-art, .villa-discovery-controls button { color: var(--text-primary); }
+.home-feature-copy > p, .banner-search p, .villa-discovery-head p,
+.shortcut-search-hint, .shortcut-search-hint button { color: var(--text-secondary); }
+.home-merchant-tools span, .home-news-card { border-color: var(--border-neutral); }
+.home-shortcuts { background: var(--surface); color: var(--text-primary); }
+.shortcut-search { background: var(--surface-secondary); border-color: var(--border-neutral); }
+.shortcut-search input { color: var(--text-primary); }
+.shortcut-search input::placeholder { color: var(--text-secondary); }
+.shortcut-search-symbol { color: var(--text-primary); }
+.shortcut-search:focus-within { border-color: var(--action); box-shadow: 0 0 0 1px var(--action); }
+.shortcut-icon { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.shortcut-icon-fill { fill: currentColor; }
+.shortcut-icon-accent { stroke: currentColor; }
+.shortcut-item { color: var(--text-primary); }
+.shortcut-item:hover { color: var(--text-primary); background: var(--surface-secondary); }
+.shortcut-item:hover .shortcut-icon { background: var(--action-hover); border-color: var(--action-hover); }
+.shortcut-search-hint button:hover { color: var(--text-primary); }
+.home-feature-image:after { background: linear-gradient(transparent, #111111d9); }
+.home-feature-image-note small, .vc-banner-copy .kicker { color: var(--on-action); }
+.vc-ad-label, .vc-banner-prev, .vc-banner-next { color: var(--text-primary); }
+.vc-banner-controls .vc-banner-pause { background: var(--action); }
+.subscription-plan.active, .subscription-options button.active { background: var(--surface-secondary); border-color: var(--action); box-shadow: 0 0 0 1px var(--action); }
+/* Status/approval badges, warning/error notices, and provider logos keep their semantic palettes. */
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* Neutral editorial/navigation accents, separate from semantic status badges. */
+.home-news { background: var(--surface-secondary); color: var(--text-primary); }
+.home-news-all, .home-news-read, .home-news-tag, .home-news-controls button,
+.villa-discovery-all, .villa-discovery-heading h2 { color: var(--text-primary); }
+.home-news-heading p, .home-news-body p, .home-news-count,
+.villa-discovery-heading p, .villa-discovery-controls { color: var(--text-secondary); }
+.home-feature-image { background: var(--surface-secondary); }
+.villa-discovery-skeleton > span { background: var(--border-neutral); }
+.villa-discovery-skeleton > div {
+  background-image: linear-gradient(110deg, var(--border-neutral) 25%, var(--surface-secondary) 45%, var(--border-neutral) 65%);
+}
+.app :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible,
+.portal :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus-ring); outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.user-greeting, .info-article-list article > span,
+.home-service-body > span, .scan-preview-card span { color: var(--text-primary); }
+.home-service-art { background: var(--surface-secondary); color: var(--text-primary); }
+.home-service-body p { color: var(--text-secondary); }
+.footer-social button:hover, .footer-social a:hover {
+  color: var(--on-action); background: var(--action); border-color: var(--action);
+}
+
+/* Hero navigation: explicit interaction, small visual dots, generous hit areas. */
+.vc-banner { --hero-dot-size: 6px; --hero-dot-active-size: 8px; --hero-control-size: 44px; touch-action: pan-y; }
+.vc-banner-prev,.vc-banner-next { width:var(--hero-control-size);height:var(--hero-control-size);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s; }
+.vc-banner[data-navigation="visible"] .vc-banner-prev,.vc-banner[data-navigation="visible"] .vc-banner-next { opacity:1;visibility:visible;pointer-events:auto; }
+.vc-banner-controls { gap:8px;max-width:calc(100% - 144px);padding:3px 8px;border-radius:24px;background:rgb(17 17 17 / 65%); }
+.vc-banner-dots { display:flex;align-items:center;position:relative;overflow-x:auto;max-width:224px;scrollbar-width:none; }
+.vc-banner-dots::-webkit-scrollbar { display:none; }
+.vc-banner-controls .vc-banner-dots button { position:relative;flex:0 0 32px;width:32px;height:36px;background:transparent;border-radius:50%;padding:0; }
+.vc-banner-dots button::after { content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:var(--hero-dot-size);height:var(--hero-dot-size);border-radius:50%;background:rgb(255 255 255 / 65%); }
+.vc-banner-dots button.active::after { width:var(--hero-dot-active-size);height:var(--hero-dot-active-size);background:#fff; }
+.vc-banner-controls .vc-banner-pause { flex:0 0 36px;width:36px;height:36px;border-radius:50%; }
+.vc-banner :is(button,a):focus-visible,.vc-banner:focus-visible { outline:3px solid #fff;outline-offset:3px;box-shadow:0 0 0 5px var(--action,#111); }
+@media (prefers-reduced-motion:reduce) { .vc-banner-slide,.vc-banner-prev,.vc-banner-next { transition:none; } }
+
+/* Demo-only display fallbacks; real upload counts and media ownership stay unchanged. */
+.demo-photo { display:block;aspect-ratio:16/10;object-fit:cover;max-width:100%; }
+.demo-empty-gallery { margin:16px 0;max-width:720px; }
+.demo-empty-gallery img { width:100%;height:auto;border-radius:12px; }
+.demo-empty-gallery figcaption { font-size:12px;padding:8px;color:var(--text-primary,#171717);background:var(--surface-muted,#f5f5f5); }
+.card-image:has(img[data-demo-image="true"])::after,.merchant-cover:has(img[data-demo-image="true"])::after,.discovery-villa-photo:has(img[data-demo-image="true"])::after { content:"ภาพประกอบ DEMO";position:absolute;bottom:8px;right:8px;padding:4px 8px;border-radius:4px;background:#111e;color:#fff;font-size:11px;pointer-events:none; }
+
+/* Master status corner ribbon */
+:root{--review-pending:#64748b;--review-reviewing:#2563eb;--review-changes:#d97706;--review-approved:#15803d;--review-rejected:#dc2626;}
+.villa-image,.merchant-cover{position:relative;overflow:hidden;border-radius:12px;isolation:isolate;}
+.status-corner-ribbon{position:absolute;z-index:2;top:64px;right:-64px;width:300px;min-height:38px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:5px 8px;transform:rotate(45deg);color:#fff;font-size:19px;line-height:28px;font-weight:700;white-space:nowrap;pointer-events:none;box-shadow:0 2px 4px #0002;}
+.status-corner-ribbon span{display:block;line-height:28px;}
+.status-corner-ribbon.status-pending{background:var(--review-pending)}.status-corner-ribbon.status-reviewing{background:var(--review-reviewing)}.status-corner-ribbon.status-changes{background:var(--review-changes)}.status-corner-ribbon.status-approved{background:var(--review-approved)}.status-corner-ribbon.status-rejected{background:var(--review-rejected)}
+/* Public gallery: cover first, no CMS ribbon or private documents. */
+.villa-photo-slider{position:relative;border-radius:14px;overflow:hidden;background:var(--surface-muted,#f5f5f5);touch-action:pan-y;outline-offset:4px}
+.villa-photo-cover>img{width:100%;height:auto;aspect-ratio:16/10;max-height:600px;object-fit:cover}
+.villa-photo-prev,.villa-photo-next{position:absolute;top:40%;width:44px;height:44px;border:0;border-radius:50%;background:#111d;color:#fff;font-size:30px;cursor:pointer}.villa-photo-prev{left:12px}.villa-photo-next{right:12px}
+.villa-photo-dots{display:flex;flex-wrap:wrap;justify-content:center;padding:4px}.villa-photo-dots button{width:32px;height:32px;display:grid;place-items:center;border:0;background:transparent;cursor:pointer}.villa-photo-dots span{width:6px;height:6px;border-radius:50%;background:#a3a3a3}.villa-photo-dots [aria-current=true] span{background:#111}.villa-photo-count{text-align:center;font-size:12px;margin:0 0 8px}.villa-public-media video{display:block;width:100%;max-height:600px;border-radius:12px}.villa-public-media figure{margin:12px 0}
+
+.merchant-cover:has(img[data-demo-image="true"])::after{left:8px;right:auto}
+
+/* Public approval ribbon belongs to the cover only; controls stay outside it. */
+.villa-photo-cover{position:relative;overflow:hidden;isolation:isolate}
+.card-image>.status-corner-ribbon,.discovery-villa-photo>.status-corner-ribbon{pointer-events:none}

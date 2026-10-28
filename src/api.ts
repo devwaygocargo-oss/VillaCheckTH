@@ -1,3 +1,5 @@
+import {t as translateSystem} from "./locale"
+import {t,localeTag} from './locale'
 import type { Account } from "./merchantStore"
 const adminPortal = () => typeof window !== "undefined" && /^\/admin(?:\/|$)/.test(window.location.pathname)
 let csrf = ""
@@ -18,20 +20,25 @@ async function request<T>(path: string, data?: unknown): Promise<T> {
       method: data === undefined ? "GET" : "POST",
       credentials: "same-origin",
       cache: "no-store",
-      headers: { ...(adminPortal() ? {"X-VillaCheck-Portal":"admin"} : {}), ...(data === undefined ? {} : { "Content-Type": "application/json", "X-CSRF-Token": csrf }) },
+      headers: { "Accept-Language":localeTag(), ...(adminPortal() ? {"X-VillaCheck-Portal":"admin"} : {}), ...(data === undefined ? {} : { "Content-Type": "application/json", "X-CSRF-Token": csrf }) },
       body: data === undefined ? undefined : JSON.stringify(data),
     })
   } catch {
-    throw new ApiError(503, "เชื่อมต่อ Backend ไม่สำเร็จ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่")
+    throw new ApiError(503, translateSystem("เชื่อมต่อ Backend ไม่สำเร็จ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่"))
   }
   const value = await response
     .json()
-    .catch(() => ({ error: "เชื่อมต่อ Backend ไม่สำเร็จ" }))
+    .catch(() => {if(response.ok)throw new ApiError(502,translateSystem("Backend ตอบกลับไม่สมบูรณ์ กรุณาลองใหม่"));return {error:translateSystem("เชื่อมต่อ Backend ไม่สำเร็จ")}})
   if (!response.ok)
-    throw new ApiError(response.status, value.error || "ดำเนินการไม่สำเร็จ")
+    throw new ApiError(response.status, value.error || translateSystem("ดำเนินการไม่สำเร็จ"))
   if (data !== undefined && (path.startsWith("/auth/") || path.startsWith("/otp/"))) {
     sessionEpoch++
     window.dispatchEvent(new Event("auth-session-changed"))
+  }
+  if(data!==undefined&&/^\/(?:villas(?:\/|$)|merchant\/(?:villas\/|property-media(?:\?|$)|ownership-documents(?:\?|$)|owner-verification(?:\?|$))|admin\/(?:property-media|ownership-documents|owner-verification)(?:\?|$))/.test(path)){
+    invalidatePublicVillaReads()
+    try{localStorage.setItem("villacheck:demo-villa-visibility-changed",String(Date.now()))}catch{/* Storage may be disabled. */}
+    window.dispatchEvent(new Event("villacheck:demo-villa-visibility-changed"))
   }
   return value as T
 }
@@ -49,7 +56,7 @@ export async function currentAccount() {
   const path=adminPortal()?"/auth/admin-me":"/auth/me",epoch=sessionEpoch
   if(accountRead?.path===path&&accountRead.epoch===epoch)return accountRead.promise
   const promise=api<{user:Account;csrf:string}>(path).then(session=>{
-    if(epoch!==sessionEpoch)throw new ApiError(409,"บัญชีเข้าสู่ระบบเปลี่ยนแล้ว กรุณาโหลดข้อมูลอีกครั้ง")
+    if(epoch!==sessionEpoch)throw new ApiError(409,translateSystem("บัญชีเข้าสู่ระบบเปลี่ยนแล้ว กรุณาโหลดข้อมูลอีกครั้ง"))
     csrf=session.csrf
     return session.user
   }).finally(()=>{if(accountRead?.promise===promise)accountRead=null})

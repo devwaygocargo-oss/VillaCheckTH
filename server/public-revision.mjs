@@ -6,9 +6,9 @@ export async function publicRevision(db,current,context){
  const reversed=context?context.holds.has(current.id):await db.prepare("SELECT id FROM invoices WHERE villa_id=? AND status='paid' AND payment_status='FAILED' LIMIT 1").get(current.id)
  if(reversed)return {...current,status:"pending"}
  if(current.status==="approved")return current
- const snapshot=context?context.snapshots.get(current.id):JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key=?").get("villa_approved:"+current.id))?.value||"null")
- if(!snapshot)return current
- return {...snapshot.villa,_approvedSnapshot:snapshot}
+ // Latest owner policy: an unapproved draft has no publicly approved projection.
+ // Preserve snapshots for history/review, never substitute one to bypass current status.
+ return current
 }
 export async function resolvePublicQr(db,qr){
  let current=await db.prepare("SELECT * FROM villas WHERE qr=?").get(qr)
@@ -18,7 +18,8 @@ export async function resolvePublicQr(db,qr){
   const snapshot=history.map(r=>JSON.parse(r.value)).find(s=>s.villa.qr===qr)
   if(snapshot)current=await db.prepare("SELECT * FROM villas WHERE id=?").get(snapshot.villa.id)
  }
- return publicRevision(db,current)
+ const published=await publicRevision(db,current)
+ return published?.status==="approved"?published:null
 }
 export async function publishedVillas(db){
  const [current,rows,blocked]=await Promise.all([db.prepare("SELECT * FROM villas WHERE qr IS NOT NULL ORDER BY created DESC,id DESC").all(),db.prepare("SELECT key,value FROM system_settings WHERE key LIKE 'villa_approved:%' OR key='public_demo_villas_visible'").all(),db.prepare("SELECT DISTINCT villa_id FROM invoices WHERE status='paid' AND payment_status='FAILED'").all()])

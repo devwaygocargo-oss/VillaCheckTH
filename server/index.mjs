@@ -1,14 +1,23 @@
+import {existingCustomerOAuth} from "./customer-oauth-runtime.mjs";
+import {stagedProviderEnvironment} from "./staged-provider-configuration.mjs";
+import {sharedApplicationEnvironment} from './shared-application-environment.mjs';
+import {verifyRuntime} from "./staging-interactive-policy.mjs";
+import {stagingDemoEnvironment} from './staging-demo-safety.mjs'
+import {productionRuntimePolicy,verifyProductionData,isProductionRuntime} from "./production-runtime.mjs"
 import {stagingMailTransport} from "./staging-mail.mjs"
 import {paymentConfiguration} from "./payment-access.mjs"
 import {smtpTransportOptions} from "./smtp-diagnostics.mjs"
 import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 import { createApp } from "./app.mjs"
-import { createUser, hashPassword, openDatabase } from "./database.mjs"
+import { hashPassword, openDatabase } from "./database.mjs"
 import { openPostgres } from "./postgres.mjs"
 /** @param {NodeJS.ProcessEnv} env
- * @param {{listen?: boolean, databaseFactory?: (url?: string) => Promise<any>}} options */
-export async function startServer(env = process.env, { listen = true, databaseFactory } = {}) {
+ * @param {{listen?: boolean, databaseFactory?: (url?: string) => Promise<any>, allowLegacyEnvironment?: boolean}} options */
+export async function startServer(env = process.env, { listen = true, databaseFactory, allowLegacyEnvironment = false } = {}) {
+  const customerOAuth=existingCustomerOAuth(env);
+  env=sharedApplicationEnvironment(stagedProviderEnvironment(env),stagingDemoEnvironment)
+  const policy=productionRuntimePolicy(env,{allowLegacyEnvironment})
   env = {
     ...env,
     DATABASE_URL: env.DATABASE_URL || env.VillaCheck_DATABASE_URL,
@@ -21,46 +30,17 @@ export async function startServer(env = process.env, { listen = true, databaseFa
     throw Error("APP_URL must be your public HTTPS URL in production")
   if (production && env.SEED_DEMO_ACCOUNTS === "true")
     throw Error("Demo accounts cannot be enabled in production")
-  const seedDemo = !production && env.SEED_DEMO_ACCOUNTS === "true"
+  const seedDemo = false
   const db = databaseFactory ? await databaseFactory(env.DATABASE_URL) : env.DATABASE_URL
-    ? await openPostgres(env.DATABASE_URL)
+    ? await openPostgres(env.DATABASE_URL,{bootstrap:false})
     : openDatabase(
         env.DATABASE_PATH || resolve(root, "server/data/villacheck.sqlite"),
       )
   let server
   try {
-    const add = async (email, password, name, role) => {
-      // Existing accounts need no write transaction on a serverless cold start.
-      if (await db.prepare("SELECT id FROM users WHERE email=?").get(email)) return
-      return db.transaction(async () => {
-        if (
-          !(await db.prepare("SELECT id FROM users WHERE email=?").get(email))
-        )
-          await createUser(db, email, password, name, role)
-      })
-    }
-    if (env.ADMIN_EMAIL && env.ADMIN_PASSWORD) {
-      if (env.ADMIN_PASSWORD.length < 12)
-        throw Error("ADMIN_PASSWORD must have at least 12 characters")
-      await add(
-        env.ADMIN_EMAIL.toLowerCase(),
-        env.ADMIN_PASSWORD,
-        "Administrator",
-        "admin",
-      )
-    }
-    if (seedDemo) {
-      await add(
-        "owner@villacheck.test",
-        "Owner1234",
-        "Demo Merchant",
-        "merchant",
-      )
-      await add("admin@villacheck.test", "Admin1234", "Demo Admin", "admin")
-      await add("user@villacheck.test", "User1234", "Demo User", "user")
-    }
+    if(isProductionRuntime(env))await verifyProductionData(db,{allowUninitializedCatalog:policy.businessInitializationDisabled===true});else await verifyRuntime(db,env);
     if (
-      production &&
+      isProductionRuntime(env) &&
       (await db
         .prepare(
           "SELECT id FROM users WHERE email IN ('owner@villacheck.test','admin@villacheck.test','user@villacheck.test')",
@@ -72,14 +52,25 @@ export async function startServer(env = process.env, { listen = true, databaseFa
       production &&
       !(await db.prepare("SELECT id FROM users WHERE role='admin'").get())
     )
-      throw Error("Set ADMIN_EMAIL and ADMIN_PASSWORD for initial setup")
+      throw Error(policy.phase1?"Phase1 Admin must be provisioned separately":"Set ADMIN_EMAIL and ADMIN_PASSWORD for initial setup")
     let transport
-    if (env.SMTP_HOST && env.SMTP_FROM) {
+    if ((!policy.phase1||policy.emailOtpDelivery==='SMTP') && env.SMTP_HOST && env.SMTP_FROM) {
       const { default: nodemailer } = await import("nodemailer")
       transport = nodemailer.createTransport(smtpTransportOptions(env))
     }
     transport=stagingMailTransport(transport,env)
     const config = {
+      interactiveDemo:env.APP_ENV==='staging',
+      businessInitializationDisabled:policy.businessInitializationDisabled===true,
+      productionPrelaunch:policy.prelaunch,
+      productionRuntime:isProductionRuntime(env)||policy.phase1,
+      productionDemoDataApproval:isProductionRuntime(env)?"ZERO_DEMO_DATA":undefined,
+      productionReleaseMode:policy.releaseMode||(policy.phase1?'PHASE1':isProductionRuntime(env)?'PRELAUNCH':undefined),
+      phase1EmailOtpDelivery:policy.phase1?policy.emailOtpDelivery:undefined,
+      phase1RequirementsRevision:env.PHASE1_REQUIREMENTS_REVISION,
+      phase1ActivationMode:policy.phase1?env.PHASE1_ACTIVATION_MODE:undefined,
+      phase1InitialGrantPolicy:policy.phase1?env.PHASE1_INITIAL_GRANT_POLICY:undefined,
+      phase1EmailOtpApproval:env.PHASE1_EMAIL_OTP_APPROVAL,
       appUrl,
       appEnvironment:env.APP_ENV,
       stagingEmailAllowlist:(env.STAGING_EMAIL_ALLOWLIST||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean),
@@ -89,18 +80,23 @@ export async function startServer(env = process.env, { listen = true, databaseFa
       demoMode:env.DEMO_MODE === "true",
       paymentVerificationMode: env.PAYMENT_VERIFICATION_MODE || "MANUAL",
       otpSecret: env.OTP_SECRET,
-      thaiBulkSmsApiKey: env.THAIBULKSMS_API_KEY,
-      thaiBulkSmsApiSecret: env.THAIBULKSMS_API_SECRET,
-      thaiBulkSmsSender: env.THAIBULKSMS_SENDER,
-      thaiBulkSmsOtpKey: env.THAIBULKSMS_OTP_KEY,
-      thaiBulkSmsOtpSecret: env.THAIBULKSMS_OTP_SECRET,
-      thaiBulkSmsEmailOtpTemplateId: env.THAIBULKSMS_EMAIL_OTP_TEMPLATE_ID,
-      lineClientId: env.LINE_CHANNEL_ID,
-      lineClientSecret: env.LINE_CHANNEL_SECRET,
-      googleClientId: env.GOOGLE_CLIENT_ID,
-      googleClientSecret: env.GOOGLE_CLIENT_SECRET,
-      facebookClientId: env.FACEBOOK_APP_ID,
-      facebookClientSecret: env.FACEBOOK_APP_SECRET,
+      otpLoginEnabled: env.OTP_LOGIN_ENABLED==='true',
+      phoneRegistrationEnabled: env.STAGING_SECURITY_REGISTRATION_ENABLED==='true',
+      stagingRegistrationPhones:{user:env.STAGING_REGISTRATION_PHONE_USER,merchant:env.STAGING_REGISTRATION_PHONE_MERCHANT},
+      stagingSmsAllowlist:[env.STAGING_REGISTRATION_PHONE_USER,env.STAGING_REGISTRATION_PHONE_MERCHANT].filter(Boolean),
+      thaiBulkSmsApiKey: policy.phase1?undefined:env.THAIBULKSMS_API_KEY,
+      thaiBulkSmsApiSecret: policy.phase1?undefined:env.THAIBULKSMS_API_SECRET,
+      thaiBulkSmsSender: policy.phase1?undefined:env.THAIBULKSMS_SENDER,
+      thaiBulkSmsOtpKey: policy.phase1?undefined:env.THAIBULKSMS_OTP_KEY,
+      thaiBulkSmsOtpSecret: policy.phase1?undefined:env.THAIBULKSMS_OTP_SECRET,
+      thaiBulkSmsEmailOtpTemplateId: policy.phase1?undefined:env.THAIBULKSMS_EMAIL_OTP_TEMPLATE_ID,
+      lineClientId: policy.phase1?undefined:env.LINE_CHANNEL_ID,
+      lineClientSecret: policy.phase1?undefined:env.LINE_CHANNEL_SECRET,
+      googleClientId: policy.phase1?undefined:env.GOOGLE_CLIENT_ID,
+      googleClientSecret: policy.phase1?undefined:env.GOOGLE_CLIENT_SECRET,
+      ...customerOAuth,
+      facebookClientId: policy.phase1?undefined:env.FACEBOOK_APP_ID,
+      facebookClientSecret: policy.phase1?undefined:env.FACEBOOK_APP_SECRET,
       facebookVersion: env.FACEBOOK_GRAPH_VERSION,
       seedDemo,
       serverless: !listen,

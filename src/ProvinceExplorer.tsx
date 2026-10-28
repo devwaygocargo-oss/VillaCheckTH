@@ -1,3 +1,5 @@
+import {t as translateSystem} from "./locale"
+import {t} from "./locale"
 import { useCms,useCopy,usePresentation } from "./cms";
 import { useState } from "react";
 
@@ -25,8 +27,8 @@ export default function ProvinceExplorer({ onSearch }: { onSearch: (query: strin
       <div className="container province-layout">
         <div className="province-copy">
           <span className="kicker">{t("home.provinceKicker")}</span>
-          <h2 style={{whiteSpace:"pre-line"}}>{section?.title||"เริ่มจากจุดหมาย\nที่คุณกำลังจะไป"}</h2>
-          <p>{section?.description||"เลือกจังหวัดหรือกดหมุดบนแผนที่ เพื่อดู Villa ในจังหวัดนั้น พร้อมตัวกรองที่พักทันที"}</p>
+          <h2 style={{whiteSpace:"pre-line"}}>{section?.title||translateSystem("เริ่มจากจุดหมาย\nที่คุณกำลังจะไป")}</h2>
+          <p>{section?.description||translateSystem("เลือกจังหวัดหรือกดหมุดบนแผนที่ เพื่อดู Villa ในจังหวัดนั้น พร้อมตัวกรองที่พักทันที")}</p>
           <div className="province-chips">
             {presentation.provinces.map(province => (
               <button key={province} className={province === selected ? "active" : ""} onClick={() => openProvince(province)}>
@@ -35,10 +37,9 @@ export default function ProvinceExplorer({ onSearch }: { onSearch: (query: strin
             ))}
           </div>
           <a className="province-google-link" href={googleMapsUrl(selected)} target="_blank" rel="noopener noreferrer">
-            ดู {selected} บน Google Maps ↗
-          </a>
+            {translateSystem("ดู")}{" "}{selected} {" "}{translateSystem("บน Google Maps ↗")}</a>
         </div>
-        <div className="province-map province-map-destinations" role="group" aria-label={`ปักหมุดจุดหมาย ${presentation.provinces.length} จังหวัด คลิกเพื่อดู Villa`}>
+        <div className="province-map province-map-destinations" role="group" aria-label={translateSystem("ปักหมุดจุดหมาย {v0} จังหวัด คลิกเพื่อดู Villa", {v0: presentation.provinces.length})}>
           <div className="map-route route-one" aria-hidden="true" />
           <div className="map-route route-two" aria-hidden="true" />
           {popularProvinces.map((province, index) => (
@@ -47,13 +48,13 @@ export default function ProvinceExplorer({ onSearch }: { onSearch: (query: strin
               key={province}
               style={{ left: `${pinPositions[index][0]}%`, top: `${pinPositions[index][1]}%` }}
               onClick={() => openProvince(province)}
-              aria-label={`ดู Villa ในจังหวัด${province}`}
+              aria-label={translateSystem("ดู Villa ในจังหวัด{v0}", {v0: province})}
             >
               <i aria-hidden="true" />
-              <span>{province}<small>ดู Villa ในจังหวัด →</small></span>
+              <span>{province}<small>{translateSystem("ดู Villa ในจังหวัด →")}</small></span>
             </button>
           ))}
-          <div className="map-index"><span>POPULAR DESTINATIONS</span><span>{presentation.provinces.length} จังหวัด · {t("home.provinceMap")}</span></div>
+          <div className="map-index"><span>POPULAR DESTINATIONS</span><span>{presentation.provinces.length} {" "}{translateSystem("จังหวัด ·")}{" "}{t("home.provinceMap")}</span></div>
         </div>
       </div>
     </section>

@@ -201,8 +201,9 @@ export function openDatabase(path) {
 export async function transaction(db, work) {
   return db.transaction(work)
 }
-export async function createUser(db, email, password, name, role = "merchant") {
-  const id = randomUUID()
+export async function createUser(db, email, password, name, role = "merchant", options={}) {
+  if(options.id!==undefined&&(typeof options.id!=="string"||! /^[a-f0-9-]{36}$/.test(options.id)))throw Error("Invalid server allocation")
+  const id = options.id || randomUUID()
   await db
     .prepare(
       "INSERT INTO users(id,email,name,password_hash,role) VALUES (?,?,?,?,?)",

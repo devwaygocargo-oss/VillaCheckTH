@@ -56,10 +56,10 @@ const articles = {
     "เปรียบเทียบเบอร์โทรและบัญชีสื่อสารกับข้อมูลใน Trust Profile หากมีผู้ขอเปลี่ยนบัญชีรับเงินหรือให้ติดต่อช่องทางใหม่ ควรยืนยันกับช่องทางเดิมก่อน",
 }
 const images = [
-  "/demo/villas/villa-1.jpg",
-  "/demo/villas/villa-2.jpg",
-  "/demo/villas/villa-3.jpg",
-  "/demo/villas/villa-4.jpg",
+  "/villa-placeholder.svg",
+  "/villa-placeholder.svg",
+  "/villa-placeholder.svg",
+  "/villa-placeholder.svg",
 ]
 const initialCmsDefaults = {
   presentation:presentationDefaults,
@@ -128,14 +128,14 @@ const initialCmsDefaults = {
         visible: true,
         title: "หนึ่งสแกน\nเห็นหลักฐานที่จำเป็น",
         description:
-          "QR ของ VillaCheck เชื่อมผู้เดินทางกับข้อมูลตรวจสอบล่าสุด โดยไม่พาเข้าสู่ขั้นตอนจองหรือชำระเงิน",
+          "สแกน QR เพื่อดูข้อมูลที่พัก สถานะ และวันที่ตรวจสอบล่าสุดในหน้าเดียว โดยไม่เปิดเผยเอกสารส่วนบุคคล",
       },
       {
         id: "merchant",
         visible: true,
         title: "สร้างความน่าเชื่อถือ\nให้ที่พักของคุณ",
         description:
-          "เปลี่ยนความมั่นใจให้เป็นโอกาสทางธุรกิจ ด้วย Trust Profile, QR Verification และข้อมูลเชิงลึกที่ช่วยให้ลูกค้าตัดสินใจง่ายขึ้น",
+          "จัดข้อมูลที่พักให้ครบ ส่งหลักฐานให้ผู้ดูแลพิจารณา และแบ่งปันหน้าข้อมูลผ่าน QR เพื่อให้ผู้สนใจตรวจสอบได้อย่างมั่นใจ",
       },
       {
         id: "pricing",
@@ -161,4 +161,5 @@ const initialCmsDefaults = {
 // Default homepage and article illustrations each use a different licensed photo.
 let editorialImageIndex=0;
 const diversifyDefaultImages=value=>typeof value==="string"&&/^\/demo\/villas\/villa-[1-9]\.jpg$/.test(value)?diverseEditorialDefaults[editorialImageIndex++%diverseEditorialDefaults.length].url:Array.isArray(value)?value.map(diversifyDefaultImages):value&&typeof value==="object"?Object.fromEntries(Object.entries(value).map(([key,item])=>[key,diversifyDefaultImages(item)])):value;
-export const cmsDefaults=diversifyDefaultImages(initialCmsDefaults);
+const neutralFallbacks=v=>typeof v==='string'&&v.startsWith('/demo/')?'/villa-placeholder.svg':Array.isArray(v)?v.map(neutralFallbacks):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,neutralFallbacks(x)])):v;
+export const cmsDefaults=neutralFallbacks(diversifyDefaultImages(initialCmsDefaults));

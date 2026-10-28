@@ -1,3 +1,5 @@
+import {t as translateSystem} from "./locale"
+import {t,localeTag} from "./locale"
 import {useEffect,useRef,useState} from "react"
 import {api,currentAccount,ApiError} from "./api"
 import type {Invoice} from "./merchantStore"
@@ -32,7 +34,7 @@ export default function OmiseCheckout({invoice,admin=false}:{invoice:Invoice;adm
    if(current===epoch.current)setConfig({...settings,methods:settings.methods.filter(m=>m==="promptpay")})
    try{if(settings.enabled||settings.statusAvailable)result=await api<Payment>(`/payments/${invoice.id}/omise`)}catch(e){if(!(e instanceof ApiError&&e.status===404))throw e}
    if(current===epoch.current){setConfig({...settings,methods:settings.methods.filter(m=>m==="promptpay")});setMethod(settings.methods.includes("promptpay")?"promptpay":"");setPayment(result)}
-  }catch(e){if(current===epoch.current){setError(e instanceof Error?e.message:"อ่านสถานะไม่สำเร็จ");setPayment({status:"UNKNOWN"})}}finally{if(current===epoch.current){setBusy(false);inFlight.current=false}}
+  }catch(e){if(current===epoch.current){setError(e instanceof Error?e.message:translateSystem("อ่านสถานะไม่สำเร็จ"));setPayment({status:"UNKNOWN"})}}finally{if(current===epoch.current){setBusy(false);inFlight.current=false}}
  }
  useEffect(()=>{void refresh();return()=>{epoch.current++;inFlight.current=false}},[invoice.id])
  const start=async()=>{
@@ -47,18 +49,18 @@ export default function OmiseCheckout({invoice,admin=false}:{invoice:Invoice;adm
    })
    // No client return/status fields are trusted; the backend binds invoice amount and return URI.
    const result=await api<Payment>(`/payments/${invoice.id}/omise`,{source});setPayment(result)
-  }catch(e){setError(e instanceof Error?e.message:"เริ่มชำระไม่สำเร็จ");setPayment({status:"UNKNOWN"})}finally{inFlight.current=false;setBusy(false)}
+  }catch(e){setError(e instanceof Error?e.message:translateSystem("เริ่มชำระไม่สำเร็จ"));setPayment({status:"UNKNOWN"})}finally{inFlight.current=false;setBusy(false)}
  }
  const authorization=safeProviderUrl(payment?.authorizeUri,"authorize"),qr=safeProviderUrl(payment?.qrImage,"qr")
- return <section className="payment-panel" data-testid="omise-checkout"><h2>Omise Test Checkout</h2><strong>ใบแจ้งชำระ ฿{((config?.amount ?? invoice.amount*100)/100).toLocaleString("th-TH")} · {invoice.packageName}</strong><p>สำหรับทดสอบเท่านั้น ห้ามโอนเงินจริงหรือใช้แอปธนาคารจริงชำระ QR ทดสอบ</p>
- {busy&&<p role="status">กำลังตรวจสอบรายการ…</p>}{error&&<p role="alert">{error}</p>}
- <p data-testid="omise-status">สถานะ: {payment?labels[payment.status]||"รอตรวจสอบรายการ":config?.paid?"บันทึกชำระแล้ว กรุณาตรวจสถานะล่าสุด":"ยังไม่ได้เริ่มรายการ"}</p>
- {!busy&&config&&!config.enabled&&<p>ยังไม่เปิด Omise Test checkout กรุณาให้ผู้ดูแลตั้งค่า Test keys และวิธีชำระ</p>}
- {config?.amount===0&&<p>ยอดสุทธิ 0 บาท ไม่ต้องสร้างรายการชำระ</p>}
- {!admin&&config?.enabled&&config.amount>0&&!config.paid&&!payment&&<><label>วิธีชำระทดสอบ<select aria-label="วิธีชำระ Omise Test" disabled={busy} value={method} onChange={e=>setMethod(e.target.value)}>{config.methods.filter(m=>m==="promptpay").map(m=><option key={m} value={m}>PromptPay Test QR</option>)}</select></label><button className="primary-button" type="button" disabled={busy||!method} onClick={()=>void start()}>เริ่มชำระทดสอบ</button></>}
- {authorization&&<p><a className="outline-button" data-testid="omise-redirect" href={authorization} rel="noreferrer">ไปหน้ายืนยัน Omise Test</a></p>}
- {qr&&<img src={qr} alt="QR จาก Omise Test เท่านั้น" width={256} height={256} referrerPolicy="no-referrer"/>}
- {payment?.expiresAt&&<p>หมดอายุ: {new Date(payment.expiresAt).toLocaleString("th-TH")}</p>}
- <button className="outline-button" type="button" disabled={busy} onClick={()=>void refresh()}>ตรวจสถานะล่าสุด</button><p>การกลับจากหน้าผู้ให้บริการไม่ยืนยันการชำระ ระบบตรวจสถานะจาก server และยังต้องให้ Admin อนุมัติ Villa แยกอีกขั้น</p>
+ return <section className="payment-panel" data-testid="omise-checkout"><h2>Omise Test Checkout</h2><strong>{translateSystem("ใบแจ้งชำระ ฿")}{((config?.amount ?? invoice.amount*100)/100).toLocaleString(localeTag())} · {invoice.packageName}</strong><p>{translateSystem("สำหรับทดสอบเท่านั้น ห้ามโอนเงินจริงหรือใช้แอปธนาคารจริงชำระ QR ทดสอบ")}</p>
+ {busy&&<p role="status">{translateSystem("กำลังตรวจสอบรายการ…")}</p>}{error&&<p role="alert">{error}</p>}
+ <p data-testid="omise-status">{translateSystem("สถานะ:")}{" "}{payment?translateSystem(labels[payment.status]||"รอตรวจสอบรายการ"):config?.paid?translateSystem("บันทึกชำระแล้ว กรุณาตรวจสถานะล่าสุด"):translateSystem("ยังไม่ได้เริ่มรายการ")}</p>
+ {!busy&&config&&!config.enabled&&<p>{translateSystem("ยังไม่เปิด Omise Test checkout กรุณาให้ผู้ดูแลตั้งค่า Test keys และวิธีชำระ")}</p>}
+ {config?.amount===0&&<p>{translateSystem("ยอดสุทธิ 0 บาท ไม่ต้องสร้างรายการชำระ")}</p>}
+ {!admin&&config?.enabled&&config.amount>0&&!config.paid&&!payment&&<><label>{translateSystem("วิธีชำระทดสอบ")}<select aria-label={translateSystem("วิธีชำระ Omise Test")} disabled={busy} value={method} onChange={e=>setMethod(e.target.value)}>{config.methods.filter(m=>m==="promptpay").map(m=><option key={m} value={m}>PromptPay Test QR</option>)}</select></label><button className="primary-button" type="button" disabled={busy||!method} onClick={()=>void start()}>{translateSystem("เริ่มชำระทดสอบ")}</button></>}
+ {authorization&&<p><a className="outline-button" data-testid="omise-redirect" href={authorization} rel="noreferrer">{translateSystem("ไปหน้ายืนยัน Omise Test")}</a></p>}
+ {qr&&<img src={qr} alt={translateSystem("QR จาก Omise Test เท่านั้น")} width={256} height={256} referrerPolicy="no-referrer"/>}
+ {payment?.expiresAt&&<p>{translateSystem("หมดอายุ:")}{" "}{new Date(payment.expiresAt).toLocaleString(localeTag())}</p>}
+ <button className="outline-button" type="button" disabled={busy} onClick={()=>void refresh()}>{translateSystem("ตรวจสถานะล่าสุด")}</button><p>{translateSystem("การกลับจากหน้าผู้ให้บริการไม่ยืนยันการชำระ ระบบตรวจสถานะจาก server และยังต้องให้ Admin อนุมัติ Villa แยกอีกขั้น")}</p>
  </section>
 }
