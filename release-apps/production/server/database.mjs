@@ -1,0 +1,289 @@
+import {packagePricing} from "./package-promotions.mjs"
+import {promisify} from "node:util"
+import generatePromptPay from "promptpay-qr"
+import QRCode from "qrcode"
+const invoicePerVilla = id => ["basic","starter","pro","premium"].includes(id);
+import {packageContent} from "./package-content.mjs";
+import {quoteCoupon} from "./promotions.mjs"
+import { receivingBank } from "./payment-account.mjs"
+import { cmsBusiness, monthlyValidity, cmsPaymentSnapshot } from "./cms-business.mjs"
+import { DatabaseSync } from "node:sqlite"
+import { wrapSqlite } from "./database-adapter.mjs"
+import { mkdirSync, chmodSync, readFileSync } from "node:fs"
+import { dirname } from "node:path"
+import {
+  randomBytes,
+  randomUUID,
+  scryptSync,
+  scrypt,
+  timingSafeEqual,
+} from "node:crypto"
+export const packages = {
+  basic: { name: "Basic Verify", amount: 99000, capacity: 1 },
+  starter: { name: "Online Verify", amount: 199000, capacity: 1 },
+  pro: { name: "Social Verify", amount: 299000, capacity: 1 },
+  premium: { name: "Premium Verify", amount: 499000, capacity: 1 },
+}
+export function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex")
+  return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`
+}
+export function verifyPassword(password, value) {
+  const [salt, hash] = value.split(":")
+  return timingSafeEqual(
+    Buffer.from(hash, "hex"),
+    scryptSync(password, salt, 64),
+  )
+}
+const derivePassword=promisify(scrypt)
+// Same salt:hex format and scrypt defaults as verifyPassword; no stored hash changes.
+export async function verifyPasswordAsync(password,value) {
+ const [salt,encoded]=String(value||"").split(":")
+ const expected=typeof encoded==="string"&&/^[a-f0-9]{128}$/i.test(encoded)?Buffer.from(encoded,"hex"):null
+ const actual=await derivePassword(password,salt||"invalid-password-record",64)
+ return expected!==null&&timingSafeEqual(expected,actual)
+}
+export function openDatabase(path) {
+  if (path !== ":memory:")
+    mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
+  const db = new DatabaseSync(path)
+  if (path !== ":memory:") chmodSync(path, 0o600)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      key TEXT PRIMARY KEY, count INTEGER NOT NULL, expires INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      owner_id TEXT PRIMARY KEY REFERENCES users(id), package_id TEXT NOT NULL,
+      expires TEXT, payments INTEGER NOT NULL DEFAULT 0, created TEXT NOT NULL
+    );
+    PRAGMA journal_mode = WAL;
+    PRAGMA foreign_keys = ON;
+    PRAGMA busy_timeout = 5000;
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL,
+      password_hash TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('merchant','admin','user'))
+    );
+    CREATE TABLE IF NOT EXISTS sessions (
+      token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id),
+      csrf TEXT NOT NULL, expires INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS documents (
+      id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id),
+      name TEXT NOT NULL, mime TEXT NOT NULL, bytes BLOB NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS villas (
+      id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id), name TEXT NOT NULL,
+      province TEXT NOT NULL, merchant TEXT NOT NULL, email TEXT NOT NULL, package_id TEXT NOT NULL,
+      document_id TEXT NOT NULL REFERENCES documents(id),
+      status TEXT NOT NULL CHECK(status IN ('pending','approved','changes','rejected')) DEFAULT 'pending',
+      reason TEXT NOT NULL DEFAULT '', qr TEXT UNIQUE, expires TEXT, payments INTEGER NOT NULL DEFAULT 0,
+      created TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS invoices (
+      id TEXT PRIMARY KEY, villa_id TEXT NOT NULL REFERENCES villas(id), amount INTEGER NOT NULL,
+      months INTEGER NOT NULL CHECK(months BETWEEN 1 AND 36),
+      status TEXT NOT NULL CHECK(status IN ('pending','submitted','paid')) DEFAULT 'pending',
+      proof_id TEXT REFERENCES documents(id), reference TEXT NOT NULL DEFAULT '', reason TEXT NOT NULL DEFAULT '',
+      created TEXT NOT NULL, paid_at TEXT, confirmed_by TEXT REFERENCES users(id)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS one_open_invoice ON invoices(villa_id) WHERE status != 'paid';
+    CREATE TABLE IF NOT EXISTS mails (
+      id TEXT PRIMARY KEY, villa_id TEXT NOT NULL REFERENCES villas(id), invoice_id TEXT NOT NULL UNIQUE REFERENCES invoices(id),
+      recipient TEXT NOT NULL, subject TEXT NOT NULL, body TEXT NOT NULL, created TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued', attempts INTEGER NOT NULL DEFAULT 0,
+      next_attempt INTEGER NOT NULL DEFAULT 0, last_error TEXT NOT NULL DEFAULT '', sent_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS audits (
+      id TEXT PRIMARY KEY, actor_id TEXT NOT NULL REFERENCES users(id), action TEXT NOT NULL,
+      target_id TEXT NOT NULL, created TEXT NOT NULL
+    );
+  `)
+  db.exec(
+    readFileSync(new URL("./business-schema.sql", import.meta.url), "utf8"),
+  )
+  // A worker interrupted before receiving SMTP's response retries on restart.
+  db.exec("UPDATE mails SET status='queued' WHERE status='sending'")
+  // Add columns without discarding existing merchant/admin data.
+  const migrate = (table, column, definition) => {
+    if (
+      !db
+        .prepare(`PRAGMA table_info(${table})`)
+        .all()
+        .some((row) => row.name === column)
+    )
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+  }
+  migrate("users", "business_name_en", "TEXT NOT NULL DEFAULT ''")
+  migrate("villas", "name_en", "TEXT NOT NULL DEFAULT ''")
+  for (const column of ["photo_uploaded_at","photo_taken_at","photo_reviewed_at"]) migrate("villas", column, "TEXT")
+  migrate(
+    "invoices",
+    "payment_status",
+    "TEXT NOT NULL DEFAULT 'WAITING_FOR_SLIP'",
+  )
+  migrate("invoices", "verification_mode", "TEXT NOT NULL DEFAULT 'MANUAL'")
+  migrate("invoices", "currency", "TEXT NOT NULL DEFAULT 'THB'")
+  migrate("invoices", "external_transaction_id", "TEXT")
+  migrate("invoices", "external_provider", "TEXT")
+  migrate("invoices", "updated_at", "TEXT")
+  db.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS unique_payment_transaction ON invoices(external_transaction_id) WHERE external_transaction_id IS NOT NULL",
+  )
+  db.exec(
+    "UPDATE invoices SET payment_status=CASE WHEN status='paid' THEN 'VERIFIED' WHEN status='submitted' THEN 'PENDING_REVIEW' ELSE payment_status END",
+  )
+  migrate(
+    "subscriptions",
+    "lifecycle",
+    "TEXT NOT NULL DEFAULT 'PENDING_RENEWAL'",
+  )
+  migrate("villas", "verification_level", "TEXT NOT NULL DEFAULT 'VERIFIED'")
+  migrate("villas", "photo_url", "TEXT NOT NULL DEFAULT ''")
+  migrate("villas", "guest_capacity", "INTEGER CHECK(guest_capacity BETWEEN 1 AND 1000)")
+  migrate("villas", "reviewed_at", "TEXT")
+  migrate("villas", "reviewed_by", "TEXT")
+  migrate("mails", "payment_instructions", "TEXT")
+  migrate("login_otps", "account_type", "TEXT NOT NULL DEFAULT 'user' CHECK(account_type IN ('user','merchant'))")
+  migrate("login_otps", "binding_user_id", "TEXT REFERENCES users(id)")
+  migrate("login_otps", "purpose", "TEXT NOT NULL DEFAULT 'login' CHECK(purpose IN ('login','register','link_identity'))")
+  migrate("users", "created", "TEXT NOT NULL DEFAULT ''")
+  migrate("users", "last_login", "TEXT")
+  for (const field of ["business_name", "phone", "address"])
+    migrate("users", field, "TEXT NOT NULL DEFAULT ''")
+  migrate("invoices", "subscription_owner", "TEXT REFERENCES users(id)")
+  migrate("invoices", "package_id", "TEXT")
+  db.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS one_open_subscription_invoice ON invoices(subscription_owner) WHERE status != 'paid' AND subscription_owner IS NOT NULL",
+  )
+  for (const column of ["phone", "bank_name", "account_name", "account_number"])
+    migrate("villas", column, "TEXT NOT NULL DEFAULT ''")
+  db.prepare("UPDATE users SET created=? WHERE created=''").run(
+    new Date().toISOString(),
+  )
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS oauth_identities (
+      provider TEXT NOT NULL, subject TEXT NOT NULL, user_id TEXT NOT NULL REFERENCES users(id),
+      PRIMARY KEY(provider, subject), UNIQUE(provider, user_id)
+    );
+    CREATE TABLE IF NOT EXISTS oauth_states (
+      state_hash TEXT PRIMARY KEY, provider TEXT NOT NULL, verifier TEXT NOT NULL,
+      return_to TEXT NOT NULL, expires INTEGER NOT NULL
+    );
+  `)
+  for (const [id, plan] of Object.entries(packages))
+    db.prepare(
+      "INSERT INTO package_catalog(id,name,slug,description,amount,capacity,trial_months,max_level,banner,sort_order,created,updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING",
+    ).run(
+      id,
+      plan.name,
+      id,
+      "แพ็กเกจ Merchant",
+      plan.amount,
+      plan.capacity,
+      id === "basic" ? 3 : 0,
+      id === "premium" ? "PREMIUM_VERIFIED" : "VERIFIED",
+      id === "premium" ? 1 : 0,
+      Object.keys(packages).indexOf(id),
+      new Date().toISOString(),
+      new Date().toISOString(),
+    )
+  if(!db.prepare("SELECT value FROM system_settings WHERE key='package_model_v2'").get()) {
+    db.prepare("UPDATE package_catalog SET active=0").run()
+    for(const [id,plan] of Object.entries(packages)) db.prepare("UPDATE package_catalog SET name=?,amount=?,capacity=1,trial_months=0,billing_cycle='MONTHLY',description=?,features=?,active=1,max_level=?,banner=?,sort_order=? WHERE id=?").run(plan.name,plan.amount,packageContent[id].description,JSON.stringify(packageContent[id].features),id==='basic'?'BASIC_CHECKED':id==='premium'?'PREMIUM_VERIFIED':'VERIFIED',id==='premium'?1:0,Object.keys(packages).indexOf(id),id)
+    db.exec("UPDATE villas SET payments=0,expires=NULL WHERE package_id='basic' AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.status='paid' AND i.amount>0 AND (i.villa_id=villas.id OR i.subscription_owner=villas.owner_id));")
+    db.prepare("INSERT INTO system_settings(key,value) VALUES ('package_model_v2','true')").run()
+  }
+  db.exec(
+    "INSERT INTO leads(id,user_id,type,name,email,source,created,updated) SELECT id,id,UPPER(role),name,email,'REGISTRATION',created,created FROM users WHERE role IN ('user','merchant') AND id NOT IN (SELECT user_id FROM leads WHERE user_id IS NOT NULL)",
+  )
+  return wrapSqlite(db)
+}
+export async function transaction(db, work) {
+  return db.transaction(work)
+}
+export async function createUser(db, email, password, name, role = "merchant", options={}) {
+  if(options.id!==undefined&&(typeof options.id!=="string"||! /^[a-f0-9-]{36}$/.test(options.id)))throw Error("Invalid server allocation")
+  const id = options.id || randomUUID()
+  await db
+    .prepare(
+      "INSERT INTO users(id,email,name,password_hash,role) VALUES (?,?,?,?,?)",
+    )
+    .run(id, email.toLowerCase(), name, hashPassword(password), role)
+  await db
+    .prepare("UPDATE users SET created=? WHERE id=?")
+    .run(new Date().toISOString(), id)
+  if (["user", "merchant"].includes(role))
+    await db
+      .prepare(
+        "INSERT INTO leads(id,user_id,type,name,email,source,created,updated) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO NOTHING",
+      )
+      .run(
+        randomUUID(),
+        id,
+        role.toUpperCase(),
+        name,
+        email.toLowerCase(),
+        "REGISTRATION",
+        new Date().toISOString(),
+        new Date().toISOString(),
+      )
+  return { id, email: email.toLowerCase(), name, role }
+}
+export async function audit(db, actor, action, target) {
+  await db
+    .prepare("INSERT INTO audits VALUES (?,?,?,?,?)")
+    .run(randomUUID(), actor.id, action, target, new Date().toISOString())
+}
+// Calculate calendar months in Bangkok, independent of the server's timezone.
+export function addMonths(value, months) {
+  const local = new Date(new Date(value).getTime() + 7 * 3600000)
+  const day = local.getUTCDate()
+  local.setUTCDate(1)
+  local.setUTCMonth(local.getUTCMonth() + months)
+  const end = new Date(
+    Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + 1, 0),
+  ).getUTCDate()
+  local.setUTCDate(Math.min(day, end))
+  return new Date(local.getTime() - 7 * 3600000).toISOString()
+}
+export async function createInvoice(db,villa,appUrl,paymentInstructions=""){return db.transaction(()=>createInvoiceInternal(db,villa,appUrl,paymentInstructions))}
+async function createInvoiceInternal(db, villa, appUrl, paymentInstructions="") {
+  const id = randomUUID()
+  const plan = await db
+    .prepare("SELECT * FROM package_catalog WHERE id=?")
+    .get(villa.package_id)
+  if(plan.id === "basic")throw Object.assign(Error("Basic uses a promotion grant; paid signup and renewal terms require confirmation"),{status:409})
+  const couponRow=await db.prepare("SELECT value FROM system_settings WHERE key=?").get('merchant_coupon:'+villa.owner_id)
+  const coupon=plan.amount>0?await quoteCoupon(db,couponRow?JSON.parse(couponRow.value):'',villa.owner_id,plan):null
+  const promotion=await packagePricing(db,plan)
+  if(promotion.pricingPending)throw Object.assign(Error("การปัดเศษส่วนลดรอยืนยัน"),{status:409})
+  if(coupon&&promotion.promotion)throw Object.assign(Error("การใช้คูปองร่วมโปรโมชั่นรอยืนยัน"),{status:409})
+  const amount=coupon?coupon.amount:promotion.netAmount
+  if(amount===0)throw Object.assign(Error("ยอดสุทธิ 0 บาท ไม่สร้าง charge หรือ invoice เรียกเก็บ ระยะสิทธิ์และวิธีเปิดระดับฟรีรอยืนยัน"),{status:409})
+  const months=invoicePerVilla(plan.id) && plan.billing_cycle === "MONTHLY" ? 1 : monthlyValidity(await cmsBusiness(db),plan.billing_cycle,villa.payments)
+  const created = new Date().toISOString()
+  const instructions=await cmsPaymentSnapshot(db,paymentInstructions)
+  const release=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
+  const receiver=await receivingBank(db)
+  const bankQrImage=receiver && amount>0 ? await QRCode.toDataURL(generatePromptPay(receiver.promptpayId,{amount:amount/100}),{width:512,margin:4}) : (release?JSON.parse(release.value).content.site.paymentQrImage || "":"")
+  // Snapshot the published validity rule on each new invoice; existing invoices retain their terms.
+  await db
+    .prepare(
+      "INSERT INTO invoices(id,villa_id,amount,months,created,updated_at) VALUES (?,?,?,?,?,?)",
+    )
+    .run(id, villa.id, amount, months, created, created)
+  await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run("invoice_package_promotion:"+id,JSON.stringify(promotion))
+  if(coupon){await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_discount:${id}`,JSON.stringify(coupon));await db.prepare("DELETE FROM system_settings WHERE key=?").run("merchant_coupon:"+villa.owner_id)}
+  await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_bank_qr:${id}`,JSON.stringify(bankQrImage))
+  if(receiver)await db.prepare("INSERT INTO system_settings(key,value) VALUES (?,?)").run(`invoice_receiving_bank:${id}`,JSON.stringify(receiver))
+  const subject = `VillaCheck: ${villa.name} ${
+    villa.payments === 0 ? "ผ่านการอนุมัติ" : "ต่ออายุ QR"
+  } กรุณาชำระแพ็กเกจ`
+  const body = `เรียน ${villa.merchant}\n\nVilla: ${villa.name}\nแพ็กเกจ: ${plan.name}\nยอดชำระ: ฿${(amount / 100).toLocaleString("th-TH")}\nเลขที่ใบแจ้งชำระ: ${id}\n\nเข้าสู่ระบบที่ ${appUrl}/#page=owner-package เพื่อดูวิธีชำระและแนบสลิป\nAdmin จะตรวจยืนยันการชำระ จากนั้น QR มีอายุ ${months} เดือน\n1 Villa = 1 QR การต่ออายุใช้รหัสเดิม`
+  await db
+    .prepare(
+      "INSERT INTO mails(id,villa_id,invoice_id,recipient,subject,body,created,payment_instructions) VALUES (?,?,?,?,?,?,?,?)",
+    )
+    .run(randomUUID(), villa.id, id, villa.email, subject, body, created,instructions)
+  return id
+}

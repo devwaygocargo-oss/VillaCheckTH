@@ -1,0 +1,195 @@
+import {enrollVerifiedNewMerchant} from './merchant-free-period.mjs'
+import {claimVerifiedEmail} from "./email-identity.mjs"
+import { cmsBusiness, cmsLoginConfig, otpTemplate } from "./cms-business.mjs"
+import {randomInt,randomUUID,randomBytes,createHmac,timingSafeEqual,createCipheriv,createDecipheriv,createHash} from 'node:crypto'
+import {createUser} from './database.mjs'
+const fail=(status,message)=>{throw Object.assign(Error(message),{status})}
+export function otpChannels(config,transport){
+ if(config.productionReleaseMode==='PHASE1')return {email:config.phase1EmailOtpDelivery==='SMTP'&&Boolean(transport&&config.smtpFrom),sms:false}
+ const enabled=typeof config.otpSecret==='string'&&config.otpSecret.length>=32
+ return {email:Boolean(enabled&&(config.thaiBulkSmsEmailOtpTemplateId?config.thaiBulkSmsApiKey&&config.thaiBulkSmsApiSecret:transport&&config.smtpFrom)),sms:Boolean(enabled&&(config.thaiBulkSmsOtpKey||config.thaiBulkSmsOtpSecret?config.thaiBulkSmsOtpKey&&config.thaiBulkSmsOtpSecret:config.thaiBulkSmsApiKey&&config.thaiBulkSmsApiSecret&&config.thaiBulkSmsSender))}
+}
+export function otpDestination(channel,value){
+ if(typeof value!=='string'||value.length>254)fail(400,'อีเมลหรือเบอร์โทรไม่ถูกต้อง')
+ if(channel==='email'){const v=value.trim().toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))fail(400,'อีเมลไม่ถูกต้อง');return v}
+ if(channel!=='sms')fail(400,'ช่องทาง OTP ไม่ถูกต้อง')
+ let v=value.replace(/[ ()-]/g,'');if(/^0[689]\d{8}$/.test(v))v='+66'+v.slice(1)
+ if(!/^\+[1-9]\d{7,14}$/.test(v))fail(400,'เบอร์โทรไม่ถูกต้อง เช่น 0812345678 หรือ +66812345678')
+ return v
+}
+const hash=(config,id,code)=>createHmac('sha256',config.otpSecret).update(id+':'+code).digest('hex')
+const tokenKey=config=>createHash('sha256').update(config.otpSecret).digest()
+function encryptToken(config,token){const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',tokenKey(config),iv);const bytes=Buffer.concat([cipher.update(token,'utf8'),cipher.final()]);return 'tbs:'+Buffer.concat([iv,cipher.getAuthTag(),bytes]).toString('base64')}
+function decryptToken(config,value){const bytes=Buffer.from(value.slice(4),'base64'),cipher=createDecipheriv('aes-256-gcm',tokenKey(config),bytes.subarray(0,12));cipher.setAuthTag(bytes.subarray(12,28));return Buffer.concat([cipher.update(bytes.subarray(28)),cipher.final()]).toString('utf8')}
+async function providerOtp(config,fetchProvider,action,fields){
+ const r=await fetchProvider('https://otp.thaibulksms.com/v2/otp/'+action,{method:'POST',headers:{Accept:'application/json','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({key:config.thaiBulkSmsOtpKey,secret:config.thaiBulkSmsOtpSecret,...fields}).toString(),signal:AbortSignal.timeout(15000),redirect:'error'});
+ const result=await r.json();return {ok:r.ok,status:r.status,result}
+}
+async function providerEmailOtp(config,fetchProvider,action,fields){
+ const r=await fetchProvider('https://email-api.thaibulksms.com/email/v1/otp/'+action,{method:'POST',headers:{Authorization:'Basic '+Buffer.from(config.thaiBulkSmsApiKey+':'+config.thaiBulkSmsApiSecret).toString('base64'),Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify(fields),signal:AbortSignal.timeout(15000),redirect:'error'});
+ return {ok:r.ok,status:r.status,result:await r.json()}
+}
+export function smsDiagnostic(config,status,result){
+ const clean=v=>{let s=typeof v==='string'?v:typeof v==='object'&&v!==null?JSON.stringify(v):String(v??'');for(const secret of [config.thaiBulkSmsApiKey,config.thaiBulkSmsApiSecret,config.thaiBulkSmsOtpKey,config.thaiBulkSmsOtpSecret,config.otpSecret,Buffer.from((config.thaiBulkSmsApiKey||'')+':'+(config.thaiBulkSmsApiSecret||'')).toString('base64')])if(secret)s=s.split(secret).join('[redacted]');return s.replace(/\b\d{6,15}\b/g,'[redacted]').slice(0,400)}
+ const code=clean(result?.code||result?.error?.code||result?.error_code||'')
+ const message=clean(result?.message||result?.error?.message||result?.error||'')
+ const names={'108':'ERROR_USER_TRIAL','116':'ERROR_INSUFFICIENT_CREDIT','110':'ERROR_SENDER','111':'ERROR_SENDER_NOT_FOUND'}
+ const combined=(names[code]||code)+' '+message
+ const category=/ERROR_USER_TRIAL|trial member/i.test(combined)?'ERROR_USER_TRIAL':/INSUFFICIENT_CREDIT|insufficient credit/i.test(combined)?'ERROR_INSUFFICIENT_CREDIT':status===401||/AUTHENTICATION|UNAUTHORIZED/i.test(combined)?'AUTHENTICATION_ERROR':/SENDER|API_KEY_SUSPENDED|IP_NOT_ALLOWED|MSISDN/i.test(combined)?'SENDER_OR_CONFIG_ERROR':status>=500?'PROVIDER_SERVER_ERROR':'PROVIDER_REJECTED'
+ return {httpStatus:status,errorCode:/^(?:ERROR_[A-Z0-9_]{1,48}|[0-9]{1,5})$/.test(code)?code:null,errorName:names[code]||null,errorMessage:message?({SENDER_OR_CONFIG_ERROR:'Sender is invalid or provider configuration is not permitted.',AUTHENTICATION_ERROR:'Provider authentication failed.',ERROR_USER_TRIAL:'Provider trial restriction.',ERROR_INSUFFICIENT_CREDIT:'Provider credit is insufficient.',PROVIDER_SERVER_ERROR:'Provider service unavailable.'}[category]||'Provider rejected the request.'):null,category,responseFields:result&&typeof result==='object'?Object.fromEntries(Object.entries(result).map(([key,value])=>[key,typeof value])):{},hasProviderToken:typeof result?.token==='string'&&Boolean(result.token),providerStatus:typeof result?.status==='string'?clean(result.status):null}
+}
+export async function probeSmsCredit(config,fetchProvider=fetch){
+ const environment={apiKeyLoaded:Boolean(config.thaiBulkSmsApiKey),apiSecretLoaded:Boolean(config.thaiBulkSmsApiSecret),senderLoaded:Boolean(config.thaiBulkSmsSender),otpAppKeyLoaded:Boolean(config.thaiBulkSmsOtpKey),otpAppSecretLoaded:Boolean(config.thaiBulkSmsOtpSecret),emailTemplateLoaded:Boolean(config.thaiBulkSmsEmailOtpTemplateId),emailMode:config.thaiBulkSmsEmailOtpTemplateId?'otp-api':'smtp',smsMode:config.thaiBulkSmsOtpKey||config.thaiBulkSmsOtpSecret?'otp-api':'sms-api',otpSecretLoaded:Boolean(config.otpSecret&&config.otpSecret.length>=32)}
+ if(!environment.apiKeyLoaded||!environment.apiSecretLoaded)return {environment,category:'CONFIG_MISSING'}
+ try{const r=await fetchProvider('https://api-v2.thaibulksms.com/credit',{headers:{Authorization:'Basic '+Buffer.from(config.thaiBulkSmsApiKey+':'+config.thaiBulkSmsApiSecret).toString('base64'),Accept:'application/json'},signal:AbortSignal.timeout(15000),redirect:'error'});const result=await r.json();return {environment,...smsDiagnostic(config,r.status,result),authenticated:r.ok,category:r.ok?'OK':smsDiagnostic(config,r.status,result).category,remainingCredit:r.ok?result.remaining_credit:null}}
+ catch{return {environment,category:'NETWORK_OR_INVALID_RESPONSE'}}
+}
+export function createLoginOtp(db,config,transport,fetchSms=fetch){
+ return {
+  async request(data,bindingUser=null,options={}){
+   if(config.productionReleaseMode==='PHASE1'&&(config.phase1EmailOtpDelivery!=='SMTP'||data.channel!=='email'||data.purpose!=='register'))fail(503,'Phase1 registration delivery is disabled or not approved')
+   const accountType=data.accountType||'user'
+   if(!['user','merchant'].includes(accountType))fail(400,'ประเภทบัญชีไม่ถูกต้อง')
+   if(data.purpose!==undefined&&!['login','register','link_identity',...(options.passwordRecovery===true?['reset_password']:[])].includes(data.purpose))fail(400,'คำขอ OTP ไม่ถูกต้อง')
+   if(data.purpose==='link_identity'&&bindingUser?.role!=='merchant')fail(403,'เข้าสู่ระบบ Merchant ก่อนเชื่อมช่องทางเข้าสู่ระบบ')
+   const business=await cmsBusiness(db),deliveryConfig=await cmsLoginConfig(db,config)
+   const channel=data.channel,destination=otpDestination(channel,data.destination)
+   if(channel==='sms'&&config.appEnvironment==='staging'&&!config.stagingSmsAllowlist?.includes(destination))fail(403,'Staging อนุญาตส่ง SMS เฉพาะหมายเลขทดสอบที่กำหนด')
+   if(channel==='email'&&config.appEnvironment==='staging'&&!config.stagingEmailAllowlist?.includes(destination))fail(403,'Staging อนุญาตส่ง OTP เฉพาะอีเมลทดสอบที่กำหนด')
+   if(!otpChannels(deliveryConfig,transport)[channel])fail(503,channel==='email'?'ยังไม่ได้ตั้งค่าการส่ง OTP ทางอีเมล':'ยังไม่ได้ตั้งค่าการส่ง OTP ทาง SMS')
+   const id=randomUUID(),code=String(randomInt(0,1000000)).padStart(6,'0'),now=Date.now()
+   await db.transaction(async()=>{
+    await db.prepare('DELETE FROM login_otps WHERE created<?').run(now-86400000)
+    const last=await db.prepare('SELECT created FROM login_otps WHERE destination=? ORDER BY created DESC LIMIT 1').get(destination)
+    if(last&&now-Number(last.created)<60000)fail(429,'กรุณารอ 60 วินาทีก่อนขอ OTP ใหม่')
+    const count=await db.prepare('SELECT count(*) AS n FROM login_otps WHERE destination=? AND created>?').get(destination,now-3600000)
+    if(Number(count.n)>=5)fail(429,'ขอ OTP ครบจำนวนที่อนุญาต กรุณาลองอีกครั้งภายหลัง')
+    await db.prepare('UPDATE login_otps SET consumed=1 WHERE destination=? AND consumed=0').run(destination)
+    await db.prepare('INSERT INTO login_otps(id,channel,destination,code_hash,expires,created,account_type,binding_user_id,purpose) VALUES (?,?,?,?,?,?,?,?,?)').run(id,channel,destination,hash(config,id,code),now+300000,now,accountType,data.purpose==='link_identity'?bindingUser.id:null,data.purpose==='reset_password'?'login':data.purpose||'login')
+    if(options.passwordRecovery===true||options.phoneRegistration===true)await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('otp_purpose:'+id,options.phoneRegistration===true?'phone_registration':'reset_password')
+    if(options.phoneRegistration===true&&options.allocatedUserId)await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('phone_registration_allocation:'+id,JSON.stringify({userId:options.allocatedUserId}))
+   })
+   try{
+    if(channel==='email'&&deliveryConfig.thaiBulkSmsEmailOtpTemplateId){
+     const response=await providerEmailOtp(config,fetchSms,'send',{template_uuid:deliveryConfig.thaiBulkSmsEmailOtpTemplateId,recipient_email:destination,payload:{}});
+     if(!response.ok||!['success','waiting'].includes(response.result.status)||typeof response.result.token!=='string'||!response.result.token||response.result.token.length>4096)throw Object.assign(Error('Email OTP provider rejected request'),{diagnostic:smsDiagnostic(config,response.status,response.result)});
+     await db.prepare('UPDATE login_otps SET code_hash=? WHERE id=?').run(encryptToken(config,response.result.token),id);
+    }else if(channel==='email')await transport.sendMail({from:config.smtpFrom,to:destination,subject:business.emailOtpSubject,text:otpTemplate(business.emailOtpBody,code)})
+    else if(config.thaiBulkSmsOtpKey&&config.thaiBulkSmsOtpSecret){
+     const response=await providerOtp(config,fetchSms,'request',{msisdn:destination.slice(1)});
+     if(!response.ok||response.result.status!=='success'||typeof response.result.token!=='string'||!response.result.token||response.result.token.length>4096)throw Object.assign(Error('OTP provider rejected request'),{diagnostic:smsDiagnostic(config,response.status,response.result)});
+     await db.prepare('UPDATE login_otps SET code_hash=? WHERE id=?').run(encryptToken(config,response.result.token),id);
+    }else{
+     const params=new URLSearchParams({msisdn:destination.slice(1),message:otpTemplate(business.smsOtpBody,code),sender:config.thaiBulkSmsSender})
+     const r=await fetchSms('https://api-v2.thaibulksms.com/sms',{method:'POST',headers:{Authorization:'Basic '+Buffer.from(config.thaiBulkSmsApiKey+':'+config.thaiBulkSmsApiSecret).toString('base64'),Accept:'application/json','Content-Type':'application/x-www-form-urlencoded'},body:params.toString(),signal:AbortSignal.timeout(15000),redirect:'error'})
+     const result=await r.json()
+     if(!r.ok)throw Object.assign(Error('sms delivery failed'),{diagnostic:smsDiagnostic(config,r.status,result)})
+     const accepted=result.phone_number_list?.some(p=>typeof p.number==='string'&&p.number.replace(/^\+/,'')===destination.slice(1)&&typeof p.message_id==='string'&&p.message_id.length>0)
+     if(!accepted)throw Object.assign(Error('sms recipient not accepted'),{diagnostic:smsDiagnostic(config,r.status,{...result,message:result.bad_phone_number_list?.[0]?.message||result.message||'Recipient not accepted'})})
+    }
+   }catch(error){
+    await db.prepare('UPDATE login_otps SET consumed=1 WHERE id=?').run(id)
+    const reason=channel==='email'?({EAUTH:'SMTP_AUTH_FAILED',ETIMEDOUT:'SMTP_TIMEOUT',ECONNECTION:'SMTP_CONNECTION_FAILED',ESOCKET:'SMTP_CONNECTION_FAILED',EENVELOPE:'SMTP_RECIPIENT_OR_SENDER_REJECTED'}[error.code]||'EMAIL_DELIVERY_FAILED'):'SMS_DELIVERY_FAILED'
+    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('otp_delivery_'+channel,JSON.stringify({ok:false,reason,...(error.diagnostic?error.diagnostic:channel==='sms'||deliveryConfig.thaiBulkSmsEmailOtpTemplateId?{category:'NETWORK_OR_INVALID_RESPONSE'}:{}),at:new Date().toISOString()}))
+    fail(503,channel==='email'?'ส่งอีเมล OTP ไม่สำเร็จ กรุณาใช้ช่องทางอื่นหรือลองใหม่ภายหลัง':'ส่ง SMS OTP ไม่สำเร็จ กรุณาใช้ช่องทางอื่นหรือลองใหม่ภายหลัง')
+   }
+   await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('otp_delivery_'+channel,JSON.stringify({ok:true,at:new Date().toISOString()}))
+   return {challengeId:id,expiresAt:new Date(now+300000).toISOString(),resendAfter:60}
+  },
+  async verify(data,bindingUser=null,options={}){
+   if(typeof data.challengeId!=='string'||!/^[-a-f0-9]{36}$/.test(data.challengeId)||typeof data.code!=='string'||!/^\d{6}$/.test(data.code))fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
+   if(!config.otpSecret||config.otpSecret.length<32)fail(503,'OTP ยังไม่พร้อมใช้งาน')
+   let verificationDiagnostic,verificationChannel;
+    const row=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(data.challengeId)
+    if(!row||row.consumed||Number(row.expires)<=Date.now()||row.attempts>=5)fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
+    const recoveryPurpose=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('otp_purpose:'+row.id)
+    if(recoveryPurpose?.value==='phone_registration'&&options.phoneRegistration!==true)fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
+    if(options.phoneRegistration===true&&recoveryPurpose?.value!=='phone_registration')fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
+    if(recoveryPurpose?.value==='reset_password'&&options.passwordRecovery!==true)fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
+    if(options.passwordRecovery===true&&recoveryPurpose?.value!=='reset_password')fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
+    if(row.binding_user_id&&(!bindingUser||bindingUser.id!==row.binding_user_id||bindingUser.role!=='merchant'))fail(403,'ใช้บัญชี Merchant ที่เริ่มยืนยันช่องทางนี้')
+    verificationChannel=row.channel;
+    let valid;
+    if(row.code_hash.startsWith('tbs:')){
+     if(row.channel==='email'){
+      if(!config.thaiBulkSmsApiKey||!config.thaiBulkSmsApiSecret)fail(503,'ยังไม่ได้ตั้งค่าการยืนยัน Email OTP');
+      let response;try{response=await providerEmailOtp(config,fetchSms,'verify',{token:decryptToken(config,row.code_hash),otp_code:data.code})}catch{fail(503,'เชื่อมต่อบริการยืนยัน OTP ไม่สำเร็จ กรุณาลองใหม่ภายหลัง')}
+      if(response.status>=500||[401,402,403,429].includes(response.status))fail(503,'บริการยืนยัน OTP ไม่พร้อมใช้งาน กรุณาลองใหม่ภายหลัง');
+      verificationDiagnostic=smsDiagnostic(config,response.status,response.result);
+      valid=response.ok&&['success','verified'].includes(response.result.status);
+     }else{
+     if(!config.thaiBulkSmsOtpKey||!config.thaiBulkSmsOtpSecret)fail(503,'ยังไม่ได้ตั้งค่าการยืนยัน SMS OTP');
+     let response;try{response=await providerOtp(config,fetchSms,'verify',{token:decryptToken(config,row.code_hash),pin:data.code})}catch{fail(503,'เชื่อมต่อบริการยืนยัน OTP ไม่สำเร็จ กรุณาลองใหม่ภายหลัง')}
+     if(response.status>=500||response.status===429||response.status===401||response.status===403)fail(503,'บริการยืนยัน OTP ไม่พร้อมใช้งาน กรุณาลองใหม่ภายหลัง');
+     verificationDiagnostic=smsDiagnostic(config,response.status,response.result);
+     valid=response.ok&&response.result.status==='success';
+     }
+    }else valid=timingSafeEqual(Buffer.from(row.code_hash,'hex'),Buffer.from(hash(config,row.id,data.code),'hex'))
+    if(!verificationDiagnostic)verificationDiagnostic={category:valid?'OK':'INVALID_OTP'};
+   // Provider I/O is outside the global write transaction. Recheck replay,
+   // expiration and attempt limits atomically after the provider returns.
+   const result=await db.transaction(async()=>{
+    const verified=await (async()=>{
+    const current=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(data.challengeId)
+    if(!current||current.consumed||Number(current.expires)<=Date.now()||current.attempts>=5||current.code_hash!==row.code_hash)return {invalid:true}
+    if(!valid){await db.prepare('UPDATE login_otps SET attempts=attempts+1 WHERE id=?').run(row.id);return {invalid:true}}
+    await db.prepare('UPDATE login_otps SET consumed=1 WHERE id=?').run(row.id)
+    if(row.binding_user_id){
+     if(row.channel==='email'){
+      const other=await db.prepare('SELECT id FROM users WHERE email=?').get(row.destination)
+      if(other&&other.id!==row.binding_user_id)return {conflict:true}
+      await db.prepare('UPDATE users SET email=? WHERE id=?').run(row.destination,row.binding_user_id)
+      await db.prepare('UPDATE leads SET email=?,updated=? WHERE user_id=?').run(row.destination,new Date().toISOString(),row.binding_user_id)
+     }else{
+      const other=await db.prepare("SELECT user_id FROM oauth_identities WHERE provider='phone_otp' AND subject=?").get(row.destination)
+      if(other&&other.user_id!==row.binding_user_id)return {conflict:true}
+      await db.prepare("DELETE FROM oauth_identities WHERE provider='phone_otp' AND user_id=?").run(row.binding_user_id)
+      await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,row.binding_user_id)
+     }
+     if(row.channel==='email')await db.prepare('DELETE FROM system_settings WHERE key=?').run('unverified_registration_email:'+row.binding_user_id)
+     const boundUser=await db.prepare('SELECT * FROM users WHERE id=?').get(row.binding_user_id)
+     return {user:row.channel==='email'?await claimVerifiedEmail(db,boundUser):boundUser}
+    }
+    if(row.channel==='email'){
+     const existing=await db.prepare('SELECT * FROM users WHERE email=?').get(row.destination)
+     if(existing&&await db.prepare('SELECT value FROM system_settings WHERE key=?').get('unverified_registration_email:'+existing.id))return {unlinked:true}
+     if(options.passwordRecovery===true&&!existing)return {invalid:true}
+     if(existing&&(!['user','merchant'].includes(existing.role)||(row.account_type==='merchant'&&existing.role!=='merchant')))return {wrongAccount:true}
+     if(!existing&&row.account_type==='merchant'&&row.purpose!=='register')return {unlinked:true}
+     const verifiedUser=existing||await createUser(db,row.destination,randomBytes(48).toString('hex'),row.destination.split('@')[0],row.account_type||'user');
+     if(!existing)await enrollVerifiedNewMerchant(db,verifiedUser,new Date().toISOString(),{createdNow:true});
+     return {user:await claimVerifiedEmail(db,verifiedUser)}
+    }
+    // Never treat an unverified contact phone on a Merchant/Admin profile as a login identity.
+    let user=await db.prepare("SELECT u.* FROM oauth_identities o JOIN users u ON u.id=o.user_id WHERE o.provider='phone_otp' AND o.subject=?").get(row.destination)
+    if(user&&(!['user','merchant'].includes(user.role)||(row.account_type==='merchant'&&user.role!=='merchant')))return {wrongAccount:true}
+    if(!user&&row.account_type==='merchant'&&row.purpose!=='register')return {unlinked:true}
+    const allocation=options.phoneRegistration===true?await db.prepare('SELECT value FROM system_settings WHERE key=?').get('phone_registration_allocation:'+row.id):null
+    const createdNow=!user
+    if(!user){user=await createUser(db,`${randomUUID()}@phone.villacheck.invalid`,randomBytes(48).toString('hex'),row.account_type==='merchant'?'Merchant VillaCheck':'สมาชิก VillaCheck',row.account_type||'user',allocation?{id:JSON.parse(allocation.value).userId}:{});await db.prepare('UPDATE users SET phone=? WHERE id=?').run(row.destination,user.id);await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,user.id);await enrollVerifiedNewMerchant(db,user,new Date().toISOString(),{createdNow:true})}
+    return {user,createdNow}
+    })()
+    if(verified.user&&options.phoneRegistration===true){
+     if(typeof options.onVerified!=='function'||verified.createdNow!==true)fail(409,'หมายเลขนี้มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบ')
+     const registered=await options.onVerified(verified.user)
+     await db.prepare('DELETE FROM system_settings WHERE key=?').run('phone_registration_allocation:'+row.id)
+     await db.prepare('DELETE FROM system_settings WHERE key=?').run('otp_purpose:'+row.id)
+     return {user:registered}
+    }
+    if(verified.user&&options.passwordRecovery===true){
+     if(typeof options.onVerified!=='function')fail(500,'คำขอกู้คืนไม่สมบูรณ์')
+     const recovered=await options.onVerified(verified.user)
+     await db.prepare('DELETE FROM system_settings WHERE key=?').run('otp_purpose:'+row.id)
+     return {user:recovered}
+    }
+    return verified
+   })
+   if(verificationDiagnostic)await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('otp_verification_'+verificationChannel,JSON.stringify({...verificationDiagnostic,category:result.invalid?verificationDiagnostic.category:'OK',accepted:!result.invalid,at:new Date().toISOString()}));
+   if(result.invalid)fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
+   if(result.conflict)fail(409,'ช่องทางนี้ผูกกับบัญชีอื่นแล้ว กรุณาใช้ช่องทางอื่น')
+   if(result.wrongAccount)fail(409,'ไม่สามารถเข้าสู่ระบบบัญชีนี้ผ่านช่องทางที่เลือก กรุณาใช้หน้าลงชื่อเข้าระบบสำหรับบัญชีของคุณ')
+   if(result.unlinked)fail(409,'ยังไม่มีบัญชี Merchant ที่เชื่อมช่องทางนี้ กรุณาสมัคร Merchant ใหม่ หรือใช้อีเมลเดิมแล้วเชื่อมเบอร์ในข้อมูล Merchant')
+   return result.user
+  }
+ }
+}

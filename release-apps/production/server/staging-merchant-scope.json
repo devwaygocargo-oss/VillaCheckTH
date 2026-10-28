@@ -1,0 +1,172 @@
+{
+  "reference": "STAGING_SCOPED_MERCHANT_USER_PUBLIC_E2E_V1",
+  "authorization": "PROPOSED_NOT_AUTHORIZED",
+  "target": {
+    "vercelProjectId": "prj_3A3Lygt3Z9Pt3D9p8bk693fTfHiC",
+    "neonProjectId": "twilight-leaf-26518545",
+    "branchId": "br-young-waterfall-azxu6cij",
+    "endpointId": "ep-lively-wildflower-azuxgq19",
+    "host": "ep-lively-wildflower-azuxgq19.c-3.ap-southeast-1.aws.neon.tech",
+    "database": "neondb",
+    "schema": "public",
+    "role": "neondb_owner"
+  },
+  "admin": {
+    "id": "2c3d5a47-5832-489a-824a-291c78818b13",
+    "email": "demo-interactive-admin-20261027@villacheck.example",
+    "role": "admin"
+  },
+  "merchants": [
+    {
+      "id": "a9fbfa43-f83e-463c-b07b-d582704e5863",
+      "email": "demo-interactive-20261027@villacheck.example",
+      "role": "merchant",
+      "villaIds": [
+        "95a91dca-384b-4335-ba29-c974d6211bb7"
+      ]
+    },
+    {
+      "id": "85cd765d-93ce-478e-813c-525c60fcb8dd",
+      "email": "demo-merchant-meeting-20261027@villacheck.example",
+      "role": "merchant",
+      "villaIds": [
+        "b3ac6695-2236-41e7-a84e-a5ef90333fb2",
+        "3139eff4-4971-4c8e-b53b-04084167b09f",
+        "dab7c82f-e919-4d24-90c3-562e8432a6a2"
+      ]
+    },
+    {
+      "id": "e555b3bd-be91-4638-ad1f-94092cf9f652",
+      "email": "demo-merchant-fresh-20261028@villacheck.example",
+      "role": "merchant",
+      "name": "DEMO ผู้ประกอบการ ใหม่",
+      "phone": "0000000000",
+      "address": "DEMO ที่อยู่สังเคราะห์สำหรับ Staging เท่านั้น",
+      "businessName": "DEMO กิจการทดสอบใหม่",
+      "keychainAccount": "fresh-20261028-merchant",
+      "villaIds": [
+        "71795be2-c41b-4b42-8563-a90a27dd8100",
+        "6b3055cc-9b96-4295-8f4f-5f8e3bf5e27c",
+        "1e096973-5f3f-4b78-b000-e36f9cc838e7"
+      ]
+    },
+    {
+      "id": "8fad5d4a-7742-41a4-b58b-45b73920fc1c",
+      "role": "merchant",
+      "email": "security-phone-merchant-20261028@villacheck.example",
+      "pendingRegistration": true,
+      "villaIds": [
+        "17c258a4-b1de-48c3-8181-e215d17ca27b"
+      ]
+    }
+  ],
+  "protectedVillaIds": [
+    "000cbb3a-977b-41ba-a978-dcd4e2b5b940",
+    "004464af-1175-4bdc-bfbe-6181d87f5896",
+    "0f1ddf04-5b72-4d94-a9aa-d2acb978ee6f",
+    "17887268-e86f-433b-ae4a-e0c8386331e3",
+    "1dd3026c-c0e1-4e87-aa91-7d297a622a7e",
+    "3301b641-cceb-42bf-b24b-5a35b7790a2a",
+    "33bb608c-738d-48ff-aa3d-c24056a56a20",
+    "36e42bed-a492-44b6-ab65-70659cc7a313",
+    "36fd9cfa-b201-4348-a0eb-0767344f23dd",
+    "3ca00141-26fb-4ebf-ad66-5d50342e34f5",
+    "3e45be37-eee3-4826-acca-6a4295e57c43",
+    "4077731f-0c5d-4909-a340-8198da83c2cc",
+    "4818b555-2bc6-4281-aaf5-07fa51aa7cbb",
+    "482953eb-2c86-4fb9-ae63-bd575542151a",
+    "4839f613-4c52-4178-a033-a6079825b64d",
+    "4f43bea0-ab0a-4da7-bf90-48af8ec4d03c",
+    "505ea0ed-0dd5-426d-aba0-8dddbb957dd2",
+    "5d673f5f-e71f-468b-b0e3-f7afd3e68319",
+    "5e166458-f75d-40f0-9cef-f31ea14d938e",
+    "6e766373-18c7-489c-b01f-6c8bb7afbc11",
+    "74033858-31ac-45d9-8fd7-5b70b49d5040",
+    "7751cc64-fbba-4f52-a6f1-cb085b3a581b",
+    "7a950216-0e46-49ac-a078-18b7fd985a11",
+    "7ae81ce0-1d9f-4936-8228-9b012ca74ab1",
+    "80920169-0831-4f6f-a826-cd6ca45831f8",
+    "82314733-6552-4971-a0c6-c5b7eb9e5aeb",
+    "88f05712-253a-4ea8-a24d-c84cd49b49f2",
+    "895fb3d8-bf8a-4791-a0c8-4bcd44586e05",
+    "8e8dd800-bf23-4877-b317-22f12729a063",
+    "a2580d3e-4c7b-40a0-acfb-6a1f9dde565c",
+    "a3c75991-4ceb-42f8-ab4f-09657f956872",
+    "a8895805-84b6-4d2c-a7cd-ba9d699d4eb6",
+    "adecb426-4849-48b7-a459-bc39285ba350",
+    "afb73d7d-f293-4279-914f-9cb9c920244a",
+    "b108aea7-d102-4f23-ab7d-816f67d106a7",
+    "b2879fd4-9a5f-41dc-ad14-2818a4debf07",
+    "b6ab815c-202f-428a-a926-5663d3f60f1e",
+    "b99b4591-02a6-4974-a83d-82d9af3c056d",
+    "b9f59349-8516-4f62-ad7f-d0980b63cc86",
+    "be25dfc9-5465-45d1-a8fa-242a0adac44f",
+    "bf638bd4-ace8-4e8f-ad0d-95723b6ad700",
+    "c1db5fd8-12cd-4edc-a9be-a17e073b7ec2",
+    "c42d07af-04ef-45af-a724-755e9b294c48",
+    "cc697fdb-c5f6-4bd7-a4f7-032d3f8bd4b2",
+    "cfd3f715-fcb5-4a51-a0e1-9f7ec1e965f0",
+    "d0c8da91-3233-4b4c-a300-26f5fbe57d6d",
+    "d1e61a1a-9710-4881-a604-c2d6cc68dd56",
+    "d355c900-0e83-4b5e-aedc-0286ff795159",
+    "d4fa7f56-026f-49f4-ac57-7aac1f906dda",
+    "d60d5090-2ef1-4f47-af20-a46a89b762e5",
+    "db1a7aae-d98e-419e-af46-2ceab61d79a9",
+    "dd53addd-a54c-4e25-adc5-27365e085231",
+    "e394f044-652c-42e5-a651-03bcf359aba2",
+    "e42643c1-7427-4e87-92a1-450ce40c9f88",
+    "e6c3c25f-539e-400c-a344-d0b582a5a2ae",
+    "f056606c-c2ba-4f58-a9d9-6ed777c416c8",
+    "f8a06a10-f4bb-4c6c-ac19-22ff325707b5"
+  ],
+  "signupVerification": "DISABLED_NO_BYPASS",
+  "newActorProvisioning": "REQUIRES_EXACT_APPROVAL",
+  "businessCapacity": "UNLIMITED; fixed UUID allocation limits release-test scope only",
+  "businessWriteMerchantId": "85cd765d-93ce-478e-813c-525c60fcb8dd",
+  "existingDemoBusinessWrites": false,
+  "users": [
+    {
+      "id": "4f3b067a-3531-4672-b205-276add22e497",
+      "email": "demo-user-meeting-20261027@villacheck.example",
+      "role": "user"
+    },
+    {
+      "id": "95634006-631a-4b13-870c-fa3dd7816818",
+      "email": "demo-user-fresh-20261028@villacheck.example",
+      "role": "user",
+      "name": "DEMO ผู้ใช้ ใหม่",
+      "phone": "0000000000",
+      "address": "DEMO ที่อยู่สังเคราะห์สำหรับ Staging เท่านั้น",
+      "businessName": "",
+      "keychainAccount": "fresh-20261028-user"
+    },
+    {
+      "id": "52e61b79-582b-4703-857b-e603ed8e2cb5",
+      "role": "user",
+      "email": "security-phone-user-20261028@villacheck.example",
+      "pendingRegistration": true
+    }
+  ],
+  "leadId": "2672e84e-e780-4de1-a0f3-c5e63e64cc5b",
+  "additionalAdmins": [
+    {
+      "id": "f984302d-6328-4f13-8793-355a092ef118",
+      "email": "demo-admin-fresh-20261028@villacheck.example",
+      "role": "admin",
+      "name": "DEMO ผู้ดูแล ใหม่",
+      "phone": "0000000000",
+      "address": "DEMO ที่อยู่สังเคราะห์สำหรับ Staging เท่านั้น",
+      "businessName": "",
+      "keychainAccount": "fresh-20261028-admin"
+    }
+  ],
+  "businessWriteMerchantIds": [
+    "85cd765d-93ce-478e-813c-525c60fcb8dd",
+    "e555b3bd-be91-4638-ad1f-94092cf9f652",
+    "8fad5d4a-7742-41a4-b58b-45b73920fc1c"
+  ],
+  "leadIds": {
+    "demo-user-meeting-20261027@villacheck.example": "2672e84e-e780-4de1-a0f3-c5e63e64cc5b",
+    "demo-user-fresh-20261028@villacheck.example": "713c6b70-1429-40c8-a173-6cf53079129e"
+  }
+}

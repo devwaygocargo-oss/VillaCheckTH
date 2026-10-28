@@ -1,0 +1,50 @@
+{
+  "status": "NOT_AUTHORIZED_PREPARED_ONLY",
+  "explicitUserApprovalReceived": false,
+  "scope": {
+    "reference": "VC_DIAGNOSTIC_AUTOMATION_EXPOSURE_20261029",
+    "operation": "REVOKE_AND_REGENERATE_EXACT_DIAGNOSTIC_AUTOMATION_BYPASS",
+    "environment": "production",
+    "projectId": "prj_AojlAe1eFqvqEnKd3FPENLbr3DtO",
+    "teamId": "team_H5TvWOtVZTbtuTSapZyj6uGz",
+    "keychainService": "com.villacheck.production.green-sun-56847773",
+    "keychainAccount": "diagnostic-automation",
+    "revokeCount": 1,
+    "generateCount": 1,
+    "otherBypassKeys": "PRESERVE",
+    "projectProtection": "PRESERVE",
+    "providerCredentials": "PRESERVE"
+  },
+  "proposalSha256": "f748d8ca0907b1289b1b074a1bae2c7224f89dddf48811e7530c148f42c33d23",
+  "approvalReceiptPath": "/Users/dewmp/Downloads/DesignVillaCheck-finish/docs/releases/evidence/remove-mfa-current-20261029/diagnostic-automation-rotation-approval.json",
+  "approvalReceiptCreated": false,
+  "method": {
+    "officialReference": "https://vercel.com/docs/rest-api/projects/update-protection-bypass-for-automation",
+    "request": "PATCH /v1/projects/{projectId}/protection-bypass",
+    "bodyShape": {
+      "revoke": {
+        "secret": "IN_MEMORY_ONLY_AFTER_APPROVAL",
+        "regenerate": true
+      }
+    },
+    "transport": "Existing Vercel CLI api with JSON stdin; response captured in memory; no secret arguments or temporary files",
+    "keychain": "Native Swift Security API; exact existing item persistent reference; value-only update through stdin; preserve access control and original JSON/base64 JSON codec"
+  },
+  "verification": [
+    "Only the exact old diagnostic key is removed and exactly one new key appears",
+    "All other bypass entries and project configuration must be unchanged",
+    "Keychain expected-value comparison and readback must succeed",
+    "No Google/LINE/Facebook/application credentials, roles, sessions, database or environments are changed"
+  ],
+  "failureBehavior": "Stop on any mismatch. If the provider may have rotated but local update did not complete, report reconciliation required; do not blindly retry or recreate the revoked key.",
+  "localVerification": {
+    "mockTests": 28,
+    "passed": 28,
+    "failed": 0,
+    "swiftTypecheck": "PASS",
+    "liveProviderCalls": 0,
+    "keychainReads": 0,
+    "keychainWrites": 0,
+    "rotationExecuted": false
+  }
+}

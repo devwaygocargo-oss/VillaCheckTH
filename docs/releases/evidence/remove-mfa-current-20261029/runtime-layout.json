@@ -1,0 +1,23 @@
+{
+  "purpose": "MFA retirement only; preserve each existing environment feature baseline",
+  "applicationCodeParity": false,
+  "reason": "Production and Staging already diverged before this task; do not promote held features or roll back Staging.",
+  "variants": {
+    "staging": {
+      "sourcePrefix": "",
+      "baselineCommit": "57885ae245c5652633035c85dd71846440119cb7",
+      "baselineDeployment": "dpl_DgWB9tCJwuzRBLNyuTXq5PWWL6QE",
+      "sourceDigest": "7661b595997724e01ef1213a8a8eb406b1883c648a3945f883179f13225ea3cb",
+      "files": 347,
+      "runtimeChanges": 0
+    },
+    "production": {
+      "sourcePrefix": "release-apps/production/",
+      "baselineCommit": "39325cc8f028f58ef9787c1b9f5f0122570f1850",
+      "baselineDeployment": "dpl_DCuj1oySbaWhBdt5XkbAwojnby23",
+      "sourceDigest": "8ebddc691f7930551ec0702cfe37461ec7a01fbe835462e607ed805d7491be12",
+      "files": 222,
+      "runtimeChanges": 0
+    }
+  }
+}

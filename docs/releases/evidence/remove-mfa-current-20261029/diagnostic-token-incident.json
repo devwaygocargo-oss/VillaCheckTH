@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-28T22:10:49.519Z",
+  "incident": "MFA_CURRENT_PHASE_DIAGNOSTIC_TOKEN_TOOL_LOG_EXPOSURE_20261029",
+  "affectedCredential": "Production Vercel diagnostic automation bypass only",
+  "source": "Unhandled Playwright route.fetch exception during anonymous login-page probe teardown",
+  "applicationPasswordsOrGoogleOAuthSecretsPrinted": false,
+  "actorLoginsInFailedProbe": 0,
+  "rawTraceOrStorageStateFilesCreated": false,
+  "tokenValueIncludedInThisReceipt": false,
+  "productionAutomationStopped": true,
+  "rotationApproval": "PENDING_USER_RESPONSE",
+  "credentialRotated": false,
+  "productionDeploymentHeld": true,
+  "primaryOAuthProvidersChanged": false
+}

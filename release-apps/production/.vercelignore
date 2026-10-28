@@ -1,0 +1,20 @@
+# Upload source only; configure private staging variables in the host.
+.env*
+.git
+node_modules
+.next
+.build
+backend/generated
+server/data
+.DS_Store
+.codex
+.agents
+.aws
+audit-results
+reports
+docs/validation
+*.log
+*.pem
+*.key
+
+tsconfig.tsbuildinfo
