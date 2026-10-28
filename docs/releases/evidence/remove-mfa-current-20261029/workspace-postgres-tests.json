@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-28T21:39:47.132Z",
+  "exitCode": 0,
+  "tests": 25,
+  "pass": 25,
+  "fail": 0,
+  "skip": 0,
+  "disposablePostgreSQL": true,
+  "loopbackOnlyNetwork": true,
+  "productionConnections": 0,
+  "realProviderRequests": 0,
+  "files": [
+    "server/no-mfa.test.mjs",
+    "server/current-phase-release.test.mjs",
+    "server/current-phase-integration.test.mjs",
+    "server/internal-test-provisioning.test.mjs",
+    "server/login-otp.test.mjs",
+    "server/otp-concurrency.test.mjs"
+  ],
+  "log": "/tmp/vc-mfa-root-pg-tests.log"
+}

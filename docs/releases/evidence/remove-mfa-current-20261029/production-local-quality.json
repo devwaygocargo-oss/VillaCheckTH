@@ -1,0 +1,26 @@
+{
+  "environment": "production",
+  "passed": true,
+  "sourceDigest": "8ebddc691f7930551ec0702cfe37461ec7a01fbe835462e607ed805d7491be12",
+  "checks": [
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "log": "/tmp/vc-mfa-production-lint.log",
+      "logSha256": "004867a5738f19805221c5c5da3dc09d574b34c7c030748a64756c787d8c2dab"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "log": "/tmp/vc-mfa-production-build.log",
+      "logSha256": "5be02ac490a8927c3c1cb76c69e0979762cd9580f4f445cbb09df3b0d5bce4a0"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "log": "/tmp/vc-mfa-production-typecheck.log",
+      "logSha256": "79a33c4c1f3dcb26f886d0235fd4d226d769e1ff84fcba625c92dc930523aafd"
+    }
+  ],
+  "filesUnchanged": 222
+}

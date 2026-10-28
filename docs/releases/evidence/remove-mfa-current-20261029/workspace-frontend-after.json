@@ -1,0 +1,22 @@
+{
+  "mfaOnlyDeltaValidated": true,
+  "files": [
+    {
+      "file": "src/prototype.tsx",
+      "sha256": "54a24974efea90c89e00b3a75d3dfb5db029c5012738417d1c5f2d81ff75217a"
+    },
+    {
+      "file": "src/AdminLogin.tsx",
+      "sha256": "f76694d12c98f864c4815d723307db06722cb3cee79b109282aec339f7c76adc"
+    },
+    {
+      "file": "src/api.ts",
+      "sha256": "c71ec509d61bec393bd0a9a7f85b293001c2e8878f8d10188a5d68e2dc891e84"
+    }
+  ],
+  "removed": [
+    "src/PrivilegedMfa.tsx"
+  ],
+  "localFrontendTestsPassed": 3,
+  "liveCalls": 0
+}

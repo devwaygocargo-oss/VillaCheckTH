@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-28T21:47:44.974Z",
+  "newFiles": [
+    {
+      "file": "scripts/mfa-only-hold-repair-postgres.test.mjs",
+      "sha256": "d16b9cb03d64620bfc5fd3f7a162274fd588965b04c4faa12c29ebac3cf2829b"
+    },
+    {
+      "file": "scripts/run-mfa-only-hold-postgres-tests.mjs",
+      "sha256": "679cf61ae3c9597832c089e179621907f91b549b9f4c5e1e2227b643ca01ae50"
+    },
+    {
+      "file": "scripts/mfa-current-variants.test-runner.mjs",
+      "sha256": "ed00025fde345c69cb079d63b3de98fb4d7cd8c3a07752e45160c9fbf65d0a14"
+    }
+  ],
+  "existingIndependentTestUnchanged": true,
+  "liveDatabaseConnections": 0,
+  "realProviderRequests": 0,
+  "noEnvFileOrKeychainReadByTests": true
+}

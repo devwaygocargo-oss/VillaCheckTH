@@ -1,0 +1,54 @@
+[
+  {
+    "file": "server/app.mjs",
+    "sha256": "0a011cf9fe135358cb74b02a8d21bb59bbf26532a099c9c51710f607cea60602"
+  },
+  {
+    "file": "server/index.mjs",
+    "sha256": "c405d2d37fd287d99cf203ac32a766b097a6b7f0f61572ad5f6157dd5c3b3589"
+  },
+  {
+    "file": "server/current-phase-release.mjs",
+    "sha256": "1645c0c111e27c8d8f72b63a9a023e035abf24ad974ce928955fa542a2a86581"
+  },
+  {
+    "file": "server/staging-interactive-policy.mjs",
+    "sha256": "c32e3bdebd9075941d44563f207fd81501c895d8b81d46cbfb40224c6fcbdeac"
+  },
+  {
+    "file": "server/password-recovery.mjs",
+    "sha256": "80ade2abe2e2d3ba455de11aacf0fe954943c64ac749cfed3761c7c64569f981"
+  },
+  {
+    "file": "server/internal-test-provisioning.mjs",
+    "sha256": "b72792b4aab914c83923bb34e8e0ddc500f889ce67e213747c471619c1a2eb2b"
+  },
+  {
+    "file": "server/internal-test-provisioning.test.mjs",
+    "sha256": "d76f51a35740fed7e758688cd9360ee8abe36ac24c0a8afbc4b3d30f4885a0fe"
+  },
+  {
+    "file": "server/privileged-mfa.mjs",
+    "sha256": "9525f44e1db36f80fd250c762a0a65015c879e7391539e0e15151ae711767790"
+  },
+  {
+    "file": "server/privileged-mfa.test.mjs",
+    "sha256": "345db7c7c6596f33d65c383f1eef4eb453cf6cf4b9bb294cfd3ac5e59b80edc9"
+  },
+  {
+    "file": "server/current-phase-release.test.mjs",
+    "sha256": "865a4e020ac99784b83a70ad23c61d11787ea545f33f51c8e19cb908e1bad528"
+  },
+  {
+    "file": "server/current-phase-integration.test.mjs",
+    "sha256": "e0d2d297796074ec1ec7fb4475056e0659e8c6a89d14673e10ef34d38d3eabc1"
+  },
+  {
+    "file": "server/owner-rollout-preparation.test.mjs",
+    "sha256": "a8e7b10549d0aadad847275b83820c984cc9ba53176d8f1acaf636aeca70ffce"
+  },
+  {
+    "file": "server/security-candidate-preservation.test.mjs",
+    "sha256": "0df79a0b85d52c96b216cb6122d3367372ab44f1c3eff8ece26f3543a05d115d"
+  }
+]

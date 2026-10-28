@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-28T21:44:50.302Z",
+  "passed": true,
+  "exitCode": 0,
+  "tests": 6,
+  "pass": 6,
+  "fail": 0,
+  "helperSourceSha256": "e7b52ed8ee9661f4fcc42c7f78e2b7e3e24bd093b8658b718be7fd08342b9990",
+  "helperSourceUnchanged": true,
+  "applicationSchema": "server/postgres-schema.sql + server/business-schema.sql via actual openPostgres",
+  "auditService": "server/database.mjs audit()",
+  "auditTargetColumn": "target_id",
+  "disposablePostgreSQL": true,
+  "externalHttpOrProviderOrKeychainCalls": 0,
+  "liveDatabaseConnections": 0,
+  "productionWrites": 0,
+  "log": "docs/releases/evidence/remove-mfa-current-20261029/production-mfa-only-hold-postgres-tests.log"
+}

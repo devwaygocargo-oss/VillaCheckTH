@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-28T22:10:44.038Z",
+  "passed": true,
+  "tests": 6,
+  "failed": 0,
+  "localMocksOnly": true,
+  "liveRequests": 0,
+  "browserLaunches": 0,
+  "keychainReads": 0,
+  "productionCalls": 0,
+  "rawHeaderMessageOrStackEscapedToStdoutOrStderr": false,
+  "contextRoutesRemovedBeforeClose": true,
+  "expectedClosingTargetErrorsOnlyIgnored": true,
+  "unknownTransportErrorsFail": true,
+  "processExceptionHandlersSanitized": true,
+  "allTeardownBounded": true,
+  "productionAutomationHardPaused": true,
+  "localeHydrationWaitPreserved": true,
+  "files": [
+    {
+      "file": "scripts/verify-mfa-current-browser.mjs",
+      "sha256": "a6fccfd90a8e6686a3b915e76e7fe9fd68322258a507a69b189029f598fdf0fc"
+    },
+    {
+      "file": "scripts/mfa-browser-safety.mjs",
+      "sha256": "ddb0dea91b4261109ec19b80ea2870172660c7bd576eeaa3172826dd4e36a9f0"
+    },
+    {
+      "file": "scripts/mfa-browser-safety.test.mjs",
+      "sha256": "008ae760d309a8670397a59201509b379927ffda6d42aa3380cf10c67bc28f24"
+    }
+  ]
+}

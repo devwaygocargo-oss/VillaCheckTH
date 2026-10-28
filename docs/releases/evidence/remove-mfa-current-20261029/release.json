@@ -1,0 +1,14 @@
+{
+  "commit": "db93c2774be6cca47347a95385e122845b1ffdcb",
+  "branch": "release/remove-mfa-current-20261029-db93c277",
+  "parent": "fc72814f4e3f5230d37b4991574db8ab4525cbff",
+  "gitDir": "/tmp/vc-mfa-release-git-SutsIi",
+  "pushed": true,
+  "localGitHead": "c1b73bd7e1310d94ffa746b2f5f4d66219566ae7",
+  "applicationCodeParity": false,
+  "preservesDistinctExistingFeatureBaselines": true,
+  "rootWorkspacePatch": "docs/releases/evidence/remove-mfa-current-20261029/workspace-mfa-removal.patch",
+  "noOwnerOrNewRole": true,
+  "runtimeFilesVerified": 569,
+  "previousPreparedCommit": "81bc6ca9ce5cb59a9daad2a907734e1a24b3be97"
+}

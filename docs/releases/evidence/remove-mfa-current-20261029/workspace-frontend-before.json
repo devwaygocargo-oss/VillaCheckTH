@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-28T21:30:12.677Z",
+  "beforeMfaOnlyFrontendEdit": true,
+  "files": [
+    {
+      "file": "src/prototype.tsx",
+      "sha256": "387a872f8fb14f173b9b85a0f8e5dddbb95332dd0665ea6c9f9f6681f668d6e6"
+    },
+    {
+      "file": "src/AdminLogin.tsx",
+      "sha256": "830853224c0858cc0b36aefefc0ec8f64646d63ab0c05d5e4fc93917222b191d"
+    },
+    {
+      "file": "src/api.ts",
+      "sha256": "b5b704333c5667a771688e9be89b18268af88f4a8b54295e4f1b6cb7a4982685"
+    },
+    {
+      "file": "src/PrivilegedMfa.tsx",
+      "sha256": "3b47835514a09ff3861cb436758a3f4686f54bb0c5ba0c9d52e79c6c6da0bd16"
+    }
+  ]
+}

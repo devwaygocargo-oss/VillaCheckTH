@@ -1,0 +1,273 @@
+{
+  "at": "2026-10-28T21:40:56.805211+00:00",
+  "scope": "MFA-only changes relative to original dirty workspace; no live operations",
+  "files": [
+    {
+      "file": "server/app.mjs",
+      "beforeSha256": "0a011cf9fe135358cb74b02a8d21bb59bbf26532a099c9c51710f607cea60602",
+      "afterSha256": "bb3add8ac097ab1dac866fa15ded7d935a2b92087ed3cfb45e7a1605994f82a7",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/app.mjs"
+    },
+    {
+      "file": "server/index.mjs",
+      "beforeSha256": "c405d2d37fd287d99cf203ac32a766b097a6b7f0f61572ad5f6157dd5c3b3589",
+      "afterSha256": "80bca5da2ea15b950e0d556cec7d5e95ffba8251014bbf08326bb360f34d7cf6",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/index.mjs"
+    },
+    {
+      "file": "server/current-phase-release.mjs",
+      "beforeSha256": "1645c0c111e27c8d8f72b63a9a023e035abf24ad974ce928955fa542a2a86581",
+      "afterSha256": "880b20bb4798186808bdb8fa4815b7c10a717dd3847e2f7d12b546d9c83489ba",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/current-phase-release.mjs"
+    },
+    {
+      "file": "server/staging-interactive-policy.mjs",
+      "beforeSha256": "c32e3bdebd9075941d44563f207fd81501c895d8b81d46cbfb40224c6fcbdeac",
+      "afterSha256": "334c69caa488ed34c949ff6547630c1efa41f9add13ffe3969dccc8084f2656b",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/staging-interactive-policy.mjs"
+    },
+    {
+      "file": "server/password-recovery.mjs",
+      "beforeSha256": "80ade2abe2e2d3ba455de11aacf0fe954943c64ac749cfed3761c7c64569f981",
+      "afterSha256": "07618ee3becdfc30bf36db887377fdcb8f8b87a26197575ba0b0fd73a62935a7",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/password-recovery.mjs"
+    },
+    {
+      "file": "server/internal-test-provisioning.mjs",
+      "beforeSha256": "b72792b4aab914c83923bb34e8e0ddc500f889ce67e213747c471619c1a2eb2b",
+      "afterSha256": "4dac4b176ef5d65105c07d7adc9be056e5ea545a17c2bf68cd4a5600cd2225b6",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/internal-test-provisioning.mjs"
+    },
+    {
+      "file": "server/internal-test-provisioning.test.mjs",
+      "beforeSha256": "d76f51a35740fed7e758688cd9360ee8abe36ac24c0a8afbc4b3d30f4885a0fe",
+      "afterSha256": "f877c8b600f7c698b45837c53a9b014c5f8f069b8a716cf2e376836879d4f0cb",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/internal-test-provisioning.test.mjs"
+    },
+    {
+      "file": "server/privileged-mfa.mjs",
+      "beforeSha256": "9525f44e1db36f80fd250c762a0a65015c879e7391539e0e15151ae711767790",
+      "afterSha256": null,
+      "removed": true,
+      "backup": "/tmp/vc-mfa-root-before/server/privileged-mfa.mjs"
+    },
+    {
+      "file": "server/privileged-mfa.test.mjs",
+      "beforeSha256": "345db7c7c6596f33d65c383f1eef4eb453cf6cf4b9bb294cfd3ac5e59b80edc9",
+      "afterSha256": null,
+      "removed": true,
+      "backup": "/tmp/vc-mfa-root-before/server/privileged-mfa.test.mjs"
+    },
+    {
+      "file": "server/current-phase-release.test.mjs",
+      "beforeSha256": "865a4e020ac99784b83a70ad23c61d11787ea545f33f51c8e19cb908e1bad528",
+      "afterSha256": "a25c833721654f6c97c4153502bbe2f61c2baa3000bccb59541f93dc764b1603",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/current-phase-release.test.mjs"
+    },
+    {
+      "file": "server/current-phase-integration.test.mjs",
+      "beforeSha256": "e0d2d297796074ec1ec7fb4475056e0659e8c6a89d14673e10ef34d38d3eabc1",
+      "afterSha256": "2f1488be79b654e7eb2beae2748d03e32d3ef5c6d4ee6f9f007f7c3a223447c8",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/current-phase-integration.test.mjs"
+    },
+    {
+      "file": "server/owner-rollout-preparation.test.mjs",
+      "beforeSha256": "a8e7b10549d0aadad847275b83820c984cc9ba53176d8f1acaf636aeca70ffce",
+      "afterSha256": "63bf310cc6bc8e53dabceaf37523e17ff10264cc39dc117cdb0227239fd966eb",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/owner-rollout-preparation.test.mjs"
+    },
+    {
+      "file": "server/security-candidate-preservation.test.mjs",
+      "beforeSha256": "0df79a0b85d52c96b216cb6122d3367372ab44f1c3eff8ece26f3543a05d115d",
+      "afterSha256": "0daf069cd6a2edd26113dd52b87b347980fe2ed13a7ca7d98218ada557f2712a",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/server/security-candidate-preservation.test.mjs"
+    },
+    {
+      "file": "scripts/verify-full-lifecycle-browser.mjs",
+      "beforeSha256": "8765e3d22b1089e29301303d897911f74132720ec38e9b14b42fcbac3a4767e2",
+      "afterSha256": "3a8c58143998840f8ab21a2a0c602687f781cf0a64b9ac1c5799ed27c440ad45",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/verify-full-lifecycle-browser.mjs"
+    },
+    {
+      "file": "scripts/verify-isolated-phone-browser.mjs",
+      "beforeSha256": "c4fcc1b562c7ce19a5a5358ae6ceafb91ed44dc9e19210f54ea9919722a72061",
+      "afterSha256": "271bbc51eda86c478ca43fb92fbc6853dd4a2b0b328d0c8289e19951987ee19b",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/verify-isolated-phone-browser.mjs"
+    },
+    {
+      "file": "scripts/verify-security-closure-browser.mjs",
+      "beforeSha256": "b890b6079e24a1d83821429340562cb10da2220a406136598d1a02b43045aaf3",
+      "afterSha256": "eea3acdd3fc4d7c6f2d97712ddea6af03cb73f719ed407652632449b0cf048f1",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/verify-security-closure-browser.mjs"
+    },
+    {
+      "file": "scripts/capture-local-cms-manual-v4.mjs",
+      "beforeSha256": "aeb141fe696cff3bfd12f5055c4eaf35220e9697410bb8a061c65398c0993e89",
+      "afterSha256": "8fd47e26b1ee76c8214a57410a04f03fd45d36b126a89405ee9adf3ee615196e",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/capture-local-cms-manual-v4.mjs"
+    },
+    {
+      "file": "scripts/capture-local-upload-manual-v4.mjs",
+      "beforeSha256": "5812c071d8a35cf90752b1bf06c03c45b69f6b80d4054e2d6df324e60cab4060",
+      "afterSha256": "47c29f4fc4d1f974ea199f937a894e101e39c5dc7003b48734918bb28cb4aa37",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/capture-local-upload-manual-v4.mjs"
+    },
+    {
+      "file": "scripts/capture-local-manual-workflows-v4.mjs",
+      "beforeSha256": "5dfdce07437904b9a81229f2cfed1aa77cd80a604012f839355d65507dc3b695",
+      "afterSha256": "e9a77fe2422da08e8e60cbc3edcb71fb580953478bd2e24c922e22fa4338fe5b",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/capture-local-manual-workflows-v4.mjs"
+    },
+    {
+      "file": "scripts/capture-local-qr-reply-manual-v4.mjs",
+      "beforeSha256": "aa1249bfef431fb7b4ae6b1327e5388a8e4794442d039ab84fda29789aff55a8",
+      "afterSha256": "099a7001ee53923e7eeac10bf80088cd057d193c028cdbc3b3f7309814995e84",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/capture-local-qr-reply-manual-v4.mjs"
+    },
+    {
+      "file": "scripts/cms-manual-candidate.test.mjs",
+      "beforeSha256": "dad284fa783eda844b13efdd0920b4e83c34050729e27675138f637bfe98cfa3",
+      "afterSha256": "479331d93ff53bb656a4f0a932f24e9f805cfea163e20f446f7ab244334b78fe",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/cms-manual-candidate.test.mjs"
+    },
+    {
+      "file": "scripts/run-compose-security-20261029.mjs",
+      "beforeSha256": "d6818f369d906a94183b7f2e3aa6417b9c52863156374b48a60c6c35d457c7ad",
+      "afterSha256": "a4e058436fe992884a0b9cc80586c1fc365579220fb64e43299b5529c98bd999",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/run-compose-security-20261029.mjs"
+    },
+    {
+      "file": "scripts/run-protected-envelope-browser.mjs",
+      "beforeSha256": "77b7065e72872410657f0c0d8502ebef0197522d38b679c378acc30135cc2969",
+      "afterSha256": "4ab5c6368a93ae1a5644e937c3a6ed51f48ad65254d147464d77cb37add5b137",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/run-protected-envelope-browser.mjs"
+    },
+    {
+      "file": "scripts/run-protected-envelope-postgres.mjs",
+      "beforeSha256": "ad61dfb54ebd1d3d4c16bedeb7ed9f43990e4f75545df4e869711b5d606783d6",
+      "afterSha256": "5e93c03456710c8d9c3f45759b16b3f6f625dc6d9e9d042a2611522100309c3b",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/run-protected-envelope-postgres.mjs"
+    },
+    {
+      "file": "scripts/run-composed-lifecycle-browser-20261029.mjs",
+      "beforeSha256": "034d411c9060b87cb7f677df4aa456c47acb0114f15bb28e0993f112a8c45b42",
+      "afterSha256": "e13e63a8f481be2f549aaf9f04e46632940567b7722e451f5a18c13fabb52858",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/run-composed-lifecycle-browser-20261029.mjs"
+    },
+    {
+      "file": "scripts/test-security-candidate-postgres.mjs",
+      "beforeSha256": "00cc8cd817fd9dd4a72ca4a15d3c748fa7bb0185d43dc2bb703b36aa467d62e4",
+      "afterSha256": "a6d46500eb5528b715a76d6e61e839adc97369204072b8f545d032cb79a6fd74",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/test-security-candidate-postgres.mjs"
+    },
+    {
+      "file": "scripts/prepare-security-closure-candidate.mjs",
+      "beforeSha256": "5d81262226a84f9db21d3310aac6725b44a2e0f976c4875e7d5a44273357ea9c",
+      "afterSha256": "f390538ad66c1474a30faaa4048ee7d3b8f352e53d0b4bb9350f9bffb6b58645",
+      "removed": false,
+      "backup": "/tmp/vc-mfa-root-before/scripts/prepare-security-closure-candidate.mjs"
+    },
+    {
+      "file": "server/no-mfa.test.mjs",
+      "beforeSha256": null,
+      "afterSha256": "f5124c32ec5429a16a0066efffb7e60208c09f9787113ccd46d820abd7c26c9f",
+      "added": true
+    }
+  ],
+  "backupManifests": [
+    "/tmp/vc-mfa-root-before/backend-manifest.json",
+    "/tmp/vc-mfa-root-before/backend-ops-manifest.json"
+  ],
+  "originalExistingFilesBackedUp": 27,
+  "operatorScriptsBackedUp": 14,
+  "patch": "/tmp/vc-mfa-root-before/backend-cleanup.patch",
+  "patchSha256": "34b4023855eef1a6fdf5a22e377db69a0d94def0532c96045693a850665a7694",
+  "actualEnvChanged": false,
+  "databaseMigrations": 0,
+  "liveDatabaseConnections": 0,
+  "realProviderRequests": 0,
+  "tests": {
+    "localHTTPAndConfiguration": {
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "log": "/tmp/vc-mfa-root-local-tests.log"
+    },
+    "disposablePostgreSQL": {
+      "at": "2026-10-28T21:39:47.132Z",
+      "exitCode": 0,
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "skip": 0,
+      "disposablePostgreSQL": true,
+      "loopbackOnlyNetwork": true,
+      "productionConnections": 0,
+      "realProviderRequests": 0,
+      "files": [
+        "server/no-mfa.test.mjs",
+        "server/current-phase-release.test.mjs",
+        "server/current-phase-integration.test.mjs",
+        "server/internal-test-provisioning.test.mjs",
+        "server/login-otp.test.mjs",
+        "server/otp-concurrency.test.mjs"
+      ],
+      "log": "/tmp/vc-mfa-root-pg-tests.log"
+    },
+    "operatorSyntax": {
+      "files": 14,
+      "failed": 0
+    },
+    "allChangedJavaScriptSyntax": {
+      "files": 26,
+      "failed": 0
+    }
+  },
+  "runtimeScan": {
+    "paths": [
+      "server",
+      "backend",
+      "prisma",
+      "app",
+      "pages",
+      ".env.example"
+    ],
+    "excluded": [
+      "*.test.*",
+      "*.json"
+    ],
+    "mfaTotpEnrollmentOrAuthenticatorMatches": 0
+  },
+  "retainedReferences": {
+    "config/security-closure-release-plan.v1.json": "Historical checksum-bound rollout plan; no runtime or CI consumer. Preserved as baseline evidence.",
+    "scripts/prepare-security-closure-candidate.mjs": "Historical MFA-era builder explicitly refuses execution before its original preserved body.",
+    "scripts/remove-backend-mfa-20261029.py": "Historical exact-source removal transformation; not an auth/runtime consumer.",
+    "scripts/remove-no-mfa-ui-20261029.py": "Historical exact-source removal transformation; not an auth/runtime consumer.",
+    "scripts/prepare-no-mfa-release-20261029.mjs": "Historical manifest explicitly lists removed modules; no import or enforcement.",
+    "negativeRegressionTests": "Retained factor keys and obsolete flags used only to verify inertness/private-data preservation."
+  }
+}

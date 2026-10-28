@@ -1,0 +1,26 @@
+{
+  "environment": "staging",
+  "passed": true,
+  "sourceDigest": "7661b595997724e01ef1213a8a8eb406b1883c648a3945f883179f13225ea3cb",
+  "checks": [
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "log": "/tmp/vc-mfa-staging-lint.log",
+      "logSha256": "004867a5738f19805221c5c5da3dc09d574b34c7c030748a64756c787d8c2dab"
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "log": "/tmp/vc-mfa-staging-build.log",
+      "logSha256": "77fc5b348f350634f455c7137c21543263af937969103b67de23ad785cd5d2f6"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "log": "/tmp/vc-mfa-staging-typecheck.log",
+      "logSha256": "79a33c4c1f3dcb26f886d0235fd4d226d769e1ff84fcba625c92dc930523aafd"
+    }
+  ],
+  "filesUnchanged": 347
+}

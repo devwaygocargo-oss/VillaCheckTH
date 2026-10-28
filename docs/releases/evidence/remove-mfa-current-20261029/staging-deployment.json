@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-28T22:33:38.268Z",
+  "id": "dpl_AgABBT6fuGSjj7KoZCxX6FHv8AQu",
+  "url": "https://design-villacheck-5fpon32yf-villa-check.vercel.app",
+  "projectId": "prj_3A3Lygt3Z9Pt3D9p8bk693fTfHiC",
+  "readyState": "READY",
+  "sourceVerified": true,
+  "commit": "db93c2774be6cca47347a95385e122845b1ffdcb",
+  "sourcePrefix": "",
+  "sourceDigest": "7661b595997724e01ef1213a8a8eb406b1883c648a3945f883179f13225ea3cb",
+  "baselineCommit": "57885ae245c5652633035c85dd71846440119cb7",
+  "previousDeployment": "dpl_DgWB9tCJwuzRBLNyuTXq5PWWL6QE",
+  "runtimeChangesFromPrevious": 0,
+  "applicationCodeParity": false
+}

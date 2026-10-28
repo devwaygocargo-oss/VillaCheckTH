@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-28T21:45:19.819Z",
+  "state": "REPAIRED_MFA_ONLY_HOLD",
+  "actorId": "c68dfe2e-465e-4a7f-af9e-f49f966cddbb",
+  "changedSettings": 2,
+  "auditsAdded": 1,
+  "usersPasswordsRolesFactorsSessionsOrBusinessRowsChanged": 0,
+  "noNewAccounts": true,
+  "noBusinessWrites": true,
+  "noProviderCalls": true,
+  "preservesHistoricalReason": true,
+  "existingOperatorVerified": true
+}

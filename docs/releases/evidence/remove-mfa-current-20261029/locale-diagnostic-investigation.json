@@ -1,0 +1,69 @@
+{
+  "at": "2026-10-28T22:23:13.908Z",
+  "applicationChanges": 0,
+  "productionCalls": 0,
+  "diagnosticAttempts": 1,
+  "primarySuite": {
+    "cases": 12,
+    "passed": 11,
+    "failed": 1,
+    "authenticationAssertionsPassed": 12,
+    "failingStep": "persisted-locale-after-reload",
+    "failedCaseStoredLocaleAndButtonStateWereNotRecorded": true
+  },
+  "singleDiagnostic": {
+    "passed": true,
+    "selection": {
+      "storedLocale": "en",
+      "htmlLang": "en",
+      "englishButtonPressed": true,
+      "allVisibleEnglishButtonsPressed": true,
+      "sidebarHasThaiLabels": null,
+      "sidebarHasEnglishCmsLabel": null,
+      "sidebarHasEnglishLogoutLabel": null
+    },
+    "beforeReload": {
+      "storedLocale": "en",
+      "htmlLang": "en",
+      "englishButtonPressed": true,
+      "allVisibleEnglishButtonsPressed": true,
+      "sidebarHasThaiLabels": false,
+      "sidebarHasEnglishCmsLabel": true,
+      "sidebarHasEnglishLogoutLabel": true
+    },
+    "afterReload": {
+      "storedLocale": "en",
+      "htmlLang": "en",
+      "englishButtonPressed": true,
+      "allVisibleEnglishButtonsPressed": true,
+      "sidebarHasThaiLabels": false,
+      "sidebarHasEnglishCmsLabel": true,
+      "sidebarHasEnglishLogoutLabel": true
+    },
+    "afterWait": {
+      "storedLocale": "en",
+      "htmlLang": "en",
+      "englishButtonPressed": true,
+      "allVisibleEnglishButtonsPressed": true,
+      "sidebarHasThaiLabels": false,
+      "sidebarHasEnglishCmsLabel": true,
+      "sidebarHasEnglishLogoutLabel": true
+    },
+    "logout": "PASS_FRESH_SESSION_ONLY",
+    "contextClosed": true
+  },
+  "conclusion": "Intermittent failure not reproduced in the one authorized diagnostic; retain original 11/12 suite separately.",
+  "confirmedTestSetupRisk": {
+    "location": "scripts/verify-mfa-current-browser.mjs:language",
+    "description": "The existing helper silently returns when a requested language button has not mounted yet, despite preflight confirming language controls exist; a case can be labeled EN without selection."
+  },
+  "unconfirmedApplicationHypothesis": {
+    "staticServerHtmlLanguage": "th",
+    "clientInitializationIsSingleUse": true,
+    "description": "A later root hydration attribute write could leave html lang inconsistent with the selected store; not established by this single passing diagnostic."
+  },
+  "nextStep": "Run the corrected full Stage suite once through the safe wrapper; retain prior 11/12 and the single passing diagnostic as historical evidence.",
+  "qaSelectionGuardCorrected": true,
+  "qaCorrection": "Requested TH/EN now waits up to 15 seconds for the visible existing control, clicks once, then requires the HTML language, persisted locale and active-button state. It never silently skips a requested language.",
+  "correctedFullSuiteVerification": "PENDING_ROOT_RUN"
+}

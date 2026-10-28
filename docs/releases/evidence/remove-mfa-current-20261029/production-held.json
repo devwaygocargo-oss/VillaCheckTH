@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-28T22:54:59.950Z",
+  "status": "HELD_PENDING_EXPLICIT_DIAGNOSTIC_CREDENTIAL_ROTATION_APPROVAL",
+  "newDeployment": false,
+  "existingDeployment": "dpl_DCuj1oySbaWhBdt5XkbAwojnby23",
+  "existingCommit": "39325cc8f028f58ef9787c1b9f5f0122570f1850",
+  "privateWebsiteQaResumed": false,
+  "exposedCredentialRevokedOrRotated": false,
+  "newUsersOrBusinessData": 0
+}

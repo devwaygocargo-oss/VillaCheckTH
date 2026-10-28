@@ -1,0 +1,10 @@
+{
+  "environment": "staging",
+  "exitCode": 1,
+  "passed": false,
+  "cases": 12,
+  "childOutputSuppressed": true,
+  "rawOutputStored": false,
+  "timedOut": false,
+  "report": "docs/releases/evidence/remove-mfa-current-20261029/predeploy-final/staging-browser.json"
+}

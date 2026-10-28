@@ -1,0 +1,1509 @@
+{
+  "artifact": "/tmp/vc-mfa-staging-X7VRCx",
+  "files": [
+    {
+      "file": ".vercelignore",
+      "sha256": "97d8ae16197a054fc4c2f636dc357c7e81c9380ddaebcfb6cf332316da3e4d0d"
+    },
+    {
+      "file": "app/admin/login/page.tsx",
+      "sha256": "fabf37ff86685d6b5c073e4602ca842c13c866596297e3cdb0956d27a3ef46e7"
+    },
+    {
+      "file": "app/admin/page.tsx",
+      "sha256": "ed1e1f74060b6ecdcb1b4bd6fc8cb85bb63e3d9305d17e8523d5f7a575cb2bde"
+    },
+    {
+      "file": "app/favicon.ico",
+      "sha256": "5a9718997cdb60fd1f43ad49192d35923a33df5a3d4c2d314bac39f8607e6557"
+    },
+    {
+      "file": "app/layout.tsx",
+      "sha256": "39c626b4126e6b4a69d862685aba5f5bb1bd2e7d6a040badd236f848aa1e266b"
+    },
+    {
+      "file": "app/page.tsx",
+      "sha256": "c40a0652e2f76d4f4f4873dcaab294b8aee9b41133655e4b189c5d06998989f9"
+    },
+    {
+      "file": "backend/app.module.ts",
+      "sha256": "b9e28778f3f942129a305a6b10594585520f168ed19ae100f308164c5a5c296d"
+    },
+    {
+      "file": "backend/bootstrap.ts",
+      "sha256": "828fe5444ec7137ec62e38117f5531b22d9a99e645af10ac1e82829b4959acc9"
+    },
+    {
+      "file": "backend/domain.service.ts",
+      "sha256": "cdb480a36eb50dbb4bbcc5c9db361afd100484693e3a73057f40ad5d6447d7e1"
+    },
+    {
+      "file": "backend/main.ts",
+      "sha256": "b9b86bf90516cb2c34c389e5f6c9f9e52ebc9471f05ae3c23f39dd8f4c1d87dd"
+    },
+    {
+      "file": "backend/package.service.ts",
+      "sha256": "869ce6b997ad50e0c25793fa6421b0b45acb2c776e8a0cd3991a60d7c506c875"
+    },
+    {
+      "file": "backend/prisma.service.ts",
+      "sha256": "c794dae5b58bbb4a2b7dd7c177c868644d2f9c1cc4fb086fe9eca4a4ec5e20da"
+    },
+    {
+      "file": "next-env.d.ts",
+      "sha256": "4a60641bc203a59d0cd4c627ca48f3e9af09984c307dd26e92bcb40b8811631e"
+    },
+    {
+      "file": "next.config.mjs",
+      "sha256": "f082d184e02474bb93350c315602849ee045e16c67ddfaf71fdfe4cdeb097b62"
+    },
+    {
+      "file": "package-lock.json",
+      "sha256": "3bc60be20f5cb78afa2d808a03b955dc16e8a123c4f73c8ee46e075a491cf879"
+    },
+    {
+      "file": "package.json",
+      "sha256": "facb9d0209a170c043ea14383e209d424dafcfd2e2383ddcabafd65f8da34b82"
+    },
+    {
+      "file": "pages/api/[...route].ts",
+      "sha256": "56da7bb935a1922c8ff82f19c326e6f43469be3093c87cc4c199dd596501895c"
+    },
+    {
+      "file": "postcss.config.mjs",
+      "sha256": "a1a188221f064d964dd9958c3d48b0c23252fabbeb6099d95ee8e15c764718b0"
+    },
+    {
+      "file": "prisma.config.ts",
+      "sha256": "be30fc60df4914c2388f965194b2dfd64f777d82db38e69f8f5cad00d3870f51"
+    },
+    {
+      "file": "prisma/schema.prisma",
+      "sha256": "9b2285aa7a5c5f42cbd942827b655d528d15801fcc505589e3561d055c3e4141"
+    },
+    {
+      "file": "public/data-deletion.html",
+      "sha256": "b42d9bc1158fb893139819ef58dde41d9dcf8dfcf1eeb6195a18e4e437dd7d65"
+    },
+    {
+      "file": "public/demo/diverse/photo-11123267.jpg",
+      "sha256": "c6b339584ee8c03a01bd07f0806070e947a3a466b480bfc3d5f9fcb643927010"
+    },
+    {
+      "file": "public/demo/diverse/photo-11125352.jpg",
+      "sha256": "44fbefef64abd5c97dff228aff37b40dba53e14d243adadfca131793416d8dbe"
+    },
+    {
+      "file": "public/demo/diverse/photo-1134175.jpg",
+      "sha256": "6aa58e0be3b93c67a33af73c6d6f45da6c32706ec62000a6568ffdc62fc96293"
+    },
+    {
+      "file": "public/demo/diverse/photo-11363037.jpg",
+      "sha256": "bdce80341d69c6388bf6e5c8001c869178198cbcca85a19d38c1356c6e62454e"
+    },
+    {
+      "file": "public/demo/diverse/photo-11495845.jpg",
+      "sha256": "64d99ce9212ad69866e8f56f1f8cf4d4b7b273781bf4e0572218af114a4550a0"
+    },
+    {
+      "file": "public/demo/diverse/photo-11586313.jpg",
+      "sha256": "3d3192c26c0b8924f7bff3d6cad3e638d73412a6ab50cc50f89c58ad6d9f3fd6"
+    },
+    {
+      "file": "public/demo/diverse/photo-12389384.jpg",
+      "sha256": "226a5cd0a644ad9b16f07ccf405f6bae4c606caf98acd0f3dba7f242edd7a8fb"
+    },
+    {
+      "file": "public/demo/diverse/photo-12437961.jpg",
+      "sha256": "6d0473af809a890a5a71d60b3e11bdb79fcd15a0fdf10340b7681d6a114b0ad7"
+    },
+    {
+      "file": "public/demo/diverse/photo-12700378.jpg",
+      "sha256": "bd3c9f8d01ba6d9c73ded76fcf5f1169f3c537ed58fbb6303560fa4fcc1d7605"
+    },
+    {
+      "file": "public/demo/diverse/photo-12715456.jpg",
+      "sha256": "0675d2c4a1d0b59d77d9ed7c34a3717074171405bbf86bef3752a55eb9cc1c4c"
+    },
+    {
+      "file": "public/demo/diverse/photo-1285625.jpg",
+      "sha256": "f6b0b93c690d1729bf73076fe31be059cf37a5d1b93ea6d7b1bda39fd316cf6f"
+    },
+    {
+      "file": "public/demo/diverse/photo-12975922.jpg",
+      "sha256": "b4343c09351375328a8d82ce877cc4f387bd5fea51a89645823aa418b43570f4"
+    },
+    {
+      "file": "public/demo/diverse/photo-13212159.jpg",
+      "sha256": "7cd2848584015b1170fac6a3abafa2ebee97b14d576f0c010b0d4279c928478c"
+    },
+    {
+      "file": "public/demo/diverse/photo-13652239.jpg",
+      "sha256": "871493c6fdf521fe274a423878215a82d8ab9f60b51ff3539e268b195a19455a"
+    },
+    {
+      "file": "public/demo/diverse/photo-13752348.jpg",
+      "sha256": "910ee006a3984f180bb4cc4f85a3b0a97e4fb969d9e5e58d54ef7cd93f82e9e2"
+    },
+    {
+      "file": "public/demo/diverse/photo-13914273.jpg",
+      "sha256": "88e7e0054ea716d70808df4546c516b5b7bee56a506cb7f48faac9092511dd89"
+    },
+    {
+      "file": "public/demo/diverse/photo-14024974.jpg",
+      "sha256": "9b295d88452340979b6f6d3190e7ed420db0df7949de2c7c556b58cd253c7ed0"
+    },
+    {
+      "file": "public/demo/diverse/photo-14036478.jpg",
+      "sha256": "6f0ef068f27417a1c82761c2d1f2934060e5bf14384b75948978633db8907a9f"
+    },
+    {
+      "file": "public/demo/diverse/photo-14917401.jpg",
+      "sha256": "0dcd7a7985904cddc4d90f334c676bae47bfe61e76c0c0944e8364045492f698"
+    },
+    {
+      "file": "public/demo/diverse/photo-14923415.jpg",
+      "sha256": "3c7469fa4a5e9724a68c8c146df7fba1ae5077d6516b6044b4b2fc6e154c7d53"
+    },
+    {
+      "file": "public/demo/diverse/photo-16574323.jpg",
+      "sha256": "f53b2c468bec60cb18ca17f42ed98f20cbfe0f7460180d855444f2f17b5ec908"
+    },
+    {
+      "file": "public/demo/diverse/photo-16959786.jpg",
+      "sha256": "9bc6680212439f07fb03475b7ffa009b58ef3ce3f1567de77f93e1c2aa99798c"
+    },
+    {
+      "file": "public/demo/diverse/photo-16963039.jpg",
+      "sha256": "06e50bec8f020317fc63fa9c19b61e78341af2a55a34efdd0a9803a1469fa5ec"
+    },
+    {
+      "file": "public/demo/diverse/photo-17104379.jpg",
+      "sha256": "ffbe897fa59ccd932208717985bd0e8a62d9369d1de19c29cf709cac2219a161"
+    },
+    {
+      "file": "public/demo/diverse/photo-17167127.jpg",
+      "sha256": "bedd3fe3c44d617f69ca6357aea0c268a00bd8f7410845f62eb66c1a6c1d04b1"
+    },
+    {
+      "file": "public/demo/diverse/photo-17403929.jpg",
+      "sha256": "62260345798094a29d3388354c7a1463623f88d2910a60ce6bb6bed5cc68f6af"
+    },
+    {
+      "file": "public/demo/diverse/photo-17744872.jpg",
+      "sha256": "b404f633d81ff0e26bb3fdc64667fb4c658e23bdb067dd5fd13bf8e3db31d7b3"
+    },
+    {
+      "file": "public/demo/diverse/photo-17837145.jpg",
+      "sha256": "0103eca47070b21820377b06f347a4fdeff31ddef4e56cec5ec78b4ef9386c9e"
+    },
+    {
+      "file": "public/demo/diverse/photo-17901772.jpg",
+      "sha256": "7da355b3a594b3ee96ebf3b9b89e9e3a536eca5e08524d6d8e2ae87701b439c2"
+    },
+    {
+      "file": "public/demo/diverse/photo-19075398.jpg",
+      "sha256": "6f15576a58d0635be9aeee4fad4f154d84350eec9d15767316afd50136894112"
+    },
+    {
+      "file": "public/demo/diverse/photo-19840953.jpg",
+      "sha256": "431391f76fc8fe6352c66fb3a325feaf14aeb0a3b49846a555fb12af038cb62d"
+    },
+    {
+      "file": "public/demo/diverse/photo-20068206.jpg",
+      "sha256": "57fc3b4d10bb54f984cc15602a04f75703da3cdd9d244f5c053dfa8a0ae8404f"
+    },
+    {
+      "file": "public/demo/diverse/photo-20491120.jpg",
+      "sha256": "8dc039edf02aa3513ef26df1ce3e73c6d25df6caa0303c3cd29477782cc99774"
+    },
+    {
+      "file": "public/demo/diverse/photo-20512825.jpg",
+      "sha256": "1828e2e93b7d7de7e505956e38f1de1e544f4f2b1abeefaad1f97fc473b9f151"
+    },
+    {
+      "file": "public/demo/diverse/photo-20702842.jpg",
+      "sha256": "7d0c304c6bb6a9c4ada837ca6758e604cc403ee387194ace785af4d4887d40b9"
+    },
+    {
+      "file": "public/demo/diverse/photo-22034274.jpg",
+      "sha256": "ec8f8686bde6c358d2dee850295e1b4b82ba80f20c7136ef23d5ed1c8baa14ae"
+    },
+    {
+      "file": "public/demo/diverse/photo-24807128.jpg",
+      "sha256": "e6927c3f3b114e4ab432a257b9b65cefdb8936e12b378fe84104267ebb3c24a9"
+    },
+    {
+      "file": "public/demo/diverse/photo-26859048.jpg",
+      "sha256": "e9d7f12597497073d601da5efec1db5d60e21c903c511652c5283ce45ace45c8"
+    },
+    {
+      "file": "public/demo/diverse/photo-2710052.jpg",
+      "sha256": "b2ddce332d2012f5edff1a2d1a5389d9551a58b17ef075f5a510eb91aeeafc14"
+    },
+    {
+      "file": "public/demo/diverse/photo-27626169.jpg",
+      "sha256": "45e84e307914dfa07641677095d1b1c60aceae6e6376e4a5973339600aa60770"
+    },
+    {
+      "file": "public/demo/diverse/photo-28703857.jpg",
+      "sha256": "9401c1efb500fd4f797c99f1117479bf700b9d7797bab3f3cad33c340f864001"
+    },
+    {
+      "file": "public/demo/diverse/photo-2878410.jpg",
+      "sha256": "9aff465659acc3fbd42e14f1adce238cf75acca445cf8ea5100c5ea4843f346c"
+    },
+    {
+      "file": "public/demo/diverse/photo-28882834.jpg",
+      "sha256": "3dd705ed7867ce8f36cf5bf51221860ff3c0513573dc068ccc2082070e81ba11"
+    },
+    {
+      "file": "public/demo/diverse/photo-28915352.jpg",
+      "sha256": "66a098411e52c8b4a50a6adf9d051b513e743185bd5d0c49ba719c2be0102e53"
+    },
+    {
+      "file": "public/demo/diverse/photo-29280660.jpg",
+      "sha256": "6901ff1a91814e946a1e9725727f4d33878ba282b128ab065c7f94c0a5e3e6f8"
+    },
+    {
+      "file": "public/demo/diverse/photo-29286827.jpg",
+      "sha256": "8f89b05a6069a873ddc3e6eefb688d839b5d6b3721fb03e964b779a93f8db82c"
+    },
+    {
+      "file": "public/demo/diverse/photo-30781823.jpg",
+      "sha256": "56ff137fd5fbe198fab059bd6d9c0eb9669384503a8ce3f3bd9c1caed929143e"
+    },
+    {
+      "file": "public/demo/diverse/photo-31199408.jpg",
+      "sha256": "b5508d2625a44d36e36a2585bbf3db0993a5f2794f2ed5c70804b8b8c458fa7c"
+    },
+    {
+      "file": "public/demo/diverse/photo-31372932.jpg",
+      "sha256": "14155172f682bc67d866c9210b3489d3c5798f23c128ace31ae98a0400cdb8b4"
+    },
+    {
+      "file": "public/demo/diverse/photo-31385582.jpg",
+      "sha256": "82a8459570a0484751dfcdbc8d97c8b8761fe39b4c517acd0bc1bedef70b439b"
+    },
+    {
+      "file": "public/demo/diverse/photo-31387341.jpg",
+      "sha256": "c6955c7ac5a6ac2468edf1d8d73b0c6165e8aa180ed0f120cbef85e06f73efb3"
+    },
+    {
+      "file": "public/demo/diverse/photo-31533477.jpg",
+      "sha256": "5f4faf49f014db2b90bea02d9f1f34b2b5234cf9562ea13ab0e9cb7e2f029747"
+    },
+    {
+      "file": "public/demo/diverse/photo-31817157.jpg",
+      "sha256": "c63230bac34b82123f3a02e61c8c484a6ad26fe35cc4338f23c303dbe3385ce6"
+    },
+    {
+      "file": "public/demo/diverse/photo-31888553.jpg",
+      "sha256": "12e9eedf1934deb5747fd3b8f7cd2ecebb3341febc322e4bf552ba463ecdfef3"
+    },
+    {
+      "file": "public/demo/diverse/photo-32214076.jpg",
+      "sha256": "60a70be9776f03f13631dba1e8f44da0f728ad96b33345427a56863fa7d81d22"
+    },
+    {
+      "file": "public/demo/diverse/photo-33709939.jpg",
+      "sha256": "86bd1a1ecb546e7ebc5229591b89f44539caba358a86aa2871c7242e78cccbb6"
+    },
+    {
+      "file": "public/demo/diverse/photo-33976194.jpg",
+      "sha256": "93e32f81c8b3533c3cf8ddb83a8fcbf230b53bf35e1a8a2c955d3824738feec7"
+    },
+    {
+      "file": "public/demo/diverse/photo-34053607.jpg",
+      "sha256": "d3413da6a9360b920432bc92567e41bccf0ff44ed9c95581767276adf3e5d4af"
+    },
+    {
+      "file": "public/demo/diverse/photo-34104609.jpg",
+      "sha256": "387c34f6d9ac52434784541cae830db3d7cdd9b1021b35a5dc3b93e719fcd92a"
+    },
+    {
+      "file": "public/demo/diverse/photo-34378030.jpg",
+      "sha256": "6c55cac7c39438e3589391ead2e5ea4126d0249e35fb771be7c25a2745a12bc2"
+    },
+    {
+      "file": "public/demo/diverse/photo-34831115.jpg",
+      "sha256": "d070f6bf4ca1aaf1ef6735e7ddceee0b3c126df1bba3e87fd530cee3878f907f"
+    },
+    {
+      "file": "public/demo/diverse/photo-35069534.jpg",
+      "sha256": "d73644fa574bffc3f7848a46f8201fd3448ea7cc2a48a19028ffcd9628444eb1"
+    },
+    {
+      "file": "public/demo/diverse/photo-35106193.jpg",
+      "sha256": "506c4e4e4d0bddf561a99ac1d500f0fd41c98d4b591f9cd7b4d03f56f36ee91e"
+    },
+    {
+      "file": "public/demo/diverse/photo-35171524.jpg",
+      "sha256": "6831e515acd06ec51aa7f8a595beb05aad68c6eb3d8280bf7f57a1827eb8f239"
+    },
+    {
+      "file": "public/demo/diverse/photo-35739966.jpg",
+      "sha256": "e958cbf375c2b7fa2947bcd23babc0f1aff4fc7226cea71bd50d687059403533"
+    },
+    {
+      "file": "public/demo/diverse/photo-36003285.jpg",
+      "sha256": "1850046e8e26a24498e3ced642ae271b51dfb491f439da82b705f37ba391f35f"
+    },
+    {
+      "file": "public/demo/diverse/photo-36216408.jpg",
+      "sha256": "fc0b873453bc94cf68e9d8e974a3cdfc927e5b5f8d896639c4f74f3ef673d3aa"
+    },
+    {
+      "file": "public/demo/diverse/photo-36394726.jpg",
+      "sha256": "a436adf4e7fe6f3d4df08a58a5e236ebe1ec8726a7cdcf3d770aef7f3eeea164"
+    },
+    {
+      "file": "public/demo/diverse/photo-36965360.jpg",
+      "sha256": "3271d483a7f74230a05a55e9ed716b5fc7196c08882f86f8c7ed5b3a4469cb24"
+    },
+    {
+      "file": "public/demo/diverse/photo-36988001.jpg",
+      "sha256": "33d2729a52b970353037d447c3cd49197b2e14084e6e0f4493e0322b8d4d627c"
+    },
+    {
+      "file": "public/demo/diverse/photo-37254204.jpg",
+      "sha256": "83d5ff62e7e3ab2699487a858593d600f126060b32bf84093881aaef6f7515ec"
+    },
+    {
+      "file": "public/demo/diverse/photo-37657485.jpg",
+      "sha256": "dbb3f2dc6b06fa8b294c4c6a9fc4df7e348d23a17171f69f0e3abc9085b44718"
+    },
+    {
+      "file": "public/demo/diverse/photo-37692742.jpg",
+      "sha256": "9c5e3b408ace73bc1bdee9ec300e79fc7f9d89377f72d7281f4822a0205cbea2"
+    },
+    {
+      "file": "public/demo/diverse/photo-37736542.jpg",
+      "sha256": "a1cbdc5a5c8e7b69183ea19ee98616f551b06a944f8c11b32eeb6ddc30e424b3"
+    },
+    {
+      "file": "public/demo/diverse/photo-37847601.jpg",
+      "sha256": "a0ca02f51334fe4f402a6436a0bda69dae60c20dcc7d46ce484e2dc34a29206a"
+    },
+    {
+      "file": "public/demo/diverse/photo-38697706.jpg",
+      "sha256": "900d16099b4985ddce374ad7eaedd644ddbad798a5555d6788ea60f9e7bb6493"
+    },
+    {
+      "file": "public/demo/diverse/photo-38875037.jpg",
+      "sha256": "f51908463c16874ff97ee64c4c73f040805d65dbe2447bcde241f98a01706a83"
+    },
+    {
+      "file": "public/demo/diverse/photo-39011060.jpg",
+      "sha256": "6a9b130516b59085a21e85fa4f1241ceed9e2799e6e14d2e40255bd21c8e2865"
+    },
+    {
+      "file": "public/demo/diverse/photo-4870581.jpg",
+      "sha256": "3f8f5b56f942948cf36fde24f9f479957121158a34482319cf8ab6cf47d16a9b"
+    },
+    {
+      "file": "public/demo/diverse/photo-5563472.jpg",
+      "sha256": "148e03721f09b4d9ba1feedcf8eaf64aef7ad83464d6b5cd52089e54519cfb52"
+    },
+    {
+      "file": "public/demo/diverse/photo-5649731.jpg",
+      "sha256": "2363d75e4dfdc91f605252a0994c343b51950f929db2549303a0b6633ca26dc2"
+    },
+    {
+      "file": "public/demo/diverse/photo-5726534.jpg",
+      "sha256": "3091fe88dc27a7e5de95d7b8c41962e28400093558e7c5a550c00ef0adf989f1"
+    },
+    {
+      "file": "public/demo/diverse/photo-5766545.jpg",
+      "sha256": "66c237b74ce5fe38c64c0b92f8c6937a6daf7d6f3d7d3bb46390bcb45c14688f"
+    },
+    {
+      "file": "public/demo/diverse/photo-6129991.jpg",
+      "sha256": "daa59c03e7be276919edd136f4d6d96a244c31fc213271509e4a69b9595379f9"
+    },
+    {
+      "file": "public/demo/diverse/photo-6489089.jpg",
+      "sha256": "1d1b0a400fcac73de2010f35818b982bc5e652a68af7724e99c101ff2329a122"
+    },
+    {
+      "file": "public/demo/diverse/photo-6510417.jpg",
+      "sha256": "cfd9def536629eaf9b04634005bf13ab40c96242b0d92e1ccd6809007e0af1f9"
+    },
+    {
+      "file": "public/demo/diverse/photo-7031711.jpg",
+      "sha256": "308cdf210da2a535163fa5ff2c053cad748225f66ff2e0acf7a6c704df6c5d05"
+    },
+    {
+      "file": "public/demo/diverse/photo-7174105.jpg",
+      "sha256": "5348799778d8eb16bc7baf1bb365f7e0403cd59be6df15cbbf00febc14bf77d2"
+    },
+    {
+      "file": "public/demo/diverse/photo-7868989.jpg",
+      "sha256": "670fef4818cf3fe840786b88c58ae01aa3a02e667c1c79a45abc2fa5abc1878b"
+    },
+    {
+      "file": "public/demo/diverse/photo-7903178.jpg",
+      "sha256": "dfcab6bea49df982fe387f68deae9993475e38bc40f2491c72a69c1e6d247cae"
+    },
+    {
+      "file": "public/demo/diverse/photo-7942030.jpg",
+      "sha256": "7173a3bf6c324dfb082f1ed18d7aabed12303333628622ddc2bb61799ee8d0a3"
+    },
+    {
+      "file": "public/demo/diverse/photo-8143671.jpg",
+      "sha256": "3f9e7eeb271f5889de2401b10094316aa3144027f235174184ec7c2baac89a1c"
+    },
+    {
+      "file": "public/demo/diverse/photo-8533865.jpg",
+      "sha256": "c35a4b837e4e07dc1fd13e7934ac1efb9bad14f61e206cd94514b6d001011f4c"
+    },
+    {
+      "file": "public/demo/diverse/photo-9730025.jpg",
+      "sha256": "9abd361eb8b989fcd051659d8556388908bccafe4422c1bdce64fd7363a19a99"
+    },
+    {
+      "file": "public/demo/villas/villa-1.jpg",
+      "sha256": "432dd3798a51a30e098de245f263d10de531b765b83523a70b1142a169c45c7e"
+    },
+    {
+      "file": "public/demo/villas/villa-2.jpg",
+      "sha256": "9196bdb96b5a856e41f4f698415bfe40c385ad8de40b56bf4f3236497270c2b2"
+    },
+    {
+      "file": "public/demo/villas/villa-3.jpg",
+      "sha256": "27976c94f8891183216fd4d7002bb761babda3fc73c833d871b838758fd1d435"
+    },
+    {
+      "file": "public/demo/villas/villa-4.jpg",
+      "sha256": "a6e27ac4ce8de870185cbf8d0f3c1227224e0d3b5031fbc5d75cc4cde8d41bdd"
+    },
+    {
+      "file": "public/demo/villas/villa-5.jpg",
+      "sha256": "e687c2965b43f3cda65c805a6f6d728d808f2265e6ce919c39829247884cdf77"
+    },
+    {
+      "file": "public/demo/villas/villa-6.jpg",
+      "sha256": "b069ab06e30256af63b15ff8f56316f1bdddc8dad7f5c6f7597b15eec58c7888"
+    },
+    {
+      "file": "public/illustrations/merchant-trust.svg",
+      "sha256": "3c73b2611395ccda66400882e88229826c3384f98ce7c4686a62c1221a4fd67f"
+    },
+    {
+      "file": "public/illustrations/platform-updates.svg",
+      "sha256": "8a8e03ed179600bdee87658f8bbc86d292d2bb86005ef8a35496feb79dd7e61f"
+    },
+    {
+      "file": "public/illustrations/qr-evidence.svg",
+      "sha256": "b341e40cc800609499452c72319dbb84acb2236ec6b78c8230694f4f62bc07bf"
+    },
+    {
+      "file": "public/licenses/line-seed-sans-th.txt",
+      "sha256": "2e877cb9d5c82b6f0e0c5da509eb905ae8e299467da73c32f7b80bb9ce51ab62"
+    },
+    {
+      "file": "public/villa-placeholder.svg",
+      "sha256": "18325a8bec712e601b28958303557110df0b83c0b52ad6ec480211a7148f39c4"
+    },
+    {
+      "file": "scripts/build-backend.mjs",
+      "sha256": "df3ee7049c44582d6c9816daf63a68dfbf6272f9b6703bdec7368e08167786bd"
+    },
+    {
+      "file": "server/acceptance.mjs",
+      "sha256": "6dcdc0d41898c4ebd16afb77fe9676e8c7a6157c2e423f531b0ef8d16c0c93ff"
+    },
+    {
+      "file": "server/account-management.mjs",
+      "sha256": "12119aeb413cccb6a9caaedcfe3643b767fe7bf05f8b4772d7d91e07a5e89a55"
+    },
+    {
+      "file": "server/account-security.mjs",
+      "sha256": "f8324df8262f0504d11e8664faf82d044ce32d9f8e4f1f791892ea1013e2c36e"
+    },
+    {
+      "file": "server/admin-business.mjs",
+      "sha256": "62bed8797f259911da639136544f1c63128d9e13753f480c7757d7ccbe9e4e9c"
+    },
+    {
+      "file": "server/advertising.mjs",
+      "sha256": "936decdf246aa96241ff488e044e6a931181a2d823a7ac141785e357d686ff28"
+    },
+    {
+      "file": "server/app.mjs",
+      "sha256": "50b2ccc748703966e846e8b33c88046571b309c4356f3b08663f3531ff25e9e3"
+    },
+    {
+      "file": "server/approval-history.mjs",
+      "sha256": "d44acde40961abe2aa9462908e8ab6ebc69d360e354b48a9e96e5c426ac96242"
+    },
+    {
+      "file": "server/bank-receiving.mjs",
+      "sha256": "2621b77362146f8e52c746b1bfa46f45ac607870a4385da9e580c33f04aa6f32"
+    },
+    {
+      "file": "server/banner-display.mjs",
+      "sha256": "3d1ea97f3c6b35dbb8b13fdd3c78c530cf85367ec8a870f88c1499999b7909af"
+    },
+    {
+      "file": "server/basic-promotion.mjs",
+      "sha256": "922b13f7f5ac5198faeea2ef35301e5efdbfaa8085df53f9e23bb9cfe20faadb"
+    },
+    {
+      "file": "server/business-schema.sql",
+      "sha256": "d246b654cd118e795a4df7879a3c7efac73a33fbb11f62ee50127e63051d1d0d"
+    },
+    {
+      "file": "server/catalog.mjs",
+      "sha256": "bd6a52c59510b63475376e26ecfbff7dda948f75855d366916e57a3e038c6316"
+    },
+    {
+      "file": "server/change-approvals.mjs",
+      "sha256": "a54926f41a2488b0641ba2918939dfbcf8d569ab789f1b902e6140c9a64fb053"
+    },
+    {
+      "file": "server/check-localization.mjs",
+      "sha256": "3a9876c9b59918e6b7319ef53565dd61cea6667f91576ed3c62e8ed0fcbd1863"
+    },
+    {
+      "file": "server/cms-business.mjs",
+      "sha256": "c7a6b69e84b0c67ee3e64578a195c14d08aefc0675cc29a250f2e6fc31cf40d6"
+    },
+    {
+      "file": "server/cms-change-history.mjs",
+      "sha256": "96a2ff8a7a5b55bc9d3636a7601ad6c1656567d08b9b04fc2425813a0bc2ce76"
+    },
+    {
+      "file": "server/cms-defaults.mjs",
+      "sha256": "8ec88d8af016fa435929c4a04e883a7a9a28d064cebdb39bffbb006fb64a962e"
+    },
+    {
+      "file": "server/cms-home-config.mjs",
+      "sha256": "d25d112254b130129bebc93284d116c1f597296286ee4ea2dfee6529d70755e4"
+    },
+    {
+      "file": "server/cms-presentation.mjs",
+      "sha256": "40e035e63cab9a82df54d82ab1aa609d9c274b4e198459f337f1c53025541477"
+    },
+    {
+      "file": "server/cms.mjs",
+      "sha256": "35b601e8b2f259becca2c75fa0fd3a98cf00242e4883f01e9c9a80415073cfbe"
+    },
+    {
+      "file": "server/customer-oauth-runtime.mjs",
+      "sha256": "eac8d530f252ce0fb221c84c24ff2deab620a106b70dd567dc5b61c6314ce6c6"
+    },
+    {
+      "file": "server/customer-oauth-security.mjs",
+      "sha256": "cc581cb3745d94f49e3a83a2cac14cff44e680c7a8b1f334cb17883e4912638b"
+    },
+    {
+      "file": "server/database-adapter.mjs",
+      "sha256": "99e701fc8b99b99cf338c56e15d0136309edabf784af0cfb33fe8e84264ef2c4"
+    },
+    {
+      "file": "server/database.mjs",
+      "sha256": "1370629f4a68a9843673eb16c207d80324b3c17bc392e5459daf4faa9954b952"
+    },
+    {
+      "file": "server/demo-free-seed.mjs",
+      "sha256": "7fa4dfd758b19b19a1ed88e6299c43708cc9453a72bd84602b3cdd82cd967af4"
+    },
+    {
+      "file": "server/demo-image-catalog.mjs",
+      "sha256": "4955c51dfd48d253a87e1ae17b137debdb56deb7cde95465be3351ae74067403"
+    },
+    {
+      "file": "server/demo-payment.mjs",
+      "sha256": "50ae950396dc2efff76eb8a18c6c27c43ca047ab060f76e20d8e2235867bac6b"
+    },
+    {
+      "file": "server/demo-seed.mjs",
+      "sha256": "4aae8c82a1059ad6213804656d13560397c0c7433b0282d3df688a2410bc7fc0"
+    },
+    {
+      "file": "server/demo-villa-visibility.mjs",
+      "sha256": "2249aca7cf12cf55625777213b1329bf785a9dcf910d43960a6af9baa3233dc0"
+    },
+    {
+      "file": "server/email-identity.mjs",
+      "sha256": "5a58319aa3e625533aac6a17f3271ce426deab2484cb92ae494172d718f58b6c"
+    },
+    {
+      "file": "server/guest-capacity.mjs",
+      "sha256": "5850c75c9ff5cb89b13e63752a9231d073e1f5997d9f51d1fc3001f658b4c589"
+    },
+    {
+      "file": "server/index.mjs",
+      "sha256": "75a3df7544233d2c4b4eeb6772f5e0a07ce1650ea1c55b1b51d2ee572eff9d5c"
+    },
+    {
+      "file": "server/locale-messages.mjs",
+      "sha256": "41ac26b95e88e8ab1fef27b4f8ec1c0d6923f696105ebe6f6ec9c2582c955f51"
+    },
+    {
+      "file": "server/login-otp.mjs",
+      "sha256": "4b1bd6159f3a4875306ecb7f7bbe0b49fc3ae42c536b3bdb4eea573844a53f85"
+    },
+    {
+      "file": "server/mail.mjs",
+      "sha256": "a2e94fb291deff3486810630ab4d8ae3b39c13d76ec55d39f979d2f565a4d2f7"
+    },
+    {
+      "file": "server/manual-proof.mjs",
+      "sha256": "e8dff7790ec4766bc7341deaa3c27df43abcf54213d9b4bc1011dfc737c78b02"
+    },
+    {
+      "file": "server/media-date.mjs",
+      "sha256": "6ff3592d82a1b18b91642b7cd2c18bf76f19ad7f060ecb6428c205606edf087a"
+    },
+    {
+      "file": "server/media-range.mjs",
+      "sha256": "911b948998775cef0d697f31061cfca13dc640ab575bc250e376c60b333a366f"
+    },
+    {
+      "file": "server/membership-lifecycle.mjs",
+      "sha256": "64fd5ca079797ef982e30277fa4cf52a10f8905485bf8cef46ad470610d92719"
+    },
+    {
+      "file": "server/merchant-free-period.mjs",
+      "sha256": "a009e63a9b2783245af50c55875dc737d57c4e90e895bfd241032d67b6d25bfe"
+    },
+    {
+      "file": "server/merchant-receiving-bank.mjs",
+      "sha256": "fc5914df69fcc27106f7bc5ba1de6e35c1550b154c2eda5bf9bcdc5b4f6f8436"
+    },
+    {
+      "file": "server/news-content.mjs",
+      "sha256": "a657d946e9849763dafcf5b5fe1ea2a90e7c61c70e979272806628610254fc2c"
+    },
+    {
+      "file": "server/oauth.mjs",
+      "sha256": "5cbb73de8134bda1a0396fa241056050fc266d072a0c0b5ea0cf1484796bdbd8"
+    },
+    {
+      "file": "server/omise.mjs",
+      "sha256": "5fc16dbb5e64f138b068dd8b0b8f47c8e0a2b75c35cc5a6317c64d36559ff86c"
+    },
+    {
+      "file": "server/operations.mjs",
+      "sha256": "3168dccece9c16e5c4dbc5ec53f18f4515be051d5bd92b79c63b7178ab20fc04"
+    },
+    {
+      "file": "server/owner-verification.mjs",
+      "sha256": "b89fd3ec811147c395d1eebc908b609b87abf93c8db87bea4eac40f303a79940"
+    },
+    {
+      "file": "server/ownership-documents.mjs",
+      "sha256": "8500f554e3b7a18bb6565174457fb9badc76e396bf7e918fdad8bedb1023887c"
+    },
+    {
+      "file": "server/package-content.mjs",
+      "sha256": "4e67ae68914612f34d06912cf9084f36eff1182524a7275231f96b2cf01cbe7b"
+    },
+    {
+      "file": "server/package-entitlements.mjs",
+      "sha256": "85436370ea3b9d270f2116210ca13720e11337550bd40ea8fa4a5f35da9bb873"
+    },
+    {
+      "file": "server/package-promotions.mjs",
+      "sha256": "9a4c8451f23b540b21c7b255b1d827bb31f47d5d394a72b16728546017bc77bd"
+    },
+    {
+      "file": "server/password-recovery.mjs",
+      "sha256": "1b5b6831fabcbde9c67446d651a39cce9da1f78c0044742015a69068b6d87716"
+    },
+    {
+      "file": "server/password-registration.mjs",
+      "sha256": "c8d29b9623d712df5447b0cadc165561d06d39cda09b7f7f79d1e41dd9317958"
+    },
+    {
+      "file": "server/payment-access.mjs",
+      "sha256": "d4ca74668193f4261deb841c7103adbcdf63a64c7687e00125e80b39a98a0b0a"
+    },
+    {
+      "file": "server/payment-account.mjs",
+      "sha256": "474ea50236986fb38990c15c2208aede85ae07940eb14b64767bc77d10219a9a"
+    },
+    {
+      "file": "server/payment-qr.mjs",
+      "sha256": "673f36b58094b4975db3ef8657edd5ea41a35e88f970b684a3564db569e74e00"
+    },
+    {
+      "file": "server/payment-service.mjs",
+      "sha256": "fd8756499867aa0fc0b7dd9302dae16d3eb00d2cd84bacd6813a6ab8b5282206"
+    },
+    {
+      "file": "server/payment-verification.mjs",
+      "sha256": "9870a0962e48a669a200c5657042fc46ab24daa198983ed634013aa8de4068be"
+    },
+    {
+      "file": "server/postgres-schema.sql",
+      "sha256": "34be56ddb7b656c8a1473f9537b09f94e3883071a4639577b8e526371e3bd017"
+    },
+    {
+      "file": "server/postgres.mjs",
+      "sha256": "b4a12f407b6a18c1181680b299eebda382ae9f134b4642d6483b31abdfcdabd4"
+    },
+    {
+      "file": "server/privacy-requests.mjs",
+      "sha256": "adcc23183b30c749118da1b4f271e59540ed83e86f7b10283ec544d66f573064"
+    },
+    {
+      "file": "server/production-demo-gate.mjs",
+      "sha256": "cd260de16d0a0e6d7792d167ab3732f634e64a34cb95c4e4d7f9ebe3b9181c85"
+    },
+    {
+      "file": "server/production-runtime.mjs",
+      "sha256": "69724397bdb1481ed78619a21617847f60c048f5389ce31966083deb8155302d"
+    },
+    {
+      "file": "server/promotions.mjs",
+      "sha256": "f9ca2471b8067b673edbfbf3982c27550fd380666a34c74ea2e49d0237a366f0"
+    },
+    {
+      "file": "server/property-details.mjs",
+      "sha256": "c0828522ca7f93b30dd35dfc61e81ac06f1a45ee165b134dde79c51336c6e453"
+    },
+    {
+      "file": "server/property-media.mjs",
+      "sha256": "0eb470c1a93755a74e642da77955666a8285e2468f78c3e263f071e70e7a502a"
+    },
+    {
+      "file": "server/proration.mjs",
+      "sha256": "af909ef272873291a6fb0e536080ce90a31729e9092892d73504828db69eeb07"
+    },
+    {
+      "file": "server/public-error.mjs",
+      "sha256": "375cafe340dd1524ae4b9b44b85935dc2b79c05d2a9ec0361759d4089246c745"
+    },
+    {
+      "file": "server/public-revision.mjs",
+      "sha256": "3369446188d6306c011440cb85e8278199855c4a33d95229ac0dda4c4d082ab7"
+    },
+    {
+      "file": "server/qa-initial-grant-policy.mjs",
+      "sha256": "0e412672826f13b60aad3ecb8a4380cddba25a6ae15163b9e2e4e18b222e579a"
+    },
+    {
+      "file": "server/readiness.mjs",
+      "sha256": "22e5e53a61fefa68c1b5b470487709084085769259c3123658f588d58e01346e"
+    },
+    {
+      "file": "server/review-presentation.mjs",
+      "sha256": "48ba5312b2d2a50afb6bca7eb177ddc063eea6cd2369bfdb519c7b4299a0d142"
+    },
+    {
+      "file": "server/reviews.mjs",
+      "sha256": "c4771690e27d05cb6c80d4f8b52f242b2c613361e624f2654c50ec91977103f1"
+    },
+    {
+      "file": "server/security-events.mjs",
+      "sha256": "e4c12e063595d2c096e31883129a774d4994fe0ab4aa1c6a93fcdbee4d63ccb2"
+    },
+    {
+      "file": "server/shared-application-environment.mjs",
+      "sha256": "903e3260dfe0a15a05eb8b63d1a8f6191fdc892e31d2c0ca5847004999b47584"
+    },
+    {
+      "file": "server/smtp-diagnostics.mjs",
+      "sha256": "b4565dabcaf39f7efc2bd2c24c7e22b7e9f65fff49b19cd685255d173df90694"
+    },
+    {
+      "file": "server/social-materials.mjs",
+      "sha256": "401faebad3351c96c69399202115eb2cad7056568c27e671455808d54c9e10ec"
+    },
+    {
+      "file": "server/staged-provider-configuration.mjs",
+      "sha256": "e061f4da54340a2c408a0bde8db9799969d77e34b10e290b4efb4f386c15fa80"
+    },
+    {
+      "file": "server/staging-demo-safety.mjs",
+      "sha256": "e9f8093738309b17f96fc15ad61b93cf4527d458870456724dd5c4369af85d1a"
+    },
+    {
+      "file": "server/staging-interactive-policy.mjs",
+      "sha256": "02e9a0ee87b95e20c3520bfd5ae244bfaeb4484e43807f685db976d863de1c25"
+    },
+    {
+      "file": "server/staging-mail.mjs",
+      "sha256": "ec1aaecdd4e682320cf72577c92f88264fa23c7b11e29066ded4475077afe6cb"
+    },
+    {
+      "file": "server/staging-merchant-scope.json",
+      "sha256": "1d68a89bf459f6d7304bba971f5d8f563f9ff9e548919e1cd5ddd37c923e112d"
+    },
+    {
+      "file": "server/status-guide.mjs",
+      "sha256": "acd4d04fa19c6c073c84870efb95612d1e0366ea8991f79bf85714832fa2dad2"
+    },
+    {
+      "file": "server/subscriptions.mjs",
+      "sha256": "e180b26c45361b4ef583ead430dcce5ff266d7d124698193550aeeb67a05d50d"
+    },
+    {
+      "file": "server/target-attestation.mjs",
+      "sha256": "d07927b4728b399360178b6031e5c0386e58d9026d1f7a112a6ad53433c65c70"
+    },
+    {
+      "file": "server/verification-document-limits.mjs",
+      "sha256": "62e436a30ca58755f3515f8432f80accb14ac7a11d5b5a5deb399446994406ea"
+    },
+    {
+      "file": "server/villa-create-request.mjs",
+      "sha256": "2d37e596f8449a1cf0c8ed16c186a55ec75ae787505425c6d1c062dbae641c6d"
+    },
+    {
+      "file": "server/villa-drafts.mjs",
+      "sha256": "c56e885911ad7182244afd6046f9a4e7047088b4c4ec412ed477b3cab21bfcaa"
+    },
+    {
+      "file": "server/villa-media-limits.mjs",
+      "sha256": "188c0b71633161dbea04592ad0c83c1927eed554b165de53726b0c9c29084d4c"
+    },
+    {
+      "file": "server/villa-pages.mjs",
+      "sha256": "27f82f7232cf6ffe0c2f80d9342219a6d4219c110aa104da0e6e5b01c40f0083"
+    },
+    {
+      "file": "server/villa-photo.mjs",
+      "sha256": "977117de0a7cebe795d53d12804563e5e973a3f237d97b8a897d887eaff6e752"
+    },
+    {
+      "file": "server/villa-read-context.mjs",
+      "sha256": "8e221ce7027d70e814e12b6c72daef654d7975041b1bbcbc3ae73cd6e5a20594"
+    },
+    {
+      "file": "server/villa-review.mjs",
+      "sha256": "fe17c12092df1b8b9b8910469139c6d596c35f735ad1c786c2442928bd306b3f"
+    },
+    {
+      "file": "server/write-session.mjs",
+      "sha256": "60eda19cdf5849ad5ffa637569435607d62b23d7071bda8d9d331350e088629d"
+    },
+    {
+      "file": "src/AccountPrivacy.tsx",
+      "sha256": "2897c6dbc38b23e7a6351f3c87cbb4b5358705553ac9a5fde886002503e0fbe1"
+    },
+    {
+      "file": "src/AccountSecurity.tsx",
+      "sha256": "a9e7d435eaf4fbcdf986071f775f989029344d0f5ca81797ca8c7337df64fa81"
+    },
+    {
+      "file": "src/AdminAcceptance.tsx",
+      "sha256": "5b32cf59e039cd342656ec65eb9394731442188afedb057c2466c9f043f18de7"
+    },
+    {
+      "file": "src/AdminAccess.tsx",
+      "sha256": "5c52a533f0d31d881670f7e937b5f750d650b7918adbc816966c01f4f9ba45e5"
+    },
+    {
+      "file": "src/AdminAccounts.tsx",
+      "sha256": "78168b5d868a0a732e0792053a16ae1991db0b95a4d241d6f2dc4453ab3ce5b3"
+    },
+    {
+      "file": "src/AdminApprovalNotice.tsx",
+      "sha256": "7dce7f9f21876e137b474ee697ee2a90da6a858106708c91a4a2203e98a2f67b"
+    },
+    {
+      "file": "src/AdminApprovedVillas.tsx",
+      "sha256": "a6a5b16f15e0a0352947ad830ccfa7cd01dcb8a1859f6c58433fc4f373426003"
+    },
+    {
+      "file": "src/AdminBusiness.tsx",
+      "sha256": "fd73440c32b31f25b99303e5716e6cbeaa2cdb17e41fdbe8be6ffd37ed3e93a0"
+    },
+    {
+      "file": "src/AdminChangeApprovals.tsx",
+      "sha256": "239f34a84fd5faa2e8defa33265111ff69bfea76ff077221db16a3030e178a98"
+    },
+    {
+      "file": "src/AdminCms.tsx",
+      "sha256": "461327e3fc37aee5f6089507a47a878f2d734ab34f403c8813992c6f450a96bd"
+    },
+    {
+      "file": "src/AdminLeadList.tsx",
+      "sha256": "13ced7f7bc41ffaaf62e690279f510d2514ca7b83e566713c1fae183cb88ad04"
+    },
+    {
+      "file": "src/AdminLogin.tsx",
+      "sha256": "ceb6b2c07cb3d4cd87aeb1c42d3f6b562e642bb13b39ca50e6e4f8a68e23afbf"
+    },
+    {
+      "file": "src/AdminPendingVillas.tsx",
+      "sha256": "bc02f222a045fc6e87390e7bea46f5cdb7f6635c13067c7bdc3264ea223b5be2"
+    },
+    {
+      "file": "src/AdminPromotions.tsx",
+      "sha256": "cdd9eb7d1d9e07e8e8c6051f8fc24dc59871eecb9696412e2aaf4a84d329b601"
+    },
+    {
+      "file": "src/AdminReadiness.tsx",
+      "sha256": "543d085112ab9a276c9f8df5243a5d4e03541f69fd3aac5fbe3c02134725a814"
+    },
+    {
+      "file": "src/AdminReceivingBank.tsx",
+      "sha256": "c5806b623428a01dfd66b3b614e3d3b97ef940c70cab1a9044df2104bb3c6b7b"
+    },
+    {
+      "file": "src/AdminVillaPage.tsx",
+      "sha256": "2d4c51746d7fbbeb7a0edd826937b387391c3d1fadee7bc8f4a29c8a0e95bb31"
+    },
+    {
+      "file": "src/Advertising.tsx",
+      "sha256": "369c3763b55ef89066932dd11eeda4e4b78f8529a0a93b903a8d64f66c519e47"
+    },
+    {
+      "file": "src/App.tsx",
+      "sha256": "c12546cb48b90f1bde671c6c24ff1eca69a7877bc2dcb8d989f87c56018b9529"
+    },
+    {
+      "file": "src/AuthProviderIcon.tsx",
+      "sha256": "2bc69d9a2a44aa1dcb44373f9025a93adf6d66896a4baf89eddf2bc4e95d5e04"
+    },
+    {
+      "file": "src/Backoffice.tsx",
+      "sha256": "975af563d3848d5f4f8899cfeb1779a11e7b0f1827d6eed6b812c377b4f8fe21"
+    },
+    {
+      "file": "src/BannerEditor.tsx",
+      "sha256": "1887673625a0c3db02b28fdf757cbcfe9d2f5d3f3d3845fe408fb415790590be"
+    },
+    {
+      "file": "src/BusinessReadiness.tsx",
+      "sha256": "681abcc0a7dde48ac16bf23d6a60bcdc19338681149466108329c0b6f2b6a30b"
+    },
+    {
+      "file": "src/CmsBannerInventory.tsx",
+      "sha256": "8d5ff49e3072ad11294f0c16408e77fdc58e1acc156b9257b7416d995fe641eb"
+    },
+    {
+      "file": "src/CmsChangeHistory.tsx",
+      "sha256": "f2e95ab287c2339841bbbc83f3840be9aa0ffaa7cf520626ae4f10ad2b3f1961"
+    },
+    {
+      "file": "src/CmsIntroBannerEditor.tsx",
+      "sha256": "d2797f10734f1145c65b6489370d37e8d114eac61fef1f11e501ebc20507cf19"
+    },
+    {
+      "file": "src/CmsMediaPicker.tsx",
+      "sha256": "6d8af3924ef5c7054638cb6e4deda30221c90dc6974c1308074915418d33fb3c"
+    },
+    {
+      "file": "src/CmsPresentationEditor.tsx",
+      "sha256": "7d773cfdaf98b40f79bd9aba87a8326ac16cadf7d4d62cdbb49c1a8080847b0f"
+    },
+    {
+      "file": "src/CmsPreviewWindow.tsx",
+      "sha256": "229f591e94c12853036594b736be1639e3141c8d627e2ea3d8309e67ecc94cf8"
+    },
+    {
+      "file": "src/ContactLead.tsx",
+      "sha256": "87cf414a1b537d2e06335cdea1514471c1c13973b91934eebefd74d6e00fde31"
+    },
+    {
+      "file": "src/DemoNotice.tsx",
+      "sha256": "bab7ddfec1832d03fcf239e7f258e5afd64dd88bc576bf24fa001ca2ead9eb23"
+    },
+    {
+      "file": "src/DemoPhoto.tsx",
+      "sha256": "7a3a1460050db8566725cc1141c92afd91df8673406a2bf02a8c4ebcfc5740ee"
+    },
+    {
+      "file": "src/DocumentManagement.tsx",
+      "sha256": "0aac97d0c36fb6963c24ec9710e28d7e613bbefc74a8963f941c36c0892f61a3"
+    },
+    {
+      "file": "src/FacebookMediaBrief.tsx",
+      "sha256": "f525b2d57e7f4df5fd3c41ca5927358e383ebaaa41100e3bcab54c3c5dad66f1"
+    },
+    {
+      "file": "src/FooterAd.tsx",
+      "sha256": "f772dff415fa14945c59958fbc13caccc0e6e04526823650bb012d88e46a520d"
+    },
+    {
+      "file": "src/HomeBanner.tsx",
+      "sha256": "1d04e112f03279e70d9c27d3ae7d68961f9aa244654d500840aa95df9f2832e5"
+    },
+    {
+      "file": "src/HomeDiscoveryEditor.tsx",
+      "sha256": "8b89edc0e849b799a6a777a0866d1fb9fb26e3811ae195c032dea4fc7d4e9ff2"
+    },
+    {
+      "file": "src/HomeLogoLink.tsx",
+      "sha256": "a821b7b699611724b0d71dec64da6a833e061d16bb7901bccc2eb6c3720543d8"
+    },
+    {
+      "file": "src/HomeMarketingImage.tsx",
+      "sha256": "b10015757a9df9a4eea6316fd765dd1d4a1ce93902e03f8337a2ad9ae6ff8b5f"
+    },
+    {
+      "file": "src/HomeNews.tsx",
+      "sha256": "7b475a111b18904644877b706c76ade90bb7f4a9ebe0c720b75d23fd8d5e796d"
+    },
+    {
+      "file": "src/HomeShortcuts.tsx",
+      "sha256": "4603543363a53898ef710450aa6d0d33cae683420cd973456972b453e717f078"
+    },
+    {
+      "file": "src/HomeVillaShowcase.tsx",
+      "sha256": "2776e2e0412279443cc8e69c59dc7aa72cdde5eafef2c4d6c7e231d56220debf"
+    },
+    {
+      "file": "src/LanguageSwitcher.tsx",
+      "sha256": "ef5fdfdaf1712296391077f944317a349002ca80debafa0cf377c1e36776e27f"
+    },
+    {
+      "file": "src/MediaUploadQueue.tsx",
+      "sha256": "0009c1a4b13ffc611c435a012e51840b9a2f4aa270fe7371e2c412a9ad86756b"
+    },
+    {
+      "file": "src/MerchantProfile.tsx",
+      "sha256": "c0da518f27c08c0dc5e08270b663996332297025d84bd7346037f03a70353f62"
+    },
+    {
+      "file": "src/MerchantReceivingBank.tsx",
+      "sha256": "4c9e5a97998fded4e663ead865a0923951d0b3a0c8d40b2a6fff367bd112a55c"
+    },
+    {
+      "file": "src/OmiseCheckout.tsx",
+      "sha256": "1ca87c867595d9701a0cf5beb7b80827ecc1387560be912bc5bd7b78bebc1079"
+    },
+    {
+      "file": "src/OperationsPortal.tsx",
+      "sha256": "81972d040f6c37595558f6b001f85de84cd58fa5a9947205f766d76c2d49a8fe"
+    },
+    {
+      "file": "src/OtpLogin.tsx",
+      "sha256": "1343e7054106c11c6368955a4ddb79b98a01451b58fbff385211a4544f5a3d17"
+    },
+    {
+      "file": "src/OwnerVerification.tsx",
+      "sha256": "9673501d80d798991e37e3d528abb189894e318549b419e22de7b034c62f5a61"
+    },
+    {
+      "file": "src/OwnershipDocuments.tsx",
+      "sha256": "064b9321434a1dd4a66dd38c0d90023b6d2b111e28d3933e549c29c545b46e2f"
+    },
+    {
+      "file": "src/PackageComingSoon.tsx",
+      "sha256": "0c177da460cccf578e32bc857498ae107d6ff889ed0fbcb18cff9bb7c3b6c99e"
+    },
+    {
+      "file": "src/PasswordRecovery.tsx",
+      "sha256": "2eb8df8b55f2304049877f492fea4b414ae3b77db26ff7bec7c772f22e315bfa"
+    },
+    {
+      "file": "src/PasswordRegistration.tsx",
+      "sha256": "d48a2245df5b8ab3db1561babaad44a4f20d81fbd7a4e5bb7918389905ddb0ba"
+    },
+    {
+      "file": "src/PaymentQr.tsx",
+      "sha256": "3120ec2b95bbf36f833e03c063d37ce9f810a2497612a3c9678f6e6dc06f8587"
+    },
+    {
+      "file": "src/PremiumBanner.tsx",
+      "sha256": "a6564f5e17cf523d4a46c1f1580df8a65f64e77a32ba50ee322c96de9a129cf5"
+    },
+    {
+      "file": "src/PropertyDetails.tsx",
+      "sha256": "e493a82c7260da46a6ccedb981a3ae49cbd161836de983ae86a77a48fe6b03c9"
+    },
+    {
+      "file": "src/PropertyMedia.tsx",
+      "sha256": "a172189c9a86df8946759e283a0ce36cd540942bba9be8c5dcb9667a755663ee"
+    },
+    {
+      "file": "src/PropertySearchSelect.tsx",
+      "sha256": "ed46004d9c876277ba8ce2fe0ad33260945f32fe2158da0f47eabc2a392909dc"
+    },
+    {
+      "file": "src/ProvinceExplorer.tsx",
+      "sha256": "a2715769f79b9433eb144f908a80f4474314e431a511a4bf4e82562b441837c0"
+    },
+    {
+      "file": "src/PublicMedia.tsx",
+      "sha256": "a4a88314f7225ddc64510d2778b9e723dda80f59552faff6c29cfb8f6d95f8e5"
+    },
+    {
+      "file": "src/Reviews.tsx",
+      "sha256": "a28b835218496c2b5fb592b82b91b1cc1e87fde61b07138d5d3af86b18fa3356"
+    },
+    {
+      "file": "src/ShortcutIcon.tsx",
+      "sha256": "a620b4f0336af35643f43ced3fbf613256ddd23302c18dcdc960f75154cc2925"
+    },
+    {
+      "file": "src/SocialLogin.tsx",
+      "sha256": "dfb34dce524fa14a478dab9d0b0351b82530222f715e8a6eec0d746dd251ddc9"
+    },
+    {
+      "file": "src/SocialMaterials.tsx",
+      "sha256": "cbab706b56349f0e919679b3cdc57474011f05e1b08d04d77ce51fc4abcb4e44"
+    },
+    {
+      "file": "src/StatusCornerRibbon.tsx",
+      "sha256": "ddc2d3ac4046e311863370ab4c513ad7488d17efc076c2d872b0c94d72b75c7c"
+    },
+    {
+      "file": "src/SubscriptionPanel.tsx",
+      "sha256": "668d6c7dbf7c6d6f874accaa5fe6219aa667f47cb4a996e21bb61844537036c5"
+    },
+    {
+      "file": "src/UserAccounts.tsx",
+      "sha256": "77a44d35cf4331bbc2e355ad58122edfc24a4a0559c78aa5743de8f3a8b2a483"
+    },
+    {
+      "file": "src/VillaEntitlements.tsx",
+      "sha256": "e74233010982fbb4bec17a18aef4980b1299dc11f0d017c30a9c42e3b4258670"
+    },
+    {
+      "file": "src/VillaMap.tsx",
+      "sha256": "8504d2583466a336c450df90a2745f1138e0bae619cb59758247fb0acdd66365"
+    },
+    {
+      "file": "src/VillaMediaGallery.tsx",
+      "sha256": "7918a50695b712a5bd7c3905777c9cf64639e6b6c016a93d90db86c2972d2324"
+    },
+    {
+      "file": "src/VillaPackagePanel.tsx",
+      "sha256": "14e11850daa36ffab5da9172f755162d4a251d93b5b8fd3f7e2b71c4af17476c"
+    },
+    {
+      "file": "src/api.ts",
+      "sha256": "86f10e70b12cc6557e026d9608f98764d6d3b1abe46129812f97615191f47426"
+    },
+    {
+      "file": "src/assets/fonts/line-seed-sans-th/LINESeedSansTH_W_Bd.woff2",
+      "sha256": "63a428a7989a73de4e908092717de3a70a2c128b7b01b35a3821f39db22a2003"
+    },
+    {
+      "file": "src/assets/fonts/line-seed-sans-th/LINESeedSansTH_W_Rg.woff2",
+      "sha256": "caf74c95ba957707253e40747d8364c937970df80551ab0766afc073d1fd90d6"
+    },
+    {
+      "file": "src/assets/fonts/line-seed-sans-th/OFL.txt",
+      "sha256": "2e877cb9d5c82b6f0e0c5da509eb905ae8e299467da73c32f7b80bb9ce51ab62"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-display-LICENSE.txt",
+      "sha256": "e5032c56c373f0875c879a24bd559e6df0eb04820f243daf73252a92127b0a3b"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-display-latin-500-normal.woff2",
+      "sha256": "406b95125a0cda29352ad8d956236a6ff5e73c9f12726771142cc73f39d1a994"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-display-latin-600-normal.woff2",
+      "sha256": "981092b42dfcea799f0546d250cecc57894d347bb8a41d80a573cc448e7fb590"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-display-latin-700-normal.woff2",
+      "sha256": "d4c452ce6bd46891d0443796df238b4b6addf39b5c6095fb42844e6d476e2903"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-LICENSE.txt",
+      "sha256": "bd85ada3eef71267263e0fd24a40ae20380015c7cf1afa0c27a4340b03431320"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-latin-300-normal.woff2",
+      "sha256": "3a085adf09575044f7ea1b2b40212f0690bc7cc8b4a6c735deb3b457cd7df3b6"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-latin-400-normal.woff2",
+      "sha256": "fde3c93cfbfd8c97286fac1cca1c89912eb61857dd3996d26b7c0eaf16715bb6"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-latin-500-normal.woff2",
+      "sha256": "48a30aec87f1260fd291e1cc3cbc2fd191098eec913f583b8d77cb79b0e1edce"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-latin-600-normal.woff2",
+      "sha256": "351530d6156ff829f957f2085a55f5ea45c4d07e3504625b1e7db0b239c25e3a"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-latin-700-normal.woff2",
+      "sha256": "af79e77ba9fd08231b341621ee55fef64a63e0e1da954734e2766bec60830bd9"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-thai-300-normal.woff2",
+      "sha256": "270f3bfcb842eecf819da93786af290691ca9dc231664be9712e35ebfde2f1e9"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-thai-400-normal.woff2",
+      "sha256": "57776453076ebf0fa935080e63c0ae656f1f1ecd5172112d59d3b259e0dd8796"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-thai-500-normal.woff2",
+      "sha256": "36aac83971765332c5d79f98bba123a4ed07aacd5f90c4634eecba7d46264014"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-thai-600-normal.woff2",
+      "sha256": "8690b63cc8c7090492cce68f57a421be92fee4f682dff7ee06912132ebd2a8fc"
+    },
+    {
+      "file": "src/assets/fonts/noto-sans-thai-thai-700-normal.woff2",
+      "sha256": "fa4acaf9f20aa6d9a4c86c6474fe40e65525dd2ed6dd687f55a4ef1da5a0a57e"
+    },
+    {
+      "file": "src/authMessages.ts",
+      "sha256": "4bc0f8f3fdaf9c490d6527b811eacbca923f1ab119b88047022ed6a2561242ce"
+    },
+    {
+      "file": "src/cms-publish-sync.ts",
+      "sha256": "57d0c436a294ea2b9b2d1513c504b73a780d9e9ae88c043830f99838cbbe21c1"
+    },
+    {
+      "file": "src/cms.tsx",
+      "sha256": "80a763ba1841276ce4e2b3f33c1bfac1ee8af6743ee180645c75ffd5c9a6a55b"
+    },
+    {
+      "file": "src/cmsCopyEnglish.ts",
+      "sha256": "ee1c43cd61d124da60a55717dc9ad9956fdc5707720bc931491342a85d0bfedd"
+    },
+    {
+      "file": "src/dashboard-documents.css",
+      "sha256": "15cda5ca40d6ee30dfe9f952ec7443b2247809e2826d75e3e63c77a5b71bd495"
+    },
+    {
+      "file": "src/dashboardTranslations.ts",
+      "sha256": "6495314936bd244e21ae8697a0c6bebe38b9f1f2991322eef107bf9e407eb856"
+    },
+    {
+      "file": "src/design-system.css",
+      "sha256": "f77befa79dc974f72ac2d3189db468d8f7a56049a983f9fd691a5a3a25ab8a48"
+    },
+    {
+      "file": "src/fonts.css",
+      "sha256": "3de91aebbf70ec96185fec84092b96a716da9c3c767270a556212397352275df"
+    },
+    {
+      "file": "src/generatedAdminEnglish.json",
+      "sha256": "a4f0281f4e04afcb20f40b0f663602c513be563e277fdb524b9b881d031fa909"
+    },
+    {
+      "file": "src/generatedCmsMetadataEnglish.json",
+      "sha256": "e763c4b795f85c8607a066cda4a713c8ec1f53b76327d1a86f89d347361eb9b5"
+    },
+    {
+      "file": "src/generatedDynamicLabelsEnglish.json",
+      "sha256": "4531422223992a5504e8ce656689ab71355c3fc5f13377a0458e3f7fe7e94636"
+    },
+    {
+      "file": "src/generatedPortalEnglish.json",
+      "sha256": "e0fce3355106648205e02159dd34967ec62ba6836700dfc98ca6b4ced77cf4de"
+    },
+    {
+      "file": "src/generatedPropertyEnglish.json",
+      "sha256": "33783e3812ff8e735d7cd3bbbe96d3e80d386c24305a7e243fb4e8502393f8cb"
+    },
+    {
+      "file": "src/generatedTemplateEnglish.json",
+      "sha256": "ec9059145793ac68760e6ac9b5ad750b5ebd8e0e3966cef9dfe7756b49188dae"
+    },
+    {
+      "file": "src/index.css",
+      "sha256": "55e4d912848bf5694c89ef96bd172ba497ddc6ef7dc94cd4ebd5539bdf0d3d63"
+    },
+    {
+      "file": "src/locale.css",
+      "sha256": "391583dd66609820b7894f854061220222bab23520add4ee97a60d6e9c27aa78"
+    },
+    {
+      "file": "src/locale.ts",
+      "sha256": "fa6e7054c9058250ae83aa9d89c14f81535021fd47fb16a006ffe526868e7a13"
+    },
+    {
+      "file": "src/media-upload-queue.css",
+      "sha256": "18f2a50df0f88ca5fb27651c98e163d1de2d6abeccd51c865820b45575c98c31"
+    },
+    {
+      "file": "src/merchantStore.ts",
+      "sha256": "9cef19ab4ffc18d0fcdac528778cd859e9a75c124f79f6f4ad027d8ee587a3e0"
+    },
+    {
+      "file": "src/navigation.ts",
+      "sha256": "d462d84e296f4b2326fd9dffedac705e4829fffd976bd76934a536f8d2d7f06e"
+    },
+    {
+      "file": "src/packagePlans.ts",
+      "sha256": "97c4a92d55f48e42b85d06184a945da0e8d4f414a3db49a0007c94e397c16efa"
+    },
+    {
+      "file": "src/prototype.tsx",
+      "sha256": "416eeeac4a46b71d549b7aa8190d34790511a9e981aadfca5760a870cf6ab875"
+    },
+    {
+      "file": "src/publicVillaRefresh.ts",
+      "sha256": "8fc56e437260272f33a22ba90a7e7a1b26c687e45f3067c593ff4fdfd97a052b"
+    },
+    {
+      "file": "src/qrReference.ts",
+      "sha256": "0f9bd5171a06ecee0cc756ff3abd8ff68c7ecc1c23e5535de58eb31f832fee11"
+    },
+    {
+      "file": "src/refinements.css",
+      "sha256": "5b57d9c77caad14e7d3d980ce85490ce05f8804d9281e5eb96bdbbf23967cffe"
+    },
+    {
+      "file": "src/review-transfer.css",
+      "sha256": "3085481ded0238e54aab616e302558e448230bc881f55b02f419bae24962ad60"
+    },
+    {
+      "file": "src/reviewTransferTranslations.ts",
+      "sha256": "4d61c28aae1737b6ae31a55bfb804eae695d683db8aaf2da679f928a6d3182b7"
+    },
+    {
+      "file": "src/support.ts",
+      "sha256": "fff0cd731d7fa5ca2bc427da952f6262e489d21e891adccce31fb90b97e3bc3b"
+    },
+    {
+      "file": "src/systemTranslations.ts",
+      "sha256": "e47f334e38ca505ed4dfc4cbb4485ec9056e806f3988e6cb21392bedb1071091"
+    },
+    {
+      "file": "src/thaiUi.ts",
+      "sha256": "b91244e95af4caf732270586bf7b05f13446a2c56302dabbe472ba4fbd8decf3"
+    },
+    {
+      "file": "src/villa-gallery.css",
+      "sha256": "4edb29e89b4c668ef8b6642f63a4ad57ddcb112531a4f174c72344426df540c9"
+    },
+    {
+      "file": "src/villaStatus.ts",
+      "sha256": "df28e8f6366f650ddee63adb92f59b38c24b67b44602ebc09b798723220b8722"
+    },
+    {
+      "file": "src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "file": "tsconfig.backend.json",
+      "sha256": "9fd905d63dfd451f891e352d817d5e451b373eb3e580c84bacd982f2d641ed68"
+    },
+    {
+      "file": "tsconfig.json",
+      "sha256": "cafa5388e3b83a5a8c633dc55b55d2579529e9198281be669869dee508a2b88c"
+    },
+    {
+      "file": "vercel.json",
+      "sha256": "f6b8c65e2213a936b1f3b6546d2972de5a3607e1a2025a94f7d2ea8fa5aaa81d"
+    }
+  ],
+  "sourceDigest": "7661b595997724e01ef1213a8a8eb406b1883c648a3945f883179f13225ea3cb",
+  "commit": "db93c2774be6cca47347a95385e122845b1ffdcb",
+  "delta": [
+    ".vercelignore",
+    "server/app.mjs",
+    "server/check-localization.mjs",
+    "server/index.mjs",
+    "server/locale-messages.mjs",
+    "server/login-otp.mjs",
+    "server/merchant-receiving-bank.mjs",
+    "server/production-runtime.mjs",
+    "server/property-media.mjs",
+    "server/public-error.mjs",
+    "server/review-presentation.mjs",
+    "server/reviews.mjs",
+    "server/staging-interactive-policy.mjs",
+    "server/staging-merchant-scope.json",
+    "src/AccountPrivacy.tsx",
+    "src/AccountSecurity.tsx",
+    "src/AdminAcceptance.tsx",
+    "src/AdminAccess.tsx",
+    "src/AdminAccounts.tsx",
+    "src/AdminApprovalNotice.tsx",
+    "src/AdminApprovedVillas.tsx",
+    "src/AdminBusiness.tsx",
+    "src/AdminChangeApprovals.tsx",
+    "src/AdminCms.tsx",
+    "src/AdminLeadList.tsx",
+    "src/AdminLogin.tsx",
+    "src/AdminPendingVillas.tsx",
+    "src/AdminPromotions.tsx",
+    "src/AdminReadiness.tsx",
+    "src/AdminReceivingBank.tsx",
+    "src/AdminVillaPage.tsx",
+    "src/Advertising.tsx",
+    "src/App.tsx",
+    "src/Backoffice.tsx",
+    "src/BannerEditor.tsx",
+    "src/BusinessReadiness.tsx",
+    "src/CmsBannerInventory.tsx",
+    "src/CmsChangeHistory.tsx",
+    "src/CmsIntroBannerEditor.tsx",
+    "src/CmsMediaPicker.tsx",
+    "src/CmsPresentationEditor.tsx",
+    "src/ContactLead.tsx",
+    "src/DemoNotice.tsx",
+    "src/DemoPhoto.tsx",
+    "src/DocumentManagement.tsx",
+    "src/FacebookMediaBrief.tsx",
+    "src/FooterAd.tsx",
+    "src/HomeBanner.tsx",
+    "src/HomeDiscoveryEditor.tsx",
+    "src/HomeLogoLink.tsx",
+    "src/HomeNews.tsx",
+    "src/HomeShortcuts.tsx",
+    "src/HomeVillaShowcase.tsx",
+    "src/LanguageSwitcher.tsx",
+    "src/MediaUploadQueue.tsx",
+    "src/MerchantProfile.tsx",
+    "src/MerchantReceivingBank.tsx",
+    "src/OmiseCheckout.tsx",
+    "src/OperationsPortal.tsx",
+    "src/OtpLogin.tsx",
+    "src/OwnerVerification.tsx",
+    "src/OwnershipDocuments.tsx",
+    "src/PackageComingSoon.tsx",
+    "src/PasswordRecovery.tsx",
+    "src/PasswordRegistration.tsx",
+    "src/PaymentQr.tsx",
+    "src/PremiumBanner.tsx",
+    "src/PropertyDetails.tsx",
+    "src/PropertyMedia.tsx",
+    "src/PropertySearchSelect.tsx",
+    "src/ProvinceExplorer.tsx",
+    "src/PublicMedia.tsx",
+    "src/Reviews.tsx",
+    "src/SocialLogin.tsx",
+    "src/SocialMaterials.tsx",
+    "src/StatusCornerRibbon.tsx",
+    "src/SubscriptionPanel.tsx",
+    "src/UserAccounts.tsx",
+    "src/VillaEntitlements.tsx",
+    "src/VillaMap.tsx",
+    "src/VillaMediaGallery.tsx",
+    "src/VillaPackagePanel.tsx",
+    "src/api.ts",
+    "src/cms.tsx",
+    "src/cmsCopyEnglish.ts",
+    "src/dashboard-documents.css",
+    "src/dashboardTranslations.ts",
+    "src/generatedAdminEnglish.json",
+    "src/generatedCmsMetadataEnglish.json",
+    "src/generatedDynamicLabelsEnglish.json",
+    "src/generatedPortalEnglish.json",
+    "src/generatedPropertyEnglish.json",
+    "src/generatedTemplateEnglish.json",
+    "src/locale.css",
+    "src/locale.ts",
+    "src/media-upload-queue.css",
+    "src/packagePlans.ts",
+    "src/prototype.tsx",
+    "src/review-transfer.css",
+    "src/reviewTransferTranslations.ts",
+    "src/support.ts",
+    "src/systemTranslations.ts",
+    "src/thaiUi.ts",
+    "src/villaStatus.ts"
+  ],
+  "sourceVerified": true,
+  "baselineCommit": "57885ae245c5652633035c85dd71846440119cb7",
+  "baselineDeployment": "dpl_DgWB9tCJwuzRBLNyuTXq5PWWL6QE",
+  "sourcePrefix": "",
+  "environment": "staging",
+  "projectId": "prj_3A3Lygt3Z9Pt3D9p8bk693fTfHiC",
+  "alias": "design-villacheck.vercel.app",
+  "runtimeChangesFromCurrentDeployment": 0
+}
