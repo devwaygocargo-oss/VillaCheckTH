@@ -1,0 +1,4 @@
+// Synthetic disposable database fixtures only. Never imported by the application.
+import fs from'node:fs';import{randomUUID}from'node:crypto';
+export function fixturePhoto(){return {type:'image/jpeg',name:'LOCAL DEMO cover.jpg',data:'data:image/jpeg;base64,'+fs.readFileSync('public/demo/diverse/photo-11123267.jpg').toString('base64')}}
+export async function fixtureCover(db,id,ownerId){const v=await db.prepare('SELECT photo_url FROM villas WHERE id=?').get(id);if(v.photo_url)return v.photo_url;const doc=randomUUID();await db.prepare('INSERT INTO documents(id,owner_id,name,mime,bytes) VALUES (?,?,?,?,?)').run(doc,ownerId,'villa-photo','image/jpeg',fs.readFileSync('public/demo/diverse/photo-11123267.jpg'));const url='/api/public/villa-photo/'+doc;await db.prepare('UPDATE villas SET photo_url=? WHERE id=?').run(url,id);return url}

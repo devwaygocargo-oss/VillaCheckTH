@@ -1,3 +1,5 @@
+import {publicReviewPage,privateReviewerLabel} from './review-presentation.mjs';
+import scope from './staging-merchant-scope.json' with {type:'json'};
 import {trustDto} from "./catalog.mjs"
 import {resolvePublicQr} from "./public-revision.mjs"
 import {packageEntitlements} from "./package-entitlements.mjs"
@@ -39,7 +41,7 @@ export const reviewReasons = {
   privacy: "คุกคามหรือเปิดเผยข้อมูลส่วนตัว",
   insufficient_evidence: "ต้องการหลักฐานเพิ่มเติมสำหรับข้อกล่าวหา",
 }
-export async function reviewsApi(db, user, req, path, url, body) {
+export async function reviewsApi(db, user, req, path, url, body, config={}) {
   if (
     !/^\/api\/(public\/reviews|reviews|admin\/reviews|merchant\/reviews)(\/|$)/.test(
       path,
@@ -50,17 +52,7 @@ export async function reviewsApi(db, user, req, path, url, body) {
     const villa = await reviewVilla(db, url.searchParams.get("qr") || "")
     if (!villa) fail(404, "ไม่พบที่พัก")
     return {
-      reviews: (await read(db))
-        .filter((r) => r.villaId === villa.id && r.status === "published")
-        .map((r) => ({
-          id: r.id,
-          rating: r.rating,
-          content: r.content,
-          author: r.author,
-          createdAt: r.createdAt,
-          publishedAt: r.publishedAt || r.reviewedAt,
-          reply: r.reply || null,
-        })),
+      ...publicReviewPage((await read(db)).filter(r=>r.villaId===villa.id),url.searchParams),
       policy: publicationPolicy,
       moderationRequired: await requiresModeration(db,villa),
     }
@@ -73,7 +65,7 @@ export async function reviewsApi(db, user, req, path, url, body) {
     const requested=url.searchParams.get("qr")
     const villa=requested?await db.prepare("SELECT id FROM villas WHERE qr=?").get(requested):null
     return {
-      reviews: (await read(db)).filter(row=>!requested||row.villaId===villa?.id).sort((a, b) =>
+      reviews: (await read(db)).filter(row=>!config.interactiveDemo||(scope.users.some(a=>a.id===row.userId)&&scope.merchants.filter(a=>(scope.businessWriteMerchantIds||[scope.businessWriteMerchantId]).includes(a.id)).flatMap(a=>a.villaIds).includes(row.villaId))).filter(row=>!requested||row.villaId===villa?.id).sort((a, b) =>
         b.createdAt.localeCompare(a.createdAt),
       ),
       reasons: reviewReasons,
@@ -87,7 +79,7 @@ export async function reviewsApi(db, user, req, path, url, body) {
     return {
       reviews: (await read(db)).filter(
         (r) => ids.includes(r.villaId) && r.status === "published",
-      ),
+      ).map(({userId,reviewedBy,reviewedByName,history,...safe})=>({...safe,author:privateReviewerLabel(safe.author)})),
     }
   }
   if (path === "/api/reviews" && req.method === "POST")

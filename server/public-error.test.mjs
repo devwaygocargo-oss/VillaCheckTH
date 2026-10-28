@@ -1,0 +1,6 @@
+import test from'node:test';import assert from'node:assert/strict';import{publicError}from'./public-error.mjs';
+test('technical exceptions do not leak SQL, credentials or exception codes',()=>{const r=publicError({status:500,message:'SELECT secret FROM users password=private',code:'P2010'});assert.deepEqual(r,{status:500,body:{error:'เกิดข้อผิดพลาดที่เซิร์ฟเวอร์',code:'SERVER_ERROR'}})});
+test('Thai validation keeps meaning and stable safe machine code',()=>{const r=publicError({status:409,message:'รูปภาพเพิ่มเติมต้องไม่เกิน 10 รูป',code:'MEDIA_LIMIT_EXCEEDED'});assert.equal(r.body.code,'MEDIA_LIMIT_EXCEEDED');assert(r.body.error.includes('10'))});
+test('English authorization details are replaced by Thai and nonstandard codes rejected',()=>{const r=publicError({status:403,message:'Wrong role user@example.invalid',code:'token/private'});assert.equal(r.body.code,'FORBIDDEN');assert(!r.body.error.includes('@'))});
+
+test('trusted sanitized Thai service failure retains useful action; arbitrary 503 exception stays generic',()=>{const e={status:503,message:'ส่งอีเมล OTP ไม่สำเร็จ กรุณาลองอีกครั้ง'};assert.equal(publicError(e,{allowServiceMessage:true}).body.error,e.message);assert.notEqual(publicError(e).body.error,e.message)});

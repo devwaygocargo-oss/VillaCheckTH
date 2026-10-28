@@ -1,3 +1,4 @@
+import {assertDemoSeedAllowed} from './production-demo-gate.mjs'
 import {createHash,randomUUID} from "node:crypto"
 import {createUser,addMonths} from "./database.mjs"
 import {seedCatalog,trustDto} from "./catalog.mjs"
@@ -13,6 +14,7 @@ export function dummyPdf(details={}){
  return Buffer.from(data);
 }
 export async function seedDemo(db,{password,adminEmail,adminPassword}={}){
+ assertDemoSeedAllowed(process.env,db.connectionIdentity)
  if(!password || password.length<12)throw Error('DEMO_PASSWORD must have at least 12 characters')
  return db.transaction(async()=>{
   await seedCatalog(db)

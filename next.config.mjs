@@ -1,4 +1,10 @@
 export default {
+ async redirects(){
+  if(process.env.APP_ENV!=="production"||!process.env.APP_URL)return [];
+  const origin=new URL(process.env.APP_URL),platform="villacheck-production.vercel.app";
+  if(origin.protocol!=="https:"||origin.username||origin.password||origin.pathname!=="/"||origin.search||origin.hash||![platform,"www.villacheckth.com"].includes(origin.host))throw Error("Unapproved Production canonical origin");
+  return origin.host===platform?[]:[{source:"/:path*",has:[{type:"host",value:platform}],destination:origin.origin+"/:path*",permanent:false}];
+ },
  async headers() { return [{ source: "/:path*", headers: [
   {key:"X-Content-Type-Options",value:"nosniff"},
   {key:"X-Frame-Options",value:"DENY"},

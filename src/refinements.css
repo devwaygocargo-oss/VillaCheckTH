@@ -373,7 +373,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 .cms-tabs button { min-width: 0; min-height: 48px; white-space: normal; }
 @media (min-width: 1101px) {
   .portal-side { position: sticky; top: 0; align-self: start; height: 100dvh; min-height: 0; }
-  .portal-side > nav { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; padding-bottom: 8px; }
+  .portal-side > nav { flex: 1; min-height: 0; align-content: start; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; padding-bottom: 8px; }
   .portal-side > nav button { flex-shrink: 0; }
   .portal-side .portal-mobile-bar, .portal-side > small, .portal-side > .portal-logout { flex-shrink: 0; }
   .portal-side > .portal-logout { margin-top: 12px; }
@@ -393,3 +393,37 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--teal); outline-
 @media(max-width:600px) { .user-recent-checks article { flex-direction:column; align-items:stretch; } }
 .portal-page.portal-merchant .portal-side nav { align-content:start; gap:6px; }
 .portal-page.portal-merchant .portal-side nav button { min-height:44px; padding:10px 12px; line-height:1.5; }
+
+/* Merchant workspace: white surfaces, existing navy/cyan brand; no True assets. */
+.portal-merchant { background:#f7f9fb; color:var(--ink); }
+.portal-merchant .portal-content { background:#fff; min-width:0; }
+.portal-merchant .merchant-demo { background:#f5f8fa; color:#4b5b6b; border:1px solid #dce5ed; }
+.portal-merchant .user-greeting { font-size:clamp(1.25rem,2.5vw,1.8rem); font-weight:600; margin:0 0 12px; }
+.portal-merchant .merchant-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:20px; }
+.merchant-cover { position:relative; margin-bottom:16px; }
+.merchant-cover-link { display:block; width:100%; border:0; padding:0; background:#f1f5f7; border-radius:14px; overflow:hidden; cursor:pointer; }
+.merchant-cover-link img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; }
+.merchant-cover-link:focus-visible,.villa-title-link:focus-visible { outline:3px solid var(--sea); outline-offset:3px; }
+.villa-title-link { border:0; background:transparent; padding:0; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.villa-status-badge { position:absolute; top:12px; left:12px; pointer-events:none; padding:7px 12px; border-radius:999px; font-size:.85rem; font-weight:600; background:#fff; color:#364152; box-shadow:0 2px 10px #0002; }
+.villa-status-badge.approved { background:#e3f4e9; color:#175736; }
+.villa-status-badge.rejected { background:#ffe8e7; color:#862b27; }
+.villa-status-badge.changes { background:#fff1cc; color:#705300; }
+.villa-status-badge.reviewing { background:#e4efff; color:#244777; }
+.villa-status-badge.pending { background:#f0edf9; color:#534170; }
+.portal-merchant .merchant-panel { background:#fff; border:1px solid #e0e6eb; box-shadow:none; }
+.portal-merchant .button-row { flex-wrap:wrap; }
+@media(max-width:640px) { .portal-merchant .portal-content { padding:20px 16px; } .portal-merchant .portal-head { align-items:flex-start; flex-wrap:wrap; } .portal-merchant .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .portal-merchant .merchant-toolbar { flex-wrap:wrap; } }
+/* Reference measured on true.th: 1440×463.5 desktop and 390×390 mobile.
+   Match responsive proportion, not proprietary artwork or typeface. */
+.vc-banner { width:100%; max-width:100%; height:auto; min-height:320px; aspect-ratio:1440/463.5; }
+.portal-merchant .portal-head h1 { font-size:clamp(26px,2.4vw,36px); line-height:1.35; }
+.free-period-banner { color:#165b43; border:1px solid #d8e9e2; border-radius:12px; padding:14px 18px; background:#f5faf7; }
+.home-shortcuts { background:#fff; color:var(--ink); }
+.shortcut-search { background:#f7f9fb; border-color:#dce5ed; }
+.shortcut-search input { color:var(--ink); }
+.shortcut-search input::placeholder { color:#617383; }
+@media(max-width:640px) { .vc-banner { aspect-ratio:1; min-height:320px; height:auto; } .vc-banner-copy { padding:24px 24px 60px; } .vc-banner-copy h2 { font-size:26px; margin:10px 0; } .vc-banner-copy p { font-size:14px; margin-bottom:16px; } }
+
+/* Media uploads must not impose intrinsic image/file-input minimum widths. */
+.property-media-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.property-media-grid figure{min-width:0;overflow-wrap:anywhere}.property-media-grid input,.property-media-grid img,.property-media-grid video{max-width:100%}.property-media-grid input{min-width:0;width:100%}@media(max-width:900px){.property-media-grid{grid-template-columns:minmax(0,1fr)}}

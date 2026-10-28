@@ -1,9 +1,11 @@
+import {enrollVerifiedNewMerchant} from './merchant-free-period.mjs'
 import {claimVerifiedEmail} from "./email-identity.mjs"
 import { cmsBusiness, cmsLoginConfig, otpTemplate } from "./cms-business.mjs"
 import {randomInt,randomUUID,randomBytes,createHmac,timingSafeEqual,createCipheriv,createDecipheriv,createHash} from 'node:crypto'
 import {createUser} from './database.mjs'
 const fail=(status,message)=>{throw Object.assign(Error(message),{status})}
 export function otpChannels(config,transport){
+ if(config.productionReleaseMode==='PHASE1')return {email:config.phase1EmailOtpDelivery==='SMTP'&&Boolean(transport&&config.smtpFrom),sms:false}
  const enabled=typeof config.otpSecret==='string'&&config.otpSecret.length>=32
  return {email:Boolean(enabled&&(config.thaiBulkSmsEmailOtpTemplateId?config.thaiBulkSmsApiKey&&config.thaiBulkSmsApiSecret:transport&&config.smtpFrom)),sms:Boolean(enabled&&(config.thaiBulkSmsOtpKey||config.thaiBulkSmsOtpSecret?config.thaiBulkSmsOtpKey&&config.thaiBulkSmsOtpSecret:config.thaiBulkSmsApiKey&&config.thaiBulkSmsApiSecret&&config.thaiBulkSmsSender))}
 }
@@ -44,25 +46,44 @@ export async function probeSmsCredit(config,fetchProvider=fetch){
 }
 export function createLoginOtp(db,config,transport,fetchSms=fetch){
  return {
-  async request(data,bindingUser=null){
+  async request(data,bindingUser=null,options={}){
+   if(config.productionReleaseMode==='PHASE1'&&options.existingAccountLogin!==true&&(config.phase1EmailOtpDelivery!=='SMTP'||data.channel!=='email'||data.purpose!=='register'))fail(503,'Phase1 registration delivery is disabled or not approved')
    const accountType=data.accountType||'user'
    if(!['user','merchant'].includes(accountType))fail(400,'ประเภทบัญชีไม่ถูกต้อง')
-   if(data.purpose!==undefined&&!['login','register','link_identity'].includes(data.purpose))fail(400,'คำขอ OTP ไม่ถูกต้อง')
+   if(data.purpose!==undefined&&!['login','register','link_identity',...(options.passwordRecovery===true?['reset_password']:[])].includes(data.purpose))fail(400,'คำขอ OTP ไม่ถูกต้อง')
    if(data.purpose==='link_identity'&&bindingUser?.role!=='merchant')fail(403,'เข้าสู่ระบบ Merchant ก่อนเชื่อมช่องทางเข้าสู่ระบบ')
    const business=await cmsBusiness(db),deliveryConfig=await cmsLoginConfig(db,config)
    const channel=data.channel,destination=otpDestination(channel,data.destination)
+   const existingAccountLogin=options.existingAccountLogin===true
+   if(existingAccountLogin&&(data.purpose||'login')!=='login')fail(400,'คำขอ OTP ไม่ถูกต้อง')
+   if(existingAccountLogin&&channel==='sms'&&!/^\+66[689]\d{8}$/.test(destination))fail(400,'กรอกหมายเลขมือถือไทยให้ถูกต้อง')
+   let loginIdentity
+   if(existingAccountLogin){
+    loginIdentity=channel==='email'?await db.prepare('SELECT * FROM users WHERE email=?').get(destination):await db.prepare("SELECT u.* FROM oauth_identities o JOIN users u ON u.id=o.user_id WHERE o.provider='phone_otp' AND o.subject=?").get(destination)
+    if(loginIdentity?.role!==accountType||channel==='email'&&loginIdentity&&await db.prepare('SELECT value FROM system_settings WHERE key=?').get('unverified_registration_email:'+loginIdentity.id))loginIdentity=null
+   }
+   if(channel==='sms'&&config.appEnvironment==='staging'&&!config.stagingSmsAllowlist?.includes(destination))fail(403,'Staging อนุญาตส่ง SMS เฉพาะหมายเลขทดสอบที่กำหนด')
    if(channel==='email'&&config.appEnvironment==='staging'&&!config.stagingEmailAllowlist?.includes(destination))fail(403,'Staging อนุญาตส่ง OTP เฉพาะอีเมลทดสอบที่กำหนด')
    if(!otpChannels(deliveryConfig,transport)[channel])fail(503,channel==='email'?'ยังไม่ได้ตั้งค่าการส่ง OTP ทางอีเมล':'ยังไม่ได้ตั้งค่าการส่ง OTP ทาง SMS')
    const id=randomUUID(),code=String(randomInt(0,1000000)).padStart(6,'0'),now=Date.now()
    await db.transaction(async()=>{
+    const stale=await db.prepare('SELECT id FROM login_otps WHERE created<?').all(now-86400000)
+    for(const old of stale)await db.prepare('DELETE FROM system_settings WHERE key=?').run('otp_login_identity:'+old.id)
     await db.prepare('DELETE FROM login_otps WHERE created<?').run(now-86400000)
     const last=await db.prepare('SELECT created FROM login_otps WHERE destination=? ORDER BY created DESC LIMIT 1').get(destination)
     if(last&&now-Number(last.created)<60000)fail(429,'กรุณารอ 60 วินาทีก่อนขอ OTP ใหม่')
     const count=await db.prepare('SELECT count(*) AS n FROM login_otps WHERE destination=? AND created>?').get(destination,now-3600000)
     if(Number(count.n)>=5)fail(429,'ขอ OTP ครบจำนวนที่อนุญาต กรุณาลองอีกครั้งภายหลัง')
     await db.prepare('UPDATE login_otps SET consumed=1 WHERE destination=? AND consumed=0').run(destination)
-    await db.prepare('INSERT INTO login_otps(id,channel,destination,code_hash,expires,created,account_type,binding_user_id,purpose) VALUES (?,?,?,?,?,?,?,?,?)').run(id,channel,destination,hash(config,id,code),now+300000,now,accountType,data.purpose==='link_identity'?bindingUser.id:null,data.purpose||'login')
+    await db.prepare('INSERT INTO login_otps(id,channel,destination,code_hash,expires,created,account_type,binding_user_id,purpose) VALUES (?,?,?,?,?,?,?,?,?)').run(id,channel,destination,hash(config,id,code),now+300000,now,accountType,data.purpose==='link_identity'?bindingUser.id:null,data.purpose==='reset_password'?'login':data.purpose||'login')
+    if(existingAccountLogin)await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('otp_login_identity:'+id,JSON.stringify({policy:'EXISTING_ACCOUNT_LOGIN',userId:loginIdentity?.id||null,role:accountType,channel}))
+    if(options.passwordRecovery===true||options.phoneRegistration===true)await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('otp_purpose:'+id,options.phoneRegistration===true?'phone_registration':'reset_password')
+    if(options.phoneRegistration===true&&options.allocatedUserId)await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?)').run('phone_registration_allocation:'+id,JSON.stringify({userId:options.allocatedUserId}))
    })
+   const genericChallenge={challengeId:id,expiresAt:new Date(now+300000).toISOString(),resendAfter:60}
+   // Keep the same response and rate limits for unknown, unverified and wrong-role
+   // accounts. They receive no provider request and can never establish a session.
+   if(existingAccountLogin&&!loginIdentity)return genericChallenge
    try{
     if(channel==='email'&&deliveryConfig.thaiBulkSmsEmailOtpTemplateId){
      const response=await providerEmailOtp(config,fetchSms,'send',{template_uuid:deliveryConfig.thaiBulkSmsEmailOtpTemplateId,recipient_email:destination,payload:{}});
@@ -85,17 +106,26 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
     await db.prepare('UPDATE login_otps SET consumed=1 WHERE id=?').run(id)
     const reason=channel==='email'?({EAUTH:'SMTP_AUTH_FAILED',ETIMEDOUT:'SMTP_TIMEOUT',ECONNECTION:'SMTP_CONNECTION_FAILED',ESOCKET:'SMTP_CONNECTION_FAILED',EENVELOPE:'SMTP_RECIPIENT_OR_SENDER_REJECTED'}[error.code]||'EMAIL_DELIVERY_FAILED'):'SMS_DELIVERY_FAILED'
     await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('otp_delivery_'+channel,JSON.stringify({ok:false,reason,...(error.diagnostic?error.diagnostic:channel==='sms'||deliveryConfig.thaiBulkSmsEmailOtpTemplateId?{category:'NETWORK_OR_INVALID_RESPONSE'}:{}),at:new Date().toISOString()}))
+    if(existingAccountLogin)return genericChallenge
     fail(503,channel==='email'?'ส่งอีเมล OTP ไม่สำเร็จ กรุณาใช้ช่องทางอื่นหรือลองใหม่ภายหลัง':'ส่ง SMS OTP ไม่สำเร็จ กรุณาใช้ช่องทางอื่นหรือลองใหม่ภายหลัง')
    }
    await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('otp_delivery_'+channel,JSON.stringify({ok:true,at:new Date().toISOString()}))
    return {challengeId:id,expiresAt:new Date(now+300000).toISOString(),resendAfter:60}
   },
-  async verify(data,bindingUser=null){
+  async verify(data,bindingUser=null,options={}){
    if(typeof data.challengeId!=='string'||!/^[-a-f0-9]{36}$/.test(data.challengeId)||typeof data.code!=='string'||!/^\d{6}$/.test(data.code))fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
    if(!config.otpSecret||config.otpSecret.length<32)fail(503,'OTP ยังไม่พร้อมใช้งาน')
    let verificationDiagnostic,verificationChannel;
     const row=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(data.challengeId)
     if(!row||row.consumed||Number(row.expires)<=Date.now()||row.attempts>=5)fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
+    const existingLoginRow=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('otp_login_identity:'+row.id)
+    const existingLogin=existingLoginRow?JSON.parse(existingLoginRow.value):null
+    if(options.existingAccountLogin===true&&!existingLogin||options.existingAccountLogin!==true&&existingLogin)fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
+    const recoveryPurpose=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('otp_purpose:'+row.id)
+    if(recoveryPurpose?.value==='phone_registration'&&options.phoneRegistration!==true)fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
+    if(options.phoneRegistration===true&&recoveryPurpose?.value!=='phone_registration')fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
+    if(recoveryPurpose?.value==='reset_password'&&options.passwordRecovery!==true)fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
+    if(options.passwordRecovery===true&&recoveryPurpose?.value!=='reset_password')fail(401,'OTP ไม่ตรงกับวัตถุประสงค์ของคำขอ')
     if(row.binding_user_id&&(!bindingUser||bindingUser.id!==row.binding_user_id||bindingUser.role!=='merchant'))fail(403,'ใช้บัญชี Merchant ที่เริ่มยืนยันช่องทางนี้')
     verificationChannel=row.channel;
     let valid;
@@ -118,10 +148,26 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
    // Provider I/O is outside the global write transaction. Recheck replay,
    // expiration and attempt limits atomically after the provider returns.
    const result=await db.transaction(async()=>{
+    const verified=await (async()=>{
     const current=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(data.challengeId)
     if(!current||current.consumed||Number(current.expires)<=Date.now()||current.attempts>=5||current.code_hash!==row.code_hash)return {invalid:true}
     if(!valid){await db.prepare('UPDATE login_otps SET attempts=attempts+1 WHERE id=?').run(row.id);return {invalid:true}}
     await db.prepare('UPDATE login_otps SET consumed=1 WHERE id=?').run(row.id)
+    if(existingLogin){
+     if(existingLogin.policy!=='EXISTING_ACCOUNT_LOGIN'||!existingLogin.userId||existingLogin.role!==row.account_type||existingLogin.channel!==row.channel)return {invalid:true}
+     const user=await db.prepare('SELECT * FROM users WHERE id=?').get(existingLogin.userId)
+     if(!user||user.role!==row.account_type||!['user','merchant'].includes(user.role))return {invalid:true}
+     if(row.channel==='email'){
+      if(user.email!==row.destination||await db.prepare('SELECT value FROM system_settings WHERE key=?').get('unverified_registration_email:'+user.id))return {invalid:true}
+     }else{
+      const linked=await db.prepare("SELECT user_id FROM oauth_identities WHERE provider='phone_otp' AND subject=?").get(row.destination)
+      if(linked?.user_id!==user.id)return {invalid:true}
+     }
+     const access=await db.prepare('SELECT value FROM system_settings WHERE key=?').get('account_status:'+user.id)
+     if(access&&JSON.parse(access.value).status==='suspended')return {invalid:true}
+     await db.prepare('DELETE FROM system_settings WHERE key=?').run('otp_login_identity:'+row.id)
+     return {user}
+    }
     if(row.binding_user_id){
      if(row.channel==='email'){
       const other=await db.prepare('SELECT id FROM users WHERE email=?').get(row.destination)
@@ -134,27 +180,48 @@ export function createLoginOtp(db,config,transport,fetchSms=fetch){
       await db.prepare("DELETE FROM oauth_identities WHERE provider='phone_otp' AND user_id=?").run(row.binding_user_id)
       await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,row.binding_user_id)
      }
+     if(row.channel==='email')await db.prepare('DELETE FROM system_settings WHERE key=?').run('unverified_registration_email:'+row.binding_user_id)
      const boundUser=await db.prepare('SELECT * FROM users WHERE id=?').get(row.binding_user_id)
      return {user:row.channel==='email'?await claimVerifiedEmail(db,boundUser):boundUser}
     }
     if(row.channel==='email'){
      const existing=await db.prepare('SELECT * FROM users WHERE email=?').get(row.destination)
-     if(existing&&row.account_type==='merchant'&&existing.role!=='merchant')return {wrongAccount:true}
+     if(existing&&await db.prepare('SELECT value FROM system_settings WHERE key=?').get('unverified_registration_email:'+existing.id))return {unlinked:true}
+     if(options.passwordRecovery===true&&!existing)return {invalid:true}
+     if(existing&&(!['user','merchant'].includes(existing.role)||(row.account_type==='merchant'&&existing.role!=='merchant')))return {wrongAccount:true}
      if(!existing&&row.account_type==='merchant'&&row.purpose!=='register')return {unlinked:true}
      const verifiedUser=existing||await createUser(db,row.destination,randomBytes(48).toString('hex'),row.destination.split('@')[0],row.account_type||'user');
+     if(!existing)await enrollVerifiedNewMerchant(db,verifiedUser,new Date().toISOString(),{createdNow:true});
      return {user:await claimVerifiedEmail(db,verifiedUser)}
     }
     // Never treat an unverified contact phone on a Merchant/Admin profile as a login identity.
     let user=await db.prepare("SELECT u.* FROM oauth_identities o JOIN users u ON u.id=o.user_id WHERE o.provider='phone_otp' AND o.subject=?").get(row.destination)
-    if(user&&row.account_type==='merchant'&&user.role!=='merchant')return {wrongAccount:true}
+    if(user&&(!['user','merchant'].includes(user.role)||(row.account_type==='merchant'&&user.role!=='merchant')))return {wrongAccount:true}
     if(!user&&row.account_type==='merchant'&&row.purpose!=='register')return {unlinked:true}
-    if(!user){user=await createUser(db,`${randomUUID()}@phone.villacheck.invalid`,randomBytes(48).toString('hex'),row.account_type==='merchant'?'Merchant VillaCheck':'สมาชิก VillaCheck',row.account_type||'user');await db.prepare('UPDATE users SET phone=? WHERE id=?').run(row.destination,user.id);await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,user.id)}
-    return {user}
+    const allocation=options.phoneRegistration===true?await db.prepare('SELECT value FROM system_settings WHERE key=?').get('phone_registration_allocation:'+row.id):null
+    const createdNow=!user
+    if(!user){user=await createUser(db,`${randomUUID()}@phone.villacheck.invalid`,randomBytes(48).toString('hex'),row.account_type==='merchant'?'Merchant VillaCheck':'สมาชิก VillaCheck',row.account_type||'user',allocation?{id:JSON.parse(allocation.value).userId}:{});await db.prepare('UPDATE users SET phone=? WHERE id=?').run(row.destination,user.id);await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp',row.destination,user.id);await enrollVerifiedNewMerchant(db,user,new Date().toISOString(),{createdNow:true})}
+    return {user,createdNow}
+    })()
+    if(verified.user&&options.phoneRegistration===true){
+     if(typeof options.onVerified!=='function'||verified.createdNow!==true)fail(409,'หมายเลขนี้มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบ')
+     const registered=await options.onVerified(verified.user)
+     await db.prepare('DELETE FROM system_settings WHERE key=?').run('phone_registration_allocation:'+row.id)
+     await db.prepare('DELETE FROM system_settings WHERE key=?').run('otp_purpose:'+row.id)
+     return {user:registered}
+    }
+    if(verified.user&&options.passwordRecovery===true){
+     if(typeof options.onVerified!=='function')fail(500,'คำขอกู้คืนไม่สมบูรณ์')
+     const recovered=await options.onVerified(verified.user)
+     await db.prepare('DELETE FROM system_settings WHERE key=?').run('otp_purpose:'+row.id)
+     return {user:recovered}
+    }
+    return verified
    })
    if(verificationDiagnostic)await db.prepare('INSERT INTO system_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('otp_verification_'+verificationChannel,JSON.stringify({...verificationDiagnostic,category:result.invalid?verificationDiagnostic.category:'OK',accepted:!result.invalid,at:new Date().toISOString()}));
    if(result.invalid)fail(401,'OTP ไม่ถูกต้องหรือหมดอายุ')
    if(result.conflict)fail(409,'ช่องทางนี้ผูกกับบัญชีอื่นแล้ว กรุณาใช้ช่องทางอื่น')
-   if(result.wrongAccount)fail(409,'บัญชีนี้ไม่ใช่ Merchant กรุณาเข้าสู่ระบบในหน้าบัญชีของคุณ หรือสมัคร Merchant ด้วยช่องทางอื่น')
+   if(result.wrongAccount)fail(409,'ไม่สามารถเข้าสู่ระบบบัญชีนี้ผ่านช่องทางที่เลือก กรุณาใช้หน้าลงชื่อเข้าระบบสำหรับบัญชีของคุณ')
    if(result.unlinked)fail(409,'ยังไม่มีบัญชี Merchant ที่เชื่อมช่องทางนี้ กรุณาสมัคร Merchant ใหม่ หรือใช้อีเมลเดิมแล้วเชื่อมเบอร์ในข้อมูล Merchant')
    return result.user
   }

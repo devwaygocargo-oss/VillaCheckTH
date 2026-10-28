@@ -1,3 +1,5 @@
+import {t as translateSystem} from "./locale"
+import {t} from "./locale"
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { supportHref } from "./support";
@@ -29,9 +31,9 @@ export default function PublicMedia({ page, go }: { page: Page; go: (page: Page,
     <div className="page-hero container"><h1>{page === "gallery" ? t("media.galleryTitle") : t("media.socialTitle").replace("{channel}",name)}</h1><p>{page === "gallery" ? t("media.galleryDescription") : t("media.socialDescription")}</p></div>
     <div className="container info-body">
       {page === "gallery" ? <>
-        {loading && <p role="status">กำลังโหลดรูปที่พัก…</p>}
+        {loading && <p role="status">{translateSystem("กำลังโหลดรูปที่พัก…")}</p>}
         {error && <p role="alert">{error}</p>}
-        {!loading && !error && !villas.length && <p>ยังไม่มีรูปที่พักที่เผยแพร่</p>}
+        {!loading && !error && !villas.length && <p>{translateSystem("ยังไม่มีรูปที่พักที่เผยแพร่")}</p>}
         <div className="villa-grid">{villas.map(v => <article key={v.qr}><img src={v.photoUrl} alt={v.name} style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", borderRadius: 12 }} /><h2>{v.name}</h2><p>{v.province}</p><button className="outline-button" onClick={() => go("verify", v.qr)}>{t("media.openVilla")}</button></article>)}</div>
       </> : href ? <a className="primary-button" href={href} target="_blank" rel="noopener noreferrer">{t("media.openSocial").replace("{channel}",name)}</a> : <><p>{t("media.unavailable").replace("{channel}",name)}</p><a className="outline-button" href={supportHref("email")}>{t("media.email")}</a><button className="primary-button" onClick={() => go("contact")}>{t("media.contact")}</button></>}
       <button className="text-button" onClick={() => go("home")}>{t("media.home")}</button>

@@ -17,6 +17,8 @@ export async function recordVillaReview(db,villa,next,kind,user){
   const before=pending?pending.before:old
   if(before!==after)changes.push({field,label,before,after})
  }
+ if(kind==='media_reorder')changes.push({field:'media_order',label:'ลำดับรูปภาพเพิ่มเติม',before:next._mediaOrderBefore.join(', '),after:next._mediaOrderAfter.join(', ')})
+ if(kind==='verification_documents_update')changes.push({field:'verification_documents',label:'เอกสารประกอบการตรวจสอบ',before:'เอกสารที่เคยอนุมัติ',after:'มีเอกสารใหม่รอตรวจสอบ'})
  if(kind==='media_removal')changes.push({field:'media',label:'นำสื่อออก',before:next._removedMedia.name,after:'นำออกหลังอนุมัติ'})
  if(kind==='document_resubmission'){
   const old=await db.prepare('SELECT name FROM documents WHERE id=?').get(villa.document_id)

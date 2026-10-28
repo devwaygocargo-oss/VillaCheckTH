@@ -46,7 +46,7 @@ test('Ready to Use requests and verifies OTP with encrypted server-only token, r
 });
 
 test('Email OTP provider uses template and API credentials, encrypts token and preserves account role only after verification',async t=>{
- const db=await openTestDatabase();t.after(()=>db.close());const ready={...config,thaiBulkSmsEmailOtpTemplateId:'template-uuid'};assert.equal(otpChannels(ready,null).email,true);assert.equal(otpChannels({...ready,thaiBulkSmsApiSecret:undefined},null).email,false);const admin=await createUser(db,'email-ready@example.com','Password12345','Admin','admin');const token='private-email-provider-token';let calls=0;const otp=createLoginOtp(db,ready,null,async(url,options)=>{assert.equal(options.headers.Authorization,'Basic '+Buffer.from('test-key:test-secret').toString('base64'));const data=JSON.parse(options.body);if(url.endsWith('/send')){assert.equal(url,'https://email-api.thaibulksms.com/email/v1/otp/send');assert.deepEqual(data,{template_uuid:'template-uuid',recipient_email:admin.email,payload:{}});return {ok:true,status:201,json:async()=>({status:'waiting',token})}}calls++;assert.equal(data.token,token);return {ok:data.otp_code==='123456',status:data.otp_code==='123456'?201:400,json:async()=>({status:data.otp_code==='123456'?'verified':'error',message:data.otp_code==='123456'?'Verified success':'Invalid OTP'})}});const challenge=await otp.request({channel:'email',destination:admin.email});assert.ok(!JSON.stringify(challenge).includes(token));const row=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(challenge.challengeId);assert.ok(row.code_hash.startsWith('tbs:'));assert.ok(!row.code_hash.includes(token));await assert.rejects(()=>otp.verify({challengeId:challenge.challengeId,code:'000000'}),e=>e.status===401);const user=await otp.verify({challengeId:challenge.challengeId,code:'123456'});assert.equal(user.id,admin.id);assert.equal(user.role,'admin');await assert.rejects(()=>otp.verify({challengeId:challenge.challengeId,code:'123456'}),e=>e.status===401);assert.equal(calls,2);
+ const db=await openTestDatabase();t.after(()=>db.close());const ready={...config,thaiBulkSmsEmailOtpTemplateId:'template-uuid'};assert.equal(otpChannels(ready,null).email,true);assert.equal(otpChannels({...ready,thaiBulkSmsApiSecret:undefined},null).email,false);const admin=await createUser(db,'email-ready@example.com','Password12345','User','user');const token='private-email-provider-token';let calls=0;const otp=createLoginOtp(db,ready,null,async(url,options)=>{assert.equal(options.headers.Authorization,'Basic '+Buffer.from('test-key:test-secret').toString('base64'));const data=JSON.parse(options.body);if(url.endsWith('/send')){assert.equal(url,'https://email-api.thaibulksms.com/email/v1/otp/send');assert.deepEqual(data,{template_uuid:'template-uuid',recipient_email:admin.email,payload:{}});return {ok:true,status:201,json:async()=>({status:'waiting',token})}}calls++;assert.equal(data.token,token);return {ok:data.otp_code==='123456',status:data.otp_code==='123456'?201:400,json:async()=>({status:data.otp_code==='123456'?'verified':'error',message:data.otp_code==='123456'?'Verified success':'Invalid OTP'})}});const challenge=await otp.request({channel:'email',destination:admin.email});assert.ok(!JSON.stringify(challenge).includes(token));const row=await db.prepare('SELECT * FROM login_otps WHERE id=?').get(challenge.challengeId);assert.ok(row.code_hash.startsWith('tbs:'));assert.ok(!row.code_hash.includes(token));await assert.rejects(()=>otp.verify({challengeId:challenge.challengeId,code:'000000'}),e=>e.status===401);const user=await otp.verify({challengeId:challenge.challengeId,code:'123456'});assert.equal(user.id,admin.id);assert.equal(user.role,'user');await assert.rejects(()=>otp.verify({challengeId:challenge.challengeId,code:'123456'}),e=>e.status===401);assert.equal(calls,2);
 });
 test('Email provider credit failure invalidates challenge and records sanitized response',async t=>{
  const db=await openTestDatabase();t.after(()=>db.close());const otp=createLoginOtp(db,{...config,thaiBulkSmsEmailOtpTemplateId:'template'},null,async()=>({ok:false,status:402,json:async()=>({code:'ERROR_INSUFFICIENT_CREDIT',message:'Error insufficient credit'})}));await assert.rejects(()=>otp.request({channel:'email',destination:'credit@example.com'}),e=>e.status===503);assert.equal((await db.prepare('SELECT consumed FROM login_otps WHERE destination=?').get('credit@example.com')).consumed,1);const diagnostic=JSON.parse((await db.prepare("SELECT value FROM system_settings WHERE key='otp_delivery_email'").get()).value);assert.equal(diagnostic.httpStatus,402);assert.equal(diagnostic.category,'ERROR_INSUFFICIENT_CREDIT');
@@ -59,3 +59,31 @@ test('Email provider credit failure invalidates challenge and records sanitized 
  for(const secret of ['person@example.test','123456','opaque-private-token'])assert(!serialized.includes(secret));
  assert.equal(diagnostic.category,'PROVIDER_REJECTED');
  });
+
+// Public OTP must not become an alternate credential for privileged accounts.
+test('Public email OTP cannot authenticate an existing Admin account',async t=>{
+ const db=await openTestDatabase();t.after(()=>db.close());
+ for(const role of ['admin']){
+  const user=await createUser(db,`privileged-${role}@example.test`,'SecurePassword123','Internal',role);
+  let code;const otp=createLoginOtp(db,config,{sendMail:async m=>{code=m.text.match(/\d{6}/)[0]}});
+  const challenge=await otp.request({channel:'email',destination:user.email,accountType:'user',purpose:'login'});
+  await assert.rejects(()=>otp.verify({challengeId:challenge.challengeId,code}),e=>e.status===409);
+  assert.equal((await db.prepare('SELECT role FROM users WHERE id=?').get(user.id)).role,role);
+  assert.equal((await db.prepare('SELECT consumed FROM login_otps WHERE id=?').get(challenge.challengeId)).consumed,1);
+  await assert.rejects(()=>otp.verify({challengeId:challenge.challengeId,code}),e=>e.status===401);
+ }
+});
+
+test('Public SMS OTP rejects a privileged verified phone identity without changing ownership',async t=>{
+ const db=await openTestDatabase();t.after(()=>db.close());
+ const admin=await createUser(db,'privileged-phone@example.test','SecurePassword123','Internal','admin');
+ await db.prepare('INSERT INTO oauth_identities VALUES (?,?,?)').run('phone_otp','+66812345678',admin.id);
+ let code;const otp=createLoginOtp(db,config,null,async(url,options)=>{
+  code=new URLSearchParams(options.body).get('message').match(/\d{6}/)[0];
+  return {ok:true,json:async()=>({phone_number_list:[{number:'66812345678',message_id:'local-only'}]})};
+ });
+ const challenge=await otp.request({channel:'sms',destination:'0812345678',accountType:'user',purpose:'register'});
+ await assert.rejects(()=>otp.verify({challengeId:challenge.challengeId,code}),e=>e.status===409);
+ assert.equal((await db.prepare("SELECT user_id FROM oauth_identities WHERE provider='phone_otp' AND subject=?").get('+66812345678')).user_id,admin.id);
+ assert.equal((await db.prepare('SELECT consumed FROM login_otps WHERE id=?').get(challenge.challengeId)).consumed,1);
+});

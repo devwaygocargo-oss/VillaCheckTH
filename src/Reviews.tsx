@@ -1,290 +1,36 @@
-import {useCopy} from "./cms";
-import { useEffect, useState } from "react"
-import { api, currentAccount } from "./api"
-import type { Account } from "./merchantStore"
-type Review = {
-  id: string
-  villaName?: string
-  rating: number
-  content: string
-  author: string
-  status?: string
-  reason?: string
-  createdAt: string
-  moderationRequired?: boolean
-  packageName?: string
-  reviewedAt?: string
-  reviewedByName?: string
-  reply?: {
-    content: string
-    author: string
-  }
-  history?: {
-    action: string
-    reason?: string
-    detail?: string
-    at: string
-  }[]
-}
-const statuses: Record<string, string> = {
-  pending: "รอตรวจสอบ",
-  published: "เผยแพร่",
-  more_info: "ขอข้อมูลเพิ่ม",
-  rejected: "ไม่อนุมัติ",
-}
-export default function Reviews({
-  qr,
-  mode = "public",
-}: {
-  qr?: string
-  mode?: "public" | "admin" | "merchant" | "user"
-}) {
-  const t=useCopy();
-  const [rows, setRows] = useState<Review[]>([]),
-    [account, setAccount] = useState<Account | null>(null),
-    [content, setContent] = useState(""),
-    [rating, setRating] = useState(5),
-    [error, setError] = useState(""),
-    [message, setMessage] = useState(""),
-    [busy, setBusy] = useState(false),
-    [reasons, setReasons] = useState<Record<string, string>>({}),
-    [reasonCode, setReasonCode] = useState("spam"),
-    [reason, setReason] = useState("")
-  const [moderationRequired, setModerationRequired] = useState<boolean | null>(null)
-  const [statusFilter, setStatusFilter] = useState("all")
-  const path =
-    mode === "public"
-      ? `/public/reviews?qr=${encodeURIComponent(qr || "")}`
-      : mode === "admin"
-        ? "/admin/reviews"+(qr?"?qr="+encodeURIComponent(qr):"")
-        : mode === "merchant"
-          ? "/merchant/reviews"
-          : "/reviews"
-  const load = async () => {
-    const data = await api<{
-      reviews: Review[]
-      reasons?: Record<string, string>
-      moderationRequired?: boolean
-    }>(path)
-    setRows(data.reviews)
-    setModerationRequired(data.moderationRequired ?? null)
-    if (data.reasons) setReasons(data.reasons)
-  }
-  useEffect(() => {
-    let active = true
-    void currentAccount()
-      .then((a) => {
-        if (active) setAccount(a)
-      })
-      .catch(() => {})
-    void load().catch((e) => {
-      if (active) setError(e.message)
-    })
-    return () => {
-      active = false
-    }
-  }, [path])
-  const act = async (path: string, data: unknown) => {
-    setBusy(true)
-    setError("")
-    setMessage("")
-    try {
-      const result = await api<{review?: Review}>(path, data)
-      await load()
-      setMessage(path === "/reviews" ? result.review?.status === "published" ? "เผยแพร่รีวิวแล้ว" : "ส่งรีวิวแล้ว รอ Admin ตรวจอนุมัติก่อนเผยแพร่" : "บันทึกแล้ว")
-      setContent("")
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ")
-    } finally {
-      setBusy(false)
-    }
-  }
-  const visibleRows = rows.filter(r=>mode !== "admin" || statusFilter === "all" || r.status === statusFilter)
-  return (
-    <section className="merchant-panel">
-      <h2>
-        {mode === "admin"
-          ? "ตรวจสอบรีวิวตามกติกา"
-          : mode === "user"
-            ? "รีวิวของฉัน"
-            : mode === "merchant"
-              ? "รีวิวที่พักและคำชี้แจง"
-              : t("reviews.title")}
-      </h2>
-      <p>
-        แพ็กเกจต่ำกว่า 2,990 บาทเผยแพร่รีวิวทันที ส่วนแพ็กเกจ 2,990 บาทขึ้นไปรอ Admin ตรวจอนุมัติก่อนเผยแพร่ ใช้กติกาเดียวกันทุกคะแนน เจ้าของที่พักตอบชี้แจงได้
-      </p>
-      {error && <p role="alert">{error}</p>}
-      {message && <p role="status">{message}</p>}
-      {mode === "admin" && (
-        <div className="portal-form">
-          <button type="button" disabled={busy} onClick={()=>void load().catch(e=>setError(e.message))}>โหลดรีวิวล่าสุด</button>
-          <label>สถานะรีวิว<select aria-label="สถานะรีวิว" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">ทั้งหมด</option>{Object.entries(statuses).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-          <label>
-            เหตุผลตามกติกา
-            <select
-              value={reasonCode}
-              onChange={(e) => setReasonCode(e.target.value)}
-            >
-              {Object.entries(reasons).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            รายละเอียดประกอบการพิจารณา
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
-          </label>
-        </div>
-      )}
-      {!visibleRows.length && <p>{rows.length ? "ไม่มีรีวิวในสถานะที่เลือก" : "ยังไม่มีรีวิว"}</p>}
-      {visibleRows.map((r) => (
-        <article
-          key={r.id}
-          style={{ padding: "20px 0", borderBottom: "1px solid #dbe5df" }}
-        >
-          <strong>
-            {"★".repeat(r.rating)}
-            {"☆".repeat(5 - r.rating)} · {r.author}
-          </strong>
-          {r.villaName && <p>{r.villaName}</p>}
-          {mode === "admin" && r.moderationRequired !== undefined && <p>{r.packageName} · {r.moderationRequired ? "รออนุมัติก่อนเผยแพร่" : "เผยแพร่อัตโนมัติเมื่อส่ง"} (แพ็กเกจขณะส่งรีวิว)</p>}
-          <p style={{ whiteSpace: "pre-wrap" }}>{r.content}</p>
-          <small>
-            {new Date(r.createdAt).toLocaleString("th-TH", {
-              timeZone: "Asia/Bangkok",
-            })}
-            {r.status && ` · ${statuses[r.status]}`}
-          </small>
-          {r.reason && <p>เหตุผล: {r.reason}</p>}
-          {r.reviewedAt && (
-            <p>
-              ผู้พิจารณา: {r.reviewedByName} ·{" "}
-              {new Date(r.reviewedAt).toLocaleString("th-TH", {
-                timeZone: "Asia/Bangkok",
-              })}
-            </p>
-          )}
-          {r.reply && (
-            <blockquote>
-              <strong>เจ้าของที่พักชี้แจง</strong>
-              <p>{r.reply.content}</p>
-            </blockquote>
-          )}
-          {mode === "admin" && (
-            <div className="button-row">
-              {(["published", "more_info", "rejected"] as const).map(
-                (status) => (
-                  <button
-                    disabled={busy}
-                    key={status}
-                    onClick={() =>
-                      void act(`/admin/reviews/${r.id}/moderate`, {
-                        status,
-                        reasonCode,
-                        reason,
-                      })
-                    }
-                  >
-                    {statuses[status]}
-                  </button>
-                ),
-              )}
-            </div>
-          )}
-          {(mode === "merchant" ||
-            (mode === "user" &&
-              ["rejected", "more_info"].includes(r.status || ""))) && (
-            <form
-              className="portal-form"
-              onSubmit={(e) => {
-                e.preventDefault()
-                const data = new FormData(e.currentTarget),
-                  text = String(data.get("text"))
-                void act(
-                  mode === "merchant"
-                    ? `/merchant/reviews/${r.id}/reply`
-                    : `/reviews/${r.id}/appeal`,
-                  mode === "merchant" ? { content: text } : { detail: text },
-                )
-              }}
-            >
-              <label>
-                {mode === "merchant" ? "ตอบชี้แจงรีวิว" : "ข้อมูลเพิ่มเติม / ขอทบทวนผล"}
-                <textarea name="text" required maxLength={4000} />
-              </label>
-              <button disabled={busy}>
-                {mode === "merchant" ? "ส่งคำชี้แจง" : "ส่งคำขอทบทวน"}
-              </button>
-            </form>
-          )}
-          {mode === "admin" && r.history?.length && (
-            <details>
-              <summary>ประวัติการพิจารณา</summary>
-              {r.history.map((h, i) => (
-                <p key={i}>
-                  {h.action} · {h.reason || h.detail} ·{" "}
-                  {new Date(h.at).toLocaleString("th-TH", {
-                    timeZone: "Asia/Bangkok",
-                  })}
-                </p>
-              ))}
-            </details>
-          )}
-        </article>
-      ))}
-      {mode === "public" && account?.role === "user" && (
-        <form
-          className="portal-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            void act("/reviews", { qr, rating, content })
-          }}
-        >
-          <h3>{t("reviews.write")}</h3>
-          <label>
-            คะแนน
-            <select
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-            >
-              {[5, 4, 3, 2, 1].map((n) => (
-                <option key={n} value={n}>
-                  {n} ดาว
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            ประสบการณ์ของคุณ
-            <textarea
-              required
-              maxLength={4000}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-          </label>
-          <p>
-            {moderationRequired === null ? "กำลังตรวจสอบเงื่อนไขการเผยแพร่รีวิว" : moderationRequired ? "รีวิวที่พักนี้จะรอ Admin ตรวจอนุมัติก่อนแสดงผล" : "รีวิวที่พักนี้จะแสดงผลทันทีหลังส่ง"} ดูสถานะและขอทบทวนผลได้ที่รีวิวของฉันในบัญชี User
-          </p>
-          <button className="primary-button" disabled={busy}>
-            {t("reviews.submit")}
-          </button>
-        </form>
-      )}
-      {mode === "public" && !account && (
-        <a
-          className="outline-button"
-          href={`#page=login&item=${encodeURIComponent(qr || "")}`}
-        >
-          {t("reviews.login")}
-        </a>
-      )}
-    </section>
-  )
+import {BusinessWriteFieldset} from './BusinessReadiness'
+import {useEffect,useState} from 'react'
+import {api,currentAccount} from './api'
+import type {Account} from './merchantStore'
+import {useLocale,localeTag} from './locale'
+import {tr} from './reviewTransferTranslations'
+import './review-transfer.css'
+type Review={id:string;villaName?:string;rating:number;content:string;author:string;status?:string;reason?:string;createdAt:string;reviewedAt?:string;reply?:{content:string;author:string};history?:{action:string;reason?:string;detail?:string;at:string}[]}
+type Summary={count:number;average:number|null;distribution:Record<string,number>}
+type Pagination={page:number;pageSize:number;total:number;totalPages:number;hasNext:boolean}
+const statuses=['pending','published','more_info','rejected']
+export default function Reviews({qr,mode='public'}:{qr?:string;mode?:'public'|'admin'|'merchant'|'user'}){
+ const {locale}=useLocale(),[rows,setRows]=useState<Review[]>([]),[account,setAccount]=useState<Account|null>(null),[content,setContent]=useState(''),[rating,setRating]=useState(5),[error,setError]=useState(''),[message,setMessage]=useState(''),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[deferred,setDeferred]=useState(false),[statusFilter,setStatusFilter]=useState('all'),[ratingFilter,setRatingFilter]=useState(''),[sort,setSort]=useState('newest'),[page,setPage]=useState(1),[reason,setReason]=useState(''),[reasonCode,setReasonCode]=useState('spam'),[reasons,setReasons]=useState<Record<string,string>>({}),[texts,setTexts]=useState<Record<string,string>>({}),[summary,setSummary]=useState<Summary>({count:0,average:null,distribution:{}}),[pagination,setPagination]=useState<Pagination>({page:1,pageSize:2,total:0,totalPages:0,hasNext:false})
+ const publicQuery=new URLSearchParams({qr:qr||'',page:String(page),pageSize:'2',sort,...(ratingFilter?{rating:ratingFilter}:{})})
+ const path=mode==='public'?'/public/reviews?'+publicQuery.toString():mode==='admin'?'/admin/reviews'+(qr?'?qr='+encodeURIComponent(qr):''):mode==='merchant'?'/merchant/reviews':'/reviews'
+ const load=async(isCurrent:()=>boolean=()=>true)=>{const data=await api<{reviews:Review[];reasons?:Record<string,string>;deferred?:boolean;summary?:Summary;pagination?:Pagination}>(path);if(!isCurrent())return;setRows(data.reviews);setDeferred(data.deferred===true);if(data.reasons)setReasons(data.reasons);if(data.summary)setSummary(data.summary);if(data.pagination)setPagination(data.pagination)}
+ useEffect(()=>{let active=true;setLoading(true);setError('');void load(()=>active).catch(()=>{if(active)setError(tr(locale,'review.loadFailed'))}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[path,locale])
+ useEffect(()=>{let active=true;if(mode==='public')void currentAccount().then(value=>{if(active)setAccount(value)}).catch(()=>{});return()=>{active=false}},[mode])
+ const act=async(endpoint:string,data:unknown)=>{setBusy(true);setError('');setMessage('');try{await currentAccount();const result=await api<{review?:Review}>(endpoint,data);await load();setMessage(tr(locale,endpoint==='/reviews'?result.review?.status==='published'?'review.publishedMessage':'review.pendingMessage':'review.saved'));setContent('');setTexts({});setReason('')}catch{setError(tr(locale,'review.failed'))}finally{setBusy(false)}}
+ const date=(value:string)=>new Date(value).toLocaleDateString(localeTag(locale),{timeZone:'Asia/Bangkok',day:'numeric',month:'short',year:'numeric'})
+ const visible=rows.filter(row=>mode!=='admin'||statusFilter==='all'||row.status===statusFilter)
+ const title=mode==='admin'?'review.admin':mode==='user'?'review.mine':mode==='merchant'?'review.merchant':'review.title'
+ if(deferred)return null
+ return <section className="merchant-panel reviews-panel" aria-label={tr(locale,title)}><h2>{tr(locale,title)}</h2><p className="review-policy">{tr(locale,'review.policy')}</p>
+ {mode==='public'&&<><div className="review-summary"><div className="review-overall"><span>{tr(locale,'review.score')}</span><strong>{summary.average===null?'—':new Intl.NumberFormat(localeTag(locale),{minimumFractionDigits:1,maximumFractionDigits:1}).format(summary.average)}<small> / 5</small></strong><p>{summary.count?tr(locale,'review.count',{count:summary.count}):tr(locale,'review.noScore')}</p></div><div className="review-distribution" role="group" aria-label={tr(locale,'review.distribution')}>{[5,4,3,2,1].map(stars=><div key={stars}><span>{tr(locale,'review.stars',{count:stars})}</span><progress value={summary.distribution[stars]||0} max={Math.max(summary.count,1)} aria-label={tr(locale,'review.stars',{count:stars})}/><span>{summary.distribution[stars]||0}</span></div>)}</div></div><div className="review-toolbar"><label>{tr(locale,'review.filter')}<select value={ratingFilter} onChange={e=>{setRatingFilter(e.target.value);setPage(1)}}><option value="">{tr(locale,'all')}</option>{[5,4,3,2,1].map(stars=><option key={stars} value={stars}>{tr(locale,'review.stars',{count:stars})}</option>)}</select></label><label>{tr(locale,'review.sort')}<select value={sort} onChange={e=>{setSort(e.target.value);setPage(1)}}>{['newest','oldest','highest','lowest'].map(value=><option key={value} value={value}>{tr(locale,'review.'+value)}</option>)}</select></label></div></>}
+ {mode==='admin'&&<div className="review-toolbar"><button type="button" className="outline-button" disabled={busy||loading} onClick={()=>{setLoading(true);void load().catch(()=>setError(tr(locale,'review.loadFailed'))).finally(()=>setLoading(false))}}>{tr(locale,'review.refresh')}</button><label>{tr(locale,'review.status')}<select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="all">{tr(locale,'all')}</option>{statuses.map(value=><option key={value} value={value}>{tr(locale,'review.'+value)}</option>)}</select></label><label>{tr(locale,'review.reason')}<select value={reasonCode} onChange={e=>setReasonCode(e.target.value)}>{Object.keys(reasons).map(key=><option key={key} value={key}>{tr(locale,'review.reason.'+key)}</option>)}</select></label><label>{tr(locale,'review.reasonDetail')}<textarea maxLength={2000} value={reason} onChange={e=>setReason(e.target.value)}/></label></div>}
+ {error&&<div role="alert"><p>{error}</p><button type="button" className="outline-button" disabled={loading} onClick={()=>{setLoading(true);setError('');void load().catch(()=>setError(tr(locale,'review.loadFailed'))).finally(()=>setLoading(false))}}>{tr(locale,'retry')}</button></div>}{message&&<p role="status">{message}</p>}
+ {loading?<p role="status">{tr(locale,'loading')}</p>:<>{!visible.length&&!error&&<p className="review-empty">{tr(locale,mode==='public'&&summary.count>0||statusFilter!=='all'?'review.noResults':'review.empty')}</p>}{visible.map(row=><article className="review-card" key={row.id}><header><div className="review-author"><span className="review-avatar" aria-hidden="true">{[...row.author][0]||'•'}</span><strong>{row.author==='Member'?tr(locale,'member'):row.author}</strong></div><div className="review-rating" aria-label={tr(locale,'review.stars',{count:row.rating})}>{'★'.repeat(row.rating)}{'☆'.repeat(5-row.rating)}<span>{row.rating}/5</span></div></header>{row.villaName&&<h3>{row.villaName}</h3>}<p className="review-content">{row.content}</p><p className="review-meta"><time dateTime={row.createdAt}>{date(row.createdAt)}</time>{row.status&&<> · {tr(locale,'review.'+row.status)}</>}</p>{row.reason&&<p>{row.reason}</p>}{row.reviewedAt&&<p>{tr(locale,'review.reviewed',{date:date(row.reviewedAt)})}</p>}{row.reply&&<blockquote><strong>{tr(locale,'review.ownerReply')}</strong><p>{row.reply.content}</p></blockquote>}
+ {mode==='admin'&&<div className="button-row">{['published','more_info','rejected'].map(status=><button type="button" className="outline-button" key={status} disabled={busy} onClick={()=>{if(window.confirm(tr(locale,'review.confirm')))void act('/admin/reviews/'+row.id+'/moderate',{status,reasonCode,reason})}}>{tr(locale,'review.'+status)}</button>)}</div>}
+ {(mode==='merchant'||mode==='user'&&['more_info','rejected'].includes(row.status||''))&&<BusinessWriteFieldset><form className="portal-form" onSubmit={e=>{e.preventDefault();void act(mode==='merchant'?'/merchant/reviews/'+row.id+'/reply':'/reviews/'+row.id+'/appeal',mode==='merchant'?{content:texts[row.id]}:{detail:texts[row.id]})}}><label>{tr(locale,mode==='merchant'?'review.reply':'review.appeal')}<textarea required maxLength={4000} value={texts[row.id]||''} onChange={e=>setTexts({...texts,[row.id]:e.target.value})}/></label><button className="outline-button" disabled={busy}>{tr(locale,mode==='merchant'?'review.sendReply':'review.sendAppeal')}</button></form></BusinessWriteFieldset>}
+ {mode==='admin'&&!!row.history?.length&&<details><summary>{tr(locale,'review.history')}</summary>{row.history.map((event,index)=><p key={index}>{event.reason||event.detail||tr(locale,'review.saved')} · {date(event.at)}</p>)}</details>}</article>)}</>}
+ {mode==='public'&&pagination.totalPages>1&&<nav className="review-pagination" aria-label={tr(locale,'review.page',{page,pages:pagination.totalPages})}><button type="button" className="outline-button" disabled={loading||page<=1} onClick={()=>setPage(value=>value-1)}>{tr(locale,'previous')}</button><span aria-live="polite">{tr(locale,'review.page',{page,pages:pagination.totalPages})}</span><button type="button" className="outline-button" disabled={loading||!pagination.hasNext} onClick={()=>setPage(value=>value+1)}>{tr(locale,'next')}</button></nav>}
+ {mode==='public'&&account?.role==='user'&&<BusinessWriteFieldset><form className="portal-form review-submit" onSubmit={e=>{e.preventDefault();void act('/reviews',{qr,rating,content})}}><h3>{tr(locale,'review.write')}</h3><label>{tr(locale,'review.rating')}<select value={rating} onChange={e=>setRating(Number(e.target.value))}>{[5,4,3,2,1].map(stars=><option key={stars} value={stars}>{tr(locale,'review.stars',{count:stars})}</option>)}</select></label><label>{tr(locale,'review.content')}<textarea required maxLength={4000} value={content} onChange={e=>setContent(e.target.value)}/></label><button className="primary-button" disabled={busy}>{busy?tr(locale,'saving'):tr(locale,'review.submit')}</button></form></BusinessWriteFieldset>}
+ {mode==='public'&&!account&&<a className="outline-button review-login" href={'#page=login&item='+encodeURIComponent(qr||'')}>{tr(locale,'review.login')}</a>}
+ </section>
 }

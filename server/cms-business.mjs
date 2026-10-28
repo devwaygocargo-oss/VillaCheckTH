@@ -18,6 +18,7 @@ export async function cmsPaymentSnapshot(db, fallback="") {
 export async function cmsLoginConfig(db,config) {
   const row=await db.prepare("SELECT value FROM system_settings WHERE key='cms_published'").get()
   const business=row?JSON.parse(row.value).content.business:{}
+  if(config.productionReleaseMode==='PHASE1')return {...config,thaiBulkSmsEmailOtpTemplateId:undefined,facebookLoginEnabled:false}
   return {...config,thaiBulkSmsEmailOtpTemplateId:business.emailOtpTemplateId||config.thaiBulkSmsEmailOtpTemplateId,facebookLoginEnabled:business.facebookLoginEnabled??(config.facebookLoginEnabled===true)}
 }
 export function otpTemplate(value,code) {

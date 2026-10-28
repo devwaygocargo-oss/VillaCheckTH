@@ -1,3 +1,4 @@
+import {merchantFreePeriod} from './merchant-free-period.mjs'
 import { cmsBusiness, monthlyValidity, paymentTemplate } from "./cms-business.mjs"
 import { generatePaymentQr } from "./payment-qr.mjs"
 import { getPlan } from "./catalog.mjs"
@@ -8,9 +9,10 @@ export async function getSubscription(db, ownerId) {
     .prepare("SELECT * FROM subscriptions WHERE owner_id=?")
     .get(ownerId)
 }
-export async function subscriptionDto(db, ownerId) {
+export async function subscriptionDto(db, ownerId,preloadedFreePeriod) {
   const sub = await getSubscription(db, ownerId)
   if (!sub) return null
+  const freePeriod=await(preloadedFreePeriod===undefined?merchantFreePeriod(db,ownerId):preloadedFreePeriod)
   const plan = await getPlan(db, sub.package_id)
   const used = (
     await db
@@ -20,23 +22,25 @@ export async function subscriptionDto(db, ownerId) {
   return {
     packageId: sub.package_id,
     name: plan.name,
-    amount: plan.amount / 100,
-    billingCycle: plan.billing_cycle,
-    billingMonths: {MONTHLY:1,QUARTERLY:3,YEARLY:12}[plan.billing_cycle] || 1,
-    capacity: plan.capacity,
+    amount: freePeriod?0:plan.amount / 100,
+    ...(freePeriod?{regularAmount:plan.amount/100,automaticBilling:false}:{}),
+    billingCycle: freePeriod?null:plan.billing_cycle,
+    billingMonths: freePeriod?null:({MONTHLY:1,QUARTERLY:3,YEARLY:12}[plan.billing_cycle] || 1),
+    capacity: freePeriod?null:plan.capacity,
+    freePeriod,
     used,
     expires: sub.expires,
     active:
-      !["SUSPENDED", "CANCELLED"].includes(sub.lifecycle) &&
+      (!freePeriod||freePeriod.state==="ACTIVE") && !["SUSPENDED", "CANCELLED"].includes(sub.lifecycle) &&
       Boolean(sub.expires && new Date(sub.expires) > new Date()),
     status: ["SUSPENDED", "CANCELLED"].includes(sub.lifecycle)
       ? sub.lifecycle
-      : sub.expires
+      : freePeriod?.state==="EXPIRED"?"EXPIRED":sub.expires
         ? new Date(sub.expires) > new Date()
           ? "ACTIVE"
           : "EXPIRED"
         : "PENDING_RENEWAL",
-    renewalDate: sub.expires,
+    renewalDate: freePeriod?null:sub.expires,
     payments: sub.payments,
   }
 }
@@ -66,6 +70,8 @@ export async function activateSubscription(
   }
 }
 export async function activateVilla(db, villa) {
+  const period=await merchantFreePeriod(db,villa.owner_id)
+  if(period){if(period.state!=='ACTIVE')return false;await db.prepare("UPDATE villas SET qr=?,expires=? WHERE id=?").run(villa.qr||`VC-${randomUUID()}`,period.endsAt,villa.id);return true}
   if (villa.payments === 0) {
     await db.prepare("UPDATE villas SET qr=?,expires=NULL WHERE id=?").run(villa.qr || `VC-${randomUUID()}`,villa.id);
     return true;

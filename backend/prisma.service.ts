@@ -1,3 +1,5 @@
+import {sharedApplicationEnvironment} from '../server/shared-application-environment.mjs';
+import {stagingDemoEnvironment} from '../server/staging-demo-safety.mjs';
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, Prisma } from "./generated/prisma/client.js";
@@ -13,12 +15,15 @@ function normalize(value: unknown): any {
 @Injectable()
 export class PrismaDatabaseService implements OnModuleDestroy {
  readonly client: PrismaClient;
+ readonly connectionIdentity:Readonly<{host:string;database:string;role:string}>;
  private readonly context = new AsyncLocalStorage<Prisma.TransactionClient>();
  readonly dialect="postgres";
  constructor() {
-  const connectionString=process.env.DATABASE_URL || process.env.VillaCheck_DATABASE_URL;
+  const runtimeEnvironment=sharedApplicationEnvironment(process.env,stagingDemoEnvironment);
+  const connectionString=runtimeEnvironment.DATABASE_URL || runtimeEnvironment.VillaCheck_DATABASE_URL;
   if(!connectionString)throw Error("DATABASE_URL is required for NestJS/Prisma");
   const url=new URL(connectionString);
+  this.connectionIdentity=Object.freeze({host:url.hostname,database:decodeURIComponent(url.pathname.slice(1)),role:decodeURIComponent(url.username)});
   const optionsSchema=url.searchParams.get("options")?.match(/search_path=([a-zA-Z0-9_]+)/)?.[1];
   const schema=url.searchParams.get("schema") || optionsSchema || "public";
   this.client=new PrismaClient({adapter:new PrismaPg({connectionString,max:5,connectionTimeoutMillis:10000},{schema})});
