@@ -1,0 +1,12 @@
+{
+  "teardown": [
+    {
+      "name": "browser",
+      "status": "CLOSED"
+    },
+    {
+      "name": "readonly_database",
+      "status": "CLOSED"
+    }
+  ]
+}

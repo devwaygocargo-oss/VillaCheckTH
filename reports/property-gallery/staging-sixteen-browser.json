@@ -1,0 +1,73 @@
+{
+  "mode": "staging-sixteen",
+  "base": "https://design-villacheck.vercel.app",
+  "rows": [
+    {
+      "width": 1440,
+      "scenario": "empty",
+      "base": "https://design-villacheck.vercel.app",
+      "empty": "PASS",
+      "expectedAnonymousAuthResponses": 2,
+      "consoleErrors": 0,
+      "overflow": false,
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "scenario": "single",
+      "base": "https://design-villacheck.vercel.app",
+      "lightbox": "PASS_OPEN_KEYBOARD_ESCAPE_FOCUS_RESTORE",
+      "playback": "PASS_ACTUAL_MP4_DECODE_PLAY_PAUSE",
+      "expectedAnonymousAuthResponses": 3,
+      "consoleErrors": 0,
+      "overflow": false,
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "scenario": "full",
+      "base": "https://design-villacheck.vercel.app",
+      "controls": "PASS_NEXT_PREV_THUMBNAIL_KEYBOARD_SWIPE",
+      "lightbox": "PASS_OPEN_KEYBOARD_ESCAPE_FOCUS_RESTORE",
+      "playback": "PASS_ACTUAL_MP4_DECODE_PLAY_PAUSE",
+      "expectedAnonymousAuthResponses": 3,
+      "consoleErrors": 0,
+      "overflow": false,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "scenario": "empty",
+      "base": "https://design-villacheck.vercel.app",
+      "empty": "PASS",
+      "expectedAnonymousAuthResponses": 2,
+      "consoleErrors": 0,
+      "overflow": false,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "scenario": "single",
+      "base": "https://design-villacheck.vercel.app",
+      "lightbox": "PASS_OPEN_KEYBOARD_ESCAPE_FOCUS_RESTORE",
+      "playback": "PASS_ACTUAL_MP4_DECODE_PLAY_PAUSE",
+      "expectedAnonymousAuthResponses": 3,
+      "consoleErrors": 0,
+      "overflow": false,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "scenario": "full",
+      "base": "https://design-villacheck.vercel.app",
+      "controls": "PASS_NEXT_PREV_THUMBNAIL_KEYBOARD_SWIPE",
+      "lightbox": "PASS_OPEN_KEYBOARD_ESCAPE_FOCUS_RESTORE",
+      "playback": "PASS_ACTUAL_MP4_DECODE_PLAY_PAUSE",
+      "expectedAnonymousAuthResponses": 3,
+      "consoleErrors": 0,
+      "overflow": false,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

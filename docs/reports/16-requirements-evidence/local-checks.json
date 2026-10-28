@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-28T21:20:52.743Z",
+  "commit": "57885ae245c5652633035c85dd71846440119cb7",
+  "candidate": "/tmp/vc16-common-wW305e",
+  "checks": [
+    {
+      "check": "build",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "/tmp/vc16-final-build.log",
+      "logSha256": "828f4dc2150bdf230564caed40758eeee402f091aa5d0730613b744471d2cfef"
+    },
+    {
+      "check": "typecheck",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "/tmp/vc16-final-typecheck.log",
+      "logSha256": "79a33c4c1f3dcb26f886d0235fd4d226d769e1ff84fcba625c92dc930523aafd"
+    },
+    {
+      "check": "lint",
+      "status": "PASS",
+      "exitCode": 0,
+      "log": "/tmp/vc16-final-lint.log",
+      "logSha256": "004867a5738f19805221c5c5da3dc09d574b34c7c030748a64756c787d8c2dab"
+    }
+  ],
+  "additionalProjectionUnitTests": {
+    "file": "server/check-localization.test.mjs",
+    "passed": 4,
+    "failed": 0
+  },
+  "disposablePostgres": {
+    "exitCode": 0,
+    "productionConnections": 0,
+    "liveProviderRequests": 0
+  },
+  "newSchemaMigrations": 0,
+  "protectedAuthSchemaDependencies": "UNCHANGED",
+  "providerActivation": false
+}

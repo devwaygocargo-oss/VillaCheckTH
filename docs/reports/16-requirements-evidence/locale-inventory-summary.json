@@ -1,0 +1,10 @@
+{
+  "allUnique": 1976,
+  "known": 296,
+  "unknown": 1774,
+  "groups": {
+    "admin": 724,
+    "portal": 595,
+    "property": 455
+  }
+}

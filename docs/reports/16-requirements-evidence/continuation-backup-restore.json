@@ -1,0 +1,30 @@
+{
+  "state": "ACTUAL_PRODUCTION_BACKUP_LOCAL_RESTORE_PASS",
+  "at": "2026-10-28T19:38:35.858Z",
+  "databaseReadOnly": true,
+  "productionBusinessWrites": 0,
+  "existingBackupRole": "villacheck_backup",
+  "serverVersion": "180006",
+  "archive": "/Users/dewmp/Library/Application Support/VillaCheck/production-backups/20261029-sixteen/full-public-1793216309228.aesgcm",
+  "metadata": "/Users/dewmp/Library/Application Support/VillaCheck/production-backups/20261029-sixteen/full-public-1793216309228.aesgcm.metadata.aesgcm",
+  "archiveSha256": "7011d758beb69435a5f9a533df449078c128821b63ff4bf9d2a6aebb3820f36d",
+  "plainBytes": 59703,
+  "encryptedBytes": 59743,
+  "all20TablesAndHistoryMatched": true,
+  "schemaColumnsConstraintsIndexesMatched": true,
+  "ownersAclDefaultPrivilegesMatched": true,
+  "globalRolePasswordsNotExported": true,
+  "localRestoreNoLoginRolesOnly": true,
+  "zeroDemo": true,
+  "ownerKeyReadbackVerified": true,
+  "keychain": {
+    "service": "com.villacheck.production.green-sun-56847773",
+    "account": "production-release-20261027-fullbackup-key",
+    "secretPrinted": false
+  },
+  "archivePermissions": "600",
+  "metadataPermissions": "600",
+  "retention": "Keep; proposed7days, no deletion/rotation scheduled without approval",
+  "plaintextDumpFiles": 0,
+  "productionRestore": 0
+}

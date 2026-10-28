@@ -1,0 +1,30 @@
+{
+  "environment": "staging",
+  "database": "neondb",
+  "ownerId": "dbc2cbbd-e3f9-4e01-b38e-92569aa6f800",
+  "rows": [
+    {
+      "key": "main",
+      "id": "2a646c2d-fbcb-4473-bb81-3574abdda322",
+      "qr": "VC-a6fc57e0-97d7-47f8-a3cc-150beb1d735a",
+      "documentId": "35429230-6ede-4466-90cc-ce2e6416c364",
+      "coverId": "4e9542b0-7b26-41f8-b31f-8705393df0e2"
+    },
+    {
+      "key": "mediaempty",
+      "id": "ffb1f48a-c5ff-4d0a-ae1b-01fbaae1bc04",
+      "qr": "VC-648c9e9d-3523-475e-ae44-4511dc173886",
+      "documentId": "6ae2d276-4486-4925-98ff-f27bc10e21d0",
+      "coverId": "9cc4fb46-3f1b-4975-a42c-8821b2b588aa",
+      "additionalDocumentId": "cce9cce1-9683-4592-83cf-fbef76604092",
+      "documentStatus": "changes"
+    }
+  ],
+  "videoPath": "/tmp/villacheck-gallery-test.mp4",
+  "existingDataPreserved": true,
+  "newUsers": 0,
+  "newVillas": 2,
+  "newDocuments": 5,
+  "newSyntheticReviews": 3,
+  "productionWrites": 0
+}

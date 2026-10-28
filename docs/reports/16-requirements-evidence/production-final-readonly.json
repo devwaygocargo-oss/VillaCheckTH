@@ -1,0 +1,157 @@
+{
+  "at": "2026-10-28T21:11:35.919Z",
+  "purpose": "Read-only final Production preservation and unauthenticated Browser audit",
+  "expectedDeploymentId": "dpl_DCuj1oySbaWhBdt5XkbAwojnby23",
+  "expectedSourceCommit": "39325cc8f028f58ef9787c1b9f5f0122570f1850",
+  "dbWrites": 0,
+  "applicationLogins": 0,
+  "providerMutations": 0,
+  "deployments": 0,
+  "secretMaterialPersisted": false,
+  "browser": [
+    {
+      "width": 1440,
+      "route": "/",
+      "http": 200,
+      "layoutOverflow": false,
+      "loginAttempted": false,
+      "visibleBrokenImages": 0,
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "route": "/admin/login",
+      "http": 200,
+      "layoutOverflow": false,
+      "loginAttempted": false,
+      "visibleBrokenImages": 0,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "route": "/",
+      "http": 200,
+      "layoutOverflow": false,
+      "loginAttempted": false,
+      "visibleBrokenImages": 0,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "route": "/admin/login",
+      "http": 200,
+      "layoutOverflow": false,
+      "loginAttempted": false,
+      "visibleBrokenImages": 0,
+      "passed": true
+    }
+  ],
+  "limitations": [
+    "No real-user or test-user login was performed; authenticated RBAC/session/logout were outside this read-only audit.",
+    "No new 16-requirement release was deployed to Production in this audit; the inspected deployment is the existing 39325cc8 gallery release.",
+    "Environment comparison uses key/ID/type/target/update metadata and public configuration, not decrypted credential values.",
+    "No private documents, account records or credentials are included in this evidence.",
+    "Mobile checks use Chromium touch emulation, not a physical iPhone/Safari device."
+  ],
+  "production": {
+    "deploymentId": "dpl_DCuj1oySbaWhBdt5XkbAwojnby23",
+    "sourceCommit": "39325cc8f028f58ef9787c1b9f5f0122570f1850",
+    "sourceInventoryFiles": 222,
+    "allUploadedFilesMatchSourceCommit": true,
+    "sourceDigest": "8ebddc691f7930551ec0702cfe37461ec7a01fbe835462e607ed805d7491be12",
+    "projectId": "prj_AojlAe1eFqvqEnKd3FPENLbr3DtO",
+    "protectionPreserved": true,
+    "environmentMetadataPreserved": true,
+    "environmentKeyCount": 29,
+    "publicConfigPreserved": true,
+    "mapping": {
+      "signature": true,
+      "nonce": true,
+      "freshness": true,
+      "deployment": true,
+      "fingerprint": true
+    },
+    "target": {
+      "host": "ep-square-resonance-aohwf0z5.c-2.ap-southeast-1.aws.neon.tech",
+      "database": "villacheck_production",
+      "schema": "public",
+      "role": "villacheck_runtime"
+    }
+  },
+  "staging": {
+    "deploymentId": "dpl_FS92FH4cNrazFxZ3TqDFkSEXp14A",
+    "projectId": "prj_3A3Lygt3Z9Pt3D9p8bk693fTfHiC",
+    "mapping": {
+      "signature": true,
+      "nonce": true,
+      "timestamp": true,
+      "deployment": true,
+      "fingerprint": true
+    },
+    "target": {
+      "host": "ep-lively-wildflower-azuxgq19.c-3.ap-southeast-1.aws.neon.tech",
+      "database": "neondb",
+      "schema": "public",
+      "role": "neondb_owner"
+    }
+  },
+  "separatePostgresTargets": true,
+  "database": {
+    "identity": {
+      "database": "villacheck_production",
+      "schema": "public",
+      "role": "villacheck_runtime",
+      "read_only": "on"
+    },
+    "counts": {
+      "users": 4,
+      "villas": 0,
+      "documents": 0
+    },
+    "requestedTestIdentitiesPresent": 0,
+    "existingRowsPreserved": true,
+    "comparedTables": [
+      "users",
+      "villas",
+      "documents",
+      "leads",
+      "subscriptions",
+      "invoices",
+      "mails"
+    ],
+    "snapshotDigests": {
+      "users": {
+        "count": 4,
+        "sha256": "5c15b69a35ce3a6183dfb359fbe08d80d481f09e39d3836399c17a8ff297b1e1"
+      },
+      "villas": {
+        "count": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "documents": {
+        "count": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "leads": {
+        "count": 2,
+        "sha256": "5aaf7dd281262ee56375c9e96a992d8e490544549c341c10071c2a846348ee8f"
+      },
+      "subscriptions": {
+        "count": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "invoices": {
+        "count": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "mails": {
+        "count": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "noDemoVillas": true,
+    "noDemoDocuments": true,
+    "demoModeDisabled": true
+  },
+  "passed": true
+}

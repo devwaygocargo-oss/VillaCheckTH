@@ -1,0 +1,28 @@
+{
+  "id": "dpl_DgWB9tCJwuzRBLNyuTXq5PWWL6QE",
+  "commit": "57885ae245c5652633035c85dd71846440119cb7",
+  "rows": [
+    {
+      "width": 1440,
+      "actualPropertyAndReviews": true,
+      "coverDecoded": true,
+      "englishPersistedOnReload": true,
+      "localizedApiError": true,
+      "uncaught": 0,
+      "overflow": false,
+      "passed": true
+    },
+    {
+      "width": 390,
+      "actualPropertyAndReviews": true,
+      "coverDecoded": true,
+      "englishPersistedOnReload": true,
+      "localizedApiError": true,
+      "uncaught": 0,
+      "overflow": false,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "businessWrites": 0
+}

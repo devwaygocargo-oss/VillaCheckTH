@@ -1,0 +1,10 @@
+{
+  "artifact": "/tmp/vc16-common-wW305e",
+  "priorManifest": "reports/requested-test-accounts-v2/staging-manifest.json",
+  "productionPriorManifest": "reports/property-gallery/production-manifest.json",
+  "localGitHead": "c1b73bd7e1310d94ffa746b2f5f4d66219566ae7",
+  "stagingPrior": "dpl_DxiVvDHRkTBwK11zzWrriqbU1FQ5",
+  "productionPrior": "dpl_DCuj1oySbaWhBdt5XkbAwojnby23",
+  "repo": "https://github.com/devwaygocargo-oss/VillaCheckTH.git",
+  "baselineRemoteMain": "6ce3dce4eeaaec96f108bbd5fb4ee3ddb082100f"
+}

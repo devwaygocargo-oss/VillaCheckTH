@@ -1,0 +1,253 @@
+{
+  "report": [
+    {
+      "file": "AccountPrivacy.tsx",
+      "replacements": 16
+    },
+    {
+      "file": "AccountSecurity.tsx",
+      "replacements": 28
+    },
+    {
+      "file": "AdminAcceptance.tsx",
+      "replacements": 11
+    },
+    {
+      "file": "AdminAccess.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "AdminAccounts.tsx",
+      "replacements": 32
+    },
+    {
+      "file": "AdminApprovalNotice.tsx",
+      "replacements": 10
+    },
+    {
+      "file": "AdminApprovedVillas.tsx",
+      "replacements": 34
+    },
+    {
+      "file": "AdminBusiness.tsx",
+      "replacements": 49
+    },
+    {
+      "file": "AdminChangeApprovals.tsx",
+      "replacements": 13
+    },
+    {
+      "file": "AdminCms.tsx",
+      "replacements": 120
+    },
+    {
+      "file": "AdminLeadList.tsx",
+      "replacements": 34
+    },
+    {
+      "file": "AdminLogin.tsx",
+      "replacements": 8
+    },
+    {
+      "file": "AdminPendingVillas.tsx",
+      "replacements": 57
+    },
+    {
+      "file": "AdminPromotions.tsx",
+      "replacements": 17
+    },
+    {
+      "file": "AdminReadiness.tsx",
+      "replacements": 84
+    },
+    {
+      "file": "AdminReceivingBank.tsx",
+      "replacements": 68
+    },
+    {
+      "file": "AdminVillaPage.tsx",
+      "replacements": 13
+    },
+    {
+      "file": "Advertising.tsx",
+      "replacements": 72
+    },
+    {
+      "file": "App.tsx",
+      "replacements": 121
+    },
+    {
+      "file": "Backoffice.tsx",
+      "replacements": 224
+    },
+    {
+      "file": "BannerEditor.tsx",
+      "replacements": 27
+    },
+    {
+      "file": "BusinessReadiness.tsx",
+      "replacements": 5
+    },
+    {
+      "file": "CmsBannerInventory.tsx",
+      "replacements": 32
+    },
+    {
+      "file": "CmsChangeHistory.tsx",
+      "replacements": 30
+    },
+    {
+      "file": "CmsIntroBannerEditor.tsx",
+      "replacements": 3
+    },
+    {
+      "file": "CmsMediaPicker.tsx",
+      "replacements": 6
+    },
+    {
+      "file": "CmsPresentationEditor.tsx",
+      "replacements": 46
+    },
+    {
+      "file": "ContactLead.tsx",
+      "replacements": 2
+    },
+    {
+      "file": "DemoNotice.tsx",
+      "replacements": 2
+    },
+    {
+      "file": "DemoPhoto.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "FacebookMediaBrief.tsx",
+      "replacements": 9
+    },
+    {
+      "file": "FooterAd.tsx",
+      "replacements": 5
+    },
+    {
+      "file": "HomeBanner.tsx",
+      "replacements": 11
+    },
+    {
+      "file": "HomeDiscoveryEditor.tsx",
+      "replacements": 23
+    },
+    {
+      "file": "HomeLogoLink.tsx",
+      "replacements": 1
+    },
+    {
+      "file": "HomeNews.tsx",
+      "replacements": 8
+    },
+    {
+      "file": "HomeShortcuts.tsx",
+      "replacements": 3
+    },
+    {
+      "file": "HomeVillaShowcase.tsx",
+      "replacements": 20
+    },
+    {
+      "file": "MerchantProfile.tsx",
+      "replacements": 23
+    },
+    {
+      "file": "OmiseCheckout.tsx",
+      "replacements": 21
+    },
+    {
+      "file": "OperationsPortal.tsx",
+      "replacements": 61
+    },
+    {
+      "file": "OwnerVerification.tsx",
+      "replacements": 47
+    },
+    {
+      "file": "PasswordRecovery.tsx",
+      "replacements": 13
+    },
+    {
+      "file": "PasswordRegistration.tsx",
+      "replacements": 12
+    },
+    {
+      "file": "PaymentQr.tsx",
+      "replacements": 9
+    },
+    {
+      "file": "PremiumBanner.tsx",
+      "replacements": 11
+    },
+    {
+      "file": "PropertyDetails.tsx",
+      "replacements": 7
+    },
+    {
+      "file": "PropertyMedia.tsx",
+      "replacements": 39
+    },
+    {
+      "file": "ProvinceExplorer.tsx",
+      "replacements": 8
+    },
+    {
+      "file": "PublicMedia.tsx",
+      "replacements": 2
+    },
+    {
+      "file": "SocialLogin.tsx",
+      "replacements": 27
+    },
+    {
+      "file": "SocialMaterials.tsx",
+      "replacements": 52
+    },
+    {
+      "file": "SubscriptionPanel.tsx",
+      "replacements": 37
+    },
+    {
+      "file": "UserAccounts.tsx",
+      "replacements": 33
+    },
+    {
+      "file": "VillaEntitlements.tsx",
+      "replacements": 29
+    },
+    {
+      "file": "VillaMap.tsx",
+      "replacements": 6
+    },
+    {
+      "file": "VillaMediaGallery.tsx",
+      "replacements": 17
+    },
+    {
+      "file": "VillaPackagePanel.tsx",
+      "replacements": 68
+    },
+    {
+      "file": "cms.tsx",
+      "replacements": 12
+    },
+    {
+      "file": "prototype.tsx",
+      "replacements": 124
+    },
+    {
+      "file": "support.ts",
+      "replacements": 1
+    }
+  ],
+  "missing": [
+    "อัปโหลดไม่สำเร็จ"
+  ],
+  "files": 61,
+  "replacements": 1905
+}

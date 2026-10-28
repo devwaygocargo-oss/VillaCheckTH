@@ -1,0 +1,80 @@
+{
+  "at": "2026-10-28T21:24:52.951Z",
+  "environment": "staging",
+  "deploymentId": "dpl_DgWB9tCJwuzRBLNyuTXq5PWWL6QE",
+  "projectId": "prj_3A3Lygt3Z9Pt3D9p8bk693fTfHiC",
+  "canonicalUrl": "https://design-villacheck.vercel.app",
+  "canonicalBinding": "EXISTING_APPROVED_DEPLOYMENT_AND_PROMOTION_RECEIPTS",
+  "noBypassOrSessionCredentialsRead": true,
+  "sourceCommit": "57885ae245c5652633035c85dd71846440119cb7",
+  "window": {
+    "since": "2026-10-28T20:24:50.715Z",
+    "until": "2026-10-28T21:24:50.715Z"
+  },
+  "query": "level:(error OR fatal)",
+  "cliVersion": "65.2.0",
+  "readOnly": true,
+  "aggregate": {
+    "records": 22,
+    "levels": {
+      "error": 22,
+      "fatal": 0
+    },
+    "sources": {
+      "function": 22
+    },
+    "streams": {
+      "stderr": 22
+    },
+    "systemRecords": 0,
+    "truncatedRecords": 0,
+    "eventTypes": {
+      "NODE_PG_SSLMODE_COMPATIBILITY_WARNING": 22
+    },
+    "messageValueTypes": {
+      "string": 22
+    },
+    "messageHashes": {
+      "77ab88c5f3bf415387d62edb9a2c9d58aa5681940420917796d8adeaf94b276d": 17,
+      "bfa33b53450f246756477bd1aa15b80ee1b26ca4b42a0a707cf983900c6c1c4b": 5
+    },
+    "httpStatuses": {},
+    "routeCategories": {
+      "PUBLIC_API": 12,
+      "AUTH_SESSION_READ": 5,
+      "OTHER_API": 5
+    },
+    "knownFieldPresence": {
+      "message": 22,
+      "requestPath": 22,
+      "data": 22
+    },
+    "messageLengths": {
+      "562": 22
+    },
+    "knownTokenPresence": {
+      "warning": 22,
+      "node": 22
+    },
+    "structuredMessageTypes": {},
+    "pages": 1,
+    "nonJsonLines": 0,
+    "unknownLevels": 0
+  },
+  "knownWarningProof": {
+    "package": "pg-connection-string",
+    "installedVersion": "2.14.1",
+    "templateSha256": "ac1b2c5ce8e61d8f206bf4bf6e74dcbed53b135a3dac4471981231de5e7d35a1",
+    "matching": "Exact installed warning template after Node PID prefix and optional standard trace-hint normalization",
+    "records": 22
+  },
+  "unclassifiedOrExceptionRecords": 0,
+  "coverageComplete": true,
+  "blocker": null,
+  "status": "KNOWN_PG_TLS_COMPATIBILITY_WARNINGS_ONLY",
+  "passed": true,
+  "rawMessagesStored": false,
+  "headersPathsSecretsOrCursorsStored": false,
+  "newDeployments": 0,
+  "dbWrites": 0
+}

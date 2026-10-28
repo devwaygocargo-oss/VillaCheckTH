@@ -1,0 +1,69 @@
+{
+  "at": "2026-10-28T21:19:01.293Z",
+  "environment": "staging",
+  "base": "https://design-villacheck.vercel.app",
+  "expectedDeploymentId": "dpl_DgWB9tCJwuzRBLNyuTXq5PWWL6QE",
+  "expectedSourceCommit": "57885ae245c5652633035c85dd71846440119cb7",
+  "pinSource": "LOCAL_CURRENT_DEPLOYMENT_RECEIPT; remote provider pin belongs to primary QA",
+  "rows": [
+    {
+      "width": 1440,
+      "locale": "th",
+      "navigationStatus": 200,
+      "passed": true,
+      "fontSizePx": 14,
+      "contrastRatio": 5.02,
+      "shadowPresent": true,
+      "containedInCover": true,
+      "overlappingControls": 0,
+      "localizedLabel": "อนุมัติแล้ว",
+      "screenshot": "staging-ribbon-1440-th.png"
+    },
+    {
+      "width": 1440,
+      "locale": "en",
+      "navigationStatus": 200,
+      "passed": true,
+      "fontSizePx": 14,
+      "contrastRatio": 5.02,
+      "shadowPresent": true,
+      "containedInCover": true,
+      "overlappingControls": 0,
+      "localizedLabel": "Approved",
+      "screenshot": "staging-ribbon-1440-en.png"
+    },
+    {
+      "width": 390,
+      "locale": "th",
+      "navigationStatus": 200,
+      "passed": true,
+      "fontSizePx": 14,
+      "contrastRatio": 5.02,
+      "shadowPresent": true,
+      "containedInCover": true,
+      "overlappingControls": 0,
+      "localizedLabel": "อนุมัติแล้ว",
+      "screenshot": "staging-ribbon-390-th.png"
+    },
+    {
+      "width": 390,
+      "locale": "en",
+      "navigationStatus": 200,
+      "passed": true,
+      "fontSizePx": 14,
+      "contrastRatio": 5.02,
+      "shadowPresent": true,
+      "containedInCover": true,
+      "overlappingControls": 0,
+      "localizedLabel": "Approved",
+      "screenshot": "staging-ribbon-390-en.png"
+    }
+  ],
+  "passed": true,
+  "anonymous": true,
+  "businessWrites": 0,
+  "authWrites": 0,
+  "credentialsOrHeadersRead": false,
+  "blocked": false,
+  "receiptUnchanged": true
+}
