@@ -16,3 +16,13 @@ docs/validation
 *.log
 *.pem
 *.key
+
+tsconfig.tsbuildinfo
+
+# Validation and release evidence are never runtime inputs.
+qa-tests
+server/*.test.mjs
+server/test-*.mjs
+scripts/*test*.mjs
+docs/reports
+server/master-test-fixtures.mjs

@@ -22,7 +22,7 @@ export type Invoice = {
   paidAt: string | null
   proof: Document | null
 }
-export type VillaReviewRequest = {id:string|null;kind:string;submittedAt:string|null;submittedBy:string|null;summary:string;changes:{field:string;label:string;before:string;after:string}[]}
+export type VillaReviewRequest = {startedAt?:string;startedBy?:string;id:string|null;kind:string;submittedAt:string|null;submittedBy:string|null;summary:string;changes:{field:string;label:string;before:string;after:string}[]}
 export type MerchantVilla = {
   approvalStatus?: "APPROVED"|"REJECTED"|"CHANGE_REQUESTED"|"PENDING_APPROVAL"
   paymentStatus?: "PENDING_REVIEW"|"UNPAID"|"PAID"|"NO_PAYMENT_REQUIRED"|"FAILED"|"RECONCILIATION_REQUIRED"
@@ -36,6 +36,7 @@ export type MerchantVilla = {
   photoUploadedAt: string | null
   photoTakenAt: string | null
   photoReviewedAt: string | null
+  demoImage?: boolean
   photoUrl: string
   guestCapacity: number | null
   province: string
@@ -76,9 +77,11 @@ export type Account = {
   role: "merchant" | "admin" | "user"
 }
 export type Store = {
+  freePeriod?:{state:"ACTIVE"|"EXPIRED";startsAt:string;endsAt:string;packageId:"starter";unlimitedVillas:true;packageSelection:"COMING_SOON"}|null;
+  releaseMode?: "PRELAUNCH"|"PHASE1"|"STAGING"
   paymentAccessMode?:"DISABLED"|"OMISE_TEST"|"LEGACY_MANUAL"|"DEMO"
   packageModel?: "PER_VILLA"
-  subscription: { packageId: string; name: string; amount: number; billingCycle: string; billingMonths: number; capacity: number; used: number; expires: string | null; active: boolean; status: string; renewalDate: string | null; payments: number } | null
+  subscription: { packageId: string; name: string; amount: number; billingCycle: string | null; billingMonths: number | null; capacity: number | null; used: number; expires: string | null; active: boolean; status: string; renewalDate: string | null; payments: number } | null
   villas: MerchantVilla[]
   mails: Mail[]
   user: Account

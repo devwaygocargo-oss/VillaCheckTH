@@ -1,6 +1,8 @@
+import {t as translateSystem} from "./locale"
 import { useEffect, useState } from "react";
 import { api } from "./api";
 export type PackagePlan = {
+ phase1DisplayOnly?:boolean; activationBlocked?:boolean;
  regularAmount?: number; discountAmount?: number|null; netAmount?: number|null; pricingPending?:boolean; promotion?: {code:string;percent:number;revision:number}|null;
  id: string; name: string; slug: string; amount: number; capacity: number; description: string;
  currency: string; billingCycle: string; trialMonths: number; features: string[];
@@ -8,10 +10,10 @@ export type PackagePlan = {
 };
 export const selectedPlanKey = "villacheck-selected-package";
 export const packageIntentKey = "villacheck-package-intent";
-export const billingLabel = (cycle: string) => ({MONTHLY:"เดือน",QUARTERLY:"3 เดือน",YEARLY:"ปี"})[cycle] || "รอบ";
+export const billingLabel = (cycle: string) => translateSystem(({MONTHLY:"เดือน",QUARTERLY:"3 เดือน",YEARLY:"ปี"})[cycle] || "รอบ");
 export const billingValidityLabel = (cycle: string, business={monthlyInitialMonths:3,monthlyRenewalMonths:1}) => cycle === "MONTHLY"
-  ? `ค่าบริการต่อที่พัก รวมภาษี · ครั้งละ 1 เดือน หลัง Admin ยืนยันสลิป`
-  : `อายุสิทธิ์ตามรอบ ${billingLabel(cycle)} หลัง Admin ยืนยันสลิป`;
+  ? translateSystem("ค่าบริการต่อที่พัก รวมภาษี · ครั้งละ 1 เดือน หลัง Admin ยืนยันสลิป")
+  : translateSystem("อายุสิทธิ์ตามรอบ {v0} หลัง Admin ยืนยันสลิป",{v0:billingLabel(cycle)});
 export function planId(name: string) { return sessionStorage.getItem(selectedPlanKey) || name; }
 export function usePackages(admin=false) {
  const [plans,setPlans]=useState<PackagePlan[]>([]);

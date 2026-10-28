@@ -1,3 +1,5 @@
+import {merchantFreePeriod} from './merchant-free-period.mjs'
+import {membershipState,membershipPolicyKey} from './membership-lifecycle.mjs'
 import {normalizeSocialFeatures,packageContent,footerAdFeature,premiumGuaranteeFeature,basicVerificationNotice,onlineVerificationFeatures} from './package-content.mjs'
 import { packages } from "./database.mjs"
 import {packagePricing} from "./package-promotions.mjs"
@@ -117,30 +119,44 @@ export async function listPlans(db, all = false) {
 export async function getVerificationMode() {
   return "MANUAL"
 }
-export function qrState(villa, subscription, now = Date.now()) {
+export function qrState(villa, subscription, now = Date.now(), {requireFiniteExpiry=false,graceLedger,gracePolicy} = {}) {
   if (villa.status === "changes" || villa.status === "rejected")
     return "SUSPENDED"
   if (subscription?.lifecycle === "SUSPENDED" || villa.status === "suspended")
     return "SUSPENDED"
   if (subscription?.lifecycle === "CANCELLED") return "INACTIVE"
   if (villa.status !== "approved" || !villa.qr) return "PENDING"
+  if(requireFiniteExpiry&&!villa.expires)return "EXPIRED"
+  for(const end of [villa.expires,...(requireFiniteExpiry?[subscription?.expires]:[])])if(end&&!Number.isFinite(Date.parse(end)))return "EXPIRED"
+  const effectiveEnd=[villa.expires,...(requireFiniteExpiry?[subscription?.expires]:[])].filter(Boolean).sort((a,b)=>Date.parse(a)-Date.parse(b))[0]
+  const membership=membershipState({expires:effectiveEnd,lifecycle:subscription?.lifecycle,ledger:graceLedger,policy:gracePolicy,now})
+  if(membership==='GRACE_PERIOD')return 'ACTIVE'
+  // Explicit expiry applies even to free/fully discounted memberships.
+  for(const end of [villa.expires,...(requireFiniteExpiry?[subscription?.expires]:[])])if(end!==null&&end!==undefined&&end!==''&&!(Number.isFinite(Date.parse(end))&&Date.parse(end)>now))return "EXPIRED"
+  if(requireFiniteExpiry&&!villa.expires)return "EXPIRED"
   if (villa.payments === 0) return "ACTIVE"
   return new Date(villa.expires).getTime() > now
     ? "ACTIVE"
     : "EXPIRED"
 }
-export async function trustDto(db, villa, context) {
+export async function trustDto(db, villa, context, options) {
   const sub = context ? context.subscriptions.get(villa.owner_id) : await db
     .prepare("SELECT * FROM subscriptions WHERE owner_id=?")
     .get(villa.owner_id)
-  const plan = await readContextPlan(db,villa.payments === 0 ? "basic" : villa.package_id,context)
-  const settings=context?.settings||new Map((await db.prepare("SELECT key,value FROM system_settings WHERE key IN (?,?)").all("villa_qr:"+villa.id,"account_status:"+villa.owner_id)).map(row=>[row.key,row]))
+  const grantKey="membership_grant:"+villa.id
+  const settings=context?.settings||new Map((await db.prepare("SELECT key,value FROM system_settings WHERE key IN (?,?,?,?,?,?)").all("villa_qr:"+villa.id,"account_status:"+villa.owner_id,"membership_ledger:"+villa.owner_id,membershipPolicyKey,grantKey,"merchant_free_period:"+villa.owner_id)).map(row=>[row.key,row]))
+  const period=await merchantFreePeriod(db,villa.owner_id,Date.now(),{settings})
+  const grantRow=settings.get(grantKey),grant=grantRow?JSON.parse(grantRow.value):null
+  const plan = await readContextPlan(db,period?"starter":grant?.state==="APPROVED"?villa.package_id:villa.payments === 0 ? "basic" : villa.package_id,context)
   const override=settings.get("villa_qr:"+villa.id),account=settings.get("account_status:"+villa.owner_id)
   const accountSuspended=account&&JSON.parse(account.value).status==="suspended"
-  const qrStatus = accountSuspended ? "SUSPENDED" : ["SUSPENDED","INACTIVE"].includes(override?.value) ? override.value : qrState(villa, sub)
+  const graceLedger=JSON.parse(settings.get("membership_ledger:"+villa.owner_id)?.value||"null"),gracePolicy=JSON.parse(settings.get(membershipPolicyKey)?.value||"null")
+  const state=membershipState({expires:[villa.expires,...(options?.requireFiniteExpiry?[sub?.expires]:[])].filter(Boolean).sort((a,b)=>Date.parse(a)-Date.parse(b))[0],lifecycle:sub?.lifecycle,ledger:graceLedger,policy:gracePolicy})
+  const qrStatus = accountSuspended ? "SUSPENDED" : ["SUSPENDED","INACTIVE"].includes(override?.value) ? override.value : qrState(villa, sub, Date.now(), {...options,graceLedger,gracePolicy})
   const actual = qrStatus === "ACTIVE" ? villa.verification_level : "REGISTERED"
   return {
     qrStatus,
+    membershipState:qrStatus==="SUSPENDED"?"SUSPENDED":qrStatus==="ACTIVE"?(state==="GRACE_PERIOD"?state:"ACTIVE"):"EXPIRED",
     verificationStatus:
       qrStatus === "EXPIRED"
         ? "EXPIRED"

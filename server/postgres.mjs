@@ -15,6 +15,8 @@ export function postgresSql(sql) {
 export async function openPostgres(connectionString, options = {}) {
   if (!/^postgres(?:ql)?:\/\//.test(connectionString))
     throw Error("DATABASE_URL must be a PostgreSQL connection URL")
+  const {bootstrap = process.env.APP_ENV !== "production", ...poolOptions} = options
+  if(process.env.APP_ENV === "production" && bootstrap)throw Error("Production runtime bootstrap is forbidden")
   const types = new pg.TypeOverrides()
   types.setTypeParser(20, (value) => {
     const number = Number(value)
@@ -28,7 +30,7 @@ export async function openPostgres(connectionString, options = {}) {
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     types,
-    ...options,
+    ...poolOptions,
   })
   pool.on("error", () => console.error("PostgreSQL connection interrupted"))
   const context = new AsyncLocalStorage()
@@ -66,6 +68,10 @@ export async function openPostgres(connectionString, options = {}) {
       }
     },
   }
+  // Non-secret, immutable connection metadata for operator target guards.
+  const parameters=new pg.Client(pool.options).connectionParameters
+  Object.defineProperty(db,"connectionIdentity",{value:Object.freeze({host:parameters.host,database:parameters.database,role:parameters.user}),enumerable:false,writable:false})
+  if(!bootstrap)return db
   try {
     await db.transaction(async () => {
       await db.exec(

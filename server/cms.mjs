@@ -1,7 +1,7 @@
 import {initializeCmsChanges,recordCmsChange,cmsChangeById,cmsChanges,archivedCmsMediaUsed} from "./cms-change-history.mjs"
 import {introBannerImage,editorialBanners} from "./banner-display.mjs"
-import {diverseDemoImages} from "./demo-image-catalog.mjs";
-const diverseImageUrls=new Set(diverseDemoImages.map(i=>i.url));
+import {diverseDemoImages,diverseEditorialDefaults} from "./demo-image-catalog.mjs";
+const diverseImageUrls=new Set([...diverseDemoImages,...diverseEditorialDefaults].map(i=>i.url));
 import {presentationConfig,copyDefaults,presentationMedia} from "./cms-presentation.mjs"
 import { homeConfig, publicNavigation, shortcutMediaUrls, shortcutIcons, publicDestinations } from "./cms-home-config.mjs"
 import { receivingBank, bankInstructions } from "./payment-account.mjs"
@@ -40,7 +40,7 @@ const slug = (value) => {
 export function cmsUrl(value, image = false) {
   string(value, 2000)
   if (!value) return value
-  if (image && (/^\/demo\/villas\/villa-[1-9]\.jpg$/.test(value)||diverseImageUrls.has(value))) return value
+  if (image && (["/villa-placeholder.svg","/illustrations/qr-evidence.svg","/illustrations/platform-updates.svg","/illustrations/merchant-trust.svg"].includes(value)||/^\/demo\/villas\/villa-[1-9]\.jpg$/.test(value)||diverseImageUrls.has(value))) return value
   if (!image && value === "#how") return value
   if (image && /^\/api\/public\/cms-media\/[a-f0-9-]+$/.test(value))
     return value
@@ -326,7 +326,7 @@ export async function cmsPaymentInstructions(db, fallback = "") {
   const bank=await receivingBank(db);if(bank)return bankInstructions(bank)
   return (await publishedCms(db)).content.site.paymentInstructions || fallback
 }
-export async function adminCms(db, user, req, path, readBody) {
+export async function adminCms(db, user, req, path, readBody, config={}) {
   if (!path.startsWith("/api/admin/cms")) return undefined
   if (user.role !== "admin") fail(403, "เฉพาะ Admin")
   if (path === "/api/admin/cms/history" && req.method === "GET") return cmsChanges(db,new URL(req.url,"http://localhost").searchParams.get("cursor")||"")
@@ -341,8 +341,8 @@ export async function adminCms(db, user, req, path, readBody) {
   if (path === "/api/admin/cms/media" && req.method === "GET") {
     const media=(await db.prepare("SELECT id,name,mime FROM documents WHERE name LIKE 'cms-image:%' ORDER BY id").all()).map(m=>({...m,url:`/api/public/cms-media/${m.id}`,source:"upload"}));
     const seen=new Set(media.map(m=>m.url));
-    const add=(url,name)=>{if(typeof url!=="string"||!(url.startsWith("https://")||/^\/demo\/villas\/villa-[1-9]\.jpg$/.test(url)||diverseImageUrls.has(url))||seen.has(url))return;seen.add(url);media.push({id:`banner-${media.length}`,name,mime:"image/remote",url,source:"banner"});};
-    for(const image of diverseDemoImages)add(image.url,image.title);
+    const add=(url,name)=>{if(config.appEnvironment==='production'&&typeof url==='string'&&url.startsWith('/demo/'))return;if(typeof url!=="string"||!(url.startsWith("https://")||/^\/demo\/villas\/villa-[1-9]\.jpg$/.test(url)||diverseImageUrls.has(url))||seen.has(url))return;seen.add(url);media.push({id:`banner-${media.length}`,name,mime:"image/remote",url,source:"banner"});};
+    if(config.appEnvironment!=='production')for(const image of diverseDemoImages)add(image.url,image.title);
     const releases=[await read(db,"cms_published",empty),await read(db,"cms_draft",empty),...await read(db,"cms_history",[])];
     for(const release of releases){const home=release.content?.home;if(!home)continue;add(home.introImage,"Intro banner");for(const [i,image] of (home.images||[]).entries())add(image,`Carousel ${i+1}`);for(const banner of home.banners||[]){add(banner.image,banner.title||"Banner");add(banner.mobileImage,(banner.title||"Banner")+" · มือถือ");}}
     const ads=await db.prepare("SELECT value FROM system_settings WHERE key LIKE 'advertisement:%'").all();

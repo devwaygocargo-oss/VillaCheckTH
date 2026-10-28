@@ -1,4 +1,4 @@
-export const introBannerImage="/demo/diverse/photo-37736542.jpg"
+export const introBannerImage="/villa-placeholder.svg"
 export function introBanner(home){return {id:"villacheck-intro",image:home.introImage||introBannerImage,mobileImage:"",title:home.title,description:home.description,href:home.buttonHref||"#page=directory",label:home.buttonLabel||"ค้นหาที่พัก",visible:home.introVisible!==false,sponsored:false,startsAt:"",endsAt:""}}
 export function editorialBanners(home){
  const rows=home.banners?.length?home.banners:home.images.map((image,i)=>({id:`legacy-slide-${i}`,image,mobileImage:"",title:home.title,description:home.description,href:home.buttonHref||"#page=directory",label:home.buttonLabel||"ค้นหาที่พัก",visible:i===0,sponsored:false,startsAt:"",endsAt:""}))

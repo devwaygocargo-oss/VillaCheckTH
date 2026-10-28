@@ -5,6 +5,9 @@ import { drainBankNotifications } from "./bank-receiving.mjs"
 import {demoMode} from "./demo-payment.mjs"
 import { qrSvg, paymentQrDto } from "./payment-qr.mjs"
 export function createMailWorker(db, config, transport) {
+ return {run:async()=>{},stop:()=>{}}
+
+  if(config.productionPrelaunch||config.productionRuntime||config.productionReleaseMode)return {run:async()=>{},stop:()=>{}}
   let active
   function run() {
     if (!active)

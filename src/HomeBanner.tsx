@@ -1,3 +1,5 @@
+import {t as translateSystem} from "./locale"
+import {t} from "./locale"
 import {onPublicVillaRefresh} from "./publicVillaRefresh";
 import {carouselBanners} from "../server/banner-display.mjs";
 import { useEffect, useRef, useState } from "react"
@@ -36,7 +38,24 @@ export default function HomeBanner() {
   const slides: HomeBannerItem[] = carouselBanners(home,presentation,advertisements,now)
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
-  const touch = useRef<number | null>(null)
+  const [explicitPlay, setExplicitPlay] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const [revealed, setRevealed] = useState(false)
+  const [reduced, setReduced] = useState(false)
+  const region = useRef<HTMLDivElement>(null)
+  const activeDot = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const changed = () => setReduced(query.matches)
+    changed(); query.addEventListener("change", changed)
+    const outside = (event: PointerEvent) => {
+      if (!region.current?.contains(event.target as Node)) setRevealed(false)
+    }
+    document.addEventListener("pointerdown", outside)
+    return () => { query.removeEventListener("change", changed); document.removeEventListener("pointerdown", outside) }
+  }, [])
+  const touch = useRef<{x:number;y:number} | null>(null)
   const current = index % Math.max(slides.length, 1)
   const move = (step: number) =>
     setIndex((i) => (i + step + slides.length) % Math.max(slides.length, 1))
@@ -46,7 +65,7 @@ export default function HomeBanner() {
   }, [])
   useEffect(() => {
     if (
-      paused ||
+      paused || ((hovered || focused) && !explicitPlay) || reduced ||
       slides.length < 2 ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     )
@@ -56,27 +75,51 @@ export default function HomeBanner() {
       home.slideIntervalMs || 5200,
     )
     return () => clearInterval(timer)
-  }, [paused, slides.length, home.slideIntervalMs])
+  }, [paused, hovered, focused, explicitPlay, reduced, slides.length, home.slideIntervalMs])
+  useEffect(() => {
+    const dot = activeDot.current, strip = dot?.parentElement
+    if (dot && strip) strip.scrollLeft = dot.offsetLeft - strip.clientWidth / 2 + dot.clientWidth / 2
+  }, [current])
   if (!slides.length) return null
   return (
     <div
       className="vc-banner"
       role="region"
       aria-roledescription="carousel"
-      aria-label="แบนเนอร์ VillaCheck"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
+      aria-label={translateSystem("แบนเนอร์ VillaCheck")}
+      ref={region}
+      tabIndex={slides.length > 1 ? 0 : undefined}
+      data-navigation={revealed ? "visible" : "hidden"}
+      onMouseEnter={() => { setHovered(true); setExplicitPlay(false) }}
+      onMouseLeave={() => { setHovered(false); if (!focused) setRevealed(false) }}
+      onClick={(e) => {
+        if (!(e.target as Element).closest("a,input,select,textarea")) setRevealed(true)
+        if (!(e.target as Element).closest(".vc-banner-pause")) setExplicitPlay(false)
+      }}
+      onFocusCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setExplicitPlay(false); setFocused(true); setRevealed(true) }}
       onBlurCapture={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false)
+        if (!e.currentTarget.contains(e.relatedTarget)) { setFocused(false); setRevealed(false) }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") { setRevealed(false); if ((e.target as Element).closest(".vc-banner-prev,.vc-banner-next")) { region.current?.focus(); setRevealed(false) } return }
+        if (e.target !== e.currentTarget) return
+        if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
+          e.preventDefault(); setExplicitPlay(false); setRevealed(true)
+          if (e.key === "Home") setIndex(0)
+          else if (e.key === "End") setIndex(slides.length - 1)
+          else move(e.key === "ArrowLeft" ? -1 : 1)
+        }
       }}
       onTouchStart={(e) => {
-        touch.current = e.touches[0].clientX
+        setExplicitPlay(false)
+        touch.current = {x:e.touches[0].clientX,y:e.touches[0].clientY}
       }}
+      onTouchCancel={() => { touch.current = null }}
       onTouchEnd={(e) => {
         if (touch.current !== null) {
-          const delta = e.changedTouches[0].clientX - touch.current
-          if (Math.abs(delta) > 45) move(delta < 0 ? 1 : -1)
+          const dx = e.changedTouches[0].clientX - touch.current.x
+          const dy = e.changedTouches[0].clientY - touch.current.y
+          if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) { move(dx < 0 ? 1 : -1); setRevealed(true) }
           touch.current = null
         }
       }}
@@ -87,6 +130,9 @@ export default function HomeBanner() {
           data-banner-id={slide.id}
           className={`vc-banner-slide ${i === current ? "active" : ""}`}
           aria-hidden={i !== current}
+          role="group"
+          aria-roledescription="slide"
+          aria-label={`${i + 1} / ${slides.length}`}
         >
           <picture>
             {slide.mobileImage && (
@@ -102,7 +148,7 @@ export default function HomeBanner() {
           <div className="container vc-banner-copy">
             {slide.sponsored && (
               <span className="vc-ad-label">
-                {"demo" in slide && slide.demo ? "โฆษณา · แพ็กเกจ 4,990 บาท/เดือน" : "พื้นที่โฆษณา · ไม่ใช่สถานะการตรวจสอบ"}
+                {"demo" in slide && slide.demo ? translateSystem("โฆษณา · แพ็กเกจ 4,990 บาท/เดือน") : translateSystem("พื้นที่โฆษณา · ไม่ใช่สถานะการตรวจสอบ")}
               </span>
             )}
             <span className="kicker">{slide.sponsored ? "FEATURED VILLA / PREMIUM MEMBER" : home.eyebrow}</span>
@@ -117,7 +163,7 @@ export default function HomeBanner() {
                   ? { target: "_blank", rel: "noopener noreferrer" }
                   : {})}
               >
-                {slide.label || "ดูรายละเอียด"} →
+                {slide.label || translateSystem("ดูรายละเอียด")} →
               </a>
             )}
           </div>
@@ -126,35 +172,48 @@ export default function HomeBanner() {
       {slides.length > 1 && (
         <>
           <button
+            type="button"
+            tabIndex={revealed ? 0 : -1}
+            aria-hidden={!revealed}
             className="vc-banner-prev"
-            aria-label="แบนเนอร์ก่อนหน้า"
+            aria-label={translateSystem("แบนเนอร์ก่อนหน้า")}
             onClick={() => move(-1)}
           >
             ‹
           </button>
           <button
+            type="button"
+            tabIndex={revealed ? 0 : -1}
+            aria-hidden={!revealed}
             className="vc-banner-next"
-            aria-label="แบนเนอร์ถัดไป"
+            aria-label={translateSystem("แบนเนอร์ถัดไป")}
             onClick={() => move(1)}
           >
             ›
           </button>
           <div className="vc-banner-controls">
+            <div className="vc-banner-dots" role="group" aria-label={translateSystem("เลือกแบนเนอร์")}>
             {slides.map((s, i) => (
               <button
                 key={s.id}
-                aria-label={`แบนเนอร์ ${i + 1}`}
+                type="button"
+                ref={i === current ? activeDot : undefined}
+                aria-label={translateSystem("แบนเนอร์ {v0}", {v0: i + 1})}
                 aria-current={i === current ? "true" : undefined}
                 className={i === current ? "active" : ""}
                 onClick={() => setIndex(i)}
               />
             ))}
+            </div>
             <button
+              type="button"
+              disabled={reduced}
+              aria-pressed={paused || reduced}
               className="vc-banner-pause"
-              aria-label={paused ? "เล่นสไลด์" : "หยุดสไลด์"}
-              onClick={() => setPaused((v) => !v)}
+              aria-label={reduced ? translateSystem("ปิดสไลด์อัตโนมัติตามการตั้งค่าลดการเคลื่อนไหว") : paused ? translateSystem("เล่นสไลด์") : translateSystem("หยุดสไลด์")}
+              onClick={() => { setPaused(!paused); setExplicitPlay(paused) }}
             >
-              {paused ? "▶" : "Ⅱ"}
+              {paused || reduced ? "▶" : "Ⅱ"}
             </button>
           </div>
         </>

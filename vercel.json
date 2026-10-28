@@ -19,10 +19,8 @@
     }
   ],
   "outputDirectory": ".next",
-  "crons": [
-    {
-      "path": "/api/ops/cron",
-      "schedule": "0 2 * * *"
-    }
+  "crons": [],
+  "regions": [
+    "sin1"
   ]
 }

@@ -1,3 +1,5 @@
+import {t as translateSystem} from "./locale"
+import {t} from "./locale"
 type Channel = "email" | "phone" | "facebook" | "instagram" | "line";
 let configured: Partial<Record<Channel,string>> = {};
 export function configureSupport(values:Partial<Record<Channel,string>>) { configured=values; }
@@ -21,7 +23,7 @@ export function supportHref(channel: Channel) {
 }
 export function openSupport(channel: Channel) {
   const href = supportHref(channel);
-  if (!href) { window.alert("ช่องทางติดต่อนี้ยังไม่เปิดใช้งาน กรุณาติดต่อผ่านอีเมลหรือแบบฟอร์มติดต่อ"); return; }
+  if (!href) { window.alert(translateSystem("ช่องทางติดต่อนี้ยังไม่เปิดใช้งาน กรุณาติดต่อผ่านอีเมลหรือแบบฟอร์มติดต่อ")); return; }
   if (channel === "email" || channel === "phone") window.location.href = href;
   else window.open(href, "_blank", "noopener,noreferrer");
 }
