@@ -6,7 +6,7 @@ import {parse} from 'dotenv'
 const [job,configFile]=process.argv.slice(2)
 if(!['backup','monitor'].includes(job)||!configFile)throw Error('Use operator-runner.mjs backup|monitor /private/operator.env')
 const root=fileURLToPath(new URL('..',import.meta.url)),settings=parse(readFileSync(configFile)),env={...process.env,...settings}
-const child=spawn(process.execPath,[join(root,'scripts',job==='backup'?'scheduled-backup.mjs':'operations-check.mjs')],{cwd:root,env,stdio:['ignore','pipe','pipe']})
+const child=spawn(process.execPath,[join(root,'tools',job==='backup'?'scheduled-backup.mjs':'operations-check.mjs')],{cwd:root,env,stdio:['ignore','pipe','pipe']})
 let output='';child.stdout.on('data',b=>output+=b);child.stderr.on('data',()=>{/* Never forward provider diagnostics or configuration values. */})
 const code=await new Promise(resolve=>{child.on('error',()=>resolve(1));child.on('exit',c=>resolve(c??1))})
 let result;try{result=JSON.parse(output.trim())}catch{result={ok:false,error:'Operation failed; inspect private configuration'}}

@@ -13,7 +13,7 @@ test("public health probe accepts protected pricing denial and fails on backend 
   res.end(JSON.stringify(req.url==="/api/public/cms"?{content:{}}:{villas:[]}))
  })
  await new Promise(r=>server.listen(0,"127.0.0.1",r));t.after(()=>new Promise(r=>server.close(r)))
- const run=()=>execute(process.execPath,["scripts/health-check.mjs"],{env:{...process.env,PUBLIC_URL:`http://127.0.0.1:${server.address().port}`}})
+ const run=()=>execute(process.execPath,["tools/health-check.mjs"],{env:{...process.env,PUBLIC_URL:`http://127.0.0.1:${server.address().port}`}})
  const report=JSON.parse((await run()).stdout);assert(report.results.every(r=>r.passed));assert.equal(report.results.find(r=>r.path==="/api/packages").status,401)
  for(const value of ["outage","leak"]){mode=value;await assert.rejects(run(),error=>{assert.equal(error.code,1);assert(JSON.parse(error.stdout).results.some(r=>!r.passed));return true})}
 })

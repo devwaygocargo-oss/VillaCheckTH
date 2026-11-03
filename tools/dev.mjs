@@ -1,5 +1,5 @@
 import {spawn,spawnSync} from "node:child_process";
-for(const args of [["node_modules/prisma/build/index.js","generate"],["scripts/build-backend.mjs"]]){
+for(const args of [["node_modules/prisma/build/index.js","generate"],["tools/build-backend.mjs"]]){
  const result=spawnSync(process.execPath,args,{stdio:"inherit"});if(result.status!==0)process.exit(result.status||1);
 }
 const children=[

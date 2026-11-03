@@ -82,7 +82,7 @@ test("staging OTP blocks non-allowlisted recipients for direct provider API as w
  const db=await openTestDatabase();t.after(()=>db.close());let calls=0
  const otp=createLoginOtp(db,{appEnvironment:"staging",stagingEmailAllowlist:["qa@example.test"],otpSecret:"phase3-otp-synthetic-secret-32-characters",thaiBulkSmsEmailOtpTemplateId:"test-template",thaiBulkSmsApiKey:"test-key",thaiBulkSmsApiSecret:"test-secret"},{sendMail:async()=>{calls++}},async()=>{calls++;throw Error("must not call provider")})
  await assert.rejects(otp.request({channel:"email",destination:"customer@example.test"}),{status:403});assert.equal(calls,0);assert.equal((await db.prepare("SELECT count(*) AS n FROM login_otps").get()).n,0)
- const result=await promisify(execFile)(process.execPath,["scripts/staging-diagnostics.mjs"],{env:{APP_ENV:"staging",SMTP_PASSWORD:"dummy-private-value",SMTP_HOST:"invalid.example.test"}})
+ const result=await promisify(execFile)(process.execPath,["tools/staging-diagnostics.mjs"],{env:{APP_ENV:"staging",SMTP_PASSWORD:"dummy-private-value",SMTP_HOST:"invalid.example.test"}})
  assert(!result.stdout.includes("dummy-private-value"));assert(!result.stdout.includes("invalid.example.test"));assert.equal(JSON.parse(result.stdout).providerAcceptance,false)
 })
 

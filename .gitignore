@@ -36,3 +36,6 @@ backend/generated/
 /docs/
 /audit-result/
 /audit-results/
+
+# Keep local operator scripts outside source control and deployments
+/scripts/

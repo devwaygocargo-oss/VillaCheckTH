@@ -1,4 +1,4 @@
-// Local synthetic browser acceptance. Run via scripts/test-postgres.mjs --browser.
+// Local synthetic browser acceptance. Run via tools/test-postgres.mjs --browser.
 import assert from "node:assert/strict"
 import {spawn} from "node:child_process"
 import {createServer} from "node:net"

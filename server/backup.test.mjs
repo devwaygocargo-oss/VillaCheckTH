@@ -4,7 +4,7 @@ import {mkdtempSync,readFileSync,rmSync,statSync} from "node:fs"
 import {randomUUID} from "node:crypto"
 import {openTestDatabase} from "./test-database.mjs"
 import {createUser,createInvoice} from "./database.mjs"
-import {exportSnapshot,restoreSnapshot,readSnapshot,durableTables} from "../scripts/application-backup.mjs"
+import {exportSnapshot,restoreSnapshot,readSnapshot,durableTables} from "../tools/application-backup.mjs"
 
 test("Encrypted online application backup remains consistent during writes and restores binary rows into an empty migrated schema",{skip:!process.env.TEST_DATABASE_URL},async t=>{
  const source=await openTestDatabase(),target=await openTestDatabase(),dir=mkdtempSync('/private/tmp/villacheck-logical-backup-'),file=dir+'/dummy.vcb',secret='Dummy backup encryption key with more than 32 characters';

@@ -7,7 +7,7 @@ import pg from "pg"
 test("Prisma migrations baseline populated databases and preserve QR across repeat deploys",{skip:!process.env.TEST_DATABASE_URL,timeout:60000},async()=>{
  const pool=new pg.Pool({connectionString:process.env.TEST_DATABASE_URL});
  const schemas=[`fresh_${randomUUID().replaceAll('-','')}`,`legacy_${randomUUID().replaceAll('-','')}`];
- const deploy=(schema)=>new Promise((resolve,reject)=>{const url=new URL(process.env.TEST_DATABASE_URL);url.searchParams.set('schema',schema);url.searchParams.set('options',`-c search_path=${schema}`);const child=spawn(process.execPath,['scripts/deploy-db.mjs'],{env:{...process.env,DATABASE_URL:url.toString(),DIRECT_URL:url.toString()},stdio:'pipe'});let output='';child.stdout.on('data',chunk=>{output+=chunk});child.stderr.on('data',chunk=>{output+=chunk});child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(Error('Migration failed: '+output.replace(/postgres(?:ql)?:\/\/[^\s]+/g,'[database URL]'))));});
+ const deploy=(schema)=>new Promise((resolve,reject)=>{const url=new URL(process.env.TEST_DATABASE_URL);url.searchParams.set('schema',schema);url.searchParams.set('options',`-c search_path=${schema}`);const child=spawn(process.execPath,['tools/deploy-db.mjs'],{env:{...process.env,DATABASE_URL:url.toString(),DIRECT_URL:url.toString()},stdio:'pipe'});let output='';child.stdout.on('data',chunk=>{output+=chunk});child.stderr.on('data',chunk=>{output+=chunk});child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(Error('Migration failed: '+output.replace(/postgres(?:ql)?:\/\/[^\s]+/g,'[database URL]'))));});
  try{
   for(const schema of schemas)await pool.query(`CREATE SCHEMA "${schema}"`);
   await deploy(schemas[0]);

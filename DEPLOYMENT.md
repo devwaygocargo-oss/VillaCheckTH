@@ -8,7 +8,7 @@ Vercel framework is Next.js; `npm ci`, `npm run build`, output `.next`. The buil
 
 Required private configuration: `DATABASE_URL` (pooled runtime), `DIRECT_URL` (direct migration connection where supported), HTTPS `APP_URL`, initial `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Existing Admin passwords are not overwritten by changing environment variables. Set support values through CMS. No secrets may use NEXT_PUBLIC prefixes or enter Git/audit files.
 
-Migrations preserve existing data and QR identities; never edit deployed migrations, use migrate reset, or use db push against production. scripts/deploy-db.mjs handles legacy baselining and migration lock retry. Diagnose lock holders before terminating a confirmed abandoned deployment; do not disable locking.
+Migrations preserve existing data and QR identities; never edit deployed migrations, use migrate reset, or use db push against production. tools/deploy-db.mjs handles legacy baselining and migration lock retry. Diagnose lock holders before terminating a confirmed abandoned deployment; do not disable locking.
 
 `SEED_DEMO_ACCOUNTS=false` and `SEED_PUBLIC_DEMO_DATA=false` for operator-owned real production data. Public demo seed never runs during build and requires explicit opt-in. Demo fixtures and Demo Mode are separate concerns: inspect existing demo content and payment state before approving any cleanup. Do not delete fixtures or reset a production database as part of UAT.
 
@@ -16,7 +16,7 @@ Migrations preserve existing data and QR identities; never edit deployed migrati
 
 A single authorized Admin can propose and approve a bank change, including their own proposal. A configured reviewer permission still applies; duplicate/stale approvals are rejected. Actor/approver/time/outcome and durable Owner notifications are retained. External Owner delivery requires a confirmed recipient/channel. Admin publishes CMS directly after reviewing Preview. Approved bank changes affect new invoices only; old receiver/amount snapshots remain.
 
-Use `node --env-file-if-exists=.env scripts/provision-admin.mjs` only in the designated environment, with `NEW_ADMIN_EMAIL`, `NEW_ADMIN_NAME`, `NEW_ADMIN_PASSWORD` in the operator environment. The script refuses existing emails and never prints passwords. Provisioning is an operator action, not public signup. Do not share Admin credentials for approval separation.
+Use `node --env-file-if-exists=.env tools/provision-admin.mjs` only in the designated environment, with `NEW_ADMIN_EMAIL`, `NEW_ADMIN_NAME`, `NEW_ADMIN_PASSWORD` in the operator environment. The script refuses existing emails and never prints passwords. Provisioning is an operator action, not public signup. Do not share Admin credentials for approval separation.
 
 ## External providers
 
@@ -30,9 +30,9 @@ Configure approved SMS/Email OTP credentials and sender/template IDs according t
 
 Vercel schedules `/api/ops/cron` daily at 02:00 UTC (09:00 Thailand). Configure a strong CRON_SECRET so Vercel sends its bearer authentication. The route fails closed without the secret. After deploying, verify lastScheduledRun in Admin readiness. A daily worker is not a real-time delivery SLA; use an authenticated external schedule for a shorter interval if required and supported by the hosting plan.
 
-Run `node scripts/operations-check.mjs` from a trusted scheduled runner to check public API health. Optional private `ALERT_WEBHOOK_URL` sends a generic failure event without customer data or credentials. The script exits nonzero for scheduler alerting. Set PUBLIC_URL to the intended deployment. Assign an on-call owner and exercise a controlled failure in staging; do not claim alerts active until the operator verifies delivery.
+Run `node tools/operations-check.mjs` from a trusted scheduled runner to check public API health. Optional private `ALERT_WEBHOOK_URL` sends a generic failure event without customer data or credentials. The script exits nonzero for scheduler alerting. Set PUBLIC_URL to the intended deployment. Assign an on-call owner and exercise a controlled failure in staging; do not claim alerts active until the operator verifies delivery.
 
-Encrypted database backup: configure BACKUP_DATABASE_URL, BACKUP_SECRET (32+ characters), BACKUP_DIR and BACKUP_RETENTION_DAYS; run `node scripts/scheduled-backup.mjs`. The directory must be protected and replicated to separately controlled storage by the operator. Defaults retain archives 30 days; never delete a prior archive until a new export succeeds. Store the encryption key outside the archive location. Daily scheduling is operator-owned; the Vercel function does not persist a backup filesystem.
+Encrypted database backup: configure BACKUP_DATABASE_URL, BACKUP_SECRET (32+ characters), BACKUP_DIR and BACKUP_RETENTION_DAYS; run `node tools/scheduled-backup.mjs`. The directory must be protected and replicated to separately controlled storage by the operator. Defaults retain archives 30 days; never delete a prior archive until a new export succeeds. Store the encryption key outside the archive location. Daily scheduling is operator-owned; the Vercel function does not persist a backup filesystem.
 
 Restore drill: create an empty migrated isolated database, set BACKUP_DATABASE_URL to it, and `npm run db:restore -- /path/archive.vcb` with the correct BACKUP_SECRET. Remote restores require deliberate ALLOW_REMOTE_RESTORE=true. The restore refuses populated targets and does not restore transient sessions/OTP. Check documents, invoice totals, bank snapshots and Villa QR identity. Record duration and agree RPO/RTO before approving operational readiness.
 
@@ -55,7 +55,7 @@ Release decision: record named business/finance reviewers and their Pass/Fail ev
 
 ## Useful commands
 
-`npm run typecheck`; `npm run lint`; `npm run check:health`; `npm run test:backend` with TEST_DATABASE_URL for full PostgreSQL integration. `npm run build` has no migration/seed step. Run `node scripts/test-postgres.mjs --browser` for isolated PostgreSQL and optional local Chrome acceptance.
+`npm run typecheck`; `npm run lint`; `npm run check:health`; `npm run test:backend` with TEST_DATABASE_URL for full PostgreSQL integration. `npm run build` has no migration/seed step. Run `node tools/test-postgres.mjs --browser` for isolated PostgreSQL and optional local Chrome acceptance.
 
 ## Current agreed delivery scope (19 October 2026)
 
@@ -63,7 +63,7 @@ Dew owns Vercel/Backup/Monitoring operations. Dummy data remains the approved te
 
 ## Operator Mac automation
 
-`scripts/install-operator-jobs.mjs` is an explicit macOS operator installer (never run by build/startup). Supply a verified BACKUP_DATABASE_URL in the operator environment. It stores credentials in `~/.villacheck-operations/operator.env` and the encryption key in `keys/backup.key`, both mode 0600, outside Git. The encrypted archives and safe operation logs are in separate subdirectories. Existing keys are reused, never regenerated on reinstall.
+`tools/install-operator-jobs.mjs` is an explicit macOS operator installer (never run by build/startup). Supply a verified BACKUP_DATABASE_URL in the operator environment. It stores credentials in `~/.villacheck-operations/operator.env` and the encryption key in `keys/backup.key`, both mode 0600, outside Git. The encrypted archives and safe operation logs are in separate subdirectories. Existing keys are reused, never regenerated on reinstall.
 
 LaunchAgents `com.villacheck.backup` (every 24 hours and login) and `com.villacheck.monitor` (every 10 minutes and login) run only while the operator Mac is on and connected. Health/backup failures request a local macOS notification; a successful notification command does not prove the user saw it. Set an approved HTTPS ALERT_WEBHOOK_URL for external alerts if required. Local archive and key on one Mac are not an offsite disaster-recovery copy. Approve and configure separate storage before claiming 24/7 hosted operational acceptance.
 
@@ -94,4 +94,4 @@ Use [the staging guide](docs/staging-deployment-guide.md) and [external acceptan
 
 Production-mode runtime now defaults `PAYMENT_ACCESS_MODE` to `DISABLED`; production `LEGACY_MANUAL` is rejected. Isolated staging may enable `OMISE_TEST` with test-only keys and explicitly selected test methods. Do not rely on an Omise flag or Demo UI alone to disable old manual endpoints. The gate holds invoice/bank-notification workers and preserves histories; see [the manual shutdown plan](docs/legacy-manual-shutdown-plan.md), including the ingress restriction required when rolling back to old code.
 
-Set `APP_ENV=staging` and exact `STAGING_EMAIL_ALLOWLIST` before Email OTP/SMTP acceptance. An empty allowlist fails closed. `scripts/staging-diagnostics.mjs` is configuration-only by default; `--verify-smtp` checks connectivity without sending mail and still does not prove Inbox delivery. No live payment mode is implemented or approved.
+Set `APP_ENV=staging` and exact `STAGING_EMAIL_ALLOWLIST` before Email OTP/SMTP acceptance. An empty allowlist fails closed. `tools/staging-diagnostics.mjs` is configuration-only by default; `--verify-smtp` checks connectivity without sending mail and still does not prove Inbox delivery. No live payment mode is implemented or approved.

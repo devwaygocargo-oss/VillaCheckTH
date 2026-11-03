@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { migrationAttempts, runMigration } from "../scripts/migration-runner.mjs";
+import { migrationAttempts, runMigration } from "../tools/migration-runner.mjs";
 
 const busy = { status: 1, output: "Timed out trying to acquire a postgres advisory lock" };
 

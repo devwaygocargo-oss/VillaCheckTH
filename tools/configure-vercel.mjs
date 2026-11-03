@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const input = process.argv[2];
-if (!input) throw new Error("Usage: node scripts/configure-vercel.mjs https://your-backend.onrender.com");
+if (!input) throw new Error("Usage: node tools/configure-vercel.mjs https://your-backend.onrender.com");
 const backend = new URL(input);
 if (backend.protocol !== "https:" || backend.username || backend.password || backend.pathname !== "/" || backend.search || backend.hash)
   throw new Error("Supply the HTTPS backend origin without credentials, path, or query.");

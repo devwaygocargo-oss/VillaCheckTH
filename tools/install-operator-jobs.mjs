@@ -15,7 +15,7 @@ if(existsSync(configFile)&&!process.env.ALERT_WEBHOOK_URL){const {parse}=await i
 writeFileSync(configFile,Object.entries(values).map(([key,value])=>key+'='+JSON.stringify(value)).join('\n')+'\n',{mode:0o600});chmodSync(configFile,0o600)
 const xml=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),agents=join(homedir(),'Library','LaunchAgents');mkdirSync(agents,{recursive:true,mode:0o700})
 for(const [job,interval]of [['backup',86400],['monitor',600]]){
- const label='com.villacheck.'+job,file=join(agents,label+'.plist'),args=[process.execPath,resolve(project,'scripts/operator-runner.mjs'),job,configFile]
+ const label='com.villacheck.'+job,file=join(agents,label+'.plist'),args=[process.execPath,resolve(project,'tools/operator-runner.mjs'),job,configFile]
  const plist='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>Label</key><string>'+label+'</string><key>ProgramArguments</key><array>'+args.map(x=>'<string>'+xml(x)+'</string>').join('')+'</array><key>WorkingDirectory</key><string>'+xml(project)+'</string><key>StartInterval</key><integer>'+interval+'</integer><key>RunAtLoad</key><true/><key>StandardOutPath</key><string>'+xml(join(operatorRoot,'logs',job+'-launch.log'))+'</string><key>StandardErrorPath</key><string>'+xml(join(operatorRoot,'logs',job+'-error.log'))+'</string></dict></plist>'
  if(existsSync(file)&&!readFileSync(file,'utf8').includes('operator-runner.mjs'))throw Error('Existing launch agent is not owned by this installer; refusing replacement')
  writeFileSync(file,plist,{mode:0o600});execFileSync('/usr/bin/plutil',['-lint',file],{stdio:'ignore'})

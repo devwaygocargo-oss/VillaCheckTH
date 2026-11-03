@@ -16,3 +16,6 @@ docs/validation
 *.log
 *.pem
 *.key
+
+# Keep local operator scripts outside source control and deployments
+/scripts/

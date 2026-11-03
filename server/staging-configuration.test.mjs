@@ -10,7 +10,7 @@ test('legacy Vite/Render configurator cannot overwrite the current Next deployme
   writeFileSync(join(cwd,'package.json'),JSON.stringify({dependencies:{next:'16'}}))
   const original=JSON.stringify({framework:'nextjs',outputDirectory:'.next',functions:{'pages/api/**/*.ts':{maxDuration:60}}})
   writeFileSync(join(cwd,'vercel.json'),original)
-  const result=spawnSync(process.execPath,[resolve('scripts/configure-vercel.mjs'),'https://backend.example.test'],{cwd,encoding:'utf8'})
+  const result=spawnSync(process.execPath,[resolve('tools/configure-vercel.mjs'),'https://backend.example.test'],{cwd,encoding:'utf8'})
   assert.notEqual(result.status,0);assert.match(result.stderr,/Next.js/)
   assert.equal(readFileSync(join(cwd,'vercel.json'),'utf8'),original)
  }finally{rmSync(cwd,{recursive:true,force:true})}
